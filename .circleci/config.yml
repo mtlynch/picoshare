@@ -1,0 +1,34 @@
+version: 2.1
+jobs:
+  deploy:
+    machine:
+      image: ubuntu-2004:202010-01
+      docker_layer_caching: true
+    environment:
+      # The flyctl changes too much to use a specific version, so use the latest for the
+      # time being.
+      # https://github.com/superfly/flyctl/issues/394#issuecomment-815890166
+      FLYCTL_VERSION: "latest"
+    steps:
+      - checkout
+      - run:
+          name: Install flyctl
+          command: curl -L https://fly.io/install.sh | sh -s "${FLYCTL_VERSION}"
+      - run:
+          name: Print flyctl version
+          command: |
+            "${HOME}/.fly/bin/flyctl" version
+      - run:
+          name: Deploy to fly.io
+          command: |
+            "${HOME}/.fly/bin/flyctl" deploy \
+              --access-token "${FLY_ACCESS_TOKEN}" \
+              --local-only
+workflows:
+  version: 2
+  test_deploy:
+    jobs:
+      - deploy:
+          filters:
+            branches:
+              only: master

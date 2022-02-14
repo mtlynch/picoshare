@@ -1,0 +1,9 @@
+.circleci/
+.vscode/
+data/
+dev-scripts/
+.coverage*
+*.env
+fly.toml
+modd.conf
+Dockerfile
