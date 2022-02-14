@@ -1,6 +1,8 @@
 FROM golang:1.17.4 AS builder
 
 COPY ./handlers /app/handlers
+COPY ./static /app/static
+COPY ./templates /app/templates
 COPY ./go.* /app/
 COPY ./main.go /app/
 
