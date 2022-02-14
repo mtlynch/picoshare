@@ -1,0 +1,37 @@
+#!/bin/bash
+
+# Exit build script on first failure.
+set -e
+
+# Echo commands to stdout.
+set -x
+
+if [ "$1" = "--full" ]; then
+  full_test="1"
+  flags="-race --coverprofile=.coverage.out"
+else
+  full_test=""
+  flags=""
+fi
+
+# Exit on unset variable.
+set -u
+
+# Change directory to repository root.
+readonly SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+cd "${SCRIPT_DIR}/.."
+
+# Install staticcheck if it's not present.
+STATICCHECK_PATH="$(go env GOPATH)/bin/staticcheck"
+if [ ! -f "${STATICCHECK_PATH}" ]; then
+    STATICCHECK_VERSION="2021.1.2"
+    go install "honnef.co/go/tools/cmd/staticcheck@${STATICCHECK_VERSION}"
+fi
+
+go test -v $flags ./...
+go vet ./...
+$STATICCHECK_PATH ./...
+
+if [ ! -z "$full_test" ]; then
+  go tool cover -html .coverage.out -o .coverage.html
+fi
