@@ -1,0 +1,28 @@
+body {
+  font-family: "Karla", sans-serif;
+}
+
+a {
+  text-decoration: none;
+}
+
+.navbar .navbar-brand {
+  font-size: 1.6em;
+}
+
+@media screen and (min-width: 960px) {
+  .navbar .navbar-brand {
+    margin-left: 0 !important;
+    margin-right: 2rem;
+  }
+}
+
+@media screen and (min-width: 960px) {
+  .navbar .navbar-brand .navbar-item {
+    padding: 0;
+  }
+}
+
+.navbar .nav-item {
+  font-size: 1.3em;
+}

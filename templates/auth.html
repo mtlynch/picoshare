@@ -1,0 +1,32 @@
+{{define "style-tags"}}{{end}} {{define "script-tags"}}
+<script type="module" src="/js/auth.js"></script>
+{{end}} {{define "content"}}
+<h1 class="title">Log In</h1>
+
+<form id="auth-form" class="mb-2" action="/auth">
+  <div class="field">
+    <label class="label">Site password</label>
+    <div class="control">
+      <input
+        class="input"
+        id="secret"
+        type="text"
+        required
+        autofocus
+        placeholder="Passphrase"
+      />
+    </div>
+  </div>
+  <div class="field">
+    <div class="control">
+      <input class="button is-primary" type="submit" value="Authenticate" />
+    </div>
+  </div>
+</form>
+
+<div id="error" class="is-hidden">
+  <article class="message is-danger">
+    <div id="error-message" class="message-body">Placeholder error.</div>
+  </article>
+</div>
+{{end}} {{template "base.html"}}
