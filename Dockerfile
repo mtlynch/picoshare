@@ -20,6 +20,8 @@ FROM alpine:3.15
 RUN apk add --no-cache bash
 
 COPY --from=builder /app/picoshare /app/picoshare
+COPY ./static /app/static
+COPY ./templates /app/templates
 
 WORKDIR /app
 
