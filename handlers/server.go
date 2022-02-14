@@ -5,7 +5,7 @@ import (
 )
 
 type Server struct {
-	router        *mux.Router
+	router *mux.Router
 }
 
 // Router returns the underlying router interface for the server.
@@ -17,7 +17,7 @@ func (s Server) Router() *mux.Router {
 // requests.
 func New() Server {
 	s := Server{
-		router:        mux.NewRouter(),
+		router: mux.NewRouter(),
 	}
 
 	s.routes()

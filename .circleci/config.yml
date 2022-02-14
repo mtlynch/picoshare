@@ -1,5 +1,40 @@
 version: 2.1
 jobs:
+  check_whitespace:
+    docker:
+      - image: cimg/base:2021.04
+    resource_class: small
+    steps:
+      - checkout
+      - run:
+          name: Check for trailing whitespace
+          command: ./dev-scripts/check-trailing-whitespace
+      - run:
+          name: Check that all text files end in a trailing newline
+          command: ./dev-scripts/check-trailing-newline
+  test_go:
+    docker:
+      - image: cimg/go:1.17.4
+    resource_class: medium
+    steps:
+      - checkout
+      - attach_workspace:
+          at: ./
+      - restore_cache:
+          keys:
+            - go-mod-v3-{{ checksum "go.sum" }}
+      - run:
+          name: Test go packages
+          command: dev-scripts/run-go-tests --full
+      - store_artifacts:
+          path: .coverage.html
+      - run:
+          name: Verify golang formatting
+          command: dev-scripts/check-go-formatting
+      - save_cache:
+          key: go-mod-v3-{{ checksum "go.sum" }}
+          paths:
+            - ~/go/pkg/mod
   deploy:
     machine:
       image: ubuntu-2004:202010-01
@@ -28,7 +63,12 @@ workflows:
   version: 2
   test_deploy:
     jobs:
+      - check_whitespace
+      - test_go
       - deploy:
+          requires:
+            - check_whitespace
+            - test_go
           filters:
             branches:
               only: master
