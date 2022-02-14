@@ -1,0 +1,24 @@
+#!/bin/bash
+
+# Exit on first failing command.
+set -e
+
+# Exit on unset variable.
+set -u
+
+# Echo commands
+set -x
+
+# Change directory to repository root.
+readonly SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+cd "${SCRIPT_DIR}/.."
+
+# Install modd if it's not present.
+MODD_PATH="$(go env GOPATH)/bin/modd"
+if [ ! -f "${MODD_PATH}" ]; then
+    go get github.com/cortesi/modd/cmd/modd
+    go install github.com/cortesi/modd/cmd/modd
+fi
+
+# Run modd for hot reloading.
+$MODD_PATH
