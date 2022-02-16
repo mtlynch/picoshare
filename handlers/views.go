@@ -13,6 +13,10 @@ type commonProps struct {
 
 func (s Server) indexGet() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		if s.isAuthenticated(r) {
+			s.uploadGet()(w, r)
+			return
+		}
 		if err := renderTemplate(w, "index.html", struct {
 			commonProps
 		}{
@@ -34,6 +38,22 @@ func (s Server) authGet() http.HandlerFunc {
 		}{
 			commonProps{
 				Title:           "PicoShare - Log in",
+				IsAuthenticated: s.isAuthenticated(r),
+			},
+		}, template.FuncMap{}); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+}
+
+func (s Server) uploadGet() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if err := renderTemplate(w, "upload.html", struct {
+			commonProps
+		}{
+			commonProps{
+				Title:           "PicoShare - Authenticate",
 				IsAuthenticated: s.isAuthenticated(r),
 			},
 		}, template.FuncMap{}); err != nil {
