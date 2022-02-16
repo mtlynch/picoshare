@@ -5,7 +5,7 @@ services:
       context: ../
     environment:
       - PORT=3333
-      - PS_SHARED_SECRET="dummypass"
+      - PS_SHARED_SECRET=dummypass
     volumes:
       - ./:/app/e2e
   cypress:
