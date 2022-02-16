@@ -6,6 +6,7 @@ processes = []
 
 [env]
   PORT = "8080"
+  PS_BEHIND_PROXY="yes"
 
 [experimental]
   allowed_public_ports = []
