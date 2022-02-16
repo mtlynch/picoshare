@@ -5,3 +5,22 @@
 [![License](http://img.shields.io/:license-agpl-blue.svg?style=flat-square)](LICENSE)
 
 A minimal, easy-to-host service for sharing images and other files.
+
+## Run LogPaste
+
+### From source
+
+```bash
+PORT=3001 go run main.go
+```
+
+### From Docker
+
+```bash
+docker run \
+  -e "PORT=3001" \
+  -e "PS_SHARED_SECRET=somesecretpass" \
+  -p 3001:3001/tcp \
+  --name picoshare \
+  mtlynch/picoshare
+```
