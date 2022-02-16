@@ -6,12 +6,19 @@ import (
 	"text/template"
 )
 
+type commonProps struct {
+	Title      string
+	IsLoggedIn bool
+}
+
 func indexGet() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if err := renderTemplate(w, "index.html", struct {
-			Title string
+			commonProps
 		}{
-			Title: "PicoShare",
+			commonProps{
+				Title: "PicoShare",
+			},
 		}, template.FuncMap{}); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -22,9 +29,11 @@ func indexGet() http.HandlerFunc {
 func authGet() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if err := renderTemplate(w, "auth.html", struct {
-			Title string
+			commonProps
 		}{
-			Title: "PicoShare - Authenticate",
+			commonProps{
+				Title: "PicoShare - Authenticate",
+			},
 		}, template.FuncMap{}); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
