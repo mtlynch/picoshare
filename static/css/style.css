@@ -10,14 +10,14 @@ a {
   font-size: 1.6em;
 }
 
-@media screen and (min-width: 960px) {
+@media screen and (min-width: 1024px) {
   .navbar .navbar-brand {
     margin-left: 0 !important;
     margin-right: 2rem;
   }
 }
 
-@media screen and (min-width: 960px) {
+@media screen and (min-width: 1024px) {
   .navbar .navbar-brand .navbar-item {
     padding: 0;
   }
