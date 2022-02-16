@@ -36,11 +36,13 @@ func renderTemplate(w http.ResponseWriter, templateFilename string, templateVars
 	const templatesRootDir = "./templates"
 	const baseTemplate = "base"
 	const baseTemplateFilename = "base.html"
+	const navbarTemplateFilename = "navbar.html"
 
 	t := template.Must(template.New(templateFilename).Funcs(funcMap).
 		ParseFiles(
 			path.Join(templatesRootDir, templateFilename),
 			path.Join(templatesRootDir, baseTemplateFilename),
+			path.Join(templatesRootDir, navbarTemplateFilename),
 		))
 	if err := t.ExecuteTemplate(w, baseTemplate, templateVars); err != nil {
 		return err
