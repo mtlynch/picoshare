@@ -6,7 +6,7 @@
 
 A minimal, easy-to-host service for sharing images and other files.
 
-## Run LogPaste
+## Run
 
 ### From source
 
