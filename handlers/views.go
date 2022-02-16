@@ -6,6 +6,19 @@ import (
 	"text/template"
 )
 
+func indexGet() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if err := renderTemplate(w, "index.html", struct {
+			Title string
+		}{
+			Title: "PicoShare",
+		}, template.FuncMap{}); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+}
+
 func authGet() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if err := renderTemplate(w, "auth.html", struct {
