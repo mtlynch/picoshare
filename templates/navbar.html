@@ -14,6 +14,7 @@
         <a class="navbar-item" href="#">
           TODO
         </a>
+        {{ if .IsLoggedIn }}
         <div class="navbar-item has-dropdown is-hoverable">
           <a class="navbar-link">
             Account
@@ -24,6 +25,11 @@
             </a>
           </div>
         </div>
+        {{ else }}
+        <a class="navbar-item" href="/login">
+          Log In
+        </a>
+        {{ end }}
       </div>
       </div>
     </div>
