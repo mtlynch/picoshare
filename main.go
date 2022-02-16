@@ -9,13 +9,19 @@ import (
 	gorilla "github.com/mtlynch/gorilla-handlers"
 
 	"github.com/mtlynch/picoshare/v2/handlers"
+	"github.com/mtlynch/picoshare/v2/handlers/auth/shared_secret"
 )
 
 func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	log.Print("Starting picoshare server")
 
-	h := gorilla.LoggingHandler(os.Stdout, handlers.New().Router())
+	authenticator, err := shared_secret.New(requireEnv("PS_SHARED_SECRET"))
+	if err != nil {
+		log.Fatalf("invalid shared secret: %v", err)
+	}
+
+	h := gorilla.LoggingHandler(os.Stdout, handlers.New(authenticator).Router())
 	if os.Getenv("PS_BEHIND_PROXY") != "" {
 		h = gorilla.ProxyIPHeadersHandler(h)
 	}
@@ -28,4 +34,12 @@ func main() {
 	log.Printf("Listening on %s", port)
 
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", port), nil))
+}
+
+func requireEnv(key string) string {
+	val := os.Getenv(key)
+	if val == "" {
+		panic(fmt.Sprintf("missing required environment variable: %s", key))
+	}
+	return val
 }

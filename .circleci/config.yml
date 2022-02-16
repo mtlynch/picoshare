@@ -35,6 +35,24 @@ jobs:
           key: go-mod-v3-{{ checksum "go.sum" }}
           paths:
             - ~/go/pkg/mod
+  e2e:
+    # We're choosing large even though xlarge is faster because CircleCI takes
+    # too long to provision xlarge instances.
+    resource_class: large
+    machine:
+      # Choose an explicit machine image so that we get the latest version of
+      # docker-compose.
+      image: ubuntu-2004:202010-01
+      docker_layer_caching: true
+    steps:
+      - checkout
+      - run:
+          name: Perform e2e tests.
+          command: dev-scripts/run-e2e-tests
+      - store_artifacts:
+          path: e2e/cypress/videos
+      - store_artifacts:
+          path: e2e/cypress/screenshots
   deploy:
     machine:
       image: ubuntu-2004:202010-01
@@ -65,10 +83,12 @@ workflows:
     jobs:
       - check_whitespace
       - test_go
+      - e2e
       - deploy:
           requires:
             - check_whitespace
             - test_go
+            - e2e
           filters:
             branches:
               only: master

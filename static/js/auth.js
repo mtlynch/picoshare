@@ -1,22 +1,4 @@
-async function authenticate(passphrase) {
-  return fetch("/api/auth", {
-    method: "POST",
-    mode: "same-origin",
-    credentials: "include",
-    cache: "no-cache",
-    redirect: "error",
-    body: JSON.stringify({
-      sharedSecret: passphrase,
-    }),
-  }).then((response) => {
-    if (!response.ok) {
-      return response.text().then((error) => {
-        return Promise.reject(error);
-      });
-    }
-    return Promise.resolve();
-  });
-}
+import { authenticate, logOut } from "./controllers/auth.js";
 
 function setAuthFormState(isEnabled) {
   document.querySelectorAll("#auth-form input").forEach((el) => {
@@ -41,10 +23,10 @@ authForm.addEventListener("submit", (evt) => {
   disableAuthForm();
   authenticate(secret)
     .then(() => {
-      document.location = "/admin/";
+      document.location = "/";
     })
     .catch((error) => {
-      document.cookie = "sharedSecret=; Max-Age=-99999999;";
+      logOut();
       document.getElementById("error-message").innerText = error;
       errorContainer.classList.remove("is-hidden");
       enableAuthForm();

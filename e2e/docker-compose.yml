@@ -1,0 +1,20 @@
+version: "3.2"
+services:
+  picoshare:
+    build:
+      context: ../
+    environment:
+      - PORT=3333
+      - PS_SHARED_SECRET="dummypass"
+    volumes:
+      - ./:/app/e2e
+  cypress:
+    image: "mtlynch/cypress:8.1.0-chrome91"
+    command: ["--browser", "chrome"]
+    depends_on:
+      - picoshare
+    environment:
+      - CYPRESS_baseUrl=http://picoshare:3333
+    working_dir: /e2e
+    volumes:
+      - ./:/e2e
