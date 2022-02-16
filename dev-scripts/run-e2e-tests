@@ -1,0 +1,21 @@
+#!/bin/bash
+
+# Exit build script on first failure
+set -e
+
+# Echo commands to stdout.
+set -x
+
+if [ "$1" = "--skip-build" ]; then
+  flags=""
+else
+  flags="--build"
+fi
+
+# Change directory to repository root.
+readonly SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+cd "${SCRIPT_DIR}/.."
+
+cd e2e
+COMPOSE_DOCKER_CLI_BUILD=1 DOCKER_BUILDKIT=1 \
+  docker-compose up --exit-code-from cypress --abort-on-container-exit $flags

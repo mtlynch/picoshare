@@ -7,17 +7,18 @@ import (
 )
 
 type commonProps struct {
-	Title      string
-	IsLoggedIn bool
+	Title           string
+	IsAuthenticated bool
 }
 
-func indexGet() http.HandlerFunc {
+func (s Server) indexGet() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if err := renderTemplate(w, "index.html", struct {
 			commonProps
 		}{
 			commonProps{
-				Title: "PicoShare",
+				Title:           "PicoShare",
+				IsAuthenticated: s.isAuthenticated(r),
 			},
 		}, template.FuncMap{}); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -26,13 +27,14 @@ func indexGet() http.HandlerFunc {
 	}
 }
 
-func authGet() http.HandlerFunc {
+func (s Server) authGet() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if err := renderTemplate(w, "auth.html", struct {
 			commonProps
 		}{
 			commonProps{
-				Title: "PicoShare - Authenticate",
+				Title:           "PicoShare - Log in",
+				IsAuthenticated: s.isAuthenticated(r),
 			},
 		}, template.FuncMap{}); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
