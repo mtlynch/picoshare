@@ -1,7 +1,9 @@
 FROM golang:1.17.4 AS builder
 
 COPY ./handlers /app/handlers
+COPY ./random /app/random
 COPY ./static /app/static
+COPY ./store /app/store
 COPY ./templates /app/templates
 COPY ./go.* /app/
 COPY ./main.go /app/
