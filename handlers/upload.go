@@ -13,7 +13,7 @@ import (
 	"github.com/mtlynch/picoshare/v2/types"
 )
 
-const MaxUploadBytes = 5000 * 1000 * 1000
+const MaxUploadBytes = 100 * 1000 * 1000
 
 func (s Server) entryGet() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {

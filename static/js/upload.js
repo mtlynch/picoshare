@@ -12,8 +12,8 @@ document
 
         const aEl = document.createElement("a");
 
-        aEl.href = "/" + res.ID;
-        aEl.innerText = document.location.href + res.ID;
+        aEl.href = "/!" + res.ID;
+        aEl.innerText = document.location.href + "!" + res.ID;
 
         resultEl.appendChild(aEl);
       })
