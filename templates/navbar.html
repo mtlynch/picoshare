@@ -10,10 +10,16 @@
       </a>
     </div>
     <div id="navbar-links" class="navbar-menu">
+      {{ if .IsAuthenticated }}
       <div class="navbar-start">
-        <a class="navbar-item" href="#">
-          TODO
-        </a>
+        <div class="navbar-item">
+          <a class="button is-primary" href="/">
+            Upload
+          </a>
+        </div>
+      </div>
+      {{ end }}
+      <div class="navbar-end">
         {{ if .IsAuthenticated }}
         <div class="navbar-item has-dropdown is-hoverable">
           <a class="navbar-link">
@@ -26,11 +32,12 @@
           </div>
         </div>
         {{ else }}
-        <a class="navbar-item" data-test-id="log-in" href="/login">
-          Log In
-        </a>
+        <div class="navbar-item">
+          <a class="button is-primary" data-test-id="log-in" href="/login">
+            Log In
+          </a>
+        </div>
         {{ end }}
-      </div>
       </div>
     </div>
   </div>
