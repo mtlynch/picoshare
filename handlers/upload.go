@@ -45,7 +45,7 @@ func (s Server) entryGet() http.HandlerFunc {
 		w.Write(entry.Data)
 	}
 }
-func (s Server) entryPut() http.HandlerFunc {
+func (s Server) entryPost() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		reader, filename, err := fileFromRequest(w, r)
 		if err != nil {

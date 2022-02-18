@@ -4,7 +4,7 @@ export async function uploadFile(file) {
   const formData = new FormData();
   formData.append("file", file);
   return fetch("/api/entry", {
-    method: "PUT",
+    method: "POST",
     credentials: "include",
     body: formData,
   })
