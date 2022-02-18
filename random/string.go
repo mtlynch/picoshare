@@ -6,14 +6,12 @@ import (
 	"time"
 )
 
-var characters = []rune("abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789")
-
 func init() {
 	log.Printf("initialize random seed")
 	rand.Seed(time.Now().UTC().UnixNano())
 }
 
-func String(n int) string {
+func String(n int, characters []rune) string {
 	b := make([]rune, n)
 	for i := range b {
 		b[i] = characters[rand.Intn(len(characters))]

@@ -78,6 +78,7 @@ func (d db) GetEntry(id types.EntryID) (types.UploadEntry, error) {
 }
 
 func (d db) InsertEntry(id types.EntryID, entry types.UploadEntry) error {
+	log.Printf("saving new entry %s (%d bytes)", id, len(entry.Data))
 	_, err := d.ctx.Exec(`
 	INSERT INTO
 		entries
