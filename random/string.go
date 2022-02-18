@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-var characters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+var characters = []rune("abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789")
 
 func init() {
 	log.Printf("initialize random seed")

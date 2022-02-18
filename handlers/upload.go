@@ -72,7 +72,7 @@ func (s Server) entryPut() http.HandlerFunc {
 }
 
 func generateEntryId() types.EntryID {
-	return types.EntryID(random.String(8))
+	return types.EntryID(random.String(14))
 }
 
 func fileFromRequest(w http.ResponseWriter, r *http.Request) (io.Reader, error) {

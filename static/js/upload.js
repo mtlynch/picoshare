@@ -1,5 +1,6 @@
 import { uploadFile } from "./controllers/upload.js";
 
+const uploadEl = document.querySelector(".file");
 const resultEl = document.getElementById("upload-result");
 
 document
@@ -16,6 +17,7 @@ document
         aEl.innerText = document.location.href + "!" + res.ID;
 
         resultEl.appendChild(aEl);
+        uploadEl.style.display = "none";
       })
       .catch((error) => {
         resultEl.innerText = error;
