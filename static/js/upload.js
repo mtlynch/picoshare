@@ -9,8 +9,6 @@ document
     resultEl.innerText = "";
     uploadFile(evt.target.files[0])
       .then((res) => {
-        console.log(res);
-
         const aEl = document.createElement("a");
 
         aEl.href = "/!" + res.ID;
