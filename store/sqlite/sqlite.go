@@ -89,6 +89,10 @@ func (d db) InsertEntry(id types.EntryID, entry types.UploadEntry) error {
 		expiration_time,
 		data
 	)
-	VALUES(?,?,?,?,?)`, id, entry.Filename, time.Now().Format(time.RFC3339), entry.Expires.Format(time.RFC3339), entry.Data)
+	VALUES(?,?,?,?,?)`, id, entry.Filename, formatTime(entry.Uploaded), formatTime(entry.Expires), entry.Data)
 	return err
+}
+
+func formatTime(t time.Time) string {
+	return t.Format(time.RFC3339)
 }
