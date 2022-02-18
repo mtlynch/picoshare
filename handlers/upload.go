@@ -23,8 +23,6 @@ const (
 
 var idCharacters = []rune("abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789")
 
-var entries = map[types.EntryID]types.UploadEntry{}
-
 func (s Server) entryGet() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id, err := parseEntryID(mux.Vars(r)["id"])
@@ -34,8 +32,9 @@ func (s Server) entryGet() http.HandlerFunc {
 			return
 		}
 
-		entry, ok := entries[id]
-		if !ok {
+		entry, err := s.store.GetEntry(id)
+		if err != nil {
+			log.Printf("error retrieving entry with id %v: %v", id, err)
 			http.Error(w, "entry not found", http.StatusNotFound)
 			return
 		}
@@ -63,12 +62,12 @@ func (s Server) entryPut() http.HandlerFunc {
 		}
 
 		id := generateEntryID()
-		entries[id] = types.UploadEntry{
+		err = s.store.InsertEntry(id, types.UploadEntry{
 			Filename: filename,
 			Data:     data,
 			Uploaded: time.Now(),
 			Expires:  time.Now().Add(FileLifetime),
-		}
+		})
 		if err != nil {
 			log.Printf("failed to save entry: %v", err)
 			http.Error(w, "can't save entry", http.StatusInternalServerError)
