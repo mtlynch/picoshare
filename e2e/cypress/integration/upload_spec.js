@@ -1,4 +1,4 @@
-it("uploads a file and views it", () => {
+it("uploads a file", () => {
   cy.visit("/");
   cy.get('.navbar-item .button[data-test-id="log-in"]').click();
 
@@ -9,5 +9,5 @@ it("uploads a file and views it", () => {
   cy.location("pathname").should("eq", "/");
 
   cy.get(".file-input").attachFile("kittyface.jpg");
-  cy.get("#upload-result a").click();
+  cy.get("#upload-result a").should("be.visible");
 });
