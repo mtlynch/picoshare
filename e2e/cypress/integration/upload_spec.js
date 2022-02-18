@@ -9,4 +9,5 @@ it("uploads a file and views it", () => {
   cy.location("pathname").should("eq", "/");
 
   cy.get(".file-input").attachFile("kittyface.jpg");
+  cy.get("#upload-result a").click();
 });
