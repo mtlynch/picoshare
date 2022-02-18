@@ -71,6 +71,9 @@ func (d db) GetEntry(id types.EntryID) (types.UploadEntry, error) {
 	if err != nil {
 		return types.UploadEntry{}, err
 	}
+
+	// TODO: Parse other fields
+
 	return types.UploadEntry{
 		Filename: types.Filename(filename),
 		Data:     data,
