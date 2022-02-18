@@ -1,6 +1,6 @@
 it("logs in and logs out", () => {
   cy.visit("/");
-  cy.get('.navbar-item[data-test-id="log-in"]').click();
+  cy.get('.navbar-item .button[data-test-id="log-in"]').click();
 
   cy.location("pathname").should("eq", "/login");
   cy.get('form input[type="password"]').type("dummypass");
@@ -12,5 +12,5 @@ it("logs in and logs out", () => {
   cy.get("#navbar-log-out").click({ force: true });
 
   cy.location("pathname").should("eq", "/");
-  cy.get('.navbar-item[data-test-id="log-in"]').should("be.visible");
+  cy.get('.navbar-item .button[data-test-id="log-in"]').should("be.visible");
 });
