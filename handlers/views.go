@@ -53,7 +53,7 @@ func (s Server) uploadGet() http.HandlerFunc {
 			commonProps
 		}{
 			commonProps{
-				Title:           "PicoShare - Authenticate",
+				Title:           "PicoShare - Upload",
 				IsAuthenticated: s.isAuthenticated(r),
 			},
 		}, template.FuncMap{}); err != nil {
