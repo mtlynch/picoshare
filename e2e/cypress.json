@@ -1,6 +1,4 @@
 {
-  "pluginsFile": false,
-  "supportFile": false,
   "defaultCommandTimeout": 10000,
   "videoCompression": false,
   "viewportWidth": 1024
