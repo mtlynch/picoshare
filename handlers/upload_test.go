@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/mtlynch/picoshare/v2/handlers"
@@ -103,6 +104,12 @@ func TestEntryPostRejectsInvalidRequest(t *testing.T) {
 			description: "filename that's five dots",
 			name:        "file",
 			filename:    ".....",
+			contents:    "dummy bytes",
+		},
+		{
+			description: "filename that's too long",
+			name:        "file",
+			filename:    strings.Repeat("A", 101),
 			contents:    "dummy bytes",
 		},
 		{
