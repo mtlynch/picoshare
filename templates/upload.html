@@ -2,6 +2,7 @@
 {{end}}
 
 {{define "script-tags"}}
+<script type="module" src="/js/upload.js"></script>
 {{end}}
 
 {{define "content"}}
@@ -22,6 +23,14 @@
       IMG_1234.png
     </span>
   </label>
+</div>
+
+<div id="upload-result"></div>
+
+<div id="error" class="is-hidden my-3">
+  <article class="message is-danger">
+    <div id="error-message" class="message-body">Placeholder error.</div>
+  </article>
 </div>
 {{end}}
 

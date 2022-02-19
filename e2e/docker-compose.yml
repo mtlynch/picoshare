@@ -9,7 +9,7 @@ services:
     volumes:
       - ./:/app/e2e
   cypress:
-    image: "mtlynch/cypress:8.1.0-chrome91"
+    image: "mtlynch/cypress:9.5.0-chrome98"
     command: ["--browser", "chrome"]
     depends_on:
       - picoshare
