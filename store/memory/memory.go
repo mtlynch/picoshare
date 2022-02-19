@@ -4,8 +4,6 @@
 package memory
 
 import (
-	"errors"
-
 	"github.com/mtlynch/picoshare/v2/store"
 	"github.com/mtlynch/picoshare/v2/types"
 )
@@ -24,7 +22,7 @@ func (m memstore) GetEntry(id types.EntryID) (types.UploadEntry, error) {
 	if entry, ok := m.entries[id]; ok {
 		return entry, nil
 	} else {
-		return types.UploadEntry{}, errors.New("not found")
+		return types.UploadEntry{}, store.EntryNotFoundError{ID: id}
 	}
 }
 
