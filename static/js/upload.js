@@ -2,11 +2,12 @@ import { uploadFile } from "./controllers/upload.js";
 
 const uploadEl = document.querySelector(".file");
 const resultEl = document.getElementById("upload-result");
+const errorContainer = document.getElementById("error");
 
 document
   .querySelector('.file-input[name="resume"]')
   .addEventListener("change", (evt) => {
-    resultEl.innerText = "";
+    errorContainer.classList.add("is-hidden");
     uploadFile(evt.target.files[0])
       .then((res) => {
         const entryId = res.id;
@@ -20,6 +21,7 @@ document
         uploadEl.style.display = "none";
       })
       .catch((error) => {
-        resultEl.innerText = error;
+        document.getElementById("error-message").innerText = error;
+        errorContainer.classList.remove("is-hidden");
       });
   });
