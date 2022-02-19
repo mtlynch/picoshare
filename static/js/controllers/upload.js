@@ -16,6 +16,12 @@ export async function uploadFile(file) {
       }
       return response.json();
     })
+    .then((data) => {
+      if (!data.hasOwnProperty("id")) {
+        throw new Error("Missing expected id field");
+      }
+      return Promise.resolve(data);
+    })
     .catch((error) => {
       return Promise.reject(error);
     });

@@ -9,10 +9,12 @@ document
     resultEl.innerText = "";
     uploadFile(evt.target.files[0])
       .then((res) => {
+        const entryId = res.id;
+
         const aEl = document.createElement("a");
 
-        aEl.href = "/!" + res.ID;
-        aEl.innerText = document.location.href + "!" + res.ID;
+        aEl.href = `/!${entryId}`;
+        aEl.innerText = `${document.location.href}!${entryId}`;
 
         resultEl.appendChild(aEl);
         uploadEl.style.display = "none";
