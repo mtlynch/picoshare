@@ -18,6 +18,7 @@ import (
 
 const (
 	MaxUploadBytes = 100 * 1000 * 1000
+	MaxFilenameLen = 100
 	FileLifetime   = 7 * 24 * time.Hour
 	EntryIDLength  = 14
 )
@@ -135,7 +136,7 @@ func fileFromRequest(w http.ResponseWriter, r *http.Request) (io.Reader, types.F
 }
 
 func parseFilename(s string) (types.Filename, error) {
-	if len(s) > 100 {
+	if len(s) > MaxFilenameLen {
 		return types.Filename(""), errors.New("filename too long")
 	}
 	if s == "." || strings.HasPrefix(s, "..") {

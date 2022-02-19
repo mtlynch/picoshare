@@ -109,7 +109,7 @@ func TestEntryPostRejectsInvalidRequest(t *testing.T) {
 		{
 			description: "filename that's too long",
 			name:        "file",
-			filename:    strings.Repeat("A", 101),
+			filename:    strings.Repeat("A", handlers.MaxFilenameLen+1),
 			contents:    "dummy bytes",
 		},
 		{
