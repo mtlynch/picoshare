@@ -1,3 +1,6 @@
+// The memory package is an in-memory implementation of the store.Store
+// interface. It aids in testing but is not ideal for production usage.
+
 package memory
 
 import (
