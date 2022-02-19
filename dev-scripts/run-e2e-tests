@@ -17,5 +17,6 @@ readonly SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pw
 cd "${SCRIPT_DIR}/.."
 
 cd e2e
+npm install
 COMPOSE_DOCKER_CLI_BUILD=1 DOCKER_BUILDKIT=1 \
   docker-compose up --exit-code-from cypress --abort-on-container-exit $flags

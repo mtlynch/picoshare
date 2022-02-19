@@ -10,6 +10,7 @@ import (
 
 	"github.com/mtlynch/picoshare/v2/handlers"
 	"github.com/mtlynch/picoshare/v2/handlers/auth/shared_secret"
+	"github.com/mtlynch/picoshare/v2/store/memory"
 )
 
 func main() {
@@ -21,7 +22,7 @@ func main() {
 		log.Fatalf("invalid shared secret: %v", err)
 	}
 
-	h := gorilla.LoggingHandler(os.Stdout, handlers.New(authenticator).Router())
+	h := gorilla.LoggingHandler(os.Stdout, handlers.New(authenticator, memory.New()).Router())
 	if os.Getenv("PS_BEHIND_PROXY") != "" {
 		h = gorilla.ProxyIPHeadersHandler(h)
 	}
