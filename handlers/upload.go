@@ -13,6 +13,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/mtlynch/picoshare/v2/random"
+	"github.com/mtlynch/picoshare/v2/store"
 	"github.com/mtlynch/picoshare/v2/types"
 )
 
@@ -39,9 +40,12 @@ func (s Server) entryGet() http.HandlerFunc {
 		}
 
 		entry, err := s.store.GetEntry(id)
-		if err != nil {
-			log.Printf("error retrieving entry with id %v: %v", id, err)
+		if _, ok := err.(store.EntryNotFoundError); ok {
 			http.Error(w, "entry not found", http.StatusNotFound)
+			return
+		} else if err != nil {
+			log.Printf("error retrieving entry with id %v: %v", id, err)
+			http.Error(w, "failed to retrieve entry", http.StatusInternalServerError)
 			return
 		}
 
