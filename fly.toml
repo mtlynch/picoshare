@@ -13,7 +13,7 @@ processes = []
   auto_rollback = true
 
 [mounts]
-source="pico-data"
+source="pico_data"
 destination="/data"
 
 [[services]]
