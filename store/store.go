@@ -1,8 +1,21 @@
 package store
 
-import "github.com/mtlynch/picoshare/v2/types"
+import (
+	"fmt"
+
+	"github.com/mtlynch/picoshare/v2/types"
+)
 
 type Store interface {
 	GetEntry(id types.EntryID) (types.UploadEntry, error)
 	InsertEntry(id types.EntryID, entry types.UploadEntry) error
+}
+
+// EntryNotFoundError occurs when no entry exists with the given ID.
+type EntryNotFoundError struct {
+	ID types.EntryID
+}
+
+func (f EntryNotFoundError) Error() string {
+	return fmt.Sprintf("Could not find entry with ID %v", f.ID)
 }
