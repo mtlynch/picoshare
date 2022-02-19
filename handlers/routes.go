@@ -15,6 +15,7 @@ func (s *Server) routes() {
 	static.PathPrefix("/third-party/").HandlerFunc(serveStaticResource()).Methods(http.MethodGet)
 
 	views := s.router.PathPrefix("/").Subrouter()
+	views.Use(upgradeToHttps)
 	views.HandleFunc("/login", s.authGet()).Methods(http.MethodGet)
 	views.PathPrefix("/!{id}").HandlerFunc(s.entryGet()).Methods(http.MethodGet)
 	views.HandleFunc("/", s.indexGet()).Methods(http.MethodGet)
