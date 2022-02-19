@@ -73,7 +73,9 @@ func (d db) GetEntry(id types.EntryID) (types.UploadEntry, error) {
 	var expirationTimeRaw string
 	var data []byte
 	err = stmt.QueryRow(id).Scan(&filename, &uploadTimeRaw, &expirationTimeRaw, &data)
-	if err != nil {
+	if err == sql.ErrNoRows {
+		return types.UploadEntry{}, store.EntryNotFoundError{ID: id}
+	} else if err != nil {
 		return types.UploadEntry{}, err
 	}
 
