@@ -3,6 +3,9 @@ package handlers_test
 import (
 	"bufio"
 	"bytes"
+	"io"
+	"io/ioutil"
+	"log"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
@@ -26,23 +29,15 @@ func TestUploadFile(t *testing.T) {
 	store := memory.New()
 	s := handlers.New(mockAuthenticator{}, store)
 
-	var b bytes.Buffer
-	bw := bufio.NewWriter(&b)
-	mw := multipart.NewWriter(bw)
-	part, err := mw.CreateFormFile("file", "someimg.png")
-	if err != nil {
-		t.Error(err)
-	}
-	part.Write([]byte("dummy bytes"))
+	formData, contentType := createMultipartFormBody("file", "dummyimage.png", "dummy bytes")
+	d, _ := ioutil.ReadAll(formData)
+	log.Print(string(d))
 
-	mw.Close()
-	bw.Flush()
-
-	req, err := http.NewRequest("POST", "/api/entry", bufio.NewReader(&b))
+	req, err := http.NewRequest("POST", "/api/entry", formData)
 	if err != nil {
 		t.Fatal(err)
 	}
-	req.Header.Add("Content-Type", mw.FormDataContentType())
+	req.Header.Add("Content-Type", contentType)
 
 	w := httptest.NewRecorder()
 	s.Router().ServeHTTP(w, req)
@@ -51,4 +46,21 @@ func TestUploadFile(t *testing.T) {
 		t.Fatalf("handler returned wrong status code: got %v want %v",
 			status, http.StatusOK)
 	}
+}
+
+func createMultipartFormBody(name, filename, contents string) (io.Reader, string) {
+	var b bytes.Buffer
+	bw := bufio.NewWriter(&b)
+	mw := multipart.NewWriter(bw)
+	defer mw.Close()
+
+	part, err := mw.CreateFormFile(name, filename)
+	if err != nil {
+		panic(err)
+	}
+	part.Write([]byte(contents))
+
+	bw.Flush()
+
+	return bufio.NewReader(&b), mw.FormDataContentType()
 }
