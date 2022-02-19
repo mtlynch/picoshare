@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"net/http"
@@ -17,12 +18,15 @@ func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	log.Print("Starting picoshare server")
 
+	dbPath := flag.String("db", "data/store.db", "path to database")
+	flag.Parse()
+
 	authenticator, err := shared_secret.New(requireEnv("PS_SHARED_SECRET"))
 	if err != nil {
 		log.Fatalf("invalid shared secret: %v", err)
 	}
 
-	h := gorilla.LoggingHandler(os.Stdout, handlers.New(authenticator, sqlite.New()).Router())
+	h := gorilla.LoggingHandler(os.Stdout, handlers.New(authenticator, sqlite.New(*dbPath)).Router())
 	if os.Getenv("PS_BEHIND_PROXY") != "" {
 		h = gorilla.ProxyIPHeadersHandler(h)
 	}

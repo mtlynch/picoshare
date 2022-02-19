@@ -29,3 +29,4 @@ COPY ./templates /app/templates
 WORKDIR /app
 
 ENTRYPOINT ["/app/picoshare"]
+CMD ["-db", "/data/store.db"]
