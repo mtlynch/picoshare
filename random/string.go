@@ -7,7 +7,7 @@ import (
 )
 
 func init() {
-	log.Printf("initialize random seed")
+	log.Printf("initializing random seed")
 	rand.Seed(time.Now().UTC().UnixNano())
 }
 

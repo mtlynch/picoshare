@@ -141,10 +141,8 @@ func parseFilename(s string) (types.Filename, error) {
 	if s == "." || strings.HasPrefix(s, "..") {
 		return types.Filename(""), errors.New("illegal filename")
 	}
-	for _, c := range s {
-		if c == '\\' {
-			return types.Filename(""), errors.New("illegal characters in filename")
-		}
+	if strings.ContainsAny(s, "\\") {
+		return types.Filename(""), errors.New("illegal characters in filename")
 	}
 	return types.Filename(s), nil
 }
