@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -136,6 +137,9 @@ func fileFromRequest(w http.ResponseWriter, r *http.Request) (io.Reader, types.F
 func parseFilename(s string) (types.Filename, error) {
 	if len(s) > 100 {
 		return types.Filename(""), errors.New("filename too long")
+	}
+	if s == "." || strings.HasPrefix(s, "..") {
+		return types.Filename(""), errors.New("illegal filename")
 	}
 	for _, c := range s {
 		if c == '\\' {
