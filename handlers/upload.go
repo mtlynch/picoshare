@@ -23,6 +23,10 @@ const (
 
 var idCharacters = []rune("abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789")
 
+type EntryPostResponse struct {
+	ID string `json:"id"`
+}
+
 func (s Server) entryGet() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id, err := parseEntryID(mux.Vars(r)["id"])
@@ -45,6 +49,7 @@ func (s Server) entryGet() http.HandlerFunc {
 		w.Write(entry.Data)
 	}
 }
+
 func (s Server) entryPost() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		reader, filename, err := fileFromRequest(w, r)
@@ -58,6 +63,12 @@ func (s Server) entryPost() http.HandlerFunc {
 		if err != nil {
 			log.Printf("error reading body: %v", err)
 			http.Error(w, fmt.Sprintf("can't read request body: %s", err), http.StatusBadRequest)
+			return
+		}
+
+		if len(data) == 0 {
+			log.Print("form file was empty")
+			http.Error(w, "file is empty", http.StatusBadRequest)
 			return
 		}
 
@@ -75,9 +86,7 @@ func (s Server) entryPost() http.HandlerFunc {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		if err := json.NewEncoder(w).Encode(struct {
-			ID string
-		}{
+		if err := json.NewEncoder(w).Encode(EntryPostResponse{
 			ID: string(id),
 		}); err != nil {
 			panic(err)
@@ -129,7 +138,7 @@ func parseFilename(s string) (types.Filename, error) {
 		return types.Filename(""), errors.New("filename too long")
 	}
 	for _, c := range s {
-		if c == '/' || c == '\\' {
+		if c == '\\' {
 			return types.Filename(""), errors.New("illegal characters in filename")
 		}
 	}
