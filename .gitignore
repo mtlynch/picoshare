@@ -1,2 +1,5 @@
+# Compiled binaries
+bin/
+
 # Persistent data directory
 data/
