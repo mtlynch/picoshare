@@ -7,6 +7,7 @@ import (
 )
 
 type Store interface {
+	GetEntriesMetadata() ([]types.UploadMetadata, error)
 	GetEntry(id types.EntryID) (types.UploadEntry, error)
 	InsertEntry(id types.EntryID, entry types.UploadEntry) error
 }

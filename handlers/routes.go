@@ -14,6 +14,10 @@ func (s *Server) routes() {
 	static.PathPrefix("/js/").HandlerFunc(serveStaticResource()).Methods(http.MethodGet)
 	static.PathPrefix("/third-party/").HandlerFunc(serveStaticResource()).Methods(http.MethodGet)
 
+	authenticatedViews := s.router.PathPrefix("/").Subrouter()
+	authenticatedViews.Use(s.requireAuthentication)
+	authenticatedViews.HandleFunc("/files", s.fileIndexGet()).Methods(http.MethodGet)
+
 	views := s.router.PathPrefix("/").Subrouter()
 	views.Use(upgradeToHttps)
 	views.HandleFunc("/login", s.authGet()).Methods(http.MethodGet)
