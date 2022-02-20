@@ -19,7 +19,7 @@
   <tbody>
     {{ range .Files }}
     <tr>
-      <td><a href="/!{{ .ID }}">{{ .Filename }}</a></td>
+      <td test-data-id="filename"><a href="/!{{ .ID }}">{{ .Filename }}</a></td>
       <td>{{ .Size }}</td>
       <td>{{ .Uploaded }}</td>
       <td>{{ .Expires }}</td>

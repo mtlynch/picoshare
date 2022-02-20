@@ -141,6 +141,7 @@ func (d db) GetEntry(id types.EntryID) (types.UploadEntry, error) {
 
 	return types.UploadEntry{
 		UploadMetadata: types.UploadMetadata{
+			ID:       id,
 			Filename: types.Filename(filename),
 			Uploaded: ut,
 			Expires:  et,
