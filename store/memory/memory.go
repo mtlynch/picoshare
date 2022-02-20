@@ -34,7 +34,7 @@ func (m memstore) GetEntry(id types.EntryID) (types.UploadEntry, error) {
 	}
 }
 
-func (m *memstore) InsertEntry(id types.EntryID, entry types.UploadEntry) error {
-	m.entries[id] = entry
+func (m *memstore) InsertEntry(entry types.UploadEntry) error {
+	m.entries[entry.ID] = entry
 	return nil
 }

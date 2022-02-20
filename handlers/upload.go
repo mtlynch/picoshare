@@ -79,8 +79,9 @@ func (s Server) entryPost() http.HandlerFunc {
 		}
 
 		id := generateEntryID()
-		err = s.store.InsertEntry(id, types.UploadEntry{
+		err = s.store.InsertEntry(types.UploadEntry{
 			UploadMetadata: types.UploadMetadata{Filename: filename,
+				ID:       id,
 				Uploaded: time.Now(),
 				Expires:  time.Now().Add(FileLifetime),
 				Size:     len(data),

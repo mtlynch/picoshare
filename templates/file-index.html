@@ -19,7 +19,15 @@
   <tbody>
     {{ range .Files }}
     <tr>
+<<<<<<< HEAD
+<<<<<<< HEAD
       <td test-data-id="filename"><a href="/!{{ .ID }}">{{ .Filename }}</a></td>
+=======
+      <td><a href="/!{{ .ID }}">{{ .Filename }}</a></td>
+>>>>>>> Add a file index view
+=======
+      <td test-data-id="filename"><a href="/!{{ .ID }}">{{ .Filename }}</a></td>
+>>>>>>> Add e2e test
       <td>{{ .Size }}</td>
       <td>{{ .Uploaded }}</td>
       <td>{{ .Expires }}</td>
