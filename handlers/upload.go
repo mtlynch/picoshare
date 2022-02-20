@@ -83,6 +83,7 @@ func (s Server) entryPost() http.HandlerFunc {
 			UploadMetadata: types.UploadMetadata{Filename: filename,
 				Uploaded: time.Now(),
 				Expires:  time.Now().Add(FileLifetime),
+				Size:     len(data),
 			},
 			Data: data,
 		})
