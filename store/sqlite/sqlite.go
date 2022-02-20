@@ -166,6 +166,16 @@ func (d db) InsertEntry(entry types.UploadEntry) error {
 	return err
 }
 
+func (d db) DeleteEntry(id types.EntryID) error {
+	log.Printf("deleting entry %v", id)
+	_, err := d.ctx.Exec(`
+	DELETE FROM
+		entries
+	WHERE
+		id=?`, id)
+	return err
+}
+
 func formatTime(t time.Time) string {
 	return t.UTC().Format(timeFormat)
 }

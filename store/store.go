@@ -10,6 +10,7 @@ type Store interface {
 	GetEntriesMetadata() ([]types.UploadMetadata, error)
 	GetEntry(id types.EntryID) (types.UploadEntry, error)
 	InsertEntry(entry types.UploadEntry) error
+	DeleteEntry(id types.EntryID) error
 }
 
 // EntryNotFoundError occurs when no entry exists with the given ID.

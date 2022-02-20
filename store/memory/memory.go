@@ -38,3 +38,8 @@ func (m *memstore) InsertEntry(entry types.UploadEntry) error {
 	m.entries[entry.ID] = entry
 	return nil
 }
+
+func (m *memstore) DeleteEntry(id types.EntryID) error {
+	delete(m.entries, id)
+	return nil
+}
