@@ -1,9 +1,12 @@
 package handlers
 
 import (
+	"log"
 	"net/http"
 	"path"
 	"text/template"
+
+	"github.com/mtlynch/picoshare/v2/types"
 )
 
 type commonProps struct {
@@ -31,6 +34,29 @@ func (s Server) indexGet() http.HandlerFunc {
 	}
 }
 
+func (s Server) fileIndexGet() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		em, err := s.store.GetEntriesMetadata()
+		if err != nil {
+			log.Printf("failed to retrieve entries metadata: %v", err)
+			http.Error(w, "failed to retrieve file index", http.StatusInternalServerError)
+			return
+		}
+		if err := renderTemplate(w, "file-index.html", struct {
+			commonProps
+			Files []types.UploadMetadata
+		}{
+			commonProps: commonProps{
+				Title:           "PicoShare - Files",
+				IsAuthenticated: s.isAuthenticated(r),
+			},
+			Files: em,
+		}, template.FuncMap{}); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+}
 func (s Server) authGet() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if err := renderTemplate(w, "auth.html", struct {

@@ -80,10 +80,12 @@ func (s Server) entryPost() http.HandlerFunc {
 
 		id := generateEntryID()
 		err = s.store.InsertEntry(id, types.UploadEntry{
-			Filename: filename,
-			Data:     data,
-			Uploaded: time.Now(),
-			Expires:  time.Now().Add(FileLifetime),
+			UploadMetadata: types.UploadMetadata{Filename: filename,
+				Uploaded: time.Now(),
+				Expires:  time.Now().Add(FileLifetime),
+				Size:     len(data),
+			},
+			Data: data,
 		})
 		if err != nil {
 			log.Printf("failed to save entry: %v", err)

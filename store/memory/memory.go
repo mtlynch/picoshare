@@ -18,6 +18,14 @@ func New() store.Store {
 	}
 }
 
+func (m memstore) GetEntriesMetadata() ([]types.UploadMetadata, error) {
+	ee := []types.UploadMetadata{}
+	for _, e := range m.entries {
+		ee = append(ee, e.UploadMetadata)
+	}
+	return ee, nil
+}
+
 func (m memstore) GetEntry(id types.EntryID) (types.UploadEntry, error) {
 	if entry, ok := m.entries[id]; ok {
 		return entry, nil

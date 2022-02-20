@@ -51,6 +51,54 @@ func New(path string) store.Store {
 	}
 }
 
+func (d db) GetEntriesMetadata() ([]types.UploadMetadata, error) {
+	rows, err := d.ctx.Query(`
+	SELECT
+		id,
+		filename,
+		upload_time,
+		expiration_time,
+		LENGTH(data) AS file_size
+	FROM
+		entries`)
+	if err != nil {
+		return []types.UploadMetadata{}, err
+	}
+
+	ee := []types.UploadMetadata{}
+	for rows.Next() {
+		var id string
+		var filename string
+		var uploadTimeRaw string
+		var expirationTimeRaw string
+		var fileSize int
+		err = rows.Scan(&id, &filename, &uploadTimeRaw, &expirationTimeRaw, &fileSize)
+		if err != nil {
+			return []types.UploadMetadata{}, err
+		}
+
+		ut, err := parseDatetime(uploadTimeRaw)
+		if err != nil {
+			return []types.UploadMetadata{}, err
+		}
+
+		et, err := parseDatetime(expirationTimeRaw)
+		if err != nil {
+			return []types.UploadMetadata{}, err
+		}
+
+		ee = append(ee, types.UploadMetadata{
+			ID:       types.EntryID(id),
+			Filename: types.Filename(filename),
+			Uploaded: ut,
+			Expires:  et,
+			Size:     fileSize,
+		})
+	}
+
+	return ee, nil
+}
+
 func (d db) GetEntry(id types.EntryID) (types.UploadEntry, error) {
 	stmt, err := d.ctx.Prepare(`
 		SELECT
@@ -92,10 +140,13 @@ func (d db) GetEntry(id types.EntryID) (types.UploadEntry, error) {
 	}
 
 	return types.UploadEntry{
-		Filename: types.Filename(filename),
-		Uploaded: ut,
-		Expires:  et,
-		Data:     data,
+		UploadMetadata: types.UploadMetadata{
+			ID:       id,
+			Filename: types.Filename(filename),
+			Uploaded: ut,
+			Expires:  et,
+		},
+		Data: data,
 	}, nil
 }
 

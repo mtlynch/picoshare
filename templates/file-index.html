@@ -1,0 +1,32 @@
+{{define "style-tags"}}
+{{end}}
+
+{{define "script-tags"}}
+{{end}}
+
+{{define "content"}}
+<h1 class="title">Files</h1>
+
+<table class="table">
+  <thead>
+    <tr>
+      <th>Filename</th>
+      <th>Size</th>
+      <th>Uploaded</th>
+      <th>Expires</th>
+    </tr>
+  </thead>
+  <tbody>
+    {{ range .Files }}
+    <tr>
+      <td test-data-id="filename"><a href="/!{{ .ID }}">{{ .Filename }}</a></td>
+      <td>{{ .Size }}</td>
+      <td>{{ .Uploaded }}</td>
+      <td>{{ .Expires }}</td>
+    </tr>
+    {{ end }}
+  </tbody>
+</table>
+{{end}}
+
+{{template "base.html"}}

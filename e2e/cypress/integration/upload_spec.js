@@ -10,4 +10,10 @@ it("uploads a file", () => {
 
   cy.get(".file-input").attachFile("kittyface.jpg");
   cy.get("#upload-result a").should("be.visible");
+
+  cy.get('.navbar a[href="/files"]').click();
+  cy.get('.table td[test-data-id="filename"]').should(
+    "contain",
+    "kittyface.jpg"
+  );
 });
