@@ -9,7 +9,7 @@ import (
 type Store interface {
 	GetEntriesMetadata() ([]types.UploadMetadata, error)
 	GetEntry(id types.EntryID) (types.UploadEntry, error)
-	InsertEntry(id types.EntryID, entry types.UploadEntry) error
+	InsertEntry(entry types.UploadEntry) error
 }
 
 // EntryNotFoundError occurs when no entry exists with the given ID.

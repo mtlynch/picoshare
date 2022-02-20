@@ -150,8 +150,8 @@ func (d db) GetEntry(id types.EntryID) (types.UploadEntry, error) {
 	}, nil
 }
 
-func (d db) InsertEntry(id types.EntryID, entry types.UploadEntry) error {
-	log.Printf("saving new entry %s (%d bytes)", id, len(entry.Data))
+func (d db) InsertEntry(entry types.UploadEntry) error {
+	log.Printf("saving new entry %s (%d bytes)", entry.ID, len(entry.Data))
 	_, err := d.ctx.Exec(`
 	INSERT INTO
 		entries
@@ -162,7 +162,7 @@ func (d db) InsertEntry(id types.EntryID, entry types.UploadEntry) error {
 		expiration_time,
 		data
 	)
-	VALUES(?,?,?,?,?)`, id, entry.Filename, formatTime(entry.Uploaded), formatTime(entry.Expires), entry.Data)
+	VALUES(?,?,?,?,?)`, entry.ID, entry.Filename, formatTime(entry.Uploaded), formatTime(entry.Expires), entry.Data)
 	return err
 }
 
