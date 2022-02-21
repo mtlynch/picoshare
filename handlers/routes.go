@@ -8,6 +8,7 @@ func (s *Server) routes() {
 	authenticatedApis := s.router.PathPrefix("/api").Subrouter()
 	authenticatedApis.Use(s.requireAuthentication)
 	authenticatedApis.HandleFunc("/entry", s.entryPost()).Methods(http.MethodPost)
+	authenticatedApis.HandleFunc("/entry/{id}", s.entryDelete()).Methods(http.MethodDelete)
 
 	static := s.router.PathPrefix("/").Subrouter()
 	static.PathPrefix("/css/").HandlerFunc(serveStaticResource()).Methods(http.MethodGet)

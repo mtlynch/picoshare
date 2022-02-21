@@ -1,7 +1,9 @@
 {{define "style-tags"}}
+<link rel="stylesheet" type="text/css" href="/css/file-index.css" />
 {{end}}
 
 {{define "script-tags"}}
+<script type="module" src="/js/fileIndex.js"></script>
 {{end}}
 
 {{define "content"}}
@@ -14,6 +16,7 @@
       <th>Size</th>
       <th>Uploaded</th>
       <th>Expires</th>
+      <th></th>
     </tr>
   </thead>
   <tbody>
@@ -23,6 +26,7 @@
       <td>{{ .Size }}</td>
       <td>{{ .Uploaded }}</td>
       <td>{{ .Expires }}</td>
+      <td><button class="button is-danger" pico-purpose="delete" pico-entry-id="{{ .ID }}"><i class="fa fa-trash" aria-hidden="true"></i></button></td>
     </tr>
     {{ end }}
   </tbody>
