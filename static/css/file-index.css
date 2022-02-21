@@ -1,3 +1,4 @@
 .deleted-entry {
   text-decoration: line-through;
+  color: darkgray;
 }
