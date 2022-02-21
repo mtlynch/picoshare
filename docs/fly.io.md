@@ -2,6 +2,19 @@
 
 TODO(mtlynch): Fill out these instructions
 
+## Create fly.toml
+
+TODO(mtlynch): Explain how to create `fly.toml` file.
+
+## Create your app
+
+```bash
+RANDOM_SUFFIX="$(head /dev/urandom | tr -dc 'a-z0-9' | head -c 6 ; echo '')"
+APP_NAME="picoshare-${RANDOM_SUFFIX}"
+
+fly apps create --name "${APP_NAME}"
+```
+
 ## Create a persistent volume (optional)
 
 ```bash
@@ -13,4 +26,20 @@ fly volumes create "${VOLUME_NAME}" \
   --encrypted \
   --region="${REGION}" \
   --size "${SIZE_IN_GB}"
+```
+
+## Deploy
+
+Finally, it's time to deploy your app.
+
+```bash
+# Change this to the latest Docker image tag
+PICOSHARE_IMAGE="mtlynch/picoshare:0.1.0"
+
+fly deploy \
+  --region="${REGION}" \
+  --image "${PICOSHARE_IMAGE}"
+
+PICOSHARE_URL="https://${APP_NAME}.fly.dev/"
+echo "Your PicoShare instance is now ready at: ${PICOSHARE_URL}"
 ```
