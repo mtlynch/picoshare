@@ -28,6 +28,14 @@ fly volumes create "${VOLUME_NAME}" \
   --size "${SIZE_IN_GB}"
 ```
 
+## Set a passphrase
+
+Choose a passphrase to secure your instance.
+
+```bash
+flyctl secrets set PS_SHARED_SECRET="somesecretpassphrase"
+```
+
 ## Deploy
 
 Finally, it's time to deploy your app.
