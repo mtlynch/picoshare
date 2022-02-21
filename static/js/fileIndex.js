@@ -13,7 +13,7 @@ document.querySelectorAll('[pico-purpose="delete"]').forEach((deleteBtn) => {
         rowEl.classList.add("deleted-entry");
       })
       .catch((error) => {
-        // TODO: Handle error
+        console.error(error);
       });
   });
 });
