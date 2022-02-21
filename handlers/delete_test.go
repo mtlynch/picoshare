@@ -7,20 +7,20 @@ import (
 
 	"github.com/mtlynch/picoshare/v2/handlers"
 	"github.com/mtlynch/picoshare/v2/store"
-	"github.com/mtlynch/picoshare/v2/store/memory"
+	"github.com/mtlynch/picoshare/v2/store/sqlite"
 	"github.com/mtlynch/picoshare/v2/types"
 )
 
 func TestDeleteExistingFile(t *testing.T) {
-	memStore := memory.New()
-	memStore.InsertEntry(types.UploadEntry{
+	dataStore := sqlite.New(":memory:")
+	dataStore.InsertEntry(types.UploadEntry{
 		UploadMetadata: types.UploadMetadata{
 			ID: types.EntryID("hR87apiUCjTV9E"),
 		},
 		Data: []byte("dummy data"),
 	})
 
-	s := handlers.New(mockAuthenticator{}, memStore)
+	s := handlers.New(mockAuthenticator{}, dataStore)
 
 	req, err := http.NewRequest("DELETE", "/api/entry/hR87apiUCjTV9E", nil)
 	if err != nil {
@@ -35,16 +35,16 @@ func TestDeleteExistingFile(t *testing.T) {
 			status, http.StatusOK)
 	}
 
-	_, err = memStore.GetEntry(types.EntryID("hR87apiUCjTV9E"))
+	_, err = dataStore.GetEntry(types.EntryID("hR87apiUCjTV9E"))
 	if _, ok := err.(store.EntryNotFoundError); !ok {
 		t.Fatalf("expected entry %v to be deleted", types.EntryID("hR87apiUCjTV9E"))
 	}
 }
 
 func TestDeleteNonExistentFile(t *testing.T) {
-	memStore := memory.New()
+	dataStore := sqlite.New(":memory:")
 
-	s := handlers.New(mockAuthenticator{}, memStore)
+	s := handlers.New(mockAuthenticator{}, dataStore)
 
 	req, err := http.NewRequest("DELETE", "/api/entry/hR87apiUCjTV9E", nil)
 	if err != nil {
@@ -62,9 +62,9 @@ func TestDeleteNonExistentFile(t *testing.T) {
 }
 
 func TestDeleteInvalidEntryID(t *testing.T) {
-	memStore := memory.New()
+	dataStore := sqlite.New(":memory:")
 
-	s := handlers.New(mockAuthenticator{}, memStore)
+	s := handlers.New(mockAuthenticator{}, dataStore)
 
 	req, err := http.NewRequest("DELETE", "/api/entry/invalid-entry-id", nil)
 	if err != nil {
