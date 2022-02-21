@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 
 	gorilla "github.com/mtlynch/gorilla-handlers"
 
@@ -25,6 +26,8 @@ func main() {
 	if err != nil {
 		log.Fatalf("invalid shared secret: %v", err)
 	}
+
+	ensureDirExists(filepath.Dir(*dbPath))
 
 	h := gorilla.LoggingHandler(os.Stdout, handlers.New(authenticator, sqlite.New(*dbPath)).Router())
 	if os.Getenv("PS_BEHIND_PROXY") != "" {
@@ -47,4 +50,12 @@ func requireEnv(key string) string {
 		panic(fmt.Sprintf("missing required environment variable: %s", key))
 	}
 	return val
+}
+
+func ensureDirExists(dir string) {
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		if err := os.Mkdir(dir, os.ModePerm); err != nil {
+			panic(err)
+		}
+	}
 }
