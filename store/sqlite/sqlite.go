@@ -3,8 +3,6 @@ package sqlite
 import (
 	"database/sql"
 	"log"
-	"os"
-	"path/filepath"
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -21,10 +19,6 @@ type db struct {
 
 func New(path string) store.Store {
 	log.Printf("reading DB from %s", path)
-	dbDir := filepath.Dir(path)
-	if _, err := os.Stat(dbDir); os.IsNotExist(err) {
-		os.Mkdir(dbDir, os.ModePerm)
-	}
 	ctx, err := sql.Open("sqlite3", path)
 	if err != nil {
 		log.Fatalln(err)
