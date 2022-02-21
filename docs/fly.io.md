@@ -46,8 +46,7 @@ PICOSHARE_IMAGE="mtlynch/picoshare:0.1.0"
 
 fly deploy \
   --region="${REGION}" \
-  --image "${PICOSHARE_IMAGE}"
-
-PICOSHARE_URL="https://${APP_NAME}.fly.dev/"
-echo "Your PicoShare instance is now ready at: ${PICOSHARE_URL}"
+  --image "${PICOSHARE_IMAGE}" && \
+  PICOSHARE_URL="https://${APP_NAME}.fly.dev/" && \
+  echo "Your PicoShare instance is now ready at: ${PICOSHARE_URL}"
 ```
