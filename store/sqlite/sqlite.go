@@ -85,7 +85,7 @@ func (d db) GetEntriesMetadata() ([]types.UploadMetadata, error) {
 			ID:       types.EntryID(id),
 			Filename: types.Filename(filename),
 			Uploaded: ut,
-			Expires:  et,
+			Expires:  types.ExpirationTime(et),
 			Size:     fileSize,
 		})
 	}
@@ -138,7 +138,7 @@ func (d db) GetEntry(id types.EntryID) (types.UploadEntry, error) {
 			ID:       id,
 			Filename: types.Filename(filename),
 			Uploaded: ut,
-			Expires:  et,
+			Expires:  types.ExpirationTime(et),
 		},
 		Data: data,
 	}, nil
@@ -156,7 +156,7 @@ func (d db) InsertEntry(entry types.UploadEntry) error {
 		expiration_time,
 		data
 	)
-	VALUES(?,?,?,?,?)`, entry.ID, entry.Filename, formatTime(entry.Uploaded), formatTime(entry.Expires), entry.Data)
+	VALUES(?,?,?,?,?)`, entry.ID, entry.Filename, formatTime(entry.Uploaded), formatTime(time.Time(entry.Expires)), entry.Data)
 	return err
 }
 

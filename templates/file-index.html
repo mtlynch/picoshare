@@ -24,8 +24,8 @@
     <tr>
       <td test-data-id="filename"><a href="/!{{ .ID }}">{{ .Filename }}</a></td>
       <td>{{ .Size }}</td>
-      <td>{{ .Uploaded }}</td>
-      <td>{{ .Expires }}</td>
+      <td>{{ formatTime .Uploaded }}</td>
+      <td>{{ formatExpiration .Expires }}</td>
       <td><button class="button is-danger" pico-purpose="delete" pico-entry-id="{{ .ID }}"><i class="fa fa-trash" aria-hidden="true"></i></button></td>
     </tr>
     {{ end }}

@@ -58,6 +58,12 @@ func (s Server) entryGet() http.HandlerFunc {
 
 func (s Server) entryPost() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		expiration, err := parseExpiration(r)
+		if err != nil {
+			http.Error(w, "invalid expiration URL parameter ", http.StatusBadRequest)
+			return
+		}
+
 		reader, filename, err := fileFromRequest(w, r)
 		if err != nil {
 			log.Printf("error reading body: %v", err)
@@ -83,7 +89,7 @@ func (s Server) entryPost() http.HandlerFunc {
 			UploadMetadata: types.UploadMetadata{Filename: filename,
 				ID:       id,
 				Uploaded: time.Now(),
-				Expires:  time.Now().Add(FileLifetime),
+				Expires:  types.ExpirationTime(expiration),
 				Size:     len(data),
 			},
 			Data: data,
@@ -153,4 +159,25 @@ func parseFilename(s string) (types.Filename, error) {
 		return types.Filename(""), errors.New("illegal characters in filename")
 	}
 	return types.Filename(s), nil
+}
+
+func parseExpiration(r *http.Request) (types.ExpirationTime, error) {
+	expirationRaw, ok := r.URL.Query()["expiration"]
+	if !ok {
+		return types.ExpirationTime{}, errors.New("missing required URL parameter: expiration")
+	}
+	if len(expirationRaw) <= 0 {
+		return types.ExpirationTime{}, errors.New("missing required URL parameter: expiration")
+	}
+	expiration, err := time.Parse(time.RFC3339, expirationRaw[0])
+	if err != nil {
+		log.Printf("invalid expiration URL parameter: %v -> %v", expirationRaw, err)
+		return types.ExpirationTime{}, errors.New("invalid expiration URL parameter")
+	}
+
+	if time.Until(expiration) < (time.Hour * 1) {
+		return types.ExpirationTime{}, errors.New("expire time must be at least one hour in the future")
+	}
+
+	return types.ExpirationTime(expiration), nil
 }

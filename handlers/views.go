@@ -1,10 +1,12 @@
 package handlers
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"path"
 	"text/template"
+	"time"
 
 	"github.com/mtlynch/picoshare/v2/types"
 )
@@ -51,7 +53,16 @@ func (s Server) fileIndexGet() http.HandlerFunc {
 				IsAuthenticated: s.isAuthenticated(r),
 			},
 			Files: em,
-		}, template.FuncMap{}); err != nil {
+		}, template.FuncMap{
+			"formatTime": func(t time.Time) string {
+				return t.Format(time.RFC3339)
+			},
+			"formatExpiration": func(et types.ExpirationTime) string {
+				t := time.Time(et)
+				delta := time.Until(t)
+				return fmt.Sprintf("%s (%.0f days)", t.Format(time.RFC3339), delta.Hours()/24)
+			},
+		}); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}

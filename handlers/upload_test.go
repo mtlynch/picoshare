@@ -11,6 +11,7 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/mtlynch/picoshare/v2/handlers"
 	"github.com/mtlynch/picoshare/v2/store/sqlite"
@@ -35,7 +36,7 @@ func TestUploadValidFile(t *testing.T) {
 	contents := []byte("dummy bytes")
 	formData, contentType := createMultipartFormBody("file", filename, contents)
 
-	req, err := http.NewRequest("POST", "/api/entry", formData)
+	req, err := http.NewRequest("POST", "/api/entry?expiration=2040-01-01T00:00:00Z", formData)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -66,6 +67,11 @@ func TestUploadValidFile(t *testing.T) {
 
 	if entry.Filename != types.Filename(filename) {
 		t.Fatalf("stored entry filename doesn't match expected: got %v, want %v", entry.Filename, filename)
+	}
+
+	expirationExpected := mustParseExpirationTime("2040-01-01T00:00:00Z")
+	if entry.Expires != expirationExpected {
+		t.Fatalf("stored entry expiration doesn't match expected: got %v, want %v", formatExpirationTime(entry.Expires), formatExpirationTime(expirationExpected))
 	}
 }
 
@@ -156,4 +162,16 @@ func createMultipartFormBody(name, filename string, contents []byte) (io.Reader,
 	bw.Flush()
 
 	return bufio.NewReader(&b), mw.FormDataContentType()
+}
+
+func mustParseExpirationTime(s string) types.ExpirationTime {
+	et, err := time.Parse(time.RFC3339, s)
+	if err != nil {
+		panic(err)
+	}
+	return types.ExpirationTime(et)
+}
+
+func formatExpirationTime(et types.ExpirationTime) string {
+	return time.Time(et).Format(time.RFC3339)
 }
