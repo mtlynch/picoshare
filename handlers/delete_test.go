@@ -17,7 +17,7 @@ func TestDeleteExistingFile(t *testing.T) {
 		UploadMetadata: types.UploadMetadata{
 			ID: types.EntryID("hR87apiUCjTV9E"),
 		},
-		Data: []byte("dummy data"),
+		Data: makeData("dummy data"),
 	})
 
 	s := handlers.New(mockAuthenticator{}, dataStore)
@@ -79,4 +79,9 @@ func TestDeleteInvalidEntryID(t *testing.T) {
 		t.Fatalf("DELETE /api/entry returned wrong status code: got %v want %v",
 			status, http.StatusBadRequest)
 	}
+}
+
+func makeData(s string) *[]byte {
+	b := []byte(s)
+	return &b
 }

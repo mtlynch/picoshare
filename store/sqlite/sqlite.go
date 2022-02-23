@@ -140,12 +140,12 @@ func (d db) GetEntry(id types.EntryID) (types.UploadEntry, error) {
 			Uploaded: ut,
 			Expires:  types.ExpirationTime(et),
 		},
-		Data: data,
+		Data: &data,
 	}, nil
 }
 
 func (d db) InsertEntry(entry types.UploadEntry) error {
-	log.Printf("saving new entry %s (%d bytes)", entry.ID, len(entry.Data))
+	log.Printf("saving new entry %s (%d bytes)", entry.ID, entry.Size)
 	_, err := d.ctx.Exec(`
 	INSERT INTO
 		entries
