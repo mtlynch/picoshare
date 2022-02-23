@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -52,7 +53,8 @@ func (s Server) entryGet() http.HandlerFunc {
 		if entry.Filename != "" {
 			w.Header().Set("Content-Disposition", fmt.Sprintf(`filename="%s"`, entry.Filename))
 		}
-		w.Write(entry.Data)
+
+		http.ServeContent(w, r, string(entry.Filename), entry.Uploaded, bytes.NewReader(entry.Data))
 	}
 }
 
