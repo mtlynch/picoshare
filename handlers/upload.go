@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	MaxUploadBytes = 100 * 1000 * 1000
+	MaxUploadBytes = 500 * 1000 * 1000
 	MaxFilenameLen = 100
 	FileLifetime   = 7 * 24 * time.Hour
 	EntryIDLength  = 14
