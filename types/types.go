@@ -16,5 +16,5 @@ type UploadMetadata struct {
 
 type UploadEntry struct {
 	UploadMetadata
-	Data []byte
+	Data *[]byte
 }

@@ -54,7 +54,7 @@ func (s Server) entryGet() http.HandlerFunc {
 			w.Header().Set("Content-Disposition", fmt.Sprintf(`filename="%s"`, entry.Filename))
 		}
 
-		http.ServeContent(w, r, string(entry.Filename), entry.Uploaded, bytes.NewReader(entry.Data))
+		http.ServeContent(w, r, string(entry.Filename), entry.Uploaded, bytes.NewReader(*entry.Data))
 	}
 }
 
@@ -94,7 +94,7 @@ func (s Server) entryPost() http.HandlerFunc {
 				Expires:  types.ExpirationTime(expiration),
 				Size:     len(data),
 			},
-			Data: data,
+			Data: &data,
 		})
 		if err != nil {
 			log.Printf("failed to save entry: %v", err)

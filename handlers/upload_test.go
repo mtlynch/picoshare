@@ -33,8 +33,8 @@ func TestUploadValidFile(t *testing.T) {
 	s := handlers.New(mockAuthenticator{}, store)
 
 	filename := "dummyimage.png"
-	contents := []byte("dummy bytes")
-	formData, contentType := createMultipartFormBody("file", filename, contents)
+	contents := makeData("dummy bytes")
+	formData, contentType := createMultipartFormBody("file", filename, *contents)
 
 	req, err := http.NewRequest("POST", "/api/entry?expiration=2040-01-01T00:00:00Z", formData)
 	if err != nil {
