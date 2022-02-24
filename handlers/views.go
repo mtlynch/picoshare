@@ -2,10 +2,10 @@ package handlers
 
 import (
 	"fmt"
+	"html/template"
 	"log"
 	"net/http"
 	"path"
-	"text/template"
 	"time"
 
 	"github.com/mtlynch/picoshare/v2/types"
