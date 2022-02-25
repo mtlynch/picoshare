@@ -6,9 +6,19 @@ function dateInFuture(daysFromNow) {
   return d;
 }
 
+function hideElement(el) {
+  el.classList.add("is-hidden");
+}
+
+function showElement(el) {
+  el.classList.remove("is-hidden");
+}
+
 const uploadEl = document.querySelector(".file");
 const resultEl = document.getElementById("upload-result");
 const errorContainer = document.getElementById("error");
+const progressSpinner = document.getElementById("progress-spinner");
+const uploadForm = document.getElementById("upload-form");
 
 const expirationContainer = document.querySelector(".expiration-container");
 const expirationSelect = document.getElementById("expiration-select");
@@ -32,7 +42,9 @@ for (const [k, v] of Object.entries(expirationTimes)) {
 document
   .querySelector('.file-input[name="resume"]')
   .addEventListener("change", (evt) => {
-    errorContainer.classList.add("is-hidden");
+    hideElement(errorContainer);
+    hideElement(uploadForm);
+    showElement(progressSpinner);
     uploadFile(evt.target.files[0], expirationSelect.value)
       .then((res) => {
         const entryId = res.id;
@@ -48,6 +60,10 @@ document
       })
       .catch((error) => {
         document.getElementById("error-message").innerText = error;
-        errorContainer.classList.remove("is-hidden");
+        showElement(errorContainer);
+        showElement(uploadForm);
+      })
+      .finally(() => {
+        hideElement(progressSpinner);
       });
   });
