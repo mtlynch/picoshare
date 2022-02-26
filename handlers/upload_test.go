@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
+	"io/ioutil"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
@@ -33,8 +34,8 @@ func TestUploadValidFile(t *testing.T) {
 	s := handlers.New(mockAuthenticator{}, store)
 
 	filename := "dummyimage.png"
-	contents := makeData("dummy bytes")
-	formData, contentType := createMultipartFormBody("file", filename, *contents)
+	contents := "dummy bytes"
+	formData, contentType := createMultipartFormBody("file", filename, makeData(contents))
 
 	req, err := http.NewRequest("POST", "/api/entry?expiration=2040-01-01T00:00:00Z", formData)
 	if err != nil {
@@ -61,8 +62,10 @@ func TestUploadValidFile(t *testing.T) {
 		t.Fatalf("failed to get expected entry %v from data store: %v", response.ID, err)
 	}
 
-	if !reflect.DeepEqual(entry.Data, contents) {
-		t.Fatalf("stored entry doesn't match expected: got %v, want %v", entry.Data, contents)
+	actual := mustReadAll(entry.Reader)
+	expected := []byte(contents)
+	if !reflect.DeepEqual(actual, expected) {
+		t.Fatalf("stored entry doesn't match expected: got %v, want %v", actual, expected)
 	}
 
 	if entry.Filename != types.Filename(filename) {
@@ -129,7 +132,7 @@ func TestEntryPostRejectsInvalidRequest(t *testing.T) {
 		store := sqlite.New(":memory:")
 		s := handlers.New(mockAuthenticator{}, store)
 
-		formData, contentType := createMultipartFormBody(tt.name, tt.filename, []byte(tt.contents))
+		formData, contentType := createMultipartFormBody(tt.name, tt.filename, bytes.NewBuffer([]byte(tt.contents)))
 
 		req, err := http.NewRequest("POST", "/api/entry", formData)
 		if err != nil {
@@ -147,7 +150,7 @@ func TestEntryPostRejectsInvalidRequest(t *testing.T) {
 	}
 }
 
-func createMultipartFormBody(name, filename string, contents []byte) (io.Reader, string) {
+func createMultipartFormBody(name, filename string, r io.Reader) (io.Reader, string) {
 	var b bytes.Buffer
 	bw := bufio.NewWriter(&b)
 	mw := multipart.NewWriter(bw)
@@ -156,7 +159,7 @@ func createMultipartFormBody(name, filename string, contents []byte) (io.Reader,
 	if err != nil {
 		panic(err)
 	}
-	part.Write(contents)
+	io.Copy(part, r)
 
 	mw.Close()
 	bw.Flush()
@@ -174,4 +177,12 @@ func mustParseExpirationTime(s string) types.ExpirationTime {
 
 func formatExpirationTime(et types.ExpirationTime) string {
 	return time.Time(et).Format(time.RFC3339)
+}
+
+func mustReadAll(r io.Reader) []byte {
+	d, err := ioutil.ReadAll(r)
+	if err != nil {
+		panic(err)
+	}
+	return d
 }

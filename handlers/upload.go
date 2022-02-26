@@ -1,12 +1,10 @@
 package handlers
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"strings"
@@ -54,7 +52,7 @@ func (s Server) entryGet() http.HandlerFunc {
 			w.Header().Set("Content-Disposition", fmt.Sprintf(`filename="%s"`, entry.Filename))
 		}
 
-		http.ServeContent(w, r, string(entry.Filename), entry.Uploaded, bytes.NewReader(*entry.Data))
+		http.ServeContent(w, r, string(entry.Filename), entry.Uploaded, entry.Reader)
 	}
 }
 
@@ -73,29 +71,14 @@ func (s Server) entryPost() http.HandlerFunc {
 			return
 		}
 
-		data, err := ioutil.ReadAll(reader)
-		if err != nil {
-			log.Printf("error reading body: %v", err)
-			http.Error(w, fmt.Sprintf("can't read request body: %s", err), http.StatusBadRequest)
-			return
-		}
-
-		if len(data) == 0 {
-			log.Print("form file was empty")
-			http.Error(w, "file is empty", http.StatusBadRequest)
-			return
-		}
-
 		id := generateEntryID()
-		err = s.store.InsertEntry(types.UploadEntry{
-			UploadMetadata: types.UploadMetadata{Filename: filename,
+		err = s.store.InsertEntry(reader,
+			types.UploadMetadata{
+				Filename: filename,
 				ID:       id,
 				Uploaded: time.Now(),
 				Expires:  types.ExpirationTime(expiration),
-				Size:     len(data),
-			},
-			Data: &data,
-		})
+			})
 		if err != nil {
 			log.Printf("failed to save entry: %v", err)
 			http.Error(w, "can't save entry", http.StatusInternalServerError)
