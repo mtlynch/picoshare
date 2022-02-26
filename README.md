@@ -6,6 +6,12 @@
 
 A minimal, easy-to-host service for sharing images and other files.
 
+## Experimental
+
+PicoShare is still highly experimental and not yet ready for production usage.
+
+You're welcome to try it, but expect frequent changes to the UI, database schema, and REST endpoints.
+
 ## Run
 
 ### From source
