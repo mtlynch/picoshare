@@ -17,7 +17,8 @@ You're welcome to try it, but expect frequent changes to the UI, database schema
 ### From source
 
 ```bash
-PORT=3001 go run main.go
+PS_SHARED_SECRET=somesecretpass PORT=3001 \
+  go run main.go
 ```
 
 ### From Docker
