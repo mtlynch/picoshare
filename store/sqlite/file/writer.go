@@ -2,7 +2,6 @@ package file
 
 import (
 	"database/sql"
-	"errors"
 	"io"
 
 	"github.com/mtlynch/picoshare/v2/types"
@@ -32,25 +31,34 @@ func NewWriter(tx sqlTx, id types.EntryID, chunkSize int) io.WriteCloser {
 func (w *writer) Write(p []byte) (int, error) {
 	n := 0
 
-	dstStart := w.written % len(buf)
-
-	if len(p) < len(w.buf) {
-		copy(w.buf, p)
-		w.written += len(p)
-		return len(p), w.flush()
+	for {
+		if n == len(p) {
+			break
+		}
+		dstStart := w.written % len(w.buf)
+		copySize := min(len(w.buf)-dstStart, len(p)-n)
+		dstEnd := dstStart + copySize
+		copy(w.buf[dstStart:dstEnd], p[n:n+copySize])
+		if dstEnd == len(w.buf) {
+			w.flush(len(w.buf))
+		}
+		w.written += copySize
+		n += copySize
 	}
-	// TODO: Handle when p is smaller
 
 	return n, nil
 }
 
 func (w *writer) Close() error {
-	return errors.New("not implemented")
+	unflushed := w.written % len(w.buf)
+	if unflushed != 0 {
+		return w.flush(unflushed)
+	}
+	return nil
 }
 
-func (w *writer) flush() error {
-	idx := w.written / ChunkSize
-	n := w.written % ChunkSize
+func (w *writer) flush(n int) error {
+	idx := w.written / len(w.buf)
 	_, err := w.tx.Exec(`
 	INSERT INTO
 		entries_data

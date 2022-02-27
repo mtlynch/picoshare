@@ -22,69 +22,100 @@ type (
 )
 
 func (tx *mockSqlTx) Exec(query string, args ...interface{}) (sql.Result, error) {
+	chunk := args[2].([]byte)
+	chunkCopy := make([]byte, len(chunk))
+	copy(chunkCopy, chunk)
 	tx.rows = append(tx.rows, mockChunkRow{
 		id:         args[0].(types.EntryID),
 		chunkIndex: args[1].(int),
-		chunk:      args[2].([]byte),
+		chunk:      chunkCopy,
 	})
 	return nil, nil
 }
 
-func TestWriteFileThatFitsInSingleChunk(t *testing.T) {
-	tx := mockSqlTx{}
-	chunkSize := 20
-
-	w := file.NewWriter(&tx, types.EntryID("1"), chunkSize)
-	data := []byte("hello, world!")
-	n, err := w.Write(data)
-	if err != nil {
-		t.Fatalf("failed to write data: %v", err)
-	}
-	if n != len(data) {
-		t.Fatalf("wrong size data written: got %d, want %d", n, len(data))
-	}
-
-	rowsExpected := []mockChunkRow{
+func TestWriteFile(t *testing.T) {
+	tests := []struct {
+		explanation  string
+		data         []byte
+		chunkSize    int
+		rowsExpected []mockChunkRow
+	}{
 		{
-			id:         types.EntryID("1"),
-			chunkIndex: 0,
-			chunk:      []byte("hello, world!"),
+			explanation: "data is smaller than chunk size",
+			data:        []byte("hello, world!"),
+			chunkSize:   25,
+			rowsExpected: []mockChunkRow{
+				{
+					id:         types.EntryID("dummy-id"),
+					chunkIndex: 0,
+					chunk:      []byte("hello, world!"),
+				},
+			},
+		},
+		{
+			explanation: "data fits exactly in single chunk",
+			data:        []byte("01234"),
+			chunkSize:   5,
+			rowsExpected: []mockChunkRow{
+				{
+					id:         types.EntryID("dummy-id"),
+					chunkIndex: 0,
+					chunk:      []byte("01234"),
+				},
+			},
+		},
+		{
+			explanation: "data occupies a partial chunk after the first",
+			data:        []byte("0123456"),
+			chunkSize:   5,
+			rowsExpected: []mockChunkRow{
+				{
+					id:         types.EntryID("dummy-id"),
+					chunkIndex: 0,
+					chunk:      []byte("01234"),
+				},
+				{
+					id:         types.EntryID("dummy-id"),
+					chunkIndex: 1,
+					chunk:      []byte("56"),
+				},
+			},
+		},
+		{
+			explanation: "data spans exactly two chunks",
+			data:        []byte("0123456789"),
+			chunkSize:   5,
+			rowsExpected: []mockChunkRow{
+				{
+					id:         types.EntryID("dummy-id"),
+					chunkIndex: 0,
+					chunk:      []byte("01234"),
+				},
+				{
+					id:         types.EntryID("dummy-id"),
+					chunkIndex: 1,
+					chunk:      []byte("56789"),
+				},
+			},
 		},
 	}
-	if !reflect.DeepEqual(tx.rows, rowsExpected) {
-		t.Fatalf("unexpected DB transactions: got %v, want %v", tx.rows, rowsExpected)
+	for _, tt := range tests {
+		tx := mockSqlTx{}
+
+		w := file.NewWriter(&tx, types.EntryID("dummy-id"), tt.chunkSize)
+		n, err := w.Write(tt.data)
+		if err != nil {
+			t.Fatalf("%s: failed to write data: %v", tt.explanation, err)
+		}
+		if n != len(tt.data) {
+			t.Fatalf("%s: wrong size data written: got %d, want %d", tt.explanation, n, len(tt.data))
+		}
+		if err := w.Close(); err != nil {
+			t.Fatalf("%s: failed to close writer: %v", tt.explanation, err)
+		}
+
+		if !reflect.DeepEqual(tx.rows, tt.rowsExpected) {
+			t.Fatalf("%s: unexpected DB transactions: got %v, want %v", tt.explanation, tx.rows, tt.rowsExpected)
+		}
 	}
 }
-
-func TestWriteFileThatSpansTwoChunks(t *testing.T) {
-	tx := mockSqlTx{}
-	chunkSize := 5
-
-	w := file.NewWriter(&tx, types.EntryID("1"), chunkSize)
-	data := []byte("0123456789")
-	n, err := w.Write(data)
-	if err != nil {
-		t.Fatalf("failed to write data: %v", err)
-	}
-	if n != len(data) {
-		t.Fatalf("wrong size data written: got %d, want %d", n, len(data))
-	}
-
-	rowsExpected := []mockChunkRow{
-		{
-			id:         types.EntryID("1"),
-			chunkIndex: 0,
-			chunk:      []byte("01234"),
-		},
-		{
-			id:         types.EntryID("1"),
-			chunkIndex: 1,
-			chunk:      []byte("56789"),
-		},
-	}
-	if !reflect.DeepEqual(tx.rows, rowsExpected) {
-		t.Fatalf("unexpected DB transactions: got %v, want %v", tx.rows, rowsExpected)
-	}
-}
-
-// TODO: Handle multiple writes that fill up part of a buffer
