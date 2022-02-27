@@ -10,16 +10,22 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 
 	"github.com/mtlynch/picoshare/v2/store"
+	"github.com/mtlynch/picoshare/v2/store/sqlite/file"
 	"github.com/mtlynch/picoshare/v2/types"
 )
 
 const (
 	timeFormat = time.RFC3339
-	chunkSize  = 32 << 20
 )
 
-type db struct {
-	ctx *sql.DB
+type (
+	db struct {
+		ctx *sql.DB
+	}
+)
+
+func (d db) Prepare(query string) (*sql.Stmt, error) {
+	return d.ctx.Prepare(query)
 }
 
 func New(path string) store.Store {
@@ -139,7 +145,7 @@ func (d db) GetEntry(id types.EntryID) (types.UploadEntry, error) {
 		return types.UploadEntry{}, err
 	}
 
-	r, err := newChunkReader(d.ctx, id)
+	r, err := file.NewReader(d, id)
 	if err != nil {
 		return types.UploadEntry{}, err
 	}
@@ -177,7 +183,7 @@ func (d db) InsertEntry(reader io.Reader, metadata types.UploadMetadata) error {
 		return err
 	}
 
-	b := make([]byte, chunkSize)
+	b := make([]byte, file.ChunkSize)
 	idx := 0
 	for {
 		n, err := reader.Read(b)
@@ -186,7 +192,7 @@ func (d db) InsertEntry(reader io.Reader, metadata types.UploadMetadata) error {
 		} else if err != nil {
 			return err
 		}
-		log.Printf("writing entry %v chunk %d - %10d bytes @ offset %10d", metadata.ID, idx, n, idx*chunkSize)
+		log.Printf("writing entry %v chunk %d - %10d bytes @ offset %10d", metadata.ID, idx, n, idx*file.ChunkSize)
 
 		_, err = tx.Exec(`
 		INSERT INTO
