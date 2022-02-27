@@ -61,7 +61,8 @@ func (w *writer) Close() error {
 
 func (w *writer) flush(n int) error {
 	idx := w.written / len(w.buf)
-	log.Printf("flushing %s -> idx=%d, n=%d, buf=%v", w.entryID, idx, n, w.buf[0:n])
+	//log.Printf("flushing %s -> idx=%d, n=%d, buf=%v", w.entryID, idx, n, w.buf[0:n])
+	log.Printf("flushing %s -> idx=%d, n=%d", w.entryID, idx, n)
 	_, err := w.tx.Exec(`
 	INSERT INTO
 		entries_data
