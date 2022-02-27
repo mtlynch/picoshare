@@ -14,6 +14,11 @@ export async function deleteFile(id) {
       return Promise.resolve();
     })
     .catch((error) => {
+      if (error.message) {
+        return Promise.reject(
+          "Failed to communicate with server: " + error.message
+        );
+      }
       return Promise.reject(error);
     });
 }
