@@ -18,14 +18,16 @@ const (
 	timeFormat = time.RFC3339
 )
 
-type (
-	db struct {
-		ctx *sql.DB
-	}
-)
+type db struct {
+	ctx *sql.DB
+}
 
 func (d db) Prepare(query string) (*sql.Stmt, error) {
 	return d.ctx.Prepare(query)
+}
+
+func (d db) Exec(query string, args ...interface{}) (sql.Result, error) {
+	return d.ctx.Exec(query, args)
 }
 
 func New(path string) store.Store {
@@ -36,6 +38,10 @@ func New(path string) store.Store {
 	}
 
 	initStmts := []string{
+		`PRAGMA cache_size = -50000`,
+		`PRAGMA journal_mode = WAL`,
+		`PRAGMA synchronous = NORMAL`,
+		`PRAGMA temp_store = FILE`,
 		`CREATE TABLE IF NOT EXISTS entries (
 			id TEXT PRIMARY KEY,
 			filename TEXT,
@@ -164,12 +170,20 @@ func (d db) GetEntry(id types.EntryID) (types.UploadEntry, error) {
 func (d db) InsertEntry(reader io.Reader, metadata types.UploadMetadata) error {
 	log.Printf("saving new entry %s", metadata.ID)
 
-	tx, err := d.ctx.BeginTx(context.Background(), nil)
-	if err != nil {
+	writeFileData := func() error {
+		chunkSize := 32 << 20
+		w := file.NewWriter(d.ctx, metadata.ID, chunkSize)
+		_, err := io.Copy(w, reader)
+		if err != nil {
+			return err
+		}
+		return w.Close()
+	}
+	if err := writeFileData(); err != nil {
 		return err
 	}
 
-	_, err = tx.Exec(`
+	_, err := d.ctx.Exec(`
 	INSERT INTO
 		entries
 	(
@@ -183,16 +197,7 @@ func (d db) InsertEntry(reader io.Reader, metadata types.UploadMetadata) error {
 		return err
 	}
 
-	chunkSize := 32 << 20
-	w := file.NewWriter(tx, metadata.ID, chunkSize)
-
-	_, err = io.Copy(w, reader)
-	if err != nil {
-		return err
-	}
-	w.Close()
-
-	return tx.Commit()
+	return nil
 }
 
 func (d db) DeleteEntry(id types.EntryID) error {

@@ -1,29 +1,22 @@
 package file
 
 import (
-	"database/sql"
 	"io"
 	"log"
 
 	"github.com/mtlynch/picoshare/v2/types"
 )
 
-type (
-	sqlTx interface {
-		Exec(query string, args ...interface{}) (sql.Result, error)
-	}
+type writer struct {
+	db      SqlDB
+	entryID types.EntryID
+	buf     []byte
+	written int
+}
 
-	writer struct {
-		tx      sqlTx
-		entryID types.EntryID
-		buf     []byte
-		written int
-	}
-)
-
-func NewWriter(tx sqlTx, id types.EntryID, chunkSize int) io.WriteCloser {
+func NewWriter(db SqlDB, id types.EntryID, chunkSize int) io.WriteCloser {
 	return &writer{
-		tx:      tx,
+		db:      db,
 		entryID: id,
 		buf:     make([]byte, chunkSize),
 	}
@@ -61,9 +54,14 @@ func (w *writer) Close() error {
 
 func (w *writer) flush(n int) error {
 	idx := w.written / len(w.buf)
-	//log.Printf("flushing %s -> idx=%d, n=%d, buf=%v", w.entryID, idx, n, w.buf[0:n])
 	log.Printf("flushing %s -> idx=%d, n=%d", w.entryID, idx, n)
-	_, err := w.tx.Exec(`
+
+	// HACK: Try to shrink memory before inserting more data.
+	_, err := w.db.Exec(`PRAGMA shrink_memory`)
+	if err != nil {
+		return err
+	}
+	_, err = w.db.Exec(`
 	INSERT INTO
 		entries_data
 	(
@@ -72,5 +70,6 @@ func (w *writer) flush(n int) error {
 		chunk
 	)
 	VALUES(?,?,?)`, w.entryID, idx, w.buf[0:n])
+
 	return err
 }

@@ -1,22 +1,11 @@
 package file_test
 
 import (
-	"database/sql"
 	"testing"
-
-	"github.com/mtlynch/picoshare/v2/store/sqlite/file"
-	"github.com/mtlynch/picoshare/v2/types"
 )
 
-type mockSqlDB struct {
-}
-
-func (db mockSqlDB) Prepare(string) (*sql.Stmt, error) {
-	return &sql.Stmt{}, nil
-}
-
 func TestReadFile(t *testing.T) {
-	db := mockSqlDB{}
+	/*db := mockSqlDB{}
 
 	_, err := file.NewReader(&db, types.EntryID("dummy-id"))
 	if err != nil {
