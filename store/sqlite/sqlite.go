@@ -183,30 +183,10 @@ func (d db) InsertEntry(reader io.Reader, metadata types.UploadMetadata) error {
 		return err
 	}
 
-	b := make([]byte, file.ChunkSize)
-	idx := 0
-	for {
-		n, err := reader.Read(b)
-		if err == io.EOF {
-			break
-		} else if err != nil {
-			return err
-		}
-		log.Printf("writing entry %v chunk %d - %10d bytes @ offset %10d", metadata.ID, idx, n, idx*file.ChunkSize)
-
-		_, err = tx.Exec(`
-		INSERT INTO
-			entries_data
-		(
-			id,
-			chunk_index,
-			chunk
-		)
-		VALUES(?,?,?)`, metadata.ID, idx, b[0:n])
-		if err != nil {
-			return err
-		}
-		idx += 1
+	w := file.NewWriter(tx, metadata.ID, 32<<20)
+	_, err = io.Copy(w, reader)
+	if err != nil {
+		return err
 	}
 
 	return tx.Commit()
