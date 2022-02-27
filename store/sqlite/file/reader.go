@@ -48,7 +48,10 @@ func NewReader(db SqlDB, id types.EntryID) (io.ReadSeeker, error) {
 func (cr *fileReader) Read(p []byte) (int, error) {
 	log.Printf("reading %d bytes (offset=%d)", len(p), cr.offset)
 	bytesRead := 0
-	bytesToRead := len(p)
+	bytesToRead := min(len(p), cr.fileLength-int(cr.offset)) // TODO: Don't downcast
+	if bytesToRead == 0 {
+		return 0, io.EOF
+	}
 	startChunk := cr.offset / int64(cr.chunkSize)
 	log.Printf("startChunk=%d, bytesToRead=%d", startChunk, bytesToRead)
 	stmt, err := cr.db.Prepare(`
@@ -86,13 +89,16 @@ func (cr *fileReader) Read(p []byte) (int, error) {
 		log.Printf("chunkStart=%d, chunkEnd=%d", chunkStart, chunkEnd)
 		bytesToRead = min(bytesToRead, chunkEnd-chunkStart)
 		copy(p[bytesRead:bytesRead+bytesToRead], chunk[chunkStart:bytesToRead])
-		bytesRead += int(chunkEnd) - int(chunkStart)
+		bytesRead += chunkEnd - chunkStart
+		cr.offset += int64(bytesRead)
 		if bytesRead >= len(p) {
 			log.Printf("read %d bytes into %d buffer, returning", bytesRead, len(p))
 			break
 		}
+		if cr.offset == int64(cr.fileLength) {
+			return bytesRead, io.EOF
+		}
 	}
-	cr.offset += int64(bytesRead)
 
 	return bytesRead, nil
 }
