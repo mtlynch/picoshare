@@ -23,6 +23,11 @@ export async function uploadFile(file, expirationTime) {
       return Promise.resolve(data);
     })
     .catch((error) => {
+      if (error.message) {
+        return Promise.reject(
+          "Failed to communicate with server: " + error.message
+        );
+      }
       return Promise.reject(error);
     });
 }
