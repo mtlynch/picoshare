@@ -12,6 +12,7 @@ import (
 type (
 	SqlDB interface {
 		Prepare(string) (*sql.Stmt, error)
+		Exec(string, ...interface{}) (sql.Result, error)
 	}
 
 	fileReader struct {

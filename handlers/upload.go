@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -17,7 +18,7 @@ import (
 )
 
 const (
-	MaxUploadBytes = 500 * 1000 * 1000
+	MaxUploadBytes = 25 * 1000 * 1000 * 1000
 	MaxFilenameLen = 100
 	FileLifetime   = 7 * 24 * time.Hour
 	EntryIDLength  = 14
@@ -78,6 +79,62 @@ func (s Server) entryPost() http.HandlerFunc {
 				ID:       id,
 				Uploaded: time.Now(),
 				Expires:  types.ExpirationTime(expiration),
+			})
+		if err != nil {
+			log.Printf("failed to save entry: %v", err)
+			http.Error(w, "can't save entry", http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(EntryPostResponse{
+			ID: string(id),
+		}); err != nil {
+			panic(err)
+		}
+	}
+}
+
+type mockReader struct {
+	fileSize int64
+	n        int64
+}
+
+func (mr *mockReader) Read(p []byte) (int, error) {
+	if mr.n >= mr.fileSize {
+		return 0, io.EOF
+	}
+	buf := []byte(strings.Repeat("A", len(p)))
+	// DEBUG: We're actually copying more than the file size, but ignore for now.
+	copy(p, buf)
+	mr.n += int64(len(p))
+	if mr.n == mr.fileSize {
+		return len(p), io.EOF
+	}
+	return len(p), nil
+}
+
+func (s Server) entryDbgGet() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		size, err := strconv.ParseInt(mux.Vars(r)["size"], 10, 32)
+		if err != nil {
+			log.Printf("error parsing size: %v", err)
+			http.Error(w, fmt.Sprintf("bad size: %v", err), http.StatusBadRequest)
+			return
+		}
+		log.Printf("creating a mock reader of size %d", size)
+		mockReader := mockReader{
+			fileSize: size,
+			n:        0,
+		}
+
+		id := generateEntryID()
+		err = s.store.InsertEntry(&mockReader,
+			types.UploadMetadata{
+				Filename: "dummy.txt",
+				ID:       id,
+				Uploaded: time.Now(),
+				Expires:  types.ExpirationTime(time.Now().Add(5 * time.Hour)),
 			})
 		if err != nil {
 			log.Printf("failed to save entry: %v", err)

@@ -16,16 +16,20 @@ type (
 		chunk      []byte
 	}
 
-	mockSqlTx struct {
+	mockSqlDB struct {
 		rows []mockChunkRow
 	}
 )
 
-func (tx *mockSqlTx) Exec(query string, args ...interface{}) (sql.Result, error) {
+func (db mockSqlDB) Prepare(string) (*sql.Stmt, error) {
+	return &sql.Stmt{}, nil
+}
+
+func (db *mockSqlDB) Exec(query string, args ...interface{}) (sql.Result, error) {
 	chunk := args[2].([]byte)
 	chunkCopy := make([]byte, len(chunk))
 	copy(chunkCopy, chunk)
-	tx.rows = append(tx.rows, mockChunkRow{
+	db.rows = append(db.rows, mockChunkRow{
 		id:         args[0].(types.EntryID),
 		chunkIndex: args[1].(int),
 		chunk:      chunkCopy,
@@ -100,9 +104,9 @@ func TestWriteFile(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tx := mockSqlTx{}
+		db := mockSqlDB{}
 
-		w := file.NewWriter(&tx, types.EntryID("dummy-id"), tt.chunkSize)
+		w := file.NewWriter(&db, types.EntryID("dummy-id"), tt.chunkSize)
 		n, err := w.Write(tt.data)
 		if err != nil {
 			t.Fatalf("%s: failed to write data: %v", tt.explanation, err)
@@ -114,8 +118,8 @@ func TestWriteFile(t *testing.T) {
 			t.Fatalf("%s: failed to close writer: %v", tt.explanation, err)
 		}
 
-		if !reflect.DeepEqual(tx.rows, tt.rowsExpected) {
-			t.Fatalf("%s: unexpected DB transactions: got %v, want %v", tt.explanation, tx.rows, tt.rowsExpected)
+		if !reflect.DeepEqual(db.rows, tt.rowsExpected) {
+			t.Fatalf("%s: unexpected DB transactions: got %v, want %v", tt.explanation, db.rows, tt.rowsExpected)
 		}
 	}
 }
