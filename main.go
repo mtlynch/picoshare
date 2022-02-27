@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -13,7 +14,23 @@ import (
 	"github.com/mtlynch/picoshare/v2/handlers"
 	"github.com/mtlynch/picoshare/v2/handlers/auth/shared_secret"
 	"github.com/mtlynch/picoshare/v2/store/sqlite"
+	"github.com/mtlynch/picoshare/v2/types"
 )
+
+type fakeReader struct {
+	n int
+}
+
+func (r *fakeReader) Read(p []byte) (int, error) {
+	if r.n > (5 * 1000 * 1000 * 1000) {
+		return 0, io.EOF
+	}
+	for i := 0; i < len(p); i++ {
+		p[i] = 'A'
+	}
+	r.n += len(p)
+	return len(p), nil
+}
 
 func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
@@ -21,6 +38,15 @@ func main() {
 
 	dbPath := flag.String("db", "data/store.db", "path to database")
 	flag.Parse()
+
+	if *dbPath == "dbg" {
+		db := sqlite.New("/tmp/db.db")
+		fr := fakeReader{}
+		db.InsertEntry(&fr, types.UploadMetadata{
+			Filename: "dummy-file.txt",
+		})
+		return
+	}
 
 	authenticator, err := shared_secret.New(requireEnv("PS_SHARED_SECRET"))
 	if err != nil {
