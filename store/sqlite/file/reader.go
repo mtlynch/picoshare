@@ -9,8 +9,6 @@ import (
 	"github.com/mtlynch/picoshare/v2/types"
 )
 
-const ChunkSize = 32 << 20 // TODO: Get rid of this
-
 type (
 	SqlDB interface {
 		Prepare(string) (*sql.Stmt, error)
@@ -21,13 +19,19 @@ type (
 		entryID    types.EntryID
 		fileLength int
 		offset     int64
+		chunkSize  int
 	}
 )
 
 func NewReader(db SqlDB, id types.EntryID) (io.ReadSeeker, error) {
 	log.Printf("creating file reader")
 
-	length, err := getFileLength(db, id)
+	chunkSize, err := getChunkSize(db, id)
+	if err != nil {
+		return nil, err
+	}
+
+	length, err := getFileLength(db, id, chunkSize)
 	if err != nil {
 		return nil, err
 	}
@@ -37,6 +41,7 @@ func NewReader(db SqlDB, id types.EntryID) (io.ReadSeeker, error) {
 		entryID:    id,
 		fileLength: length,
 		offset:     0,
+		chunkSize:  chunkSize,
 	}, nil
 }
 
@@ -44,7 +49,7 @@ func (cr *fileReader) Read(p []byte) (int, error) {
 	log.Printf("reading %d bytes (offset=%d)", len(p), cr.offset)
 	bytesRead := 0
 	bytesToRead := len(p)
-	startChunk := cr.offset / ChunkSize
+	startChunk := cr.offset / int64(cr.chunkSize)
 	log.Printf("startChunk=%d, bytesToRead=%d", startChunk, bytesToRead)
 	stmt, err := cr.db.Prepare(`
 		SELECT
@@ -76,7 +81,7 @@ func (cr *fileReader) Read(p []byte) (int, error) {
 			log.Printf("error reading chunk: %v", err)
 			return bytesRead, err
 		}
-		chunkStart := int(cr.offset % ChunkSize)
+		chunkStart := int(cr.offset % int64(cr.chunkSize))
 		chunkEnd := min(len(chunk), bytesToRead-chunkStart)
 		log.Printf("chunkStart=%d, chunkEnd=%d", chunkStart, chunkEnd)
 		bytesToRead = min(bytesToRead, chunkEnd-chunkStart)
@@ -107,7 +112,7 @@ func (cr *fileReader) Seek(offset int64, whence int) (int64, error) {
 	return cr.offset, nil
 }
 
-func getFileLength(db SqlDB, id types.EntryID) (int, error) {
+func getFileLength(db SqlDB, id types.EntryID, chunkSize int) (int, error) {
 	stmt, err := db.Prepare(`
 	SELECT
 		chunk_index,
@@ -118,6 +123,7 @@ func getFileLength(db SqlDB, id types.EntryID) (int, error) {
 		id=?
 	ORDER BY
 		chunk_index DESC
+	LIMIT 1
 	`)
 	if err != nil {
 		return 0, err
@@ -131,7 +137,32 @@ func getFileLength(db SqlDB, id types.EntryID) (int, error) {
 		return 0, err
 	}
 
-	return ChunkSize*chunkIndex + int(chunkLen), nil
+	return chunkSize*chunkIndex + int(chunkLen), nil
+}
+
+func getChunkSize(db SqlDB, id types.EntryID) (int, error) {
+	stmt, err := db.Prepare(`
+	SELECT
+		LENGTH(chunk) AS chunk_size
+	FROM
+		entries_data
+	WHERE
+		id=?
+	ORDER BY
+		chunk_index ASC
+	LIMIT 1
+	`)
+	if err != nil {
+		return 0, err
+	}
+	defer stmt.Close()
+
+	var chunkSize int
+	err = stmt.QueryRow(id).Scan(&chunkSize)
+	if err != nil {
+		return 0, err
+	}
+	return chunkSize, nil
 }
 
 func min(a, b int) int {

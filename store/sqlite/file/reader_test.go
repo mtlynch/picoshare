@@ -15,10 +15,10 @@ func (db mockSqlDB) Prepare(string) (*sql.Stmt, error) {
 	return &sql.Stmt{}, nil
 }
 
-func TestUploadValidFile(t *testing.T) {
+func TestReadFile(t *testing.T) {
 	db := mockSqlDB{}
 
-	cr, err := file.NewReader(&db, types.EntryID("1"))
+	cr, err := file.NewReader(&db, types.EntryID("dummy-id"))
 	if err != nil {
 		t.Fatalf("failed to create chunk reader: %v", err)
 	}

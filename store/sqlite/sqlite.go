@@ -183,7 +183,8 @@ func (d db) InsertEntry(reader io.Reader, metadata types.UploadMetadata) error {
 		return err
 	}
 
-	w := file.NewWriter(tx, metadata.ID, 32<<20)
+	chunkSize := 32 << 20
+	w := file.NewWriter(tx, metadata.ID, chunkSize)
 	_, err = io.Copy(w, reader)
 	if err != nil {
 		return err
