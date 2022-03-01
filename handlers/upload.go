@@ -98,20 +98,24 @@ func (s Server) entryPost() http.HandlerFunc {
 type mockReader struct {
 	fileSize int64
 	n        int64
+	w        http.ResponseWriter
 }
 
 func (mr *mockReader) Read(p []byte) (int, error) {
-	if mr.n >= mr.fileSize {
-		return 0, io.EOF
+	toWrite := int64(len(p))
+	if mr.fileSize-mr.n < toWrite {
+		toWrite = mr.fileSize - mr.n
 	}
+
 	buf := []byte(strings.Repeat("A", len(p)))
 	// DEBUG: We're actually copying more than the file size, but ignore for now.
-	copy(p, buf)
-	mr.n += int64(len(p))
+	copy(p[0:toWrite], buf[0:toWrite])
+	mr.n += toWrite
+	mr.w.Write([]byte(fmt.Sprintf("read %d MB from dummy buffer\r\n", mr.n>>20)))
 	if mr.n == mr.fileSize {
-		return len(p), io.EOF
+		return int(toWrite), io.EOF
 	}
-	return len(p), nil
+	return int(toWrite), nil
 }
 
 func (s Server) entryDbgGet() http.HandlerFunc {
@@ -126,6 +130,7 @@ func (s Server) entryDbgGet() http.HandlerFunc {
 		mockReader := mockReader{
 			fileSize: size,
 			n:        0,
+			w:        w,
 		}
 
 		id := generateEntryID()
@@ -142,12 +147,6 @@ func (s Server) entryDbgGet() http.HandlerFunc {
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		if err := json.NewEncoder(w).Encode(EntryPostResponse{
-			ID: string(id),
-		}); err != nil {
-			panic(err)
-		}
 	}
 }
 
