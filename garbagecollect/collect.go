@@ -1,6 +1,7 @@
 package garbagecollect
 
 import (
+	"log"
 	"time"
 
 	"github.com/mtlynch/picoshare/v2/store"
@@ -10,7 +11,7 @@ type Collector struct {
 	store store.Store
 }
 
-func New(store store.Store) Collector {
+func NewCollector(store store.Store) Collector {
 	return Collector{
 		store: store,
 	}
@@ -24,6 +25,7 @@ func (c Collector) Collect() error {
 
 	for _, meta := range mm {
 		if time.Now().After(time.Time(meta.Expires)) {
+			log.Printf("entry %v expired at %v", meta.ID, time.Time(meta.Expires).Format(time.RFC3339))
 			if err := c.store.DeleteEntry(meta.ID); err != nil {
 				return err
 			}
