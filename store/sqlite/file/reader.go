@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"io"
 	"log"
-	"strings"
 
 	"github.com/mtlynch/picoshare/v2/store"
 	"github.com/mtlynch/picoshare/v2/types"
@@ -101,12 +100,9 @@ func (fr *fileReader) Read(p []byte) (int, error) {
 			break
 		}
 		if fr.offset == int64(fr.fileLength) {
-			printTables(fr.db, "within loop")
 			return bytesRead, io.EOF
 		}
 	}
-
-	printTables(fr.db, "before reader exit")
 
 	return bytesRead, nil
 }
@@ -184,23 +180,4 @@ func min(a, b int) int {
 		return a
 	}
 	return b
-}
-
-func printTables(db *sql.DB, label string) { // DEBUG
-	log.Printf("printing tables from reader: %s", label)
-	tables := []string{}
-	rows, err := db.Query("SELECT tbl_name FROM sqlite_master where type='table'")
-	if err != nil {
-		log.Printf("failed to get tables: %v", err)
-	}
-
-	for rows.Next() {
-		var tblName string
-		err = rows.Scan(&tblName)
-		if err != nil {
-			log.Printf("failed to get row: %v", err)
-		}
-		tables = append(tables, tblName)
-	}
-	log.Printf("tables(%d): %v", len(tables), strings.Join(tables, ", "))
 }

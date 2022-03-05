@@ -56,7 +56,6 @@ func New(path string) store.Store {
 }
 
 func (d db) GetEntriesMetadata() ([]types.UploadMetadata, error) {
-	printTables(d.ctx)
 	rows, err := d.ctx.Query(`
 	SELECT
 		id,
@@ -145,8 +144,6 @@ func (d db) GetEntry(id types.EntryID) (types.UploadEntry, error) {
 		return types.UploadEntry{}, err
 	}
 
-	printTables(d.ctx)
-
 	return types.UploadEntry{
 		UploadMetadata: types.UploadMetadata{
 			ID:       id,
@@ -230,22 +227,4 @@ func formatTime(t time.Time) string {
 
 func parseDatetime(s string) (time.Time, error) {
 	return time.Parse(timeFormat, s)
-}
-
-func printTables(db *sql.DB) { // DEBUG
-	log.Printf("printing tables from sqlite")
-	rows, err := db.Query("SELECT tbl_name FROM sqlite_master where type='table'")
-	if err != nil {
-		log.Printf("failed to get tables: %v", err)
-	}
-
-	for rows.Next() {
-		var tblName string
-		err = rows.Scan(&tblName)
-		if err != nil {
-			log.Printf("failed to get row: %v", err)
-		}
-		log.Printf("table: %s", tblName)
-	}
-	log.Printf("done printing tables")
 }
