@@ -12,6 +12,8 @@ import (
 )
 
 func TestInsertDeleteSingleEntry(t *testing.T) {
+	// TODO: Figure out why this breaks otherwise
+	//db := sqlite.New("file::memory:?cache=shared")
 	db := sqlite.New(":memory:")
 
 	if err := db.InsertEntry(bytes.NewBufferString("hello, world!"), types.UploadMetadata{
