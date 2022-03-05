@@ -58,12 +58,21 @@ func New(path string) store.Store {
 func (d db) GetEntriesMetadata() ([]types.UploadMetadata, error) {
 	rows, err := d.ctx.Query(`
 	SELECT
-		id,
-		filename,
-		upload_time,
-		expiration_time
+		entries.id AS id,
+		entries.filename AS filename,
+		entries.upload_time AS upload_time,
+		entries.expiration_time AS expiration_time,
+		sizes.file_size AS file_size
 	FROM
-		entries`)
+		entries
+	INNER JOIN
+		(
+			SELECT
+				id,
+				SUM(LENGTH(chunk)) AS file_size
+			FROM
+				entries_data
+		) sizes ON entries.id = sizes.id`)
 	if err != nil {
 		return []types.UploadMetadata{}, err
 	}
@@ -74,7 +83,8 @@ func (d db) GetEntriesMetadata() ([]types.UploadMetadata, error) {
 		var filename string
 		var uploadTimeRaw string
 		var expirationTimeRaw string
-		err = rows.Scan(&id, &filename, &uploadTimeRaw, &expirationTimeRaw)
+		var fileSize int
+		err = rows.Scan(&id, &filename, &uploadTimeRaw, &expirationTimeRaw, &fileSize)
 		if err != nil {
 			return []types.UploadMetadata{}, err
 		}
@@ -94,7 +104,7 @@ func (d db) GetEntriesMetadata() ([]types.UploadMetadata, error) {
 			Filename: types.Filename(filename),
 			Uploaded: ut,
 			Expires:  types.ExpirationTime(et),
-			Size:     0, // TODO: Replace
+			Size:     fileSize,
 		})
 	}
 

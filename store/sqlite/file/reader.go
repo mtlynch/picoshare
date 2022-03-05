@@ -73,6 +73,11 @@ func (fr *fileReader) Read(p []byte) (int, error) {
 	defer stmt.Close()
 
 	rows, err := stmt.Query(fr.entryID, startChunk)
+	if err != nil {
+		return bytesRead, err
+	}
+	defer rows.Close()
+
 	for rows.Next() {
 		log.Printf("reading chunk, bytesRead=%d", bytesRead)
 
@@ -88,11 +93,11 @@ func (fr *fileReader) Read(p []byte) (int, error) {
 		}
 		fr.buf = bytes.NewBuffer(chunk)
 
-		chunkStart := int(fr.offset % int64(fr.chunkSize))
-		chunkEnd := min(len(chunk), bytesToRead-chunkStart)
-		log.Printf("chunkStart=%d, chunkEnd=%d", chunkStart, chunkEnd)
-		bytesToCopy := min(bytesToRead, chunkEnd-chunkStart)
-		copy(p[bytesRead:bytesRead+bytesToCopy], chunk[chunkStart:bytesToCopy])
+		readStart := int(fr.offset % int64(fr.chunkSize))
+		readEnd := min(len(chunk), bytesToRead-readStart)
+		log.Printf("readStart=%d, readEnd=%d", readStart, readEnd)
+		bytesToCopy := min(bytesToRead, readEnd-readStart)
+		copy(p[bytesRead:bytesRead+bytesToCopy], chunk[readStart:bytesToCopy])
 		bytesRead += bytesToCopy
 		fr.offset += int64(bytesRead)
 		if bytesRead >= len(p) {

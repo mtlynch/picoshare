@@ -12,7 +12,8 @@ import (
 )
 
 func TestInsertDeleteSingleEntry(t *testing.T) {
-	// TODO: Why does the DB seem to disappear mid-test if we don't use shared cache?
+	// We need to use a shared cache. Otherwise, if all connections close, the
+	// underlying database disappears.
 	db := sqlite.New("file::memory:?cache=shared")
 
 	if err := db.InsertEntry(bytes.NewBufferString("hello, world!"), types.UploadMetadata{
@@ -43,8 +44,31 @@ func TestInsertDeleteSingleEntry(t *testing.T) {
 		t.Fatalf("failed to get entry metadata: %v", err)
 	}
 
+	if len(meta) != 1 {
+		t.Fatalf("unexpected metadata size: got %v, want %v", len(meta), 1)
+	}
+
 	if meta[0].Size != len(expected) {
 		t.Fatalf("unexpected file size in entry metadata: got %v, want %v", meta[0].Size, len(expected))
+	}
+
+	expectedFilename := types.Filename("dummy-file.txt")
+	if meta[0].Filename != expectedFilename {
+		t.Fatalf("unexpected filename: got %v, want %v", meta[0].Filename, expectedFilename)
+	}
+
+	err = db.DeleteEntry(types.EntryID("dummy-id"))
+	if err != nil {
+		t.Fatalf("failed to delete entry: %v", err)
+	}
+
+	meta, err = db.GetEntriesMetadata()
+	if err != nil {
+		t.Fatalf("failed to get entry metadata: %v", err)
+	}
+
+	if len(meta) != 0 {
+		t.Fatalf("unexpected metadata size: got %v, want %v", len(meta), 0)
 	}
 }
 
