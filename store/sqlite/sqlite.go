@@ -38,10 +38,6 @@ func New(path string) store.Store {
 	}
 
 	initStmts := []string{
-		`PRAGMA cache_size = -50000`,
-		`PRAGMA journal_mode = WAL`,
-		`PRAGMA synchronous = NORMAL`,
-		`PRAGMA temp_store = FILE`,
 		`CREATE TABLE IF NOT EXISTS entries (
 			id TEXT PRIMARY KEY,
 			filename TEXT,

@@ -56,12 +56,7 @@ func (w *writer) flush(n int) error {
 	idx := w.written / len(w.buf)
 	log.Printf("flushing %s -> idx=%d, n=%d", w.entryID, idx, n)
 
-	// HACK: Try to shrink memory before inserting more data.
-	_, err := w.db.Exec(`PRAGMA shrink_memory`)
-	if err != nil {
-		return err
-	}
-	_, err = w.db.Exec(`
+	_, err := w.db.Exec(`
 	INSERT INTO
 		entries_data
 	(
