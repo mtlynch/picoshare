@@ -115,7 +115,7 @@ func TestWriteFile(t *testing.T) {
 		}
 
 		if !reflect.DeepEqual(tx.rows, tt.rowsExpected) {
-			t.Fatalf("%s: unexpected DB transactions: got %v, want %v", tt.explanation, db.rows, tt.rowsExpected)
+			t.Fatalf("%s: unexpected DB transactions: got %v, want %v", tt.explanation, tx.rows, tt.rowsExpected)
 		}
 	}
 }
