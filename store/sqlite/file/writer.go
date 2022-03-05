@@ -2,7 +2,6 @@ package file
 
 import (
 	"io"
-	"log"
 
 	"github.com/mtlynch/picoshare/v2/store/sqlite/wrapped"
 	"github.com/mtlynch/picoshare/v2/types"
@@ -33,7 +32,6 @@ func (w *writer) Write(p []byte) (int, error) {
 		dstStart := w.written % len(w.buf)
 		copySize := min(len(w.buf)-dstStart, len(p)-n)
 		dstEnd := dstStart + copySize
-		log.Printf("dstStart=%d, dstEnd=%d, n=%d, copySize=%d", dstStart, dstEnd, n, copySize)
 		copy(w.buf[dstStart:dstEnd], p[n:n+copySize])
 		if dstEnd == len(w.buf) {
 			w.flush(len(w.buf))
@@ -55,8 +53,6 @@ func (w *writer) Close() error {
 
 func (w *writer) flush(n int) error {
 	idx := w.written / len(w.buf)
-	log.Printf("flushing %s -> idx=%d, n=%d", w.entryID, idx, n)
-
 	_, err := w.tx.Exec(`
 	INSERT INTO
 		entries_data

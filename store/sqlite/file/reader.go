@@ -22,14 +22,11 @@ type (
 )
 
 func NewReader(db *sql.DB, id types.EntryID) (io.ReadSeeker, error) {
-	log.Printf("creating file reader")
-
 	chunkSize, err := getChunkSize(db, id)
 	if err != nil {
 		return nil, err
 	}
 
-	log.Printf("getting file length")
 	length, err := getFileLength(db, id, chunkSize)
 	if err != nil {
 		return nil, err
@@ -54,7 +51,6 @@ func (fr *fileReader) Read(p []byte) (int, error) {
 	bytesRead := 0
 	bytesToRead := min(len(p), fr.fileLength-int(fr.offset)) // TODO: Don't downcast
 	startChunk := fr.offset / int64(fr.chunkSize)
-	log.Printf("reading %d bytes, offset=%d, len(p)=%d, startChunk=%d)", bytesToRead, fr.offset, len(p), startChunk)
 	stmt, err := fr.db.Prepare(`
 			SELECT
 				chunk
@@ -79,12 +75,9 @@ func (fr *fileReader) Read(p []byte) (int, error) {
 	defer rows.Close()
 
 	for rows.Next() {
-		log.Printf("reading chunk, bytesRead=%d", bytesRead)
-
 		var chunk []byte
 		rows.Scan(&chunk)
 		if err == sql.ErrNoRows {
-			log.Printf("no rows!")
 			// TODO: Better error
 			return bytesRead, store.EntryNotFoundError{ID: fr.entryID}
 		} else if err != nil {
@@ -95,12 +88,10 @@ func (fr *fileReader) Read(p []byte) (int, error) {
 
 		readStart := int(fr.offset % int64(fr.chunkSize))
 		readLen := min(len(chunk), bytesToRead)
-		log.Printf("readStart=%d, readLen=%d", readStart, readLen)
 		copy(p[bytesRead:bytesRead+readLen], chunk[readStart:readStart+readLen])
 		bytesRead += readLen
 		fr.offset += int64(bytesRead)
 		if bytesRead >= len(p) {
-			log.Printf("read %d bytes into %d buffer, returning", bytesRead, len(p))
 			break
 		}
 		if fr.offset == int64(fr.fileLength) {
@@ -112,8 +103,6 @@ func (fr *fileReader) Read(p []byte) (int, error) {
 }
 
 func (fr *fileReader) Seek(offset int64, whence int) (int64, error) {
-	log.Printf("seeking to %d, %d", offset, whence)
-	log.Printf("current offset=%d", fr.offset)
 	switch whence {
 	case io.SeekStart:
 		fr.offset = offset
@@ -122,7 +111,6 @@ func (fr *fileReader) Seek(offset int64, whence int) (int64, error) {
 	case io.SeekEnd:
 		fr.offset = int64(fr.fileLength) - offset
 	}
-	log.Printf("    new offset=%d", fr.offset)
 	return fr.offset, nil
 }
 
