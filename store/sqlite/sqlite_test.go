@@ -2,6 +2,7 @@ package sqlite_test
 
 import (
 	"bytes"
+	"io"
 	"io/ioutil"
 	"log"
 	"testing"
@@ -69,6 +70,45 @@ func TestInsertDeleteSingleEntry(t *testing.T) {
 
 	if len(meta) != 0 {
 		t.Fatalf("unexpected metadata size: got %v, want %v", len(meta), 0)
+	}
+}
+
+func TestReadLastByteOfEntry(t *testing.T) {
+	// We need to use a shared cache. Otherwise, if all connections close, the
+	// underlying database disappears.
+	db := sqlite.New("file::memory:?cache=shared")
+
+	if err := db.InsertEntry(bytes.NewBufferString("hello, world!"), types.UploadMetadata{
+		ID:       types.EntryID("dummy-id"),
+		Filename: "dummy-file.txt",
+		Expires:  mustParseExpirationTime("2040-01-01T00:00:00Z"),
+	}); err != nil {
+		t.Fatalf("failed to insert file into sqlite: %v", err)
+	}
+
+	entry, err := db.GetEntry(types.EntryID("dummy-id"))
+	if err != nil {
+		t.Fatalf("failed to get entry from DB: %v", err)
+	}
+
+	pos, err := entry.Reader.Seek(1, io.SeekEnd)
+	if err != nil {
+		t.Fatalf("failed to seek file reader: %v", err)
+	}
+
+	expectedPos := int64(12)
+	if pos != expectedPos {
+		t.Fatalf("unexpected file position: got %d, want %d", pos, expectedPos)
+	}
+
+	contents, err := ioutil.ReadAll(entry.Reader)
+	if err != nil {
+		t.Fatalf("failed to read entry contents: %v", err)
+	}
+
+	expected := "!"
+	if string(contents) != expected {
+		log.Fatalf("unexpected file contents: got %v, want %v", string(contents), expected)
 	}
 }
 

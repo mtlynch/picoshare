@@ -94,11 +94,10 @@ func (fr *fileReader) Read(p []byte) (int, error) {
 		fr.buf = bytes.NewBuffer(chunk)
 
 		readStart := int(fr.offset % int64(fr.chunkSize))
-		readEnd := min(len(chunk), bytesToRead-readStart)
-		log.Printf("readStart=%d, readEnd=%d", readStart, readEnd)
-		bytesToCopy := min(bytesToRead, readEnd-readStart)
-		copy(p[bytesRead:bytesRead+bytesToCopy], chunk[readStart:bytesToCopy])
-		bytesRead += bytesToCopy
+		readLen := min(len(chunk), bytesToRead)
+		log.Printf("readStart=%d, readLen=%d", readStart, readLen)
+		copy(p[bytesRead:bytesRead+readLen], chunk[readStart:readStart+readLen])
+		bytesRead += readLen
 		fr.offset += int64(bytesRead)
 		if bytesRead >= len(p) {
 			log.Printf("read %d bytes into %d buffer, returning", bytesRead, len(p))
