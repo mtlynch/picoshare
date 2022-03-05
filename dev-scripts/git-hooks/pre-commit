@@ -9,7 +9,7 @@ set -x
 # Exit on unset variable.
 set -u
 
-./dev-scripts/run-go-tests --quick
+#./dev-scripts/run-go-tests --quick
 ./dev-scripts/check-go-formatting
 
 go build -o /dev/null main.go
