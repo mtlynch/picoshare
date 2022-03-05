@@ -1,5 +1,6 @@
 FROM golang:1.17.4 AS builder
 
+COPY ./garbagecollect /app/garbagecollect
 COPY ./handlers /app/handlers
 COPY ./random /app/random
 COPY ./static /app/static
