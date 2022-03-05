@@ -82,12 +82,12 @@ workflows:
   test_deploy:
     jobs:
       - check_whitespace
-      #- test_go
+      - test_go
       - e2e
       - deploy:
           requires:
             - check_whitespace
-            #- test_go
+            - test_go
             - e2e
           filters:
             branches:
