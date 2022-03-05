@@ -13,6 +13,7 @@ import (
 
 func TestInsertDeleteSingleEntry(t *testing.T) {
 	db := sqlite.New(":memory:")
+
 	if err := db.InsertEntry(bytes.NewBufferString("hello, world!"), types.UploadMetadata{
 		ID:       types.EntryID("dummy-id"),
 		Filename: "dummy-file.txt",
@@ -26,11 +27,23 @@ func TestInsertDeleteSingleEntry(t *testing.T) {
 		t.Fatalf("failed to get entry from DB: %v", err)
 	}
 
+	m1, err := db.GetEntriesMetadata()
+	if err != nil {
+		t.Fatalf("failed to get entry metadata: %v", err)
+	} else {
+		log.Printf("read entry metadata: %v", m1)
+	}
 	contents, err := ioutil.ReadAll(entry.Reader)
 	if err != nil {
 		t.Fatalf("failed to read entry contents: %v", err)
 	}
 
+	m, err := db.GetEntriesMetadata()
+	if err != nil {
+		t.Fatalf("failed to get entry metadata: %v", err)
+	} else {
+		log.Printf("read entry metadata: %v", m)
+	}
 	expected := "hello, world!"
 	if string(contents) != expected {
 		log.Fatalf("unexpected file contents: got %v, want %v", string(contents), expected)

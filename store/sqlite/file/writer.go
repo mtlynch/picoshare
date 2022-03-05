@@ -4,19 +4,20 @@ import (
 	"io"
 	"log"
 
+	"github.com/mtlynch/picoshare/v2/store/sqlite/wrapped"
 	"github.com/mtlynch/picoshare/v2/types"
 )
 
 type writer struct {
-	db      SqlDB
+	tx      wrapped.SqlTx
 	entryID types.EntryID
 	buf     []byte
 	written int
 }
 
-func NewWriter(db SqlDB, id types.EntryID, chunkSize int) io.WriteCloser {
+func NewWriter(tx wrapped.SqlTx, id types.EntryID, chunkSize int) io.WriteCloser {
 	return &writer{
-		db:      db,
+		tx:      tx,
 		entryID: id,
 		buf:     make([]byte, chunkSize),
 	}
@@ -56,7 +57,7 @@ func (w *writer) flush(n int) error {
 	idx := w.written / len(w.buf)
 	log.Printf("flushing %s -> idx=%d, n=%d", w.entryID, idx, n)
 
-	_, err := w.db.Exec(`
+	_, err := w.tx.Exec(`
 	INSERT INTO
 		entries_data
 	(

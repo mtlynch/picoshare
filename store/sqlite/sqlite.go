@@ -22,14 +22,6 @@ type db struct {
 	ctx *sql.DB
 }
 
-func (d db) Prepare(query string) (*sql.Stmt, error) {
-	return d.ctx.Prepare(query)
-}
-
-func (d db) Exec(query string, args ...interface{}) (sql.Result, error) {
-	return d.ctx.Exec(query, args)
-}
-
 func New(path string) store.Store {
 	log.Printf("reading DB from %s", path)
 	ctx, err := sql.Open("sqlite3", path)
@@ -147,7 +139,7 @@ func (d db) GetEntry(id types.EntryID) (types.UploadEntry, error) {
 		return types.UploadEntry{}, err
 	}
 
-	r, err := file.NewReader(d, id)
+	r, err := file.NewReader(d.ctx, id)
 	if err != nil {
 		return types.UploadEntry{}, err
 	}
@@ -165,21 +157,12 @@ func (d db) GetEntry(id types.EntryID) (types.UploadEntry, error) {
 
 func (d db) InsertEntry(reader io.Reader, metadata types.UploadMetadata) error {
 	log.Printf("saving new entry %s", metadata.ID)
-
-	writeFileData := func() error {
-		chunkSize := 32 << 20
-		w := file.NewWriter(d.ctx, metadata.ID, chunkSize)
-		_, err := io.Copy(w, reader)
-		if err != nil {
-			return err
-		}
-		return w.Close()
-	}
-	if err := writeFileData(); err != nil {
+	tx, err := d.ctx.BeginTx(context.Background(), nil)
+	if err != nil {
 		return err
 	}
 
-	_, err := d.ctx.Exec(`
+	_, err = tx.Exec(`
 	INSERT INTO
 		entries
 	(
@@ -193,7 +176,20 @@ func (d db) InsertEntry(reader io.Reader, metadata types.UploadMetadata) error {
 		return err
 	}
 
-	return nil
+	writeFileData := func() error {
+		chunkSize := 32 << 20
+		w := file.NewWriter(tx, metadata.ID, chunkSize)
+		_, err := io.Copy(w, reader)
+		if err != nil {
+			return err
+		}
+		return w.Close()
+	}
+	if err := writeFileData(); err != nil {
+		return err
+	}
+
+	return tx.Commit()
 }
 
 func (d db) DeleteEntry(id types.EntryID) error {
