@@ -6,7 +6,6 @@ import (
 	"io"
 	"log"
 
-	"github.com/mtlynch/picoshare/v2/store"
 	"github.com/mtlynch/picoshare/v2/types"
 )
 
@@ -41,20 +40,59 @@ func NewReader(db *sql.DB, id types.EntryID) (io.ReadSeeker, error) {
 		fileLength: length,
 		offset:     0,
 		chunkSize:  chunkSize,
-		buf:        bytes.NewBuffer([]byte{}),
+		buf:        nil,
 	}, nil
 }
 
 func (fr *fileReader) Read(p []byte) (int, error) {
-	if fr.offset == int64(fr.fileLength) {
-		return 0, io.EOF
+	if fr.buf == nil {
+		if err := fr.populateBuffer(); err != nil {
+			return 0, err
+		}
 	}
-	// TODO: Keep a buffer between reads to minimize reads to SQLite
+	n, err := fr.readFromBuffer(p)
+	unread := 0
+	if fr.buf != nil {
+		unread = fr.buf.Len()
+	}
+	log.Printf("read from buffer: %d, %v, unread=%d", n, err, unread)
 
-	bytesRead := 0
+	return n, err
+}
+
+func (fr *fileReader) Seek(offset int64, whence int) (int64, error) {
+	fr.buf = nil
+	log.Printf("seeking to %d, %d", offset, whence)
+	log.Printf("current offset=%d", fr.offset)
+	switch whence {
+	case io.SeekStart:
+		fr.offset = offset
+	case io.SeekCurrent:
+		fr.offset += offset
+	case io.SeekEnd:
+		fr.offset = int64(fr.fileLength) - offset
+	}
+	log.Printf("    new offset=%d", fr.offset)
+	return fr.offset, nil
+}
+
+func (fr *fileReader) readFromBuffer(p []byte) (int, error) {
+	n, err := fr.buf.Read(p)
+	if err == io.EOF {
+		fr.buf = nil
+		return n, nil
+	} else {
+		return n, err
+	}
+}
+
+func (fr *fileReader) populateBuffer() error {
+	if fr.offset == int64(fr.fileLength) {
+		return io.EOF
+	}
 
 	startChunk := fr.offset / int64(fr.chunkSize)
-	log.Printf("offset=%d, len(p)=%d, startChunk=%d)", fr.offset, len(p), startChunk)
+	log.Printf("offset=%d, startChunk=%d)", fr.offset, startChunk)
 	stmt, err := fr.db.Prepare(`
 			SELECT
 				chunk
@@ -68,63 +106,20 @@ func (fr *fileReader) Read(p []byte) (int, error) {
 			`)
 	if err != nil {
 		log.Printf("reading chunk failed: %v", err)
-		return 0, err
+		return err
 	}
 	defer stmt.Close()
 
-	rows, err := stmt.Query(fr.entryID, startChunk)
+	var chunk []byte
+	err = stmt.QueryRow(fr.entryID, startChunk).Scan(&chunk)
 	if err != nil {
-		return bytesRead, err
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		log.Printf("reading chunk, bytesRead=%d", bytesRead)
-
-		var chunk []byte
-		rows.Scan(&chunk)
-		if err == sql.ErrNoRows {
-			log.Printf("no rows!")
-			// TODO: Better error
-			return bytesRead, store.EntryNotFoundError{ID: fr.entryID}
-		} else if err != nil {
-			log.Printf("error reading chunk: %v", err)
-			return bytesRead, err
-		}
-		fr.buf = bytes.NewBuffer(chunk)
-
-		readStart := int(fr.offset % int64(fr.chunkSize))
-		readLen := min(len(p), fr.fileLength-int(fr.offset)) // TODO: Don't downcast
-		readLen = min(readLen, len(chunk))
-		log.Printf("readStart=%d, readLen=%d", readStart, readLen)
-		copy(p[bytesRead:bytesRead+readLen], chunk[readStart:readStart+readLen])
-		bytesRead += readLen
-		fr.offset += int64(bytesRead)
-		if bytesRead >= len(p) {
-			log.Printf("read %d bytes into %d buffer, returning", bytesRead, len(p))
-			break
-		}
-		if fr.offset == int64(fr.fileLength) {
-			return bytesRead, io.EOF
-		}
+		return err
 	}
 
-	return bytesRead, nil
-}
+	fr.buf = bytes.NewBuffer(chunk)
+	fr.offset += int64(len(chunk))
 
-func (fr *fileReader) Seek(offset int64, whence int) (int64, error) {
-	log.Printf("seeking to %d, %d", offset, whence)
-	log.Printf("current offset=%d", fr.offset)
-	switch whence {
-	case io.SeekStart:
-		fr.offset = offset
-	case io.SeekCurrent:
-		fr.offset += offset
-	case io.SeekEnd:
-		fr.offset = int64(fr.fileLength) - offset
-	}
-	log.Printf("    new offset=%d", fr.offset)
-	return fr.offset, nil
+	return nil
 }
 
 func getFileLength(db *sql.DB, id types.EntryID, chunkSize int) (int, error) {
