@@ -39,31 +39,68 @@ for (const [k, v] of Object.entries(expirationTimes)) {
   expirationSelect.appendChild(selectOption);
 }
 
+function doUpload(file, expiration) {
+  hideElement(errorContainer);
+  hideElement(uploadForm);
+  showElement(progressSpinner);
+  uploadFile(file, expiration)
+    .then((res) => {
+      const entryId = res.id;
+
+      const aEl = document.createElement("a");
+
+      aEl.href = `/!${entryId}`;
+      aEl.innerText = `${document.location.href}!${entryId}`;
+
+      resultEl.appendChild(aEl);
+      uploadEl.style.display = "none";
+      expirationContainer.style.display = "none";
+    })
+    .catch((error) => {
+      document.getElementById("error-message").innerText = error;
+      showElement(errorContainer);
+      showElement(uploadForm);
+    })
+    .finally(() => {
+      hideElement(progressSpinner);
+    });
+}
+
 document
   .querySelector('.file-input[name="resume"]')
   .addEventListener("change", (evt) => {
-    hideElement(errorContainer);
-    hideElement(uploadForm);
-    showElement(progressSpinner);
-    uploadFile(evt.target.files[0], expirationSelect.value)
-      .then((res) => {
-        const entryId = res.id;
-
-        const aEl = document.createElement("a");
-
-        aEl.href = `/!${entryId}`;
-        aEl.innerText = `${document.location.href}!${entryId}`;
-
-        resultEl.appendChild(aEl);
-        uploadEl.style.display = "none";
-        expirationContainer.style.display = "none";
-      })
-      .catch((error) => {
-        document.getElementById("error-message").innerText = error;
-        showElement(errorContainer);
-        showElement(uploadForm);
-      })
-      .finally(() => {
-        hideElement(progressSpinner);
-      });
+    doUpload(evt.target.files[0], expirationSelect.value);
   });
+
+uploadForm.addEventListener("drop", (evt) => {
+  evt.preventDefault();
+
+  uploadForm.classList.remove("accepting-drop");
+
+  if (!evt.dataTransfer.items) {
+    return;
+  }
+  for (var i = 0; i < evt.dataTransfer.items.length; i++) {
+    if (evt.dataTransfer.items[i].kind === "file") {
+      var file = evt.dataTransfer.items[i].getAsFile();
+      doUpload(file, expirationSelect.value);
+      return;
+    }
+  }
+});
+
+uploadEl.addEventListener("dragover", (evt) => {
+  evt.preventDefault();
+
+  uploadEl.classList.add("accepting-drop");
+});
+
+uploadEl.addEventListener("dragenter", (evt) => {
+  evt.preventDefault();
+
+  uploadEl.classList.add("accepting-drop");
+});
+
+uploadEl.addEventListener("dragleave", (evt) => {
+  uploadEl.classList.remove("accepting-drop");
+});
