@@ -1,6 +1,9 @@
 package types
 
-import "time"
+import (
+	"io"
+	"time"
+)
 
 type EntryID string
 type Filename string
@@ -16,5 +19,5 @@ type UploadMetadata struct {
 
 type UploadEntry struct {
 	UploadMetadata
-	Data *[]byte
+	Reader io.ReadSeeker
 }

@@ -2,6 +2,7 @@ package store
 
 import (
 	"fmt"
+	"io"
 
 	"github.com/mtlynch/picoshare/v2/types"
 )
@@ -9,7 +10,7 @@ import (
 type Store interface {
 	GetEntriesMetadata() ([]types.UploadMetadata, error)
 	GetEntry(id types.EntryID) (types.UploadEntry, error)
-	InsertEntry(entry types.UploadEntry) error
+	InsertEntry(reader io.Reader, metadata types.UploadMetadata) error
 	DeleteEntry(id types.EntryID) error
 }
 

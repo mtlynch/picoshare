@@ -7,9 +7,11 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"time"
 
 	gorilla "github.com/mtlynch/gorilla-handlers"
 
+	"github.com/mtlynch/picoshare/v2/garbagecollect"
 	"github.com/mtlynch/picoshare/v2/handlers"
 	"github.com/mtlynch/picoshare/v2/handlers/auth/shared_secret"
 	"github.com/mtlynch/picoshare/v2/store/sqlite"
@@ -29,7 +31,12 @@ func main() {
 
 	ensureDirExists(filepath.Dir(*dbPath))
 
-	h := gorilla.LoggingHandler(os.Stdout, handlers.New(authenticator, sqlite.New(*dbPath)).Router())
+	store := sqlite.New(*dbPath)
+
+	gc := garbagecollect.NewScheduler(store, 7*time.Hour)
+	gc.StartAsync()
+
+	h := gorilla.LoggingHandler(os.Stdout, handlers.New(authenticator, store).Router())
 	if os.Getenv("PS_BEHIND_PROXY") != "" {
 		h = gorilla.ProxyIPHeadersHandler(h)
 	}

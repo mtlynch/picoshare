@@ -6,6 +6,10 @@ a {
   text-decoration: none;
 }
 
+p {
+  max-width: 70ch;
+}
+
 .navbar .navbar-brand {
   font-size: 1.6em;
 }

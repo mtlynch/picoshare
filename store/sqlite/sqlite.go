@@ -1,7 +1,10 @@
 package sqlite
 
 import (
+	"bytes"
 	"database/sql"
+	"io"
+	"io/ioutil"
 	"log"
 	"time"
 
@@ -140,13 +143,20 @@ func (d db) GetEntry(id types.EntryID) (types.UploadEntry, error) {
 			Uploaded: ut,
 			Expires:  types.ExpirationTime(et),
 		},
-		Data: &data,
+		Reader: bytes.NewReader(data),
 	}, nil
 }
 
-func (d db) InsertEntry(entry types.UploadEntry) error {
-	log.Printf("saving new entry %s (%d bytes)", entry.ID, entry.Size)
-	_, err := d.ctx.Exec(`
+func (d db) InsertEntry(reader io.Reader, metadata types.UploadMetadata) error {
+	log.Printf("saving new entry %s", metadata.ID)
+
+	data, err := ioutil.ReadAll(reader)
+	if err != nil {
+		log.Printf("couldn't insert entry in datastore because data read failed: %v", err)
+		return err
+	}
+
+	_, err = d.ctx.Exec(`
 	INSERT INTO
 		entries
 	(
@@ -156,7 +166,7 @@ func (d db) InsertEntry(entry types.UploadEntry) error {
 		expiration_time,
 		data
 	)
-	VALUES(?,?,?,?,?)`, entry.ID, entry.Filename, formatTime(entry.Uploaded), formatTime(time.Time(entry.Expires)), entry.Data)
+	VALUES(?,?,?,?,?)`, metadata.ID, metadata.Filename, formatTime(metadata.Uploaded), formatTime(time.Time(metadata.Expires)), data)
 	return err
 }
 

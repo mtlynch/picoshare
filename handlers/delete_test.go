@@ -1,6 +1,8 @@
 package handlers_test
 
 import (
+	"bytes"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -13,12 +15,10 @@ import (
 
 func TestDeleteExistingFile(t *testing.T) {
 	dataStore := sqlite.New(":memory:")
-	dataStore.InsertEntry(types.UploadEntry{
-		UploadMetadata: types.UploadMetadata{
+	dataStore.InsertEntry(makeData("dummy data"),
+		types.UploadMetadata{
 			ID: types.EntryID("hR87apiUCjTV9E"),
-		},
-		Data: makeData("dummy data"),
-	})
+		})
 
 	s := handlers.New(mockAuthenticator{}, dataStore)
 
@@ -81,7 +81,6 @@ func TestDeleteInvalidEntryID(t *testing.T) {
 	}
 }
 
-func makeData(s string) *[]byte {
-	b := []byte(s)
-	return &b
+func makeData(s string) io.Reader {
+	return bytes.NewReader([]byte(s))
 }

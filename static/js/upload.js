@@ -6,9 +6,19 @@ function dateInFuture(daysFromNow) {
   return d;
 }
 
+function hideElement(el) {
+  el.classList.add("is-hidden");
+}
+
+function showElement(el) {
+  el.classList.remove("is-hidden");
+}
+
 const uploadEl = document.querySelector(".file");
 const resultEl = document.getElementById("upload-result");
 const errorContainer = document.getElementById("error");
+const progressSpinner = document.getElementById("progress-spinner");
+const uploadForm = document.getElementById("upload-form");
 
 const expirationContainer = document.querySelector(".expiration-container");
 const expirationSelect = document.getElementById("expiration-select");
@@ -30,7 +40,9 @@ for (const [k, v] of Object.entries(expirationTimes)) {
 }
 
 function doUpload(file, expiration) {
-  errorContainer.classList.add("is-hidden");
+  hideElement(errorContainer);
+  hideElement(uploadForm);
+  showElement(progressSpinner);
   uploadFile(file, expiration)
     .then((res) => {
       const entryId = res.id;
@@ -46,49 +58,30 @@ function doUpload(file, expiration) {
     })
     .catch((error) => {
       document.getElementById("error-message").innerText = error;
-      errorContainer.classList.remove("is-hidden");
+      showElement(errorContainer);
+      showElement(uploadForm);
+    })
+    .finally(() => {
+      hideElement(progressSpinner);
     });
 }
 
 document
   .querySelector('.file-input[name="resume"]')
   .addEventListener("change", (evt) => {
-    errorContainer.classList.add("is-hidden");
-    uploadFile(evt.target.files[0], expirationSelect.value)
-      .then((res) => {
-        const entryId = res.id;
-
-        const aEl = document.createElement("a");
-
-        aEl.href = `/!${entryId}`;
-        aEl.innerText = `${document.location.href}!${entryId}`;
-
-        resultEl.appendChild(aEl);
-        uploadEl.style.display = "none";
-        expirationContainer.style.display = "none";
-      })
-      .catch((error) => {
-        document.getElementById("error-message").innerText = error;
-        errorContainer.classList.remove("is-hidden");
-      });
+    doUpload(evt.target.files[0], expirationSelect.value);
   });
 
-const uploadForm = document.getElementById("upload-form");
 uploadForm.addEventListener("drop", (evt) => {
   evt.preventDefault();
-  if (evt.dataTransfer.items) {
-    for (var i = 0; i < evt.dataTransfer.items.length; i++) {
-      if (evt.dataTransfer.items[i].kind === "file") {
-        var file = evt.dataTransfer.items[i].getAsFile();
-        doUpload(file, expirationSelect.value);
-        return;
-      }
-    }
-  } else {
-    for (var i = 0; i < evt.dataTransfer.files.length; i++) {
-      console.log(
-        "... file[" + i + "].name = " + evt.dataTransfer.files[i].name
-      );
+  if (!evt.dataTransfer.items) {
+    return;
+  }
+  for (var i = 0; i < evt.dataTransfer.items.length; i++) {
+    if (evt.dataTransfer.items[i].kind === "file") {
+      var file = evt.dataTransfer.items[i].getAsFile();
+      doUpload(file, expirationSelect.value);
+      return;
     }
   }
 });

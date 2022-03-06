@@ -8,31 +8,37 @@
 {{define "content"}}
 <h1 class="title">Upload</h1>
 
-<div class="file has-name is-boxed" id="upload-form">
-  <label class="file-label">
-    <input class="file-input" type="file" name="resume">
-    <span class="file-cta">
-      <span class="file-icon">
-        <i class="fas fa-upload"></i>
+<div id="upload-form">
+  <div class="file has-name is-boxed">
+    <label class="file-label">
+      <input class="file-input" type="file" name="resume">
+      <span class="file-cta">
+        <span class="file-icon">
+          <i class="fas fa-upload"></i>
+        </span>
+        <span class="file-label">
+          Choose a file…
+        </span>
       </span>
-      <span class="file-label">
-        Choose a file…
+      <span class="file-name">
+        IMG_1234.png
       </span>
-    </span>
-    <span class="file-name">
-      IMG_1234.png
-    </span>
-  </label>
-</div>
+    </label>
+  </div>
 
-<div class="field my-3 expiration-container">
-  <label class="label">Expiration</label>
-  <div class="control">
-    <div class="select">
-      <select id="expiration-select">
-      </select>
+  <div class="field my-3 expiration-container">
+    <label class="label">Expiration</label>
+    <div class="control">
+      <div class="select">
+        <select id="expiration-select">
+        </select>
+      </div>
     </div>
   </div>
+</div>
+
+<div class="fa-3x is-hidden" id="progress-spinner">
+  <i class="fas fa-spinner fa-spin"></i>
 </div>
 
 <div id="upload-result"></div>
