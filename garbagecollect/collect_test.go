@@ -98,6 +98,7 @@ func TestCollectDoesNothingWhenNoFilesAreExpired(t *testing.T) {
 		t.Fatalf("retrieving datastore metadata failed: %v", err)
 	}
 
+	// Sort the elements so they have a consistent ordering.
 	sort.Slice(remaining, func(i, j int) bool {
 		return (time.Time(remaining[i].Expires)).After(time.Time(remaining[j].Expires))
 	})
