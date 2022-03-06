@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"io"
 	"log"
+	"runtime"
 
 	"github.com/mtlynch/picoshare/v2/types"
 )
@@ -40,28 +41,39 @@ func NewReader(db *sql.DB, id types.EntryID) (io.ReadSeeker, error) {
 		fileLength: length,
 		offset:     0,
 		chunkSize:  chunkSize,
-		buf:        nil,
+		buf:        bytes.NewBuffer([]byte{}),
 	}, nil
 }
 
 func (fr *fileReader) Read(p []byte) (int, error) {
-	if fr.buf == nil {
-		if err := fr.populateBuffer(); err != nil {
-			return 0, err
+	read := 0
+	for {
+		n, err := fr.buf.Read(p[read:])
+		read += n
+		log.Printf("read %d bytes from buffer, err=%v, unread=%d", n, err, fr.buf.Len())
+		if err == io.EOF {
+			log.Printf("fr.offset=%d, fr.fileLength=%d", fr.offset, fr.fileLength)
+			if int(fr.offset) == fr.fileLength {
+				return read, io.EOF
+			}
+			printMemUsage()
+			err = fr.populateBuffer()
+			printMemUsage()
+			if err != nil {
+				return read, err
+			}
+			continue
+		}
+		if read >= len(p) {
+			break
 		}
 	}
-	n, err := fr.readFromBuffer(p)
-	unread := 0
-	if fr.buf != nil {
-		unread = fr.buf.Len()
-	}
-	log.Printf("read from buffer: %d, %v, unread=%d", n, err, unread)
 
-	return n, err
+	return read, nil
 }
 
 func (fr *fileReader) Seek(offset int64, whence int) (int64, error) {
-	fr.buf = nil
+	fr.buf = bytes.NewBuffer([]byte{})
 	log.Printf("seeking to %d, %d", offset, whence)
 	log.Printf("current offset=%d", fr.offset)
 	switch whence {
@@ -76,23 +88,14 @@ func (fr *fileReader) Seek(offset int64, whence int) (int64, error) {
 	return fr.offset, nil
 }
 
-func (fr *fileReader) readFromBuffer(p []byte) (int, error) {
-	n, err := fr.buf.Read(p)
-	if err == io.EOF {
-		fr.buf = nil
-		return n, nil
-	} else {
-		return n, err
-	}
-}
-
 func (fr *fileReader) populateBuffer() error {
+	log.Printf("populating read buffer")
 	if fr.offset == int64(fr.fileLength) {
 		return io.EOF
 	}
 
 	startChunk := fr.offset / int64(fr.chunkSize)
-	log.Printf("offset=%d, startChunk=%d)", fr.offset, startChunk)
+	log.Printf("offset=%d, startChunk=%d", fr.offset, startChunk)
 	stmt, err := fr.db.Prepare(`
 			SELECT
 				chunk
@@ -116,8 +119,11 @@ func (fr *fileReader) populateBuffer() error {
 		return err
 	}
 
-	fr.buf = bytes.NewBuffer(chunk)
-	fr.offset += int64(len(chunk))
+	// Move the start index to the position in the chunk we want to read.
+	readStart := fr.offset % int64(fr.chunkSize)
+
+	fr.buf = bytes.NewBuffer(chunk[readStart:])
+	fr.offset += int64(len(chunk)) - readStart
 
 	return nil
 }
@@ -180,4 +186,14 @@ func min(a, b int) int {
 		return a
 	}
 	return b
+}
+
+func printMemUsage() {
+	var m runtime.MemStats
+	runtime.ReadMemStats(&m)
+	log.Printf("alloc: %v MiB, Sys: %v MiB, tNumGC: %v", bToMb(m.Alloc), bToMb(m.Sys), m.NumGC)
+}
+
+func bToMb(b uint64) uint64 {
+	return b / 1024 / 1024
 }

@@ -15,14 +15,23 @@ import (
 )
 
 const (
-	timeFormat = time.RFC3339
+	timeFormat       = time.RFC3339
+	defaultChunkSize = 32768 * 10
+	//defaultChunkSize = 5 * 1000 * 1000
 )
 
 type db struct {
-	ctx *sql.DB
+	ctx       *sql.DB
+	chunkSize int
 }
 
 func New(path string) store.Store {
+	return NewWithChunkSize(path, defaultChunkSize)
+}
+
+// NewWithChunkSize creates a SQLite-based datastore with the user-specified
+// chunk size for writing files. This is primarily for testing.
+func NewWithChunkSize(path string, chunkSize int) store.Store {
 	log.Printf("reading DB from %s", path)
 	ctx, err := sql.Open("sqlite3", path)
 	if err != nil {
@@ -51,7 +60,8 @@ func New(path string) store.Store {
 	}
 
 	return &db{
-		ctx: ctx,
+		ctx:       ctx,
+		chunkSize: chunkSize,
 	}
 }
 
@@ -187,9 +197,7 @@ func (d db) InsertEntry(reader io.Reader, metadata types.UploadMetadata) error {
 	}
 
 	writeFileData := func() error {
-		chunkSize := 50 * 1000 * 1000
-		//chunkSize := 100 // DEBUG
-		w := file.NewWriter(tx, metadata.ID, chunkSize)
+		w := file.NewWriter(tx, metadata.ID, d.chunkSize)
 		_, err := io.Copy(w, reader)
 		if err != nil {
 			return err

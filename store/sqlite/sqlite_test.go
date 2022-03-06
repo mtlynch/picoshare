@@ -13,9 +13,8 @@ import (
 )
 
 func TestInsertDeleteSingleEntry(t *testing.T) {
-	// We need to use a shared cache. Otherwise, if all connections close, the
-	// underlying database disappears.
-	db := sqlite.New("file::memory:?cache=shared")
+	chunkSize := 5
+	db := sqlite.NewWithChunkSize("file::memory:?cache=shared", chunkSize)
 
 	if err := db.InsertEntry(bytes.NewBufferString("hello, world!"), types.UploadMetadata{
 		ID:       types.EntryID("dummy-id"),
@@ -74,9 +73,8 @@ func TestInsertDeleteSingleEntry(t *testing.T) {
 }
 
 func TestReadLastByteOfEntry(t *testing.T) {
-	// We need to use a shared cache. Otherwise, if all connections close, the
-	// underlying database disappears.
-	db := sqlite.New("file::memory:?cache=shared")
+	chunkSize := 5
+	db := sqlite.NewWithChunkSize("file::memory:?cache=shared", chunkSize)
 
 	if err := db.InsertEntry(bytes.NewBufferString("hello, world!"), types.UploadMetadata{
 		ID:       types.EntryID("dummy-id"),

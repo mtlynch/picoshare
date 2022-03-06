@@ -52,6 +52,7 @@ func (w *writer) Close() error {
 }
 
 func (w *writer) flush(n int) error {
+	printMemUsage()
 	idx := w.written / len(w.buf)
 	_, err := w.tx.Exec(`
 	INSERT INTO
@@ -62,6 +63,7 @@ func (w *writer) flush(n int) error {
 		chunk
 	)
 	VALUES(?,?,?)`, w.entryID, idx, w.buf[0:n])
+	printMemUsage()
 
 	return err
 }
