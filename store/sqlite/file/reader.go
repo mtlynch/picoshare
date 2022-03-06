@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"io"
 	"log"
-	"runtime"
 
 	"github.com/mtlynch/picoshare/v2/types"
 )
@@ -22,14 +21,11 @@ type (
 )
 
 func NewReader(db *sql.DB, id types.EntryID) (io.ReadSeeker, error) {
-	log.Printf("creating file reader")
-
 	chunkSize, err := getChunkSize(db, id)
 	if err != nil {
 		return nil, err
 	}
 
-	log.Printf("getting file length")
 	length, err := getFileLength(db, id, chunkSize)
 	if err != nil {
 		return nil, err
@@ -50,15 +46,11 @@ func (fr *fileReader) Read(p []byte) (int, error) {
 	for {
 		n, err := fr.buf.Read(p[read:])
 		read += n
-		log.Printf("read %d bytes from buffer, err=%v, unread=%d", n, err, fr.buf.Len())
 		if err == io.EOF {
-			log.Printf("fr.offset=%d, fr.fileLength=%d", fr.offset, fr.fileLength)
 			if int(fr.offset) == fr.fileLength {
 				return read, io.EOF
 			}
-			printMemUsage()
 			err = fr.populateBuffer()
-			printMemUsage()
 			if err != nil {
 				return read, err
 			}
@@ -74,8 +66,6 @@ func (fr *fileReader) Read(p []byte) (int, error) {
 
 func (fr *fileReader) Seek(offset int64, whence int) (int64, error) {
 	fr.buf = bytes.NewBuffer([]byte{})
-	log.Printf("seeking to %d, %d", offset, whence)
-	log.Printf("current offset=%d", fr.offset)
 	switch whence {
 	case io.SeekStart:
 		fr.offset = offset
@@ -84,18 +74,15 @@ func (fr *fileReader) Seek(offset int64, whence int) (int64, error) {
 	case io.SeekEnd:
 		fr.offset = int64(fr.fileLength) - offset
 	}
-	log.Printf("    new offset=%d", fr.offset)
 	return fr.offset, nil
 }
 
 func (fr *fileReader) populateBuffer() error {
-	log.Printf("populating read buffer")
 	if fr.offset == int64(fr.fileLength) {
 		return io.EOF
 	}
 
 	startChunk := fr.offset / int64(fr.chunkSize)
-	log.Printf("offset=%d, startChunk=%d", fr.offset, startChunk)
 	stmt, err := fr.db.Prepare(`
 			SELECT
 				chunk
@@ -186,14 +173,4 @@ func min(a, b int) int {
 		return a
 	}
 	return b
-}
-
-func printMemUsage() {
-	var m runtime.MemStats
-	runtime.ReadMemStats(&m)
-	log.Printf("alloc: %v MiB, Sys: %v MiB, tNumGC: %v", bToMb(m.Alloc), bToMb(m.Sys), m.NumGC)
-}
-
-func bToMb(b uint64) uint64 {
-	return b / 1024 / 1024
 }
