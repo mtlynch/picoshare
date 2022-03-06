@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"io"
 	"reflect"
+	"sort"
 	"testing"
 	"time"
 
@@ -13,7 +14,7 @@ import (
 )
 
 func TestCollectDoesNothingWhenStoreIsEmpty(t *testing.T) {
-	dataStore := sqlite.New(":memory:")
+	dataStore := sqlite.New("file::memory:?cache=shared")
 	c := garbagecollect.NewCollector(dataStore)
 	err := c.Collect()
 	if err != nil {
@@ -32,7 +33,7 @@ func TestCollectDoesNothingWhenStoreIsEmpty(t *testing.T) {
 }
 
 func TestCollectExpiredFile(t *testing.T) {
-	dataStore := sqlite.New(":memory:")
+	dataStore := sqlite.New("file::memory:?cache=shared")
 	d := "dummy data"
 	dataStore.InsertEntry(makeData(d),
 		types.UploadMetadata{
@@ -71,7 +72,7 @@ func TestCollectExpiredFile(t *testing.T) {
 }
 
 func TestCollectDoesNothingWhenNoFilesAreExpired(t *testing.T) {
-	dataStore := sqlite.New(":memory:")
+	dataStore := sqlite.New("file::memory:?cache=shared")
 	d := "dummy data"
 	dataStore.InsertEntry(makeData(d),
 		types.UploadMetadata{
@@ -96,6 +97,10 @@ func TestCollectDoesNothingWhenNoFilesAreExpired(t *testing.T) {
 	if err != nil {
 		t.Fatalf("retrieving datastore metadata failed: %v", err)
 	}
+
+	sort.Slice(remaining, func(i, j int) bool {
+		return (time.Time(remaining[i].Expires)).After(time.Time(remaining[j].Expires))
+	})
 
 	expected := []types.UploadMetadata{
 		{
