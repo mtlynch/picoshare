@@ -74,6 +74,9 @@ document
 
 uploadForm.addEventListener("drop", (evt) => {
   evt.preventDefault();
+
+  uploadForm.classList.remove("accepting-drop");
+
   if (!evt.dataTransfer.items) {
     return;
   }
@@ -86,10 +89,18 @@ uploadForm.addEventListener("drop", (evt) => {
   }
 });
 
-uploadForm.addEventListener("dragover", (evt) => {
+uploadEl.addEventListener("dragover", (evt) => {
   evt.preventDefault();
+
+  uploadEl.classList.add("accepting-drop");
 });
 
-uploadForm.addEventListener("dragenter", (evt) => {
+uploadEl.addEventListener("dragenter", (evt) => {
   evt.preventDefault();
+
+  uploadEl.classList.add("accepting-drop");
+});
+
+uploadEl.addEventListener("dragleave", (evt) => {
+  uploadEl.classList.remove("accepting-drop");
 });
