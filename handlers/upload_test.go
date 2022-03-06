@@ -30,7 +30,7 @@ func (ma mockAuthenticator) Authenticate(r *http.Request) bool {
 }
 
 func TestUploadValidFile(t *testing.T) {
-	store := sqlite.New(":memory:")
+	store := sqlite.New("file::memory:?cache=shared")
 	s := handlers.New(mockAuthenticator{}, store)
 
 	filename := "dummyimage.png"
@@ -129,7 +129,7 @@ func TestEntryPostRejectsInvalidRequest(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		store := sqlite.New(":memory:")
+		store := sqlite.New("file::memory:?cache=shared")
 		s := handlers.New(mockAuthenticator{}, store)
 
 		formData, contentType := createMultipartFormBody(tt.name, tt.filename, bytes.NewBuffer([]byte(tt.contents)))
