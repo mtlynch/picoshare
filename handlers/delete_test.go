@@ -14,7 +14,7 @@ import (
 )
 
 func TestDeleteExistingFile(t *testing.T) {
-	dataStore := sqlite.New(":memory:")
+	dataStore := sqlite.New("file::memory:?cache=shared")
 	dataStore.InsertEntry(makeData("dummy data"),
 		types.UploadMetadata{
 			ID: types.EntryID("hR87apiUCjTV9E"),
@@ -42,7 +42,7 @@ func TestDeleteExistingFile(t *testing.T) {
 }
 
 func TestDeleteNonExistentFile(t *testing.T) {
-	dataStore := sqlite.New(":memory:")
+	dataStore := sqlite.New("file::memory:?cache=shared")
 
 	s := handlers.New(mockAuthenticator{}, dataStore)
 
@@ -62,7 +62,7 @@ func TestDeleteNonExistentFile(t *testing.T) {
 }
 
 func TestDeleteInvalidEntryID(t *testing.T) {
-	dataStore := sqlite.New(":memory:")
+	dataStore := sqlite.New("file::memory:?cache=shared")
 
 	s := handlers.New(mockAuthenticator{}, dataStore)
 
