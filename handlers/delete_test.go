@@ -9,12 +9,12 @@ import (
 
 	"github.com/mtlynch/picoshare/v2/handlers"
 	"github.com/mtlynch/picoshare/v2/store"
-	"github.com/mtlynch/picoshare/v2/store/sqlite"
+	"github.com/mtlynch/picoshare/v2/store/sqlite_test"
 	"github.com/mtlynch/picoshare/v2/types"
 )
 
 func TestDeleteExistingFile(t *testing.T) {
-	dataStore := sqlite.New("file::memory:?cache=shared")
+	dataStore := sqlite_test.New()
 	dataStore.InsertEntry(makeData("dummy data"),
 		types.UploadMetadata{
 			ID: types.EntryID("hR87apiUCjTV9E"),
@@ -42,7 +42,7 @@ func TestDeleteExistingFile(t *testing.T) {
 }
 
 func TestDeleteNonExistentFile(t *testing.T) {
-	dataStore := sqlite.New("file::memory:?cache=shared")
+	dataStore := sqlite_test.New()
 
 	s := handlers.New(mockAuthenticator{}, dataStore)
 
@@ -62,7 +62,7 @@ func TestDeleteNonExistentFile(t *testing.T) {
 }
 
 func TestDeleteInvalidEntryID(t *testing.T) {
-	dataStore := sqlite.New("file::memory:?cache=shared")
+	dataStore := sqlite_test.New()
 
 	s := handlers.New(mockAuthenticator{}, dataStore)
 
