@@ -36,8 +36,7 @@ if [[ "${IS_LITESTREAM_ENABLED}" == 'true' ]]; then
   # Let Litestream start LogPaste as a child process
   exec /app/litestream replicate \
     -exec /app/picoshare
-    "${DB_PATH}" \
-    "${DB_REPLICA_URL}"
+    "${DB_PATH}"
 else
   echo "Starting without litestream"
   # Start server.
