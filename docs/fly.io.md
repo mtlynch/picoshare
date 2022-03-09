@@ -30,6 +30,8 @@ fly volumes create "${VOLUME_NAME}" \
 
 ## Set your Litestream environment variables (optional)
 
+You only need this if you're syncing data to a Litestream replica.
+
 ```bash
 LITESTREAM_ACCESS_KEY_ID=YOUR-ACCESS-ID
 LITESTREAM_SECRET_ACCESS_KEY=YOUR-SECRET-ACCESS-KEY
