@@ -15,9 +15,9 @@ import (
 )
 
 const (
-	timeFormat       = time.RFC3339
+	timeFormat = time.RFC3339
+	// I think Chrome reads at 32768, but I haven't checked rigorously.
 	defaultChunkSize = 32768 * 10
-	//defaultChunkSize = 5 * 1000 * 1000
 )
 
 type db struct {
@@ -82,6 +82,8 @@ func (d db) GetEntriesMetadata() ([]types.UploadMetadata, error) {
 				SUM(LENGTH(chunk)) AS file_size
 			FROM
 				entries_data
+			GROUP BY
+				id
 		) sizes ON entries.id = sizes.id`)
 	if err != nil {
 		return []types.UploadMetadata{}, err
