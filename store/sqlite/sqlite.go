@@ -204,6 +204,8 @@ func (d db) InsertEntry(reader io.Reader, metadata types.UploadMetadata) error {
 		if err != nil {
 			return err
 		}
+		// We want to return the value from Close(), as it flushes the buffer and
+		// can fail.
 		return w.Close()
 	}
 	if err := writeFileData(); err != nil {
