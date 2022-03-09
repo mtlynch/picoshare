@@ -15,13 +15,15 @@ import (
 )
 
 const (
-	MaxUploadBytes = 25 * 1000 * 1000 * 1000
 	MaxFilenameLen = 100
 	FileLifetime   = 7 * 24 * time.Hour
 	EntryIDLength  = 14
 )
 
-var idCharacters = []rune("abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789")
+var (
+	maxUploadBytes = megabytesToBytes(750)
+	idCharacters   = []rune("abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789")
+)
 
 type EntryPostResponse struct {
 	ID string `json:"id"`
@@ -90,7 +92,7 @@ func parseEntryID(s string) (types.EntryID, error) {
 }
 
 func fileFromRequest(w http.ResponseWriter, r *http.Request) (io.Reader, types.Filename, error) {
-	r.Body = http.MaxBytesReader(w, r.Body, MaxUploadBytes)
+	r.Body = http.MaxBytesReader(w, r.Body, maxUploadBytes)
 	r.ParseMultipartForm(32 << 20)
 	file, metadata, err := r.FormFile("file")
 	if err != nil {
@@ -137,4 +139,8 @@ func parseExpiration(r *http.Request) (types.ExpirationTime, error) {
 	}
 
 	return types.ExpirationTime(expiration), nil
+}
+
+func megabytesToBytes(gb int) int64 {
+	return int64(gb) * 1000 * 1000
 }
