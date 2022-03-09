@@ -1,0 +1,45 @@
+#!/bin/bash
+
+# Exit build script on first failure.
+set -e
+
+# Exit on unset variable.
+set -u
+
+is_litestream_enabled() {
+  set +ux
+
+  local IS_ENABLED='false'
+
+  if [[ ! -z "${LITESTREAM_BUCKET}" ]]; then
+    IS_ENABLED='true';
+  fi
+
+  set -ux
+
+  echo "${IS_ENABLED}"
+}
+
+readonly IS_LITESTREAM_ENABLED="$(is_litestream_enabled)"
+
+# Echo commands to stdout.
+set -x
+
+if [[ "${IS_LITESTREAM_ENABLED}" == 'true' ]]; then
+  /app/litestream version
+
+  export readonly DB_PATH="/app/data/store.db"
+
+  # Restore database from S3.
+  /app/litestream restore -if-replica-exists -v "${DB_PATH}"
+
+  # Let Litestream start LogPaste as a child process
+  exec /app/litestream replicate \
+    -exec /app/picoshare
+    "${DB_PATH}" \
+    "${DB_REPLICA_URL}"
+else
+  echo "Starting without litestream"
+  # Start server.
+  /app/picoshare
+fi

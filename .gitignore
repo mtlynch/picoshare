@@ -3,3 +3,6 @@ bin/
 
 # Persistent data directory
 data/
+
+# Environment variables
+*.env
