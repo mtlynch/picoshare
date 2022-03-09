@@ -14,7 +14,7 @@ import (
 
 func TestInsertDeleteSingleEntry(t *testing.T) {
 	chunkSize := 5
-	db := sqlite.NewWithChunkSize("file::memory:?cache=shared", chunkSize)
+	db := sqlite.NewWithChunkSize("file:TestInsertDeleteSingleEntry?mode=memory&cache=shared", chunkSize)
 
 	if err := db.InsertEntry(bytes.NewBufferString("hello, world!"), types.UploadMetadata{
 		ID:       types.EntryID("dummy-id"),
@@ -74,7 +74,7 @@ func TestInsertDeleteSingleEntry(t *testing.T) {
 
 func TestReadLastByteOfEntry(t *testing.T) {
 	chunkSize := 5
-	db := sqlite.NewWithChunkSize("file::memory:?cache=shared", chunkSize)
+	db := sqlite.NewWithChunkSize("file:TestReadLastByteOfEntry?mode=memory&cache=shared", chunkSize)
 
 	if err := db.InsertEntry(bytes.NewBufferString("hello, world!"), types.UploadMetadata{
 		ID:       types.EntryID("dummy-id"),
