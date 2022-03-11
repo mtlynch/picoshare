@@ -4,6 +4,8 @@
 }
 
 #pastebox {
+  font-size: 0.95em;
   padding: 1rem;
   text-align: center;
+  caret-color: transparent;
 }
