@@ -28,7 +28,7 @@ const expirationTimes = {
   "30 days": dateInFuture(30),
   "1 year": dateInFuture(365),
 };
-const defaultExpiration = "7 days";
+const defaultExpiration = "30 days";
 for (const [k, v] of Object.entries(expirationTimes)) {
   const selectOption = document.createElement("option");
   selectOption.innerText = k;
