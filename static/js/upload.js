@@ -77,8 +77,6 @@ document
     doUpload(evt.target.files[0], expirationSelect.value);
   });
 
-resetPasteInstructions();
-
 uploadForm.addEventListener("drop", (evt) => {
   evt.preventDefault();
 
@@ -141,5 +139,9 @@ pasteEl.addEventListener("change", (evt) => {
 
 pasteEl.addEventListener("input", (evt) => {
   evt.preventDefault();
+  resetPasteInstructions();
+});
+
+document.addEventListener("DOMContentLoaded", function () {
   resetPasteInstructions();
 });
