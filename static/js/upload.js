@@ -16,6 +16,7 @@ function showElement(el) {
 
 const uploadEl = document.querySelector(".file");
 const resultEl = document.getElementById("upload-result");
+const pasteEl = document.getElementById("pastebox");
 const errorContainer = document.getElementById("error");
 const progressSpinner = document.getElementById("progress-spinner");
 const uploadForm = document.getElementById("upload-form");
@@ -66,6 +67,10 @@ function doUpload(file, expiration) {
     });
 }
 
+function resetPasteInstructions() {
+  pasteEl.value = "Or paste something here";
+}
+
 document
   .querySelector('.file-input[name="resume"]')
   .addEventListener("change", (evt) => {
@@ -103,4 +108,40 @@ uploadEl.addEventListener("dragenter", (evt) => {
 
 uploadEl.addEventListener("dragleave", (evt) => {
   uploadEl.classList.remove("accepting-drop");
+});
+
+pasteEl.addEventListener("paste", (evt) => {
+  for (const item of evt.clipboardData.items) {
+    if (item.kind === "string") {
+      item.getAsString((s) => {
+        const timestamp = new Date().toISOString().replaceAll(":", "");
+        doUpload(
+          new File([new Blob([s])], `pasted-${timestamp}.txt`),
+          expirationSelect.value
+        );
+      });
+      return;
+    }
+    const pastedFile = item.getAsFile();
+    if (!pastedFile) {
+      continue;
+    }
+
+    doUpload(pastedFile, expirationSelect.value);
+    return;
+  }
+});
+
+pasteEl.addEventListener("change", (evt) => {
+  evt.preventDefault();
+  resetPasteInstructions();
+});
+
+pasteEl.addEventListener("input", (evt) => {
+  evt.preventDefault();
+  resetPasteInstructions();
+});
+
+document.addEventListener("DOMContentLoaded", function () {
+  resetPasteInstructions();
 });
