@@ -147,4 +147,8 @@ pasteEl.addEventListener("input", (evt) => {
 document.addEventListener("DOMContentLoaded", function () {
   populateExpirationOptions();
   resetPasteInstructions();
+  // Set initial focus to paste element so that if the user pastes on page load,
+  // it pastes to the right place without them having to manually place the
+  // cursor in the right place.
+  pasteEl.focus();
 });
