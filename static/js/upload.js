@@ -16,6 +16,7 @@ function showElement(el) {
 
 const uploadEl = document.querySelector(".file");
 const resultEl = document.getElementById("upload-result");
+const pasteEl = document.getElementById("pastebox");
 const errorContainer = document.getElementById("error");
 const progressSpinner = document.getElementById("progress-spinner");
 const uploadForm = document.getElementById("upload-form");
@@ -103,4 +104,20 @@ uploadEl.addEventListener("dragenter", (evt) => {
 
 uploadEl.addEventListener("dragleave", (evt) => {
   uploadEl.classList.remove("accepting-drop");
+});
+
+pasteEl.addEventListener("paste", (evt) => {
+  for (const item of evt.clipboardData.items) {
+    console.log(item);
+    if (item.kind === "string") {
+      // TODO: handle plaintext
+      console.log("can't handle string yet");
+      continue;
+    }
+    const pastedFile = item.getAsFile();
+    if (!pastedFile) {
+      return;
+    }
+    doUpload(pastedFile, expirationSelect.value);
+  }
 });

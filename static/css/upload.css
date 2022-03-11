@@ -2,3 +2,8 @@
 .file.accepting-drop .file-cta {
   background: #dbf5ff;
 }
+
+#pastebox {
+  padding: 1rem;
+  text-align: center;
+}
