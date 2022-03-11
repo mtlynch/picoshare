@@ -1,5 +1,14 @@
 import { uploadFile } from "./controllers/upload.js";
 
+const uploadEl = document.querySelector(".file");
+const resultEl = document.getElementById("upload-result");
+const pasteEl = document.getElementById("pastebox");
+const errorContainer = document.getElementById("error");
+const progressSpinner = document.getElementById("progress-spinner");
+const uploadForm = document.getElementById("upload-form");
+const expirationContainer = document.querySelector(".expiration-container");
+const expirationSelect = document.getElementById("expiration-select");
+
 function dateInFuture(daysFromNow) {
   let d = new Date();
   d.setDate(d.getDate() + daysFromNow);
@@ -14,30 +23,23 @@ function showElement(el) {
   el.classList.remove("is-hidden");
 }
 
-const uploadEl = document.querySelector(".file");
-const resultEl = document.getElementById("upload-result");
-const pasteEl = document.getElementById("pastebox");
-const errorContainer = document.getElementById("error");
-const progressSpinner = document.getElementById("progress-spinner");
-const uploadForm = document.getElementById("upload-form");
-
-const expirationContainer = document.querySelector(".expiration-container");
-const expirationSelect = document.getElementById("expiration-select");
-const expirationTimes = {
-  "1 day": dateInFuture(1),
-  "7 days": dateInFuture(7),
-  "30 days": dateInFuture(30),
-  "1 year": dateInFuture(365),
-};
-const defaultExpiration = "30 days";
-for (const [k, v] of Object.entries(expirationTimes)) {
-  const selectOption = document.createElement("option");
-  selectOption.innerText = k;
-  selectOption.value = v.toISOString();
-  if (k === defaultExpiration) {
-    selectOption.selected = true;
+function populateExpirationOptions() {
+  const expirationTimes = {
+    "1 day": dateInFuture(1),
+    "7 days": dateInFuture(7),
+    "30 days": dateInFuture(30),
+    "1 year": dateInFuture(365),
+  };
+  const defaultExpiration = "30 days";
+  for (const [k, v] of Object.entries(expirationTimes)) {
+    const selectOption = document.createElement("option");
+    selectOption.innerText = k;
+    selectOption.value = v.toISOString();
+    if (k === defaultExpiration) {
+      selectOption.selected = true;
+    }
+    expirationSelect.appendChild(selectOption);
   }
-  expirationSelect.appendChild(selectOption);
 }
 
 function doUpload(file, expiration) {
@@ -143,5 +145,6 @@ pasteEl.addEventListener("input", (evt) => {
 });
 
 document.addEventListener("DOMContentLoaded", function () {
+  populateExpirationOptions();
   resetPasteInstructions();
 });
