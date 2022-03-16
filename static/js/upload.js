@@ -42,6 +42,10 @@ function populateExpirationOptions() {
   }
 }
 
+function stripTrailingSlash(str) {
+  return str.endsWith("/") ? str.slice(0, -1) : str;
+}
+
 function doUpload(file, expiration) {
   hideElement(errorContainer);
   hideElement(uploadForm);
@@ -52,8 +56,11 @@ function doUpload(file, expiration) {
 
       const aEl = document.createElement("a");
 
-      aEl.href = `/!${entryId}`;
-      aEl.innerText = `${document.location.href}!${entryId}`;
+      const filenameEncoded = encodeURIComponent(file.name);
+      const route = `/!${entryId}/${filenameEncoded}`;
+
+      aEl.href = route;
+      aEl.innerText = `${stripTrailingSlash(document.location.href)}${route}`;
 
       resultEl.appendChild(aEl);
       uploadEl.style.display = "none";
