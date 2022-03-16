@@ -36,7 +36,7 @@ func (s Server) entryPost() http.HandlerFunc {
 			return
 		}
 
-		reader, filename, err := fileFromRequest(w, r)
+		reader, filename, contentType, err := fileFromRequest(w, r)
 		if err != nil {
 			log.Printf("error reading body: %v", err)
 			http.Error(w, fmt.Sprintf("can't read request body: %s", err), http.StatusBadRequest)
@@ -46,10 +46,11 @@ func (s Server) entryPost() http.HandlerFunc {
 		id := generateEntryID()
 		err = s.store.InsertEntry(reader,
 			types.UploadMetadata{
-				Filename: filename,
-				ID:       id,
-				Uploaded: time.Now(),
-				Expires:  types.ExpirationTime(expiration),
+				Filename:    filename,
+				ContentType: contentType,
+				ID:          id,
+				Uploaded:    time.Now(),
+				Expires:     types.ExpirationTime(expiration),
 			})
 		if err != nil {
 			log.Printf("failed to save entry: %v", err)
@@ -89,20 +90,25 @@ func parseEntryID(s string) (types.EntryID, error) {
 	return types.EntryID(s), nil
 }
 
-func fileFromRequest(w http.ResponseWriter, r *http.Request) (io.Reader, types.Filename, error) {
+func fileFromRequest(w http.ResponseWriter, r *http.Request) (io.Reader, types.Filename, types.ContentType, error) {
 	r.Body = http.MaxBytesReader(w, r.Body, MaxUploadBytes)
 	r.ParseMultipartForm(32 << 20)
 	file, metadata, err := r.FormFile("file")
 	if err != nil {
-		return nil, "", err
+		return nil, "", "", err
 	}
 
 	filename, err := parseFilename(metadata.Filename)
 	if err != nil {
-		return nil, "", err
+		return nil, "", "", err
 	}
 
-	return file, filename, nil
+	contentType, err := parseContentType(metadata.Header.Get("Content-Type"))
+	if err != nil {
+		return nil, "", "", err
+	}
+
+	return file, filename, contentType, nil
 }
 
 func parseFilename(s string) (types.Filename, error) {
@@ -116,6 +122,13 @@ func parseFilename(s string) (types.Filename, error) {
 		return types.Filename(""), errors.New("illegal characters in filename")
 	}
 	return types.Filename(s), nil
+}
+
+func parseContentType(s string) (types.ContentType, error) {
+
+	// TODO: Sanity check content type more.
+
+	return types.ContentType(s), nil
 }
 
 func parseExpiration(r *http.Request) (types.ExpirationTime, error) {
