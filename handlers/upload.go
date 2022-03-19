@@ -101,7 +101,7 @@ func parseEntryID(s string) (types.EntryID, error) {
 func fileFromRequest(w http.ResponseWriter, r *http.Request) (fileUpload, error) {
 	r.Body = http.MaxBytesReader(w, r.Body, MaxUploadBytes)
 	r.ParseMultipartForm(32 << 20)
-	file, metadata, err := r.FormFile("file")
+	reader, metadata, err := r.FormFile("file")
 	if err != nil {
 		return fileUpload{}, err
 	}
@@ -117,7 +117,7 @@ func fileFromRequest(w http.ResponseWriter, r *http.Request) (fileUpload, error)
 	}
 
 	return fileUpload{
-		Reader:      file,
+		Reader:      reader,
 		Filename:    filename,
 		ContentType: contentType,
 	}, nil
