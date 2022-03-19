@@ -32,6 +32,8 @@ func (s Server) entryGet() http.HandlerFunc {
 			w.Header().Set("Content-Disposition", fmt.Sprintf(`filename="%s"`, entry.Filename))
 		}
 
+		w.Header().Set("Content-Type", string(entry.ContentType))
+
 		http.ServeContent(w, r, string(entry.Filename), entry.Uploaded, entry.Reader)
 	}
 }
