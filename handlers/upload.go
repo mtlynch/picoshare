@@ -18,7 +18,7 @@ const (
 	MaxUploadBytes = 500 * 1000 * 1000
 	MaxFilenameLen = 100
 	FileLifetime   = 7 * 24 * time.Hour
-	EntryIDLength  = 14
+	EntryIDLength  = 8
 )
 
 var idCharacters = []rune("abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789")

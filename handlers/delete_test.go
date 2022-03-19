@@ -17,12 +17,12 @@ func TestDeleteExistingFile(t *testing.T) {
 	dataStore := sqlite_test.New()
 	dataStore.InsertEntry(makeData("dummy data"),
 		types.UploadMetadata{
-			ID: types.EntryID("hR87apiUCjTV9E"),
+			ID: types.EntryID("hR87apiE"),
 		})
 
 	s := handlers.New(mockAuthenticator{}, dataStore)
 
-	req, err := http.NewRequest("DELETE", "/api/entry/hR87apiUCjTV9E", nil)
+	req, err := http.NewRequest("DELETE", "/api/entry/hR87apiE", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -35,9 +35,9 @@ func TestDeleteExistingFile(t *testing.T) {
 			status, http.StatusOK)
 	}
 
-	_, err = dataStore.GetEntry(types.EntryID("hR87apiUCjTV9E"))
+	_, err = dataStore.GetEntry(types.EntryID("hR87apiE"))
 	if _, ok := err.(store.EntryNotFoundError); !ok {
-		t.Fatalf("expected entry %v to be deleted", types.EntryID("hR87apiUCjTV9E"))
+		t.Fatalf("expected entry %v to be deleted", types.EntryID("hR87apiE"))
 	}
 }
 
@@ -46,7 +46,7 @@ func TestDeleteNonExistentFile(t *testing.T) {
 
 	s := handlers.New(mockAuthenticator{}, dataStore)
 
-	req, err := http.NewRequest("DELETE", "/api/entry/hR87apiUCjTV9E", nil)
+	req, err := http.NewRequest("DELETE", "/api/entry/hR87apiE", nil)
 	if err != nil {
 		t.Fatal(err)
 	}

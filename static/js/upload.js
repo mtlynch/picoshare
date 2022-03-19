@@ -50,12 +50,12 @@ function doUpload(file, expiration) {
     .then((res) => {
       const entryId = res.id;
 
-      const aEl = document.createElement("a");
+      const uploadLinksEl = document.createElement("upload-links");
+      uploadLinksEl.fileId = entryId;
+      uploadLinksEl.filename = file.name;
+      resultEl.append(uploadLinksEl);
+      showElement(resultEl);
 
-      aEl.href = `/!${entryId}`;
-      aEl.innerText = `${document.location.href}!${entryId}`;
-
-      resultEl.appendChild(aEl);
       uploadEl.style.display = "none";
       expirationContainer.style.display = "none";
     })
