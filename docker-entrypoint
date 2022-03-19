@@ -33,7 +33,7 @@ if [[ "${IS_LITESTREAM_ENABLED}" == 'true' ]]; then
   # Restore database from S3.
   /app/litestream restore -if-replica-exists -v "${DB_PATH}"
 
-  # Let Litestream start LogPaste as a child process
+  # Let Litestream start PicoShare as a child process
   exec /app/litestream replicate \
     -exec /app/picoshare
     "${DB_PATH}"
