@@ -16,7 +16,11 @@ cd "${SCRIPT_DIR}/.."
 DOCKER_BUILDKIT=1 \
   docker build -t picoshare .
 
-. prod.env
+set +x
+. dev.env
+set -x
+
+PS_SHARED_SECRET=somepassword
 
 docker rm -f picoshare || true
 

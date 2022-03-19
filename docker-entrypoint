@@ -40,7 +40,7 @@ if [[ "${IS_LITESTREAM_ENABLED}" == 'true' ]]; then
 
   # Let Litestream start PicoShare as a child process
   exec /app/litestream replicate \
-    -exec /app/picoshare
+    -exec "/app/picoshare -db ${DB_PATH}"
     "${DB_PATH}"
 else
   echo "Starting without litestream"
