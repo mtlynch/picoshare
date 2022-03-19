@@ -42,6 +42,7 @@ func NewWithChunkSize(path string, chunkSize int) store.Store {
 		`CREATE TABLE IF NOT EXISTS entries (
 			id TEXT PRIMARY KEY,
 			filename TEXT,
+			content_type TEXT,
 			upload_time TEXT,
 			expiration_time TEXT
 			)`,
@@ -70,6 +71,7 @@ func (d db) GetEntriesMetadata() ([]types.UploadMetadata, error) {
 	SELECT
 		entries.id AS id,
 		entries.filename AS filename,
+		entries.content_type AS content_type,
 		entries.upload_time AS upload_time,
 		entries.expiration_time AS expiration_time,
 		sizes.file_size AS file_size
@@ -93,10 +95,11 @@ func (d db) GetEntriesMetadata() ([]types.UploadMetadata, error) {
 	for rows.Next() {
 		var id string
 		var filename string
+		var contentType string
 		var uploadTimeRaw string
 		var expirationTimeRaw string
 		var fileSize int
-		err = rows.Scan(&id, &filename, &uploadTimeRaw, &expirationTimeRaw, &fileSize)
+		err = rows.Scan(&id, &filename, &contentType, &uploadTimeRaw, &expirationTimeRaw, &fileSize)
 		if err != nil {
 			return []types.UploadMetadata{}, err
 		}
@@ -112,11 +115,12 @@ func (d db) GetEntriesMetadata() ([]types.UploadMetadata, error) {
 		}
 
 		ee = append(ee, types.UploadMetadata{
-			ID:       types.EntryID(id),
-			Filename: types.Filename(filename),
-			Uploaded: ut,
-			Expires:  types.ExpirationTime(et),
-			Size:     fileSize,
+			ID:          types.EntryID(id),
+			Filename:    types.Filename(filename),
+			ContentType: types.ContentType(contentType),
+			Uploaded:    ut,
+			Expires:     types.ExpirationTime(et),
+			Size:        fileSize,
 		})
 	}
 
@@ -127,6 +131,7 @@ func (d db) GetEntry(id types.EntryID) (types.UploadEntry, error) {
 	stmt, err := d.ctx.Prepare(`
 		SELECT
 			filename,
+			content_type,
 			upload_time,
 			expiration_time
 		FROM
@@ -142,9 +147,10 @@ func (d db) GetEntry(id types.EntryID) (types.UploadEntry, error) {
 	defer stmt.Close()
 
 	var filename string
+	var contentType string
 	var uploadTimeRaw string
 	var expirationTimeRaw string
-	err = stmt.QueryRow(id).Scan(&filename, &uploadTimeRaw, &expirationTimeRaw)
+	err = stmt.QueryRow(id).Scan(&filename, &contentType, &uploadTimeRaw, &expirationTimeRaw)
 	if err == sql.ErrNoRows {
 		return types.UploadEntry{}, store.EntryNotFoundError{ID: id}
 	} else if err != nil {
@@ -168,10 +174,11 @@ func (d db) GetEntry(id types.EntryID) (types.UploadEntry, error) {
 
 	return types.UploadEntry{
 		UploadMetadata: types.UploadMetadata{
-			ID:       id,
-			Filename: types.Filename(filename),
-			Uploaded: ut,
-			Expires:  types.ExpirationTime(et),
+			ID:          id,
+			Filename:    types.Filename(filename),
+			ContentType: types.ContentType(contentType),
+			Uploaded:    ut,
+			Expires:     types.ExpirationTime(et),
 		},
 		Reader: r,
 	}, nil
@@ -190,10 +197,11 @@ func (d db) InsertEntry(reader io.Reader, metadata types.UploadMetadata) error {
 	(
 		id,
 		filename,
+		content_type,
 		upload_time,
 		expiration_time
 	)
-	VALUES(?,?,?,?)`, metadata.ID, metadata.Filename, formatTime(metadata.Uploaded), formatTime(time.Time(metadata.Expires)))
+	VALUES(?,?,?,?,?)`, metadata.ID, metadata.Filename, metadata.ContentType, formatTime(metadata.Uploaded), formatTime(time.Time(metadata.Expires)))
 	if err != nil {
 		return err
 	}

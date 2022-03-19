@@ -17,7 +17,7 @@ import (
 const (
 	MaxFilenameLen = 100
 	FileLifetime   = 7 * 24 * time.Hour
-	EntryIDLength  = 14
+	EntryIDLength  = 8
 )
 
 var (
@@ -25,9 +25,17 @@ var (
 	idCharacters   = []rune("abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789")
 )
 
-type EntryPostResponse struct {
-	ID string `json:"id"`
-}
+type (
+	EntryPostResponse struct {
+		ID string `json:"id"`
+	}
+
+	fileUpload struct {
+		Reader      io.Reader
+		Filename    types.Filename
+		ContentType types.ContentType
+	}
+)
 
 func (s Server) entryPost() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -38,7 +46,7 @@ func (s Server) entryPost() http.HandlerFunc {
 			return
 		}
 
-		reader, filename, err := fileFromRequest(w, r)
+		uploadedFile, err := fileFromRequest(w, r)
 		if err != nil {
 			log.Printf("error reading body: %v", err)
 			http.Error(w, fmt.Sprintf("can't read request body: %s", err), http.StatusBadRequest)
@@ -46,12 +54,13 @@ func (s Server) entryPost() http.HandlerFunc {
 		}
 
 		id := generateEntryID()
-		err = s.store.InsertEntry(reader,
+		err = s.store.InsertEntry(uploadedFile.Reader,
 			types.UploadMetadata{
-				Filename: filename,
-				ID:       id,
-				Uploaded: time.Now(),
-				Expires:  types.ExpirationTime(expiration),
+				Filename:    uploadedFile.Filename,
+				ContentType: uploadedFile.ContentType,
+				ID:          id,
+				Uploaded:    time.Now(),
+				Expires:     types.ExpirationTime(expiration),
 			})
 		if err != nil {
 			log.Printf("failed to save entry: %v", err)
@@ -91,20 +100,29 @@ func parseEntryID(s string) (types.EntryID, error) {
 	return types.EntryID(s), nil
 }
 
-func fileFromRequest(w http.ResponseWriter, r *http.Request) (io.Reader, types.Filename, error) {
+func fileFromRequest(w http.ResponseWriter, r *http.Request) (fileUpload, error) {
 	r.Body = http.MaxBytesReader(w, r.Body, maxUploadBytes)
 	r.ParseMultipartForm(32 << 20)
-	file, metadata, err := r.FormFile("file")
+	reader, metadata, err := r.FormFile("file")
 	if err != nil {
-		return nil, "", err
+		return fileUpload{}, err
 	}
 
 	filename, err := parseFilename(metadata.Filename)
 	if err != nil {
-		return nil, "", err
+		return fileUpload{}, err
 	}
 
-	return file, filename, nil
+	contentType, err := parseContentType(metadata.Header.Get("Content-Type"))
+	if err != nil {
+		return fileUpload{}, err
+	}
+
+	return fileUpload{
+		Reader:      reader,
+		Filename:    filename,
+		ContentType: contentType,
+	}, nil
 }
 
 func parseFilename(s string) (types.Filename, error) {
@@ -118,6 +136,12 @@ func parseFilename(s string) (types.Filename, error) {
 		return types.Filename(""), errors.New("illegal characters in filename")
 	}
 	return types.Filename(s), nil
+}
+
+func parseContentType(s string) (types.ContentType, error) {
+	// The content type header is fairly open-ended, so we're liberal in what
+	// values we accept.
+	return types.ContentType(s), nil
 }
 
 func parseExpiration(r *http.Request) (types.ExpirationTime, error) {

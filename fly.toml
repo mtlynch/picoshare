@@ -8,6 +8,8 @@ processes = []
   PORT = "8080"
   PS_BEHIND_PROXY="yes"
   PS_SHARED_SECRET="tmpdbg"
+  LITESTREAM_BUCKET="picoshare-litestream"
+  LITESTREAM_ENDPOINT="s3.us-west-002.backblazeb2.com"
 
 [experimental]
   allowed_public_ports = []

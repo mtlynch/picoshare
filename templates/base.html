@@ -1,11 +1,11 @@
-{{define "base"}}
+{{ define "base" }}
 <!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width,initial-scale=1.0" />
-    <title>{{.Title}}</title>
+    <title>{{ .Title }}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -15,12 +15,13 @@
     <link rel="stylesheet" type="text/css" href="/third-party/bulma@0.9.3/bulma.min.css" />
     <link href="/third-party/fontawesome6/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" type="text/css" href="/css/style.css" />
-    {{template "style-tags" .}}
+    {{ template "style-tags" . }}
     <script type="module" src="/js/navbar.js"></script>
-    {{template "script-tags" .}}
+    {{ template "script-tags" . }}
   </head>
 
   <body>
+    {{ template "custom-elements" . }}
     <noscript>
       <strong
         >We're sorry but client doesn't work properly without JavaScript
@@ -28,13 +29,13 @@
       >
     </noscript>
 
-    {{template "navbar" .}}
+    {{ template "navbar" . }}
 
     <section class="section">
       <div class="content container">
-        {{template "content" .}}
+        {{ template "content" . }}
       </div>
     </section>
   </body>
 </html>
-{{end}}
+{{ end }}

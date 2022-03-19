@@ -1,0 +1,48 @@
+#!/bin/bash
+
+# Exit build script on first failure.
+set -e
+
+# Exit on unset variable.
+set -u
+
+is_litestream_enabled() {
+  set +ux
+
+  local IS_ENABLED='false'
+
+  if [[ ! -z "${LITESTREAM_BUCKET}" ]]; then
+    IS_ENABLED='true';
+  fi
+
+  set -ux
+
+  echo "${IS_ENABLED}"
+}
+
+readonly IS_LITESTREAM_ENABLED="$(is_litestream_enabled)"
+
+# Echo commands to stdout.
+set -x
+
+if [[ "${IS_LITESTREAM_ENABLED}" == 'true' ]]; then
+  /app/litestream version
+
+  export readonly DB_PATH="/data/store.db"
+
+  if [[ -f "$DB_PATH" ]]; then
+    echo "Existing database is $(stat -c %s ${DB_PATH}) bytes"
+  else
+    echo "No existing database found"
+    # Restore database from remote storage.
+    /app/litestream restore -if-replica-exists -v "${DB_PATH}"
+  fi
+
+  # Let Litestream start PicoShare as a child process
+  exec /app/litestream replicate \
+    -exec "/app/picoshare -db ${DB_PATH}"
+else
+  echo "Starting without litestream"
+  # Start server.
+  /app/picoshare
+fi
