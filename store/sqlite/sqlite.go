@@ -30,7 +30,7 @@ func New(path string) store.Store {
 }
 
 // NewWithChunkSize creates a SQLite-based datastore with the user-specified
-// chunk size for writing files. This is primarily for testing.
+// chunk size for writing files. Most callers should just use New().
 func NewWithChunkSize(path string, chunkSize int) store.Store {
 	log.Printf("reading DB from %s", path)
 	ctx, err := sql.Open("sqlite3", path)
