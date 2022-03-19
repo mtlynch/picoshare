@@ -9,7 +9,10 @@ it("uploads a file", () => {
   cy.location("pathname").should("eq", "/");
 
   cy.get(".file-input").attachFile("kittyface.jpg");
-  cy.get("#upload-result a").should("be.visible");
+  cy.get("#upload-result upload-links").should("be.visible");
+  cy.get("#upload-result upload-links")
+    .should("have.attr", "filename")
+    .and("equal", "kittyface.jpg");
 
   cy.get('.navbar a[href="/files"]').click();
   cy.get('.table td[test-data-id="filename"]').should(
