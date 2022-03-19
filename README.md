@@ -39,9 +39,9 @@ docker run \
 
 ### From Docker + cloud data replication
 
-If you specify settings for an S3 bucket, LogPaste will use [Litestream](https://litestream.io/) to automatically replicate your data to S3.
+If you specify settings for a [Litestream](https://litestream.io/)-compatible cloud storage location, PicoShare will automatically replicate your data.
 
-You can kill the container and start it later, and it will restore your data from the S3 bucket and continue as if there was no interruption.
+You can kill the container and start it later, and PicoShare will restore your data from the cloud storage location and continue as if there was no interruption.
 
 ```bash
 LITESTREAM_BUCKET=YOUR-LITESTREAM-BUCKET
@@ -60,10 +60,10 @@ docker run \
   mtlynch/picoshare
 ```
 
-Some notes:
+Notes:
 
-- Only run one Docker container for each Litestream location
-  - LogPaste can't sync writes across multiple instances.
+- Only run one Docker container for each Litestream location.
+  - PicoShare can't sync writes across multiple instances.
 
 ## Parameters
 
