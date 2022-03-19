@@ -137,9 +137,8 @@ func parseFilename(s string) (types.Filename, error) {
 }
 
 func parseContentType(s string) (types.ContentType, error) {
-
-	// TODO: Sanity check content type more.
-
+	// The content type header is fairly open-ended, so we're liberal in what
+	// values we accept.
 	return types.ContentType(s), nil
 }
 
