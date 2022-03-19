@@ -54,13 +54,20 @@ function doUpload(file, expiration) {
     .then((res) => {
       const entryId = res.id;
 
+      const uploadLinksEl = document.createElement("upload-links");
+      resultEl.append(uploadLinksEl);
+
       const aEl = document.createElement("a");
 
+      const baseUrl = stripTrailingSlash(document.location.href);
       const filenameEncoded = encodeURIComponent(file.name);
-      const route = `/!${entryId}/${filenameEncoded}`;
 
-      aEl.href = route;
-      aEl.innerText = `${stripTrailingSlash(document.location.href)}${route}`;
+      const shortRoute = `/!${entryId}`;
+
+      //const verboseRoute = `/!${entryId}/${filenameEncoded}`;
+
+      aEl.href = shortRoute;
+      aEl.innerText = `${baseUrl}${shortRoute}`;
 
       resultEl.appendChild(aEl);
       uploadEl.style.display = "none";

@@ -6,7 +6,11 @@
 <script type="module" src="/js/upload.js"></script>
 {{ end }}
 
-{{ define "content" }}
+{{ define "custom-elements" }}
+{{ template "upload-result.html" }}
+{{ end }}
+
+{{define "content"}}
 <h1 class="title">Upload</h1>
 
 <div id="upload-form">
