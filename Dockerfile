@@ -21,7 +21,7 @@ RUN GOOS=linux GOARCH=amd64 \
 
 FROM debian:stable-20211011-slim AS litestream_downloader
 
-ARG litestream_version="v0.3.7"
+ARG litestream_version="v0.3.8"
 ARG litestream_binary_tgz_filename="litestream-${litestream_version}-linux-amd64-static.tar.gz"
 
 WORKDIR /litestream
