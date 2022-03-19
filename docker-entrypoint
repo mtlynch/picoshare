@@ -30,8 +30,16 @@ if [[ "${IS_LITESTREAM_ENABLED}" == 'true' ]]; then
 
   export readonly DB_PATH="/app/data/store.db"
 
+  if [[ -f "$DB_PATH" ]]; then
+    echo "Existing database is $(stat --printf="%s" ${DB_PATH}) bytes"
+  else
+    echo "No existing database found"
+  fi
+
   # Restore database from S3.
   /app/litestream restore -if-replica-exists -v "${DB_PATH}"
+
+  echo "After syncing, database is $(stat --printf="%s" ${DB_PATH}) bytes"
 
   # Let Litestream start PicoShare as a child process
   exec /app/litestream replicate \
