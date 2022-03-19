@@ -137,10 +137,7 @@ func (d db) GetEntry(id types.EntryID) (types.UploadEntry, error) {
 		FROM
 			entries
 		WHERE
-			id=? AND
-			-- TODO: Purge expired records instead of filtering them here.
-			expiration_time >= strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
-			`)
+			id=?`)
 	if err != nil {
 		return types.UploadEntry{}, err
 	}
