@@ -7,7 +7,7 @@
 {{ end }}
 
 {{ define "custom-elements" }}
-{{ template "upload-result.html" }}
+{{ template "upload-links.html" }}
 {{ end }}
 
 {{define "content"}}
@@ -45,7 +45,13 @@
   <i class="fas fa-spinner fa-spin"></i>
 </div>
 
-<div id="upload-result"></div>
+<div id="upload-result" class="is-hidden">
+  <article class="message is-primary">
+    <div class="message-body">
+      Upload complete!
+    </div>
+  </article>
+</div>
 
 <div id="error" class="is-hidden my-3">
   <article class="message is-danger">

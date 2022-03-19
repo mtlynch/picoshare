@@ -1,0 +1,78 @@
+<template id="upload-links-template">
+  <style>
+    @import "/third-party/bulma@0.9.3/bulma.min.css";
+
+    .box a + p {
+      margin-top: 1rem;
+      color: #696969;
+    }
+  </style>
+  <div class="box">
+    <a id="verbose-link"></a>
+    <p>Full Link</p>
+  </div>
+  <div class="box">
+    <a id="short-link"></a>
+    <p>Shortlink</p>
+  </div>
+</template>
+
+<script type="module">
+  (function () {
+    function stripTrailingSlash(str) {
+      return str.endsWith("/") ? str.slice(0, -1) : str;
+    }
+
+    const template = document.querySelector("#upload-links-template");
+
+    customElements.define(
+      "upload-links",
+      class extends HTMLElement {
+        connectedCallback() {
+          this.attachShadow({ mode: "open" }).appendChild(
+            template.content.cloneNode(true)
+          );
+          this.resetLinks();
+        }
+
+        get fileId() {
+          return this.getAttribute("file-id");
+        }
+
+        set fileId(newValue) {
+          this.setAttribute("file-id", newValue);
+          this.resetLinks();
+        }
+
+        get filename() {
+          return this.getAttribute("filename");
+        }
+
+        set filename(newValue) {
+          this.setAttribute("filename", newValue);
+          this.resetLinks();
+        }
+
+        resetLinks() {
+          // Verify the element has been attached to the DOM.
+          if (!this.shadowRoot) {
+            return;
+          }
+
+          const baseUrl = stripTrailingSlash(document.location.href);
+          const filenameEncoded = encodeURIComponent(this.filename);
+          const shortRoute = `/!${this.fileId}`;
+          const verboseRoute = `${shortRoute}/${filenameEncoded}`;
+
+          const shortLinkEl = this.shadowRoot.getElementById("short-link");
+          shortLinkEl.innerText = baseUrl + shortRoute;
+          shortLinkEl.href = shortRoute;
+
+          const verboseLinkEl = this.shadowRoot.getElementById("verbose-link");
+          verboseLinkEl.innerText = baseUrl + verboseRoute;
+          verboseLinkEl.href = verboseRoute;
+        }
+      }
+    );
+  })();
+</script>

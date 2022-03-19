@@ -3,6 +3,7 @@ package handlers
 import (
 	"fmt"
 	"html/template"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"path"
@@ -105,19 +106,27 @@ func renderTemplate(w http.ResponseWriter, templateFilename string, templateVars
 	const baseTemplate = "base"
 	const baseTemplateFilename = "base.html"
 	const navbarTemplateFilename = "navbar.html"
-	customElementsDir := path.Join(templatesRootDir, "custom-elements")
 
-	log.Print(path.Join(templatesRootDir, templateFilename))
-	log.Print(path.Join(customElementsDir, "upload-result.html"))
+	customElementsDir := path.Join(templatesRootDir, "custom-elements")
+	customElementFiles, err := ioutil.ReadDir(customElementsDir)
+	if err != nil {
+		return err
+	}
+
+	customElements := []string{}
+	for _, ce := range customElementFiles {
+		customElements = append(customElements, path.Join(customElementsDir, ce.Name()))
+	}
+
+	templateFiles := []string{}
+	templateFiles = append(templateFiles, path.Join(templatesRootDir, templateFilename))
+	templateFiles = append(templateFiles, path.Join(templatesRootDir, baseTemplateFilename))
+	templateFiles = append(templateFiles, path.Join(templatesRootDir, navbarTemplateFilename))
+	templateFiles = append(templateFiles, path.Join(templatesRootDir, navbarTemplateFilename))
+	templateFiles = append(templateFiles, customElements...)
 
 	t := template.Must(template.New(templateFilename).Funcs(funcMap).
-		ParseFiles(
-			path.Join(templatesRootDir, templateFilename),
-			path.Join(templatesRootDir, baseTemplateFilename),
-			path.Join(templatesRootDir, navbarTemplateFilename),
-			path.Join(templatesRootDir, navbarTemplateFilename),
-			path.Join(customElementsDir, "upload-result.html"),
-		))
+		ParseFiles(templateFiles...))
 	if err := t.ExecuteTemplate(w, baseTemplate, templateVars); err != nil {
 		return err
 	}
