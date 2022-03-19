@@ -1,12 +1,12 @@
-{{define "style-tags"}}
+{{ define "style-tags" }}
 <link rel="stylesheet" type="text/css" href="/css/file-index.css" />
-{{end}}
+{{ end }}
 
-{{define "script-tags"}}
+{{ define "script-tags" }}
 <script type="module" src="/js/fileIndex.js"></script>
-{{end}}
+{{ end }}
 
-{{define "content"}}
+{{ define "content" }}
 <h1 class="title">Files</h1>
 
 <table class="table">
@@ -31,6 +31,6 @@
     {{ end }}
   </tbody>
 </table>
-{{end}}
+{{ end }}
 
-{{template "base.html"}}
+{{ template "base.html" }}

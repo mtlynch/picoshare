@@ -1,11 +1,11 @@
-{{define "style-tags"}}
-{{end}}
+{{ define "style-tags" }}
+{{ end }}
 
-{{define "script-tags"}}
+{{ define "script-tags" }}
 <script type="module" src="/js/auth.js"></script>
-{{end}}
+{{ end }}
 
-{{define "content"}}
+{{ define "content" }}
 <h1 class="title">Log In</h1>
 
 <form id="auth-form" class="mb-2" action="/auth">
@@ -34,6 +34,6 @@
     <div id="error-message" class="message-body">Placeholder error.</div>
   </article>
 </div>
-{{end}}
+{{ end }}
 
-{{template "base.html"}}
+{{ template "base.html" }}
