@@ -1,0 +1,42 @@
+<template id="upload-links-template">
+  <style></style>
+  <p>Link: <span id="verbose-link"></span></p>
+  <p>Shortlink: <span id="short-link"></span></p>
+</template>
+
+<script type="module">
+  (function () {
+    const template = document.querySelector("#upload-links-template");
+
+    customElements.define(
+      "upload-links",
+      class extends HTMLElement {
+        constructor() {
+          super();
+        }
+
+        connectedCallback() {
+          this.attachShadow({ mode: "open" }).appendChild(
+            template.content.cloneNode(true)
+          );
+        }
+
+        get shortRoute() {
+          return this.getAttribute("short-route");
+        }
+
+        set shortRoute(newValue) {
+          this.setAttribute("short-route", newValue);
+        }
+
+        get verboseRoute() {
+          return this.getAttribute("verbose-route");
+        }
+
+        set verboseRoute(newValue) {
+          this.setAttribute("verbose-route", newValue);
+        }
+      }
+    );
+  })();
+</script>
