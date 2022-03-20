@@ -47,9 +47,12 @@ func (fr *fileReader) Read(p []byte) (int, error) {
 		n, err := fr.buf.Read(p[read:])
 		read += n
 		if err == io.EOF {
+			// If we've reached the end of the buffer, then we've read the full file.
 			if int(fr.offset) == fr.fileLength {
 				return read, io.EOF
 			}
+			// Otherwise, repopulate the buffer with the underlying SQLite DB and
+			// continue reading.
 			err = fr.populateBuffer()
 			if err != nil {
 				return read, err
@@ -65,7 +68,9 @@ func (fr *fileReader) Read(p []byte) (int, error) {
 }
 
 func (fr *fileReader) Seek(offset int64, whence int) (int64, error) {
+	// Seeking to a new position invalidates the buffer, so reset to zero.
 	fr.buf = bytes.NewBuffer([]byte{})
+
 	switch whence {
 	case io.SeekStart:
 		fr.offset = offset
