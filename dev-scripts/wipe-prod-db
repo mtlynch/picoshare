@@ -28,7 +28,7 @@ flyctl scale count 0 --app "${FLY_APP_NAME}"
 
 # Reset the fly.io volume.
 VOLUME_ID="$(fly volumes list | grep "${FLY_VOLUME_NAME}" | awk '{print $1;}')"
-flyctl volumes delete "${VOLUME_ID}"
+flyctl volumes delete "${VOLUME_ID}" --yes
 
 VOLUME_SIZE_IN_GB=3
 FLY_REGION="iad"
