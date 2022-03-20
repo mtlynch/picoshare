@@ -14,6 +14,8 @@ type writer struct {
 	written int
 }
 
+// Create a new writer for the entry ID using the given SqlTx and splitting the
+// file into separate rows in the DB of at most chunkSize bytes.
 func NewWriter(tx wrapped.SqlTx, id types.EntryID, chunkSize int) io.WriteCloser {
 	return &writer{
 		tx:      tx,
@@ -22,6 +24,7 @@ func NewWriter(tx wrapped.SqlTx, id types.EntryID, chunkSize int) io.WriteCloser
 	}
 }
 
+// Write writes a buffer to the SQLite database.
 func (w *writer) Write(p []byte) (int, error) {
 	n := 0
 

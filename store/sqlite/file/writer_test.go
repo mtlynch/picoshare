@@ -36,12 +36,14 @@ func (db *mockSqlTx) Exec(query string, args ...interface{}) (sql.Result, error)
 func TestWriteFile(t *testing.T) {
 	tests := []struct {
 		explanation  string
+		id           types.EntryID
 		data         []byte
 		chunkSize    int
 		rowsExpected []mockChunkRow
 	}{
 		{
 			explanation: "data is smaller than chunk size",
+			id:          types.EntryID("dummy-id"),
 			data:        []byte("hello, world!"),
 			chunkSize:   25,
 			rowsExpected: []mockChunkRow{
@@ -54,6 +56,7 @@ func TestWriteFile(t *testing.T) {
 		},
 		{
 			explanation: "data fits exactly in single chunk",
+			id:          types.EntryID("dummy-id"),
 			data:        []byte("01234"),
 			chunkSize:   5,
 			rowsExpected: []mockChunkRow{
@@ -66,6 +69,7 @@ func TestWriteFile(t *testing.T) {
 		},
 		{
 			explanation: "data occupies a partial chunk after the first",
+			id:          types.EntryID("dummy-id"),
 			data:        []byte("0123456"),
 			chunkSize:   5,
 			rowsExpected: []mockChunkRow{
@@ -83,6 +87,7 @@ func TestWriteFile(t *testing.T) {
 		},
 		{
 			explanation: "data spans exactly two chunks",
+			id:          types.EntryID("dummy-id"),
 			data:        []byte("0123456789"),
 			chunkSize:   5,
 			rowsExpected: []mockChunkRow{
@@ -102,7 +107,7 @@ func TestWriteFile(t *testing.T) {
 	for _, tt := range tests {
 		tx := mockSqlTx{}
 
-		w := file.NewWriter(&tx, types.EntryID("dummy-id"), tt.chunkSize)
+		w := file.NewWriter(&tx, tt.id, tt.chunkSize)
 		n, err := w.Write(tt.data)
 		if err != nil {
 			t.Fatalf("%s: failed to write data: %v", tt.explanation, err)

@@ -16,7 +16,7 @@ import (
 
 const (
 	timeFormat = time.RFC3339
-	// I think Chrome reads at 32768, but I haven't checked rigorously.
+	// I think Chrome reads in 32768 chunks, but I haven't checked rigorously.
 	defaultChunkSize = 32768 * 10
 )
 
