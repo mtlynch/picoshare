@@ -1,4 +1,4 @@
-package sqlite_test
+package test_sqlite
 
 import (
 	"fmt"
