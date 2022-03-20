@@ -200,20 +200,17 @@ func (d db) InsertEntry(reader io.Reader, metadata types.UploadMetadata) error {
 	)
 	VALUES(?,?,?,?,?)`, metadata.ID, metadata.Filename, metadata.ContentType, formatTime(metadata.Uploaded), formatTime(time.Time(metadata.Expires)))
 	if err != nil {
+		log.Printf("insert into entries table failed: %v", err)
 		return err
 	}
 
-	writeFileData := func() error {
-		w := file.NewWriter(tx, metadata.ID, d.chunkSize)
-		_, err := io.Copy(w, reader)
-		if err != nil {
-			return err
-		}
-		// We want to return the value from Close(), as it flushes the buffer and
-		// can fail.
-		return w.Close()
+	w := file.NewWriter(tx, metadata.ID, d.chunkSize)
+	if _, err := io.Copy(w, reader); err != nil {
+		return err
 	}
-	if err := writeFileData(); err != nil {
+
+	// Close() flushes the buffer, and it can fail.
+	if err := w.Close(); err != nil {
 		return err
 	}
 
