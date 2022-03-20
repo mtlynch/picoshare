@@ -1,4 +1,4 @@
-# picoshare
+# PicoShare
 
 [![CircleCI](https://circleci.com/gh/mtlynch/picoshare.svg?style=svg)](https://circleci.com/gh/mtlynch/picoshare)
 [![Docker Pulls](https://img.shields.io/docker/pulls/mtlynch/picoshare.svg?maxAge=86400)](https://hub.docker.com/r/mtlynch/picoshare/)
@@ -6,13 +6,19 @@
 [![GitHub last commit](https://img.shields.io/github/last-commit/mtlynch/picoshare)](https://github.com/mtlynch/picoshare/commits/master)
 [![License](http://img.shields.io/:license-agpl-blue.svg?style=flat-square)](LICENSE)
 
-A minimal, easy-to-host service for sharing images and other files.
+## Overview
 
-## Experimental
+PicoShare is a minimalist service that allows you to share files easily.
 
-PicoShare is still highly experimental and not yet ready for production usage.
+[![PicoShare demo](https://raw.githubusercontent.com/mtlynch/picoshare/master/docs/readme-assets/demo.gif)](https://raw.githubusercontent.com/mtlynch/picoshare/master/docs/readme-assets/demo.mp4)
 
-You're welcome to try it, but expect frequent changes to the UI, database schema, and REST endpoints.
+## Why PicoShare?
+
+There are a million services for sharing files, but none of them are quite like PicoShare. Here are PicoShare's advantages:
+
+- **Direct download links**: PicoShare gives you a direct download link you can share with anyone. They can view or download the file with no ads or signups.
+- **No file restrictions**: Unlike sites like imgur, Vimeo, or SoundCloud that only allow you to share specific types of files, PicoShare lets you share any file of any size.
+- **No resizing/re-encoding**: If you upload media like images, video, or audio, PicoShare never forces you to wait on re-encoding. You get a direct download link as soon as you upload the file, and PicoShare never resizes or re-encodes your file.
 
 ## Run PicoShare
 
