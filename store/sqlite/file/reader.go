@@ -13,9 +13,9 @@ type (
 	fileReader struct {
 		db         *sql.DB
 		entryID    types.EntryID
-		fileLength int
+		fileLength int64
 		offset     int64
-		chunkSize  int
+		chunkSize  int64
 		buf        *bytes.Buffer
 	}
 )
@@ -48,7 +48,7 @@ func (fr *fileReader) Read(p []byte) (int, error) {
 		read += n
 		if err == io.EOF {
 			// If we've reached the end of the buffer, then we've read the full file.
-			if int(fr.offset) == fr.fileLength {
+			if fr.offset == fr.fileLength {
 				return read, io.EOF
 			}
 			// Otherwise, repopulate the buffer with the underlying SQLite DB and
@@ -120,7 +120,7 @@ func (fr *fileReader) populateBuffer() error {
 	return nil
 }
 
-func getFileLength(db *sql.DB, id types.EntryID, chunkSize int) (int, error) {
+func getFileLength(db *sql.DB, id types.EntryID, chunkSize int64) (int64, error) {
 	stmt, err := db.Prepare(`
 	SELECT
 		chunk_index,
@@ -138,17 +138,17 @@ func getFileLength(db *sql.DB, id types.EntryID, chunkSize int) (int, error) {
 	}
 	defer stmt.Close()
 
-	var chunkIndex int
+	var chunkIndex int64
 	var chunkLen int64
 	err = stmt.QueryRow(id).Scan(&chunkIndex, &chunkLen)
 	if err != nil {
 		return 0, err
 	}
 
-	return chunkSize*chunkIndex + int(chunkLen), nil
+	return (chunkSize * chunkIndex) + chunkLen, nil
 }
 
-func getChunkSize(db *sql.DB, id types.EntryID) (int, error) {
+func getChunkSize(db *sql.DB, id types.EntryID) (int64, error) {
 	stmt, err := db.Prepare(`
 	SELECT
 		LENGTH(chunk) AS chunk_size
@@ -165,7 +165,7 @@ func getChunkSize(db *sql.DB, id types.EntryID) (int, error) {
 	}
 	defer stmt.Close()
 
-	var chunkSize int
+	var chunkSize int64
 	err = stmt.QueryRow(id).Scan(&chunkSize)
 	if err != nil {
 		return 0, err
