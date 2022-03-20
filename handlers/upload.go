@@ -21,7 +21,7 @@ const (
 )
 
 var (
-	maxUploadBytes = megabytesToBytes(500)
+	maxUploadBytes = megabytesToBytes(1500)
 	idCharacters   = []rune("abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789")
 )
 

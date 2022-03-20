@@ -9,7 +9,16 @@ import (
 )
 
 func New() store.Store {
-	name := random.String(10, []rune("abcdefghijklmnopqrstuvwxyz0123456789"))
+	return sqlite.New(ephemeralDbURI())
+}
 
-	return sqlite.New(fmt.Sprintf("file:%s?mode=memory&cache=shared", name))
+func NewWithChunkSize(chunkSize int) store.Store {
+	return sqlite.NewWithChunkSize(ephemeralDbURI(), chunkSize)
+}
+
+func ephemeralDbURI() string {
+	name := random.String(
+		10,
+		[]rune("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"))
+	return fmt.Sprintf("file:%s?mode=memory&cache=shared", name)
 }
