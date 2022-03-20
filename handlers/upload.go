@@ -17,7 +17,7 @@ import (
 const (
 	MaxFilenameLen = 100
 	FileLifetime   = 7 * 24 * time.Hour
-	EntryIDLength  = 8
+	EntryIDLength  = 10
 )
 
 var (
