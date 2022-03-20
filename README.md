@@ -44,13 +44,16 @@ If you specify settings for a [Litestream](https://litestream.io/)-compatible cl
 You can kill the container and start it later, and PicoShare will restore your data from the cloud storage location and continue as if there was no interruption.
 
 ```bash
+PORT=3001
+PS_SHARED_SECRET="somesecretpass"
 LITESTREAM_BUCKET=YOUR-LITESTREAM-BUCKET
 LITESTREAM_ENDPOINT=YOUR-LITESTREAM-ENDPOINT
 LITESTREAM_ACCESS_KEY_ID=YOUR-ACCESS-ID
 LITESTREAM_SECRET_ACCESS_KEY=YOUR-SECRET-ACCESS-KEY
 
 docker run \
-  --env "PORT=3001" \
+  --env "PORT=${PORT}" \
+  --env "PS_SHARED_SECRET=${PS_SHARED_SECRET}" \
   --env "LITESTREAM_ACCESS_KEY_ID=${LITESTREAM_ACCESS_KEY_ID}" \
   --env "LITESTREAM_SECRET_ACCESS_KEY=${LITESTREAM_SECRET_ACCESS_KEY}" \
   --env "LITESTREAM_BUCKET=${LITESTREAM_BUCKET}" \
