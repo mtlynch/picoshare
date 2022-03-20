@@ -1,6 +1,7 @@
 package shared_secret
 
 import (
+	"crypto/subtle"
 	"encoding/json"
 	"errors"
 	"log"
@@ -36,7 +37,7 @@ func (ssa SharedSecretAuthenticator) StartSession(w http.ResponseWriter, r *http
 		return
 	}
 
-	if ss != ssa.sharedSecret {
+	if subtle.ConstantTimeCompare([]byte(ss), []byte(ssa.sharedSecret)) == 0 {
 		http.Error(w, "Incorrect shared secret", http.StatusUnauthorized)
 		return
 	}
