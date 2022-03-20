@@ -200,7 +200,7 @@ func (d db) InsertEntry(reader io.Reader, metadata types.UploadMetadata) error {
 	)
 	VALUES(?,?,?,?,?)`, metadata.ID, metadata.Filename, metadata.ContentType, formatTime(metadata.Uploaded), formatTime(time.Time(metadata.Expires)))
 	if err != nil {
-		log.Printf("insert into entries table failed: %v", err)
+		log.Printf("insert into entries table failed, aborting transaction: %v", err)
 		return err
 	}
 
@@ -231,6 +231,7 @@ func (d db) DeleteEntry(id types.EntryID) error {
 	WHERE
 		id=?`, id)
 	if err != nil {
+		log.Printf("delete from entries table failed, aborting transaction: %v", err)
 		return err
 	}
 
@@ -240,6 +241,7 @@ func (d db) DeleteEntry(id types.EntryID) error {
 	WHERE
 		id=?`, id)
 	if err != nil {
+		log.Printf("delete from entries_data table failed, aborting transaction: %v", err)
 		return err
 	}
 
