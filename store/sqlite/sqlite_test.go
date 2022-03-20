@@ -8,13 +8,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mtlynch/picoshare/v2/store/sqlite"
+	"github.com/mtlynch/picoshare/v2/store/test_sqlite"
 	"github.com/mtlynch/picoshare/v2/types"
 )
 
 func TestInsertDeleteSingleEntry(t *testing.T) {
 	chunkSize := 5
-	db := sqlite.NewWithChunkSize("file:TestInsertDeleteSingleEntry?mode=memory&cache=shared", chunkSize)
+	db := test_sqlite.NewWithChunkSize(chunkSize)
 
 	if err := db.InsertEntry(bytes.NewBufferString("hello, world!"), types.UploadMetadata{
 		ID:       types.EntryID("dummy-id"),
@@ -74,7 +74,7 @@ func TestInsertDeleteSingleEntry(t *testing.T) {
 
 func TestReadLastByteOfEntry(t *testing.T) {
 	chunkSize := 5
-	db := sqlite.NewWithChunkSize("file:TestReadLastByteOfEntry?mode=memory&cache=shared", chunkSize)
+	db := test_sqlite.NewWithChunkSize(chunkSize)
 
 	if err := db.InsertEntry(bytes.NewBufferString("hello, world!"), types.UploadMetadata{
 		ID:       types.EntryID("dummy-id"),
