@@ -25,10 +25,11 @@ readonly IS_LITESTREAM_ENABLED="$(is_litestream_enabled)"
 # Echo commands to stdout.
 set -x
 
+export readonly DB_PATH="/data/store.db"
+PS_LAUNCH_CMD="/app/picoshare -db ${DB_PATH}"
+
 if [[ "${IS_LITESTREAM_ENABLED}" == 'true' ]]; then
   /app/litestream version
-
-  export readonly DB_PATH="/data/store.db"
 
   if [[ -f "$DB_PATH" ]]; then
     echo "Existing database is $(stat -c %s ${DB_PATH}) bytes"
@@ -39,10 +40,8 @@ if [[ "${IS_LITESTREAM_ENABLED}" == 'true' ]]; then
   fi
 
   # Let Litestream start PicoShare as a child process
-  exec /app/litestream replicate \
-    -exec "/app/picoshare -db ${DB_PATH}"
+  exec /app/litestream replicate -exec "$PS_LAUNCH_CMD"
 else
   echo "Starting without litestream"
-  # Start server.
-  /app/picoshare
+  exec $PS_LAUNCH_CMD
 fi
