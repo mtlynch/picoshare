@@ -9,12 +9,12 @@ import (
 	"time"
 
 	"github.com/mtlynch/picoshare/v2/garbagecollect"
-	"github.com/mtlynch/picoshare/v2/store/sqlite_test"
+	"github.com/mtlynch/picoshare/v2/store/test_sqlite"
 	"github.com/mtlynch/picoshare/v2/types"
 )
 
 func TestCollectDoesNothingWhenStoreIsEmpty(t *testing.T) {
-	dataStore := sqlite_test.New()
+	dataStore := test_sqlite.New()
 	c := garbagecollect.NewCollector(dataStore)
 	err := c.Collect()
 	if err != nil {
@@ -33,7 +33,7 @@ func TestCollectDoesNothingWhenStoreIsEmpty(t *testing.T) {
 }
 
 func TestCollectExpiredFile(t *testing.T) {
-	dataStore := sqlite_test.New()
+	dataStore := test_sqlite.New()
 	d := "dummy data"
 	dataStore.InsertEntry(makeData(d),
 		types.UploadMetadata{
@@ -70,7 +70,7 @@ func TestCollectExpiredFile(t *testing.T) {
 }
 
 func TestCollectDoesNothingWhenNoFilesAreExpired(t *testing.T) {
-	dataStore := sqlite_test.New()
+	dataStore := test_sqlite.New()
 	d := "dummy data"
 	dataStore.InsertEntry(makeData(d),
 		types.UploadMetadata{

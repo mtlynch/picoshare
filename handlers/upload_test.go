@@ -15,7 +15,7 @@ import (
 	"time"
 
 	"github.com/mtlynch/picoshare/v2/handlers"
-	"github.com/mtlynch/picoshare/v2/store/sqlite_test"
+	"github.com/mtlynch/picoshare/v2/store/test_sqlite"
 	"github.com/mtlynch/picoshare/v2/types"
 )
 
@@ -30,7 +30,7 @@ func (ma mockAuthenticator) Authenticate(r *http.Request) bool {
 }
 
 func TestUploadValidFile(t *testing.T) {
-	store := sqlite_test.New()
+	store := test_sqlite.New()
 	s := handlers.New(mockAuthenticator{}, store)
 
 	filename := "dummyimage.png"
@@ -129,7 +129,7 @@ func TestEntryPostRejectsInvalidRequest(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		store := sqlite_test.New()
+		store := test_sqlite.New()
 		s := handlers.New(mockAuthenticator{}, store)
 
 		formData, contentType := createMultipartFormBody(tt.name, tt.filename, bytes.NewBuffer([]byte(tt.contents)))
