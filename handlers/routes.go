@@ -13,6 +13,7 @@ func (s *Server) routes() {
 	static := s.router.PathPrefix("/").Subrouter()
 	static.PathPrefix("/css/").HandlerFunc(serveStaticResource()).Methods(http.MethodGet)
 	static.PathPrefix("/js/").HandlerFunc(serveStaticResource()).Methods(http.MethodGet)
+	static.PathPrefix("/assets/").HandlerFunc(serveStaticResource()).Methods(http.MethodGet)
 	static.PathPrefix("/third-party/").HandlerFunc(serveStaticResource()).Methods(http.MethodGet)
 
 	authenticatedViews := s.router.PathPrefix("/").Subrouter()

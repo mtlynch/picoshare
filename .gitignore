@@ -6,3 +6,5 @@ data/
 
 # Environment variables, which may contain secrets
 *.env
+
+.DS_Store
