@@ -23,7 +23,9 @@ fly apps create --name "${APP_NAME}"
 
 ## Create a persistent volume (optional)
 
-You can add a persistent volume to store PicoShare's data across server deploys. Note that you'll need either a persistent volume or Litestream replication (below) to prevent PicoShare from losing all data on every server redeploy.
+You can add a persistent volume to store PicoShare's data across server deploys.
+
+**Note**: You'll need either a persistent volume or Litestream replication ([below](#set-your-litestream-environment-variables-optional)) to prevent PicoShare from losing all data on every server redeploy.
 
 ```bash
 VOLUME_NAME="pico_data"
@@ -46,7 +48,7 @@ EOF
 
 You can use [Litestream](https://litestream.io) to replicate PicoShare's data to cloud storage.
 
-**Note**: You'll need either a persistent volume or Litestream replication (below) to prevent PicoShare from losing all data on every server redeploy.
+**Note**: You'll need either a persistent volume ([above](#create-a-persistent-volume-optional)) or Litestream replication to prevent PicoShare from losing all data on every server redeploy.
 
 ```bash
 LITESTREAM_ACCESS_KEY_ID=YOUR-ACCESS-ID
