@@ -7,4 +7,6 @@ data/
 # Environment variables, which may contain secrets
 *.env
 
+# System files
 .DS_Store
+Thumbs.db
