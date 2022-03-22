@@ -1,5 +1,7 @@
+@import url('fonts.css');
+
 body {
-  font-family: "Karla", sans-serif;
+  font-family: 'Karla', sans-serif;
 }
 
 a {
