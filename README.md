@@ -10,7 +10,7 @@
 
 PicoShare is a minimalist service that allows you to share files easily.
 
-- [Live demo](https://demo.pico.rocks/files)
+- [Live demo](https://demo.pico.rocks)
 
 [![PicoShare demo](https://raw.githubusercontent.com/mtlynch/picoshare/master/docs/readme-assets/demo.gif)](https://raw.githubusercontent.com/mtlynch/picoshare/master/docs/readme-assets/demo-full.gif)
 
