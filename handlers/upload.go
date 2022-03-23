@@ -183,7 +183,13 @@ func megabytesToBytes(gb int) int64 {
 func clientIPFromRemoteAddr(remoteAddr string) (net.IP, error) {
 	ip, _, err := net.SplitHostPort(remoteAddr)
 	if err != nil {
-		return net.ParseIP(""), err
+		// If this doesn't seem to be a host:port pair, try to parse it as a
+		// standalone IP.
+		ipAddr := net.ParseIP(remoteAddr)
+		if ipAddr == nil {
+			return net.ParseIP(""), err
+		}
+		return ipAddr, nil
 	}
 
 	return net.ParseIP(ip), nil
