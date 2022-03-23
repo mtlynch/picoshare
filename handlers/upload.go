@@ -21,8 +21,7 @@ const (
 )
 
 var (
-	maxUploadBytes = megabytesToBytes(1500)
-	idCharacters   = []rune("abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789")
+	idCharacters = []rune("abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789")
 )
 
 type (
@@ -101,7 +100,9 @@ func parseEntryID(s string) (types.EntryID, error) {
 }
 
 func fileFromRequest(w http.ResponseWriter, r *http.Request) (fileUpload, error) {
-	r.Body = http.MaxBytesReader(w, r.Body, maxUploadBytes)
+	// We're intentionally not limiting the size of the request because we assume
+	// the the uploading user is trusted, so they can upload files of any size
+	// they want.
 	r.ParseMultipartForm(32 << 20)
 	reader, metadata, err := r.FormFile("file")
 	if err != nil {
@@ -163,8 +164,4 @@ func parseExpiration(r *http.Request) (types.ExpirationTime, error) {
 	}
 
 	return types.ExpirationTime(expiration), nil
-}
-
-func megabytesToBytes(gb int) int64 {
-	return int64(gb) * 1000 * 1000
 }
