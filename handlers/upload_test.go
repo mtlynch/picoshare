@@ -117,7 +117,6 @@ func TestUploadValidFileWithNullExpiration(t *testing.T) {
 	}
 }
 
-
 func TestEntryPostRejectsInvalidRequest(t *testing.T) {
 	tests := []struct {
 		description string
