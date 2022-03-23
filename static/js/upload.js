@@ -40,8 +40,9 @@ function populateExpirationOptions() {
 }
 
 function doUpload(file, expiration) {
-  if (file.size > (10 * 1000 * 1000)) {
-    document.getElementById("error-message").innerText = 'File must be 10 MB or smaller on demo instance.';
+  if (file.size > 10 * 1000 * 1000) {
+    document.getElementById("error-message").innerText =
+      "File must be 10 MB or smaller on demo instance.";
     showElement(errorContainer);
     return;
   }
