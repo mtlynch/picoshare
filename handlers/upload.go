@@ -41,7 +41,7 @@ func (s Server) entryPost() http.HandlerFunc {
 		expiration, err := parseExpiration(r)
 		if err != nil {
 			log.Printf("invalid expiration URL parameter: %v", err)
-			http.Error(w, "invalid expiration URL parameter", http.StatusBadRequest)
+			http.Error(w, fmt.Sprintf("Invalid expiration URL parameter: %v", err), http.StatusBadRequest)
 			return
 		}
 
