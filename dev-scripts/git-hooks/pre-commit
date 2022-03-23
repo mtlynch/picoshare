@@ -13,3 +13,5 @@ set -u
 ./dev-scripts/check-go-formatting
 
 go build -o /dev/null main.go
+
+npm run check-format
