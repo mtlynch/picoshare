@@ -127,7 +127,6 @@ func renderTemplate(w http.ResponseWriter, templateFilename string, templateVars
 	templateFiles = append(templateFiles, path.Join(templatesRootDir, templateFilename))
 	templateFiles = append(templateFiles, path.Join(templatesRootDir, baseTemplateFilename))
 	templateFiles = append(templateFiles, path.Join(templatesRootDir, navbarTemplateFilename))
-	templateFiles = append(templateFiles, path.Join(templatesRootDir, navbarTemplateFilename))
 	templateFiles = append(templateFiles, customElements...)
 
 	t := template.Must(template.New(templateFilename).Funcs(funcMap).
