@@ -26,11 +26,15 @@
     <tbody>
       {{ range .Files }}
       <tr>
-        <td test-data-id="filename"><a href="/!{{ .ID }}">{{ .Filename }}</a></td>
-        <td>{{ .Size }}</td>
-        <td>{{ formatTime .Uploaded }}</td>
-        <td>{{ formatExpiration .Expires }}</td>
-        <td><button class="button is-danger" pico-purpose="delete" pico-entry-id="{{ .ID }}"><i class="fa fa-trash" aria-hidden="true"></i></button></td>
+        <td class="is-vcentered" test-data-id="filename"><a href="/!{{ .ID }}">{{ .Filename }}</a></td>
+        <td class="is-vcentered">{{ .Size }}</td>
+        <td class="is-vcentered">{{ formatTime .Uploaded }}</td>
+        <td class="is-vcentered">{{ formatExpiration .Expires }}</td>
+        <td class="is-vcentered">
+          <button class="button is-danger" pico-purpose="delete" pico-entry-id="{{ .ID }}">
+            <i class="fa fa-trash" aria-hidden="true"></i>
+          </button>
+        </td>
       </tr>
       {{ end }}
     </tbody>
