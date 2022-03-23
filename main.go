@@ -33,7 +33,7 @@ func main() {
 
 	store := sqlite.New(*dbPath)
 
-	gc := garbagecollect.NewScheduler(store, 7*time.Hour)
+	gc := garbagecollect.NewScheduler(store, 1*time.Minute)
 	gc.StartAsync()
 
 	h := gorilla.LoggingHandler(os.Stdout, handlers.New(authenticator, store).Router())
