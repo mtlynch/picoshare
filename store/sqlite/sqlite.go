@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"io"
 	"log"
+	"net"
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -44,7 +45,8 @@ func NewWithChunkSize(path string, chunkSize int) store.Store {
 			filename TEXT,
 			content_type TEXT,
 			upload_time TEXT,
-			expiration_time TEXT
+			expiration_time TEXT,
+			uploader_ip TEXT
 			)`,
 		`CREATE TABLE IF NOT EXISTS entries_data (
 			id TEXT,
@@ -74,6 +76,7 @@ func (d db) GetEntriesMetadata() ([]types.UploadMetadata, error) {
 		entries.content_type AS content_type,
 		entries.upload_time AS upload_time,
 		entries.expiration_time AS expiration_time,
+		entries.uploader_ip AS uploader_ip,
 		sizes.file_size AS file_size
 	FROM
 		entries
@@ -98,8 +101,9 @@ func (d db) GetEntriesMetadata() ([]types.UploadMetadata, error) {
 		var contentType string
 		var uploadTimeRaw string
 		var expirationTimeRaw string
+		var uploaderIP string
 		var fileSize int
-		err = rows.Scan(&id, &filename, &contentType, &uploadTimeRaw, &expirationTimeRaw, &fileSize)
+		err = rows.Scan(&id, &filename, &contentType, &uploadTimeRaw, &expirationTimeRaw, &uploaderIP, &fileSize)
 		if err != nil {
 			return []types.UploadMetadata{}, err
 		}
@@ -120,6 +124,7 @@ func (d db) GetEntriesMetadata() ([]types.UploadMetadata, error) {
 			ContentType: types.ContentType(contentType),
 			Uploaded:    ut,
 			Expires:     types.ExpirationTime(et),
+			UploaderIP:  net.ParseIP(uploaderIP),
 			Size:        fileSize,
 		})
 	}
@@ -133,7 +138,8 @@ func (d db) GetEntry(id types.EntryID) (types.UploadEntry, error) {
 			filename,
 			content_type,
 			upload_time,
-			expiration_time
+			expiration_time,
+			uploader_ip
 		FROM
 			entries
 		WHERE
@@ -147,7 +153,8 @@ func (d db) GetEntry(id types.EntryID) (types.UploadEntry, error) {
 	var contentType string
 	var uploadTimeRaw string
 	var expirationTimeRaw string
-	err = stmt.QueryRow(id).Scan(&filename, &contentType, &uploadTimeRaw, &expirationTimeRaw)
+	var uploaderIP string
+	err = stmt.QueryRow(id).Scan(&filename, &contentType, &uploadTimeRaw, &expirationTimeRaw, &uploaderIP)
 	if err == sql.ErrNoRows {
 		return types.UploadEntry{}, store.EntryNotFoundError{ID: id}
 	} else if err != nil {
@@ -176,6 +183,7 @@ func (d db) GetEntry(id types.EntryID) (types.UploadEntry, error) {
 			ContentType: types.ContentType(contentType),
 			Uploaded:    ut,
 			Expires:     types.ExpirationTime(et),
+			UploaderIP:  net.ParseIP(uploaderIP),
 		},
 		Reader: r,
 	}, nil
@@ -196,9 +204,10 @@ func (d db) InsertEntry(reader io.Reader, metadata types.UploadMetadata) error {
 		filename,
 		content_type,
 		upload_time,
-		expiration_time
+		expiration_time,
+		uploader_ip
 	)
-	VALUES(?,?,?,?,?)`, metadata.ID, metadata.Filename, metadata.ContentType, formatTime(metadata.Uploaded), formatTime(time.Time(metadata.Expires)))
+	VALUES(?,?,?,?,?,?)`, metadata.ID, metadata.Filename, metadata.ContentType, formatTime(metadata.Uploaded), formatTime(time.Time(metadata.Expires)), metadata.UploaderIP.String())
 	if err != nil {
 		log.Printf("insert into entries table failed, aborting transaction: %v", err)
 		return err

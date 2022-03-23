@@ -2,6 +2,7 @@ package types
 
 import (
 	"io"
+	"net"
 	"time"
 )
 
@@ -16,6 +17,7 @@ type UploadMetadata struct {
 	ContentType ContentType
 	Uploaded    time.Time
 	Expires     ExpirationTime
+	UploaderIP  net.IP
 	Size        int
 }
 

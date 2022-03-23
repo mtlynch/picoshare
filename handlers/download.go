@@ -18,6 +18,13 @@ func (s Server) entryGet() http.HandlerFunc {
 			return
 		}
 
+		clientIp, err := clientIPFromRemoteAddr(r.RemoteAddr)
+		if err != nil {
+			log.Printf("failed to parse remote addr: %v -> %v", r.RemoteAddr, err)
+			http.Error(w, "unrecognized source IP format", http.StatusBadRequest)
+			return
+		}
+
 		entry, err := s.store.GetEntry(id)
 		if _, ok := err.(store.EntryNotFoundError); ok {
 			http.Error(w, "entry not found", http.StatusNotFound)
@@ -25,6 +32,12 @@ func (s Server) entryGet() http.HandlerFunc {
 		} else if err != nil {
 			log.Printf("error retrieving entry with id %v: %v", id, err)
 			http.Error(w, "failed to retrieve entry", http.StatusInternalServerError)
+			return
+		}
+
+		if !clientIp.Equal(entry.UploaderIP) {
+			log.Printf("error retrieving entry with id %v: %v", id, err)
+			http.Error(w, "On demo instance, you can only download from the same IP as you uploaded", http.StatusForbidden)
 			return
 		}
 

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net"
 	"net/http"
 	"strings"
 	"time"
@@ -53,6 +54,13 @@ func (s Server) entryPost() http.HandlerFunc {
 			return
 		}
 
+		clientIp, err := clientIPFromRemoteAddr(r.RemoteAddr)
+		if err != nil {
+			log.Printf("failed to parse remote addr: %v -> %v", r.RemoteAddr, err)
+			http.Error(w, "unrecognized source IP format", http.StatusBadRequest)
+			return
+		}
+
 		id := generateEntryID()
 		err = s.store.InsertEntry(uploadedFile.Reader,
 			types.UploadMetadata{
@@ -61,6 +69,7 @@ func (s Server) entryPost() http.HandlerFunc {
 				ID:          id,
 				Uploaded:    time.Now(),
 				Expires:     types.ExpirationTime(expiration),
+				UploaderIP:  clientIp,
 			})
 		if err != nil {
 			log.Printf("failed to save entry: %v", err)
@@ -169,4 +178,13 @@ func parseExpiration(r *http.Request) (types.ExpirationTime, error) {
 
 func megabytesToBytes(gb int) int64 {
 	return int64(gb) * 1000 * 1000
+}
+
+func clientIPFromRemoteAddr(remoteAddr string) (net.IP, error) {
+	ip, _, err := net.SplitHostPort(remoteAddr)
+	if err != nil {
+		return net.ParseIP(""), err
+	}
+
+	return net.ParseIP(ip), nil
 }

@@ -45,6 +45,21 @@ func (s Server) fileIndexGet() http.HandlerFunc {
 			http.Error(w, "failed to retrieve file index", http.StatusInternalServerError)
 			return
 		}
+
+		// Only show uploads that match the client's IP.
+		clientIp, err := clientIPFromRemoteAddr(r.RemoteAddr)
+		if err != nil {
+			log.Printf("failed to parse remote addr: %v -> %v", r.RemoteAddr, err)
+			http.Error(w, "Unrecognized source IP format", http.StatusBadRequest)
+			return
+		}
+		emFiltered := []types.UploadMetadata{}
+		for _, metadata := range em {
+			if metadata.UploaderIP.Equal(clientIp) {
+				emFiltered = append(emFiltered, metadata)
+			}
+		}
+
 		if err := renderTemplate(w, "file-index.html", struct {
 			commonProps
 			Files []types.UploadMetadata
@@ -53,7 +68,7 @@ func (s Server) fileIndexGet() http.HandlerFunc {
 				Title:           "PicoShare - Files",
 				IsAuthenticated: s.isAuthenticated(r),
 			},
-			Files: em,
+			Files: emFiltered,
 		}, template.FuncMap{
 			"formatTime": func(t time.Time) string {
 				return t.Format(time.RFC3339)
