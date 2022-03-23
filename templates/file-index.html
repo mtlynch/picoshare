@@ -20,17 +20,34 @@
         <th>Size</th>
         <th>Uploaded</th>
         <th>Expires</th>
+        <th>Shortlink</th>
         <th></th>
       </tr>
     </thead>
     <tbody>
       {{ range .Files }}
       <tr>
-        <td test-data-id="filename"><a href="/!{{ .ID }}">{{ .Filename }}</a></td>
-        <td>{{ .Size }}</td>
-        <td>{{ formatTime .Uploaded }}</td>
-        <td>{{ formatExpiration .Expires }}</td>
-        <td><button class="button is-danger" pico-purpose="delete" pico-entry-id="{{ .ID }}"><i class="fa fa-trash" aria-hidden="true"></i></button></td>
+        <td class="is-vcentered" test-data-id="filename"><a href="/!{{ .ID }}">{{ .Filename }}</a></td>
+        <td class="is-vcentered" pico-file-size>{{ .Size }}</td>
+        <td class="is-vcentered">{{ formatTime .Uploaded }}</td>
+        <td class="is-vcentered">{{ formatExpiration .Expires }}</td>
+        <td class="is-vcentered">
+          <div class="field has-addons" pico-shortlink pico-entry-id="{{ .ID }}">
+            <div class="control">
+              <input class="input is-normal" type="text" value="" readonly>
+            </div>
+            <div class="control">
+              <button class="button is-info">
+                <i class="fa-solid fa-copy"></i>
+              </button>
+            </div>
+          </div>
+        </td>
+        <td>
+          <button class="button is-danger" pico-purpose="delete" pico-entry-id="{{ .ID }}">
+            <i class="fa fa-trash" aria-hidden="true"></i>
+          </button>
+        </td>
       </tr>
       {{ end }}
     </tbody>
