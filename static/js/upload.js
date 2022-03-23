@@ -29,7 +29,7 @@ function populateExpirationOptions() {
     "7 days": dateInFuture(7),
     "30 days": dateInFuture(30),
     "1 year": dateInFuture(365),
-    "Never": dateInFuture(999 * 365),
+    Never: dateInFuture(999 * 365),
   };
   const defaultExpiration = "30 days";
   for (const [k, v] of Object.entries(expirationTimes)) {
