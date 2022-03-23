@@ -12,28 +12,30 @@
 {{ define "content" }}
 <h1 class="title">Files</h1>
 
-<table class="table">
-  <thead>
-    <tr>
-      <th>Filename</th>
-      <th>Size</th>
-      <th>Uploaded</th>
-      <th>Expires</th>
-      <th></th>
-    </tr>
-  </thead>
-  <tbody>
-    {{ range .Files }}
-    <tr>
-      <td test-data-id="filename"><a href="/!{{ .ID }}">{{ .Filename }}</a></td>
-      <td>{{ .Size }}</td>
-      <td>{{ formatTime .Uploaded }}</td>
-      <td>{{ formatExpiration .Expires }}</td>
-      <td><button class="button is-danger" pico-purpose="delete" pico-entry-id="{{ .ID }}"><i class="fa fa-trash" aria-hidden="true"></i></button></td>
-    </tr>
-    {{ end }}
-  </tbody>
-</table>
+<div class="table-container">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Filename</th>
+        <th>Size</th>
+        <th>Uploaded</th>
+        <th>Expires</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {{ range .Files }}
+      <tr>
+        <td test-data-id="filename"><a href="/!{{ .ID }}">{{ .Filename }}</a></td>
+        <td>{{ .Size }}</td>
+        <td>{{ formatTime .Uploaded }}</td>
+        <td>{{ formatExpiration .Expires }}</td>
+        <td><button class="button is-danger" pico-purpose="delete" pico-entry-id="{{ .ID }}"><i class="fa fa-trash" aria-hidden="true"></i></button></td>
+      </tr>
+      {{ end }}
+    </tbody>
+  </table>
+</div>
 {{ end }}
 
 {{ template "base.html" }}
