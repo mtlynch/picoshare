@@ -9,9 +9,9 @@ const uploadForm = document.getElementById("upload-form");
 const expirationContainer = document.querySelector(".expiration-container");
 const expirationSelect = document.getElementById("expiration-select");
 
-function dateInFuture(daysFromNow) {
+function minutesInFuture(minutesFromNow) {
   let d = new Date();
-  d.setDate(d.getDate() + daysFromNow);
+  d.setMinutes(d.getMinutes() + minutesFromNow);
   return d;
 }
 
@@ -25,10 +25,7 @@ function showElement(el) {
 
 function populateExpirationOptions() {
   const expirationTimes = {
-    "1 day": dateInFuture(1),
-    "7 days": dateInFuture(7),
-    "30 days": dateInFuture(30),
-    "1 year": dateInFuture(365),
+    "5 minutes": minutesInFuture(5),
   };
   const defaultExpiration = "30 days";
   for (const [k, v] of Object.entries(expirationTimes)) {

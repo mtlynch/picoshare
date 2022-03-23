@@ -158,8 +158,10 @@ func parseExpiration(r *http.Request) (types.ExpirationTime, error) {
 		return types.ExpirationTime{}, errors.New("invalid expiration URL parameter")
 	}
 
-	if time.Until(expiration) > (time.Minute * 6) {
-		return types.ExpirationTime{}, errors.New("expire time must be less than five minutes")
+	// The frontend says five minutes, but it's calculated from the time the page
+	// loads, so add a little slack.
+	if time.Until(expiration) > (time.Minute * 10) {
+		return types.ExpirationTime{}, errors.New("expire time must be less than ten minutes")
 	}
 
 	return types.ExpirationTime(expiration), nil
