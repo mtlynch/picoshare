@@ -1,0 +1,22 @@
+{
+  "name": "picoshare-dev",
+  "version": "1.0.0",
+  "description": "PicoShare dev scripts",
+  "scripts": {
+    "check-format": "prettier --check ./**/*.js ./**/*.json ./**/*.css ./**/*.html",
+    "format": "prettier --write ./**/*.js ./**/*.json ./**/*.css ./**/*.html"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mtlynch/picoshare.git"
+  },
+  "author": "Michael Lynch",
+  "license": "AGPL-3.0",
+  "bugs": {
+    "url": "https://github.com/mtlynch/picoshare/issues"
+  },
+  "homepage": "https://pico.rocks",
+  "devDependencies": {
+    "prettier": "^2.6.0"
+  }
+}

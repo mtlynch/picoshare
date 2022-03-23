@@ -12,6 +12,17 @@ jobs:
       - run:
           name: Check that all text files end in a trailing newline
           command: ./dev-scripts/check-trailing-newline
+  check_frontend_formatting:
+    docker:
+      - image: cimg/node:16.14.2
+    steps:
+      - checkout
+      - run:
+          name: Download npm packages
+          command: npm install
+      - run:
+          name: Check formatting
+          command: npm run check-format
   test_go:
     docker:
       - image: cimg/go:1.17.4
@@ -82,11 +93,13 @@ workflows:
   test_deploy:
     jobs:
       - check_whitespace
+      - check_frontend_formatting
       - test_go
       - e2e
       - deploy:
           requires:
             - check_whitespace
+            - check_frontend_formatting
             - test_go
             - e2e
           filters:
