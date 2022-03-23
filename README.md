@@ -4,11 +4,14 @@
 [![Docker Pulls](https://img.shields.io/docker/pulls/mtlynch/picoshare.svg?maxAge=86400)](https://hub.docker.com/r/mtlynch/picoshare/)
 [![GitHub commit activity](https://img.shields.io/github/commit-activity/m/mtlynch/picoshare)](https://github.com/mtlynch/picoshare/commits/master)
 [![GitHub last commit](https://img.shields.io/github/last-commit/mtlynch/picoshare)](https://github.com/mtlynch/picoshare/commits/master)
+[![Contributors](https://img.shields.io/github/contributors/mtlynch/picoshare)](https://github.com/mtlynch/picoshare/graphs/contributors)
 [![License](http://img.shields.io/:license-agpl-blue.svg?style=flat-square)](LICENSE)
 
 ## Overview
 
 PicoShare is a minimalist service that allows you to share files easily.
+
+- [Live demo](https://demo.pico.rocks)
 
 [![PicoShare demo](https://raw.githubusercontent.com/mtlynch/picoshare/master/docs/readme-assets/demo.gif)](https://raw.githubusercontent.com/mtlynch/picoshare/master/docs/readme-assets/demo-full.gif)
 
