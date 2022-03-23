@@ -4,7 +4,6 @@ import (
 	"crypto/subtle"
 	"encoding/json"
 	"errors"
-	"log"
 	"net/http"
 	"time"
 )
@@ -61,7 +60,6 @@ func sharedSecretFromRequest(r *http.Request) (sharedSecret, error) {
 func (ssa SharedSecretAuthenticator) Authenticate(r *http.Request) bool {
 	authCookie, err := r.Cookie(authCookieName)
 	if err != nil {
-		log.Printf("failed to retrieve cookie from request: %v", err)
 		return false
 	}
 
