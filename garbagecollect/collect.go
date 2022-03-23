@@ -24,6 +24,10 @@ func (c Collector) Collect() error {
 	}
 
 	for _, meta := range mm {
+		// "zero" expiration dates are treated as "never" expire so they should not be GCd.
+		if time.Time(meta.Expires).IsZero() {
+			continue
+		}
 		if time.Now().After(time.Time(meta.Expires)) {
 			log.Printf("entry %v expired at %v", meta.ID, time.Time(meta.Expires).Format(time.RFC3339))
 			if err := c.store.DeleteEntry(meta.ID); err != nil {

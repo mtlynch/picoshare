@@ -78,6 +78,46 @@ func TestUploadValidFile(t *testing.T) {
 	}
 }
 
+func TestUploadValidFileWithNullExpiration(t *testing.T) {
+	store := test_sqlite.New()
+	s := handlers.New(mockAuthenticator{}, store)
+
+	filename := "dummyimage.png"
+	contents := "dummy bytes"
+	formData, contentType := createMultipartFormBody("file", filename, makeData(contents))
+
+	req, err := http.NewRequest("POST", "/api/entry?expiration=null", formData)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Add("Content-Type", contentType)
+
+	w := httptest.NewRecorder()
+	s.Router().ServeHTTP(w, req)
+
+	if status := w.Code; status != http.StatusOK {
+		t.Fatalf("handler returned wrong status code: got %v want %v",
+			status, http.StatusOK)
+	}
+
+	var response handlers.EntryPostResponse
+	err = json.Unmarshal(w.Body.Bytes(), &response)
+	if err != nil {
+		t.Fatalf("response is not valid JSON: %v", w.Body.String())
+	}
+
+	entry, err := store.GetEntry(types.EntryID(response.ID))
+	if err != nil {
+		t.Fatalf("failed to get expected entry %v from data store: %v", response.ID, err)
+	}
+
+	expirationExpected := types.ExpirationTime(*new(time.Time))
+	if entry.Expires != expirationExpected {
+		t.Fatalf("stored entry expiration doesn't match expected: got %v, want %v", formatExpirationTime(entry.Expires), formatExpirationTime(expirationExpected))
+	}
+}
+
+
 func TestEntryPostRejectsInvalidRequest(t *testing.T) {
 	tests := []struct {
 		description string

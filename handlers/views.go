@@ -60,6 +60,11 @@ func (s Server) fileIndexGet() http.HandlerFunc {
 			},
 			"formatExpiration": func(et types.ExpirationTime) string {
 				t := time.Time(et)
+				// zero time is interpreted as "never"
+				// return a meaningful expiration string instead of -XXXX years
+				if t.IsZero() {
+					return "N/A"
+				}
 				delta := time.Until(t)
 				return fmt.Sprintf("%s (%.0f days)", t.Format(time.RFC3339), delta.Hours()/24)
 			},

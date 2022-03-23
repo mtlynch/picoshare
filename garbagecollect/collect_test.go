@@ -45,6 +45,11 @@ func TestCollectExpiredFile(t *testing.T) {
 			ID:      types.EntryID("BBBBBBBBBBBB"),
 			Expires: mustParseExpirationTime("3000-01-01T00:00:00Z"),
 		})
+	dataStore.InsertEntry(makeData(d),
+		types.UploadMetadata{
+			ID:      types.EntryID("CCCCCCCCCCCC"),
+			Expires: types.ExpirationTime(*new(time.Time)),  // "zero" time should be treated as never
+		})
 
 	c := garbagecollect.NewCollector(dataStore)
 	err := c.Collect()
@@ -61,6 +66,58 @@ func TestCollectExpiredFile(t *testing.T) {
 		{
 			ID:      types.EntryID("BBBBBBBBBBBB"),
 			Expires: mustParseExpirationTime("3000-01-01T00:00:00Z"),
+			Size:    len(d),
+		},
+		{
+			ID:      types.EntryID("CCCCCCCCCCCC"),
+			Expires: types.ExpirationTime(*new(time.Time)),
+			Size:    len(d),
+		},
+	}
+	if !reflect.DeepEqual(expected, remaining) {
+		t.Fatalf("unexpected results in datastore: got %v, want %v", remaining, expected)
+	}
+}
+
+func TestCollectExpiredFileSkipsFilesWithZeroExpiration(t *testing.T) {
+	dataStore := test_sqlite.New()
+	d := "dummy data"
+	dataStore.InsertEntry(makeData(d),
+		types.UploadMetadata{
+			ID:      types.EntryID("AAAAAAAAAAAA"),
+			Expires: mustParseExpirationTime("2000-01-01T00:00:00Z"),
+		})
+	dataStore.InsertEntry(makeData(d),
+		types.UploadMetadata{
+			ID:      types.EntryID("BBBBBBBBBBBB"),
+			Expires: mustParseExpirationTime("3000-01-01T00:00:00Z"),
+		})
+	dataStore.InsertEntry(makeData(d),
+		types.UploadMetadata{
+			ID:      types.EntryID("CCCCCCCCCCCC"),
+			Expires: types.ExpirationTime(*new(time.Time)),
+		})
+
+	c := garbagecollect.NewCollector(dataStore)
+	err := c.Collect()
+	if err != nil {
+		t.Fatalf("garbage collection failed: %v", err)
+	}
+
+	remaining, err := dataStore.GetEntriesMetadata()
+	if err != nil {
+		t.Fatalf("retrieving datastore metadata failed: %v", err)
+	}
+
+	expected := []types.UploadMetadata{
+		{
+			ID:      types.EntryID("BBBBBBBBBBBB"),
+			Expires: mustParseExpirationTime("3000-01-01T00:00:00Z"),
+			Size:    len(d),
+		},
+		{
+			ID:      types.EntryID("CCCCCCCCCCCC"),
+			Expires: types.ExpirationTime(*new(time.Time)),
 			Size:    len(d),
 		},
 	}

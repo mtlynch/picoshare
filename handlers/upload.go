@@ -153,6 +153,13 @@ func parseExpiration(r *http.Request) (types.ExpirationTime, error) {
 	if len(expirationRaw) <= 0 {
 		return types.ExpirationTime{}, errors.New("missing required URL parameter: expiration")
 	}
+
+	// null expiration is treated as "never expire".
+	// Short circuit additional checks, returning "zero" time
+	if expirationRaw[0] == "null" {
+		return types.ExpirationTime(*new(time.Time)), nil
+	}
+
 	expiration, err := time.Parse(time.RFC3339, expirationRaw[0])
 	if err != nil {
 		log.Printf("invalid expiration URL parameter: %v -> %v", expirationRaw, err)

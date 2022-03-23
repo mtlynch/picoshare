@@ -29,12 +29,13 @@ function populateExpirationOptions() {
     "7 days": dateInFuture(7),
     "30 days": dateInFuture(30),
     "1 year": dateInFuture(365),
+    "Never": null,
   };
   const defaultExpiration = "30 days";
   for (const [k, v] of Object.entries(expirationTimes)) {
     const selectOption = document.createElement("option");
     selectOption.innerText = k;
-    selectOption.value = v.toISOString();
+    selectOption.value = v ? v.toISOString() : null;
     if (k === defaultExpiration) {
       selectOption.selected = true;
     }
