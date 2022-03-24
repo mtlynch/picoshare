@@ -10,6 +10,9 @@ type Filename string
 type ContentType string
 type ExpirationTime time.Time
 
+// Treat a distant expiration time as sort of a sentinel value signifying a "never expire" option.
+var NeverExpire = ExpirationTime(time.Date(3000, time.January, 0, 0, 0, 0, 0, time.UTC))
+
 type UploadMetadata struct {
 	ID          EntryID
 	Filename    Filename

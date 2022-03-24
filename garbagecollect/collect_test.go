@@ -45,6 +45,11 @@ func TestCollectExpiredFile(t *testing.T) {
 			ID:      types.EntryID("BBBBBBBBBBBB"),
 			Expires: mustParseExpirationTime("3000-01-01T00:00:00Z"),
 		})
+	dataStore.InsertEntry(makeData(d),
+		types.UploadMetadata{
+			ID:      types.EntryID("CCCCCCCCCCCC"),
+			Expires: types.NeverExpire,
+		})
 
 	c := garbagecollect.NewCollector(dataStore)
 	err := c.Collect()
@@ -61,6 +66,11 @@ func TestCollectExpiredFile(t *testing.T) {
 		{
 			ID:      types.EntryID("BBBBBBBBBBBB"),
 			Expires: mustParseExpirationTime("3000-01-01T00:00:00Z"),
+			Size:    len(d),
+		},
+		{
+			ID:      types.EntryID("CCCCCCCCCCCC"),
+			Expires: types.NeverExpire,
 			Size:    len(d),
 		},
 	}
@@ -81,6 +91,11 @@ func TestCollectDoesNothingWhenNoFilesAreExpired(t *testing.T) {
 		types.UploadMetadata{
 			ID:      types.EntryID("BBBBBBBBBBBB"),
 			Expires: mustParseExpirationTime("3000-01-01T00:00:00Z"),
+		})
+	dataStore.InsertEntry(makeData(d),
+		types.UploadMetadata{
+			ID:      types.EntryID("CCCCCCCCCCCC"),
+			Expires: types.NeverExpire,
 		})
 
 	c := garbagecollect.NewCollector(dataStore)
@@ -108,6 +123,11 @@ func TestCollectDoesNothingWhenNoFilesAreExpired(t *testing.T) {
 		{
 			ID:      types.EntryID("BBBBBBBBBBBB"),
 			Expires: mustParseExpirationTime("3000-01-01T00:00:00Z"),
+			Size:    len(d),
+		},
+		{
+			ID:      types.EntryID("CCCCCCCCCCCC"),
+			Expires: types.NeverExpire,
 			Size:    len(d),
 		},
 	}
