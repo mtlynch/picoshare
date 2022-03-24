@@ -48,7 +48,7 @@ func TestInsertDeleteSingleEntry(t *testing.T) {
 		t.Fatalf("unexpected metadata size: got %v, want %v", len(meta), 1)
 	}
 
-	if meta[0].Size != len(expected) {
+	if int(meta[0].Size) != len(expected) {
 		t.Fatalf("unexpected file size in entry metadata: got %v, want %v", meta[0].Size, len(expected))
 	}
 
