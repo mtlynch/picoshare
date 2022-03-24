@@ -9,6 +9,7 @@ type EntryID string
 type Filename string
 type ContentType string
 type ExpirationTime time.Time
+type Filesize int
 
 type UploadMetadata struct {
 	ID          EntryID
@@ -16,7 +17,7 @@ type UploadMetadata struct {
 	ContentType ContentType
 	Uploaded    time.Time
 	Expires     ExpirationTime
-	Size        int
+	Size        Filesize
 }
 
 type UploadEntry struct {
