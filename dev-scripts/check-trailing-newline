@@ -22,6 +22,7 @@ done < <(git ls-files \
   | xargs grep ".*" \
     --files-with-matches \
     --binary-files=without-match \
-    --exclude="*third-party*")
+    --exclude="*third-party*" \
+    --exclude="signatures/*")
 
 exit "${success}"
