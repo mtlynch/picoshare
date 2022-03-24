@@ -59,6 +59,9 @@ func (s Server) fileIndexGet() http.HandlerFunc {
 				return t.Format(time.RFC3339)
 			},
 			"formatExpiration": func(et types.ExpirationTime) string {
+				if et == types.NeverExpire {
+					return "Never"
+				}
 				t := time.Time(et)
 				delta := time.Until(t)
 				return fmt.Sprintf("%s (%.0f days)", t.Format(time.RFC3339), delta.Hours()/24)
@@ -105,6 +108,7 @@ func (s Server) uploadGet() http.HandlerFunc {
 				{"7 days", time.Now().AddDate(0, 0, 7), false},
 				{"30 days", time.Now().AddDate(0, 0, 30), true},
 				{"1 year", time.Now().AddDate(1, 0, 0), false},
+				{"Never", time.Time(types.NeverExpire), false},
 			},
 		}, template.FuncMap{
 			"formatExpiration": func(t time.Time) string {
