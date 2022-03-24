@@ -120,7 +120,7 @@ func (d db) GetEntriesMetadata() ([]types.UploadMetadata, error) {
 			ContentType: types.ContentType(contentType),
 			Uploaded:    ut,
 			Expires:     types.ExpirationTime(et),
-			Size:        types.Filesize(fileSize),
+			Size:        fileSize,
 		})
 	}
 
