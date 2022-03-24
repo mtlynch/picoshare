@@ -17,3 +17,25 @@ document.querySelectorAll('[pico-purpose="delete"]').forEach((deleteBtn) => {
       });
   });
 });
+
+document.querySelectorAll(["[pico-shortlink]"]).forEach((shortLink) => {
+  const btn = shortLink.querySelector("button");
+
+  btn.addEventListener("click", () => {
+    const input = shortLink.querySelector("input");
+
+    input.select();
+    input.setSelectionRange(0, 99999);
+
+    if (navigator && navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard
+        .writeText(input.value)
+        .then(() => {
+          console.log("Text copied");
+        })
+        .catch((err) => {
+          console.log("Something went wrong", err);
+        });
+    }
+  });
+});
