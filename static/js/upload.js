@@ -23,22 +23,6 @@ function showElement(el) {
   el.classList.remove("is-hidden");
 }
 
-function populateExpirationOptions() {
-  const expirationTimes = {
-    "5 minutes": minutesInFuture(5),
-  };
-  const defaultExpiration = "30 days";
-  for (const [k, v] of Object.entries(expirationTimes)) {
-    const selectOption = document.createElement("option");
-    selectOption.innerText = k;
-    selectOption.value = v.toISOString();
-    if (k === defaultExpiration) {
-      selectOption.selected = true;
-    }
-    expirationSelect.appendChild(selectOption);
-  }
-}
-
 function doUpload(file, expiration) {
   if (file.size > 10 * 1000 * 1000) {
     document.getElementById("error-message").innerText =
@@ -149,7 +133,6 @@ pasteEl.addEventListener("input", (evt) => {
 });
 
 document.addEventListener("DOMContentLoaded", function () {
-  populateExpirationOptions();
   resetPasteInstructions();
   // Set initial focus to paste element so that if the user pastes on page load,
   // it pastes to the right place without them having to manually place the

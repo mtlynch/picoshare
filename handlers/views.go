@@ -74,6 +74,9 @@ func (s Server) fileIndexGet() http.HandlerFunc {
 				return t.Format(time.RFC3339)
 			},
 			"formatExpiration": func(et types.ExpirationTime) string {
+				if et == types.NeverExpire {
+					return "Never"
+				}
 				t := time.Time(et)
 				delta := time.Until(t)
 				return fmt.Sprintf("%s (%.0f days)", t.Format(time.RFC3339), delta.Hours()/24)
@@ -102,14 +105,26 @@ func (s Server) authGet() http.HandlerFunc {
 
 func (s Server) uploadGet() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		type expirationOption struct {
+			FriendlyName string
+			Expiration   time.Time
+			IsDefault    bool
+		}
 		if err := renderTemplate(w, "upload.html", struct {
 			commonProps
+			ExpirationOptions []expirationOption
 		}{
-			commonProps{
+			commonProps: commonProps{
 				Title:           "PicoShare - Upload",
 				IsAuthenticated: s.isAuthenticated(r),
 			},
-		}, template.FuncMap{}); err != nil {
+			ExpirationOptions: []expirationOption{
+				{"5 minutes", time.Now().Add(10 * time.Minute), false},
+			},
+		}, template.FuncMap{
+			"formatExpiration": func(t time.Time) string {
+				return t.Format(time.RFC3339)
+			}}); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -136,7 +151,6 @@ func renderTemplate(w http.ResponseWriter, templateFilename string, templateVars
 	templateFiles := []string{}
 	templateFiles = append(templateFiles, path.Join(templatesRootDir, templateFilename))
 	templateFiles = append(templateFiles, path.Join(templatesRootDir, baseTemplateFilename))
-	templateFiles = append(templateFiles, path.Join(templatesRootDir, navbarTemplateFilename))
 	templateFiles = append(templateFiles, path.Join(templatesRootDir, navbarTemplateFilename))
 	templateFiles = append(templateFiles, customElements...)
 

@@ -35,6 +35,11 @@
     <div class="control">
       <div class="select">
         <select id="expiration-select">
+          {{ range .ExpirationOptions }}
+            <option
+              value="{{ formatExpiration .Expiration }}"
+              {{ if .IsDefault }}selected{{ end }}>{{ .FriendlyName }}</option>
+          {{ end }}
         </select>
       </div>
     </div>
