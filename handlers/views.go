@@ -59,6 +59,9 @@ func (s Server) fileIndexGet() http.HandlerFunc {
 				return t.Format(time.RFC3339)
 			},
 			"formatExpiration": func(et types.ExpirationTime) string {
+				if et == types.NeverExpire {
+					return "Never"
+				}
 				t := time.Time(et)
 				delta := time.Until(t)
 				return fmt.Sprintf("%s (%.0f days)", t.Format(time.RFC3339), delta.Hours()/24)
@@ -66,12 +69,26 @@ func (s Server) fileIndexGet() http.HandlerFunc {
 			"formatShortlink": func(url types.EntryID) string {
 				return r.Host + "/!" + string(url)
 			},
+			"formatFileSize": func(b int) string {
+				const unit = 1024
+
+				if b < unit {
+					return fmt.Sprintf("%d B", b)
+				}
+				div, exp := int64(unit), 0
+				for n := b / unit; n >= unit; n /= unit {
+					div *= unit
+					exp++
+				}
+				return fmt.Sprintf("%.2f %cB", float64(b)/float64(div), "kMGTPE"[exp])
+			},
 		}); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 	}
 }
+
 func (s Server) authGet() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if err := renderTemplate(w, "auth.html", struct {
@@ -108,6 +125,7 @@ func (s Server) uploadGet() http.HandlerFunc {
 				{"7 days", time.Now().AddDate(0, 0, 7), false},
 				{"30 days", time.Now().AddDate(0, 0, 30), true},
 				{"1 year", time.Now().AddDate(1, 0, 0), false},
+				{"Never", time.Time(types.NeverExpire), false},
 			},
 		}, template.FuncMap{
 			"formatExpiration": func(t time.Time) string {
