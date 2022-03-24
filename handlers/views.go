@@ -66,12 +66,26 @@ func (s Server) fileIndexGet() http.HandlerFunc {
 				delta := time.Until(t)
 				return fmt.Sprintf("%s (%.0f days)", t.Format(time.RFC3339), delta.Hours()/24)
 			},
+			"formatFileSize": func(b int) string {
+				const unit = 1024
+
+				if b < unit {
+					return fmt.Sprintf("%d B", b)
+				}
+				div, exp := int64(unit), 0
+				for n := b / unit; n >= unit; n /= unit {
+					div *= unit
+					exp++
+				}
+				return fmt.Sprintf("%.2f %cB", float64(b)/float64(div), "kMGTPE"[exp])
+			},
 		}); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 	}
 }
+
 func (s Server) authGet() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if err := renderTemplate(w, "auth.html", struct {

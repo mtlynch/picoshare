@@ -27,7 +27,7 @@
       {{ range .Files }}
       <tr>
         <td class="is-vcentered" test-data-id="filename"><a href="/!{{ .ID }}">{{ .Filename }}</a></td>
-        <td class="is-vcentered">{{ .Size }}</td>
+        <td class="is-vcentered">{{ formatFileSize .Size }}</td>
         <td class="is-vcentered">{{ formatTime .Uploaded }}</td>
         <td class="is-vcentered">{{ formatExpiration .Expires }}</td>
         <td class="is-vcentered">
