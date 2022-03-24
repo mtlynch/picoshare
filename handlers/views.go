@@ -87,14 +87,29 @@ func (s Server) authGet() http.HandlerFunc {
 
 func (s Server) uploadGet() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		type expirationOption struct {
+			FriendlyName string
+			Expiration   time.Time
+			IsDefault    bool
+		}
 		if err := renderTemplate(w, "upload.html", struct {
 			commonProps
+			ExpirationOptions []expirationOption
 		}{
-			commonProps{
+			commonProps: commonProps{
 				Title:           "PicoShare - Upload",
 				IsAuthenticated: s.isAuthenticated(r),
 			},
-		}, template.FuncMap{}); err != nil {
+			ExpirationOptions: []expirationOption{
+				{"1 day", time.Now().AddDate(0, 0, 1), false},
+				{"7 days", time.Now().AddDate(0, 0, 7), false},
+				{"30 days", time.Now().AddDate(0, 0, 30), true},
+				{"1 year", time.Now().AddDate(1, 0, 0), false},
+			},
+		}, template.FuncMap{
+			"formatExpiration": func(t time.Time) string {
+				return t.Format(time.RFC3339)
+			}}); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
