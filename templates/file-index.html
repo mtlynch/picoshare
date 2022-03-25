@@ -20,8 +20,7 @@
         <th>Size</th>
         <th>Uploaded</th>
         <th>Expires</th>
-        <th>Shortlink</th>
-        <th></th>
+        <th class="has-text-right">Actions</th>
       </tr>
     </thead>
     <tbody>
@@ -32,21 +31,18 @@
         <td class="is-vcentered">{{ formatTime .Uploaded }}</td>
         <td class="is-vcentered">{{ formatExpiration .Expires }}</td>
         <td class="is-vcentered">
-          <div class="field has-addons" pico-shortlink pico-entry-id="{{ .ID }}">
-            <div class="control">
-              <input class="input is-normal" type="text" value="{{ .ID }}" readonly>
-            </div>
-            <div class="control">
-              <button class="button is-info">
+          <div class="field is-grouped is-justify-content-flex-end">
+            <p class="control">
+              <button class="button is-info" pico-purpose="copy" pico-entry-id="{{ .ID }}">
                 <i class="fa-solid fa-copy"></i>
               </button>
-            </div>
+            </p>
+            <p class="control">
+              <button class="button is-danger" pico-purpose="delete" pico-entry-id="{{ .ID }}">
+                <i class="fa fa-trash" aria-hidden="true"></i>
+              </button>
+            </p>
           </div>
-        </td>
-        <td class="is-vcentered">
-          <button class="button is-danger" pico-purpose="delete" pico-entry-id="{{ .ID }}">
-            <i class="fa fa-trash" aria-hidden="true"></i>
-          </button>
         </td>
       </tr>
       {{ end }}
