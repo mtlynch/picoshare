@@ -9,12 +9,6 @@ const uploadForm = document.getElementById("upload-form");
 const expirationContainer = document.querySelector(".expiration-container");
 const expirationSelect = document.getElementById("expiration-select");
 
-function dateInFuture(daysFromNow) {
-  let d = new Date();
-  d.setDate(d.getDate() + daysFromNow);
-  return d;
-}
-
 function hideElement(el) {
   el.classList.add("is-hidden");
 }
@@ -89,7 +83,7 @@ uploadEl.addEventListener("dragenter", (evt) => {
   uploadEl.classList.add("accepting-drop");
 });
 
-uploadEl.addEventListener("dragleave", (evt) => {
+uploadEl.addEventListener("dragleave", () => {
   uploadEl.classList.remove("accepting-drop");
 });
 
