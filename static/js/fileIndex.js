@@ -1,5 +1,5 @@
 import { deleteFile } from "./controllers/delete.js";
-import { copyToClipboard } from "./lib/copyToClipboard.js";
+import { copyToClipboard } from "./lib/clipboard.js";
 import { makeShortLink } from "./lib/links.js";
 import { createSnackbar } from "./lib/snackbar.js";
 
