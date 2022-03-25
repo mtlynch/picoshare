@@ -6,3 +6,48 @@
 #error {
   max-width: 60ch;
 }
+
+#snackbar-container {
+  position: fixed;
+  bottom: 0px;
+  left: 50%;
+  transform: translate(-50%, 0);
+}
+
+.snackbar {
+  visibility: hidden;
+  background-color: #3488ce;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #fff;
+  text-align: center;
+  border-radius: 2px;
+  padding: 1rem;
+}
+
+.snackbar.show {
+  visibility: visible;
+  animation: fadein 0.5s, fadeout 0.5s 2.5s;
+}
+
+@keyframes fadein {
+  from {
+    bottom: 0;
+    opacity: 0;
+  }
+  to {
+    bottom: 30px;
+    opacity: 1;
+  }
+}
+
+@keyframes fadeout {
+  from {
+    bottom: 30px;
+    opacity: 1;
+  }
+  to {
+    bottom: 0;
+    opacity: 0;
+  }
+}

@@ -28,15 +28,17 @@ document.querySelectorAll('[pico-purpose="delete"]').forEach((deleteBtn) => {
 document.querySelector("#error .delete").addEventListener("click", () => {
   hideElement(errorContainer);
 });
-
 document.querySelectorAll('[pico-purpose="copy"]').forEach((copyBtn) => {
   copyBtn.addEventListener("click", () => {
     const picoId = copyBtn.getAttribute("pico-entry-id");
     const shortLink = `${window.location.origin}/!${picoId}`;
 
     copyToClipboard(shortLink)
-      .then(() => console.log("text copied !"))
-      .catch(() => console.log("error"));
+      .then(() => createSnackbar())
+      .catch((error) => {
+        document.getElementById("error-message").innerText = error;
+        showElement(errorContainer);
+      });
   });
 });
 
@@ -66,4 +68,19 @@ function copyToClipboard(textToCopy) {
       textArea.remove();
     });
   }
+}
+
+function createSnackbar() {
+  const snackbarContainer = document.getElementById("snackbar-container");
+  const el = document.createElement("div");
+
+  el.classList.add("snackbar");
+  el.innerHTML = "Link was copied!";
+
+  snackbarContainer.append(el);
+  el.classList.add("show");
+
+  setTimeout(() => {
+    el.remove();
+  }, 3000);
 }
