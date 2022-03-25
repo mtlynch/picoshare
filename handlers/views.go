@@ -70,9 +70,6 @@ func (s Server) fileIndexGet() http.HandlerFunc {
 				delta := time.Until(t)
 				return fmt.Sprintf("%s (%.0f days)", t.Format(time.RFC3339), delta.Hours()/24)
 			},
-			"formatShortlink": func(url types.EntryID) string {
-				return r.Host + "/!" + string(url)
-			},
 			"formatFileSize": func(b int) string {
 				const unit = 1024
 
