@@ -96,7 +96,7 @@ workflows:
   test_deploy:
     jobs:
       - check_whitespace
-      - check_frontend_formatting
+      - check_frontend
       - test_go
       - e2e
       - deploy:
