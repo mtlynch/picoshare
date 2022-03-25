@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"path"
+	"sort"
 	"time"
 
 	"github.com/mtlynch/picoshare/v2/types"
@@ -45,6 +46,9 @@ func (s Server) fileIndexGet() http.HandlerFunc {
 			http.Error(w, "failed to retrieve file index", http.StatusInternalServerError)
 			return
 		}
+		sort.Slice(em, func(i, j int) bool {
+			return em[i].Uploaded.After(em[j].Uploaded)
+		})
 		if err := renderTemplate(w, "file-index.html", struct {
 			commonProps
 			Files []types.UploadMetadata

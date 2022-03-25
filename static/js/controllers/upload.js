@@ -17,7 +17,7 @@ export async function uploadFile(file, expirationTime) {
       return response.json();
     })
     .then((data) => {
-      if (!data.hasOwnProperty("id")) {
+      if (!Object.prototype.hasOwnProperty.call(data, "id")) {
         throw new Error("Missing expected id field");
       }
       return Promise.resolve(data);

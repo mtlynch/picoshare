@@ -2,3 +2,7 @@
   text-decoration: line-through;
   color: darkgray;
 }
+
+#error {
+  max-width: 60ch;
+}

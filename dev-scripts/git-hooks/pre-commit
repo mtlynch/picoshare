@@ -15,3 +15,4 @@ set -u
 go build -o /dev/null main.go
 
 npm run check-format
+npm run lint
