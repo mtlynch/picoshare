@@ -4,7 +4,8 @@
   "description": "PicoShare dev scripts",
   "scripts": {
     "check-format": "prettier --check ./**/*.js ./**/*.json ./**/*.css ./**/*.html",
-    "format": "prettier --write ./**/*.js ./**/*.json ./**/*.css ./**/*.html"
+    "format": "prettier --write ./**/*.js ./**/*.json ./**/*.css ./**/*.html",
+    "lint": "eslint ./**/*.js"
   },
   "repository": {
     "type": "git",
@@ -17,6 +18,8 @@
   },
   "homepage": "https://pico.rocks",
   "devDependencies": {
+    "eslint": "^8.11.0",
+    "eslint-plugin-cypress": "^2.12.1",
     "prettier": "^2.6.0"
   }
 }
