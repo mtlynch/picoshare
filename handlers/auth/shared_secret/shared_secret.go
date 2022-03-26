@@ -81,6 +81,7 @@ func (ssa SharedSecretAuthenticator) createCookie(w http.ResponseWriter) {
 		Value:    string(ssa.sharedSecret),
 		Path:     "/",
 		HttpOnly: false,
+		SameSite: http.SameSiteStrictMode,
 		Expires:  time.Now().Add(time.Hour * 24 * 30),
 	})
 }
@@ -91,6 +92,7 @@ func (ssa SharedSecretAuthenticator) ClearSession(w http.ResponseWriter) {
 		Value:    "",
 		Path:     "/",
 		HttpOnly: false,
+		SameSite: http.SameSiteStrictMode,
 		Expires:  time.Unix(0, 0),
 	})
 }
