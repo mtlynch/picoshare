@@ -39,7 +39,7 @@ document.querySelectorAll('[pico-purpose="copy"]').forEach((copyBtn) => {
     copyToClipboard(shortLink).then(() =>
       document
         .querySelector("snackbar-notifications")
-        .showInfoMessage("Copied link")
+        .addInfoMessage("Copied link")
     );
     /*.catch((error) => {
         document.getElementById("error-message").innerText = error;
