@@ -28,6 +28,11 @@ function doUpload(file, expiration) {
       const uploadLinksEl = document.createElement("upload-links");
       uploadLinksEl.fileId = entryId;
       uploadLinksEl.filename = file.name;
+      uploadLinksEl.addEventListener("link-copied", () => {
+        document
+          .querySelector("snackbar-notifications")
+          .addInfoMessage("Copied link");
+      });
       resultEl.append(uploadLinksEl);
       showElement(resultEl);
 

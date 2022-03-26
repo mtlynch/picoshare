@@ -1,0 +1,72 @@
+<template id="upload-link-box-template">
+  <style>
+    @import "/third-party/bulma@0.9.3/bulma.min.css";
+    @import "/third-party/fontawesome6/css/all.min.css";
+
+    .light-font {
+      color: #696969;
+    }
+
+    button i {
+      font-size: 8pt;
+    }
+  </style>
+  <div class="box">
+    <div class="is-flex is-flex-direction-column">
+      <a id="link"></a>
+      <p class="light-font mt-3">
+        <slot></slot>
+      </p>
+    </div>
+    <button id="copy-btn" class="button is-small is-info">
+      <span class="icon is-small">
+        <i class="fa-solid fa-copy"></i>
+      </span>
+    </button>
+  </div>
+</template>
+
+<script type="module">
+  import { copyToClipboard } from "/js/lib/clipboard.js";
+
+  (function () {
+    const template = document.querySelector("#upload-link-box-template");
+
+    customElements.define(
+      "upload-link-box",
+      class extends HTMLElement {
+        connectedCallback() {
+          this.attachShadow({ mode: "open" }).appendChild(
+            template.content.cloneNode(true)
+          );
+          this.shadowRoot.getElementById("copy-btn").addEventListener("click",
+            () => {
+              copyToClipboard(this.href);
+              this.emitLinkCopied();
+            }
+          )
+        }
+
+        get href() {
+          return this.shadowRoot.getElementById("link").href;
+        }
+
+        set href(newValue) {
+          const linkEl = this.shadowRoot.getElementById("link");
+          linkEl.innerText = newValue;
+          linkEl.href = newValue;
+        }
+
+        emitLinkCopied() {
+          this.dispatchEvent(
+            new CustomEvent("link-copied", {
+              bubbles: true,
+              composed: true,
+            })
+          );
+        }
+      }
+    );
+  })();
+</script>
+</template>
