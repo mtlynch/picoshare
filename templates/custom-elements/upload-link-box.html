@@ -7,22 +7,26 @@
       color: #696969;
     }
 
-    button i {
-      font-size: 8pt;
+    .box button {
+      height: 1.5em;
+    }
+
+    .box button, .box button span {
+      font-size: 7pt;
     }
   </style>
   <div class="box">
-    <div class="is-flex is-flex-direction-column">
-      <a id="link"></a>
+      <div class="is-flex is-align-items-center">
+        <p><a id="link"></a></p>
+        <button id="copy-btn" class="button is-small is-info ml-2">
+          <span class="icon is-small">
+            <i class="fa-solid fa-copy"></i>
+          </span>
+        </button>
+      </div>
       <p class="light-font mt-3">
         <slot></slot>
       </p>
-    </div>
-    <button id="copy-btn" class="button is-small is-info">
-      <span class="icon is-small">
-        <i class="fa-solid fa-copy"></i>
-      </span>
-    </button>
   </div>
 </template>
 
@@ -39,6 +43,7 @@
           this.attachShadow({ mode: "open" }).appendChild(
             template.content.cloneNode(true)
           );
+          this.href = this.getAttribute("href");
           this.shadowRoot.getElementById("copy-btn").addEventListener("click",
             () => {
               copyToClipboard(this.href);
@@ -47,11 +52,18 @@
           )
         }
 
+        attributeChangedCallback(name, oldValue, newValue) {
+          if (name === "href" && newValue !== oldValue) {
+            this.href = newValue;
+          }
+        }
+
         get href() {
-          return this.shadowRoot.getElementById("link").href;
+          return this.getAttribute("href");
         }
 
         set href(newValue) {
+          this.setAttribute("href", newValue);
           const linkEl = this.shadowRoot.getElementById("link");
           linkEl.innerText = newValue;
           linkEl.href = newValue;
