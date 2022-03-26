@@ -46,8 +46,9 @@
           this.href = this.getAttribute("href");
           this.shadowRoot.getElementById("copy-btn").addEventListener("click",
             () => {
-              copyToClipboard(this.href);
-              this.emitLinkCopied();
+              copyToClipboard(this.href).then(() => {
+                this.emitLinkCopied();
+              });
             }
           )
         }
