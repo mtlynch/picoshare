@@ -20,6 +20,7 @@
 
     <body>
       {{ template "custom-elements" . }}
+      {{ template "snackbar-notifications.html" }}
 
       {{ template "navbar" . }}
 
@@ -29,6 +30,8 @@
           {{ template "content" . }}
         </div>
       </section>
+
+      <snackbar-notifications />
     </body>
   </html>
 {{ end }}

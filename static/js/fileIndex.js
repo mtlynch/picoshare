@@ -1,7 +1,6 @@
 import { deleteFile } from "./controllers/delete.js";
 import { copyToClipboard } from "./lib/copyToClipboard.js";
 import { makeShortLink } from "./lib/links.js";
-import { createSnackbar } from "./lib/snackbar.js";
 
 const errorContainer = document.getElementById("error");
 
@@ -37,11 +36,14 @@ document.querySelectorAll('[pico-purpose="copy"]').forEach((copyBtn) => {
     const picoId = copyBtn.getAttribute("pico-entry-id");
     const shortLink = makeShortLink(picoId);
 
-    copyToClipboard(shortLink)
-      .then(() => createSnackbar("Link was copied!"))
-      .catch((error) => {
+    copyToClipboard(shortLink).then(() =>
+      document
+        .querySelector("snackbar-notifications")
+        .showInfoMessage("Copied link")
+    );
+    /*.catch((error) => {
         document.getElementById("error-message").innerText = error;
         showElement(errorContainer);
-      });
+      });*/
   });
 });
