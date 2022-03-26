@@ -17,8 +17,15 @@ document.querySelectorAll('[pico-purpose="delete"]').forEach((deleteBtn) => {
     const id = deleteBtn.getAttribute("pico-entry-id");
     deleteFile(id)
       .then(() => {
-        const rowEl = deleteBtn.parentElement.parentElement;
-        rowEl.classList.add("deleted-entry");
+        let currentEl = deleteBtn.parentElement;
+        while (currentEl && currentEl.nodeName !== "TR") {
+          currentEl = currentEl.parentElement;
+        }
+        if (!currentEl) {
+          return;
+        }
+
+        currentEl.classList.add("deleted-entry");
       })
       .catch((error) => {
         document.getElementById("error-message").innerText = error;
