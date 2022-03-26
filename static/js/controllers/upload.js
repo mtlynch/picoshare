@@ -3,7 +3,7 @@
 export async function uploadFile(file, expirationTime) {
   const formData = new FormData();
   formData.append("file", file);
-  return fetch(`/api/entry?expiration=${expirationTime}`, {
+  return fetch(`/api/entry?expiration=${encodeURIComponent(expirationTime)}`, {
     method: "POST",
     credentials: "include",
     body: formData,
