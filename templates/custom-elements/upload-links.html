@@ -1,19 +1,18 @@
 <template id="upload-links-template">
   <style>
-    @import "/third-party/bulma@0.9.3/bulma.min.css";
-
-    .box a + p {
+    .box-wrapper + .box-wrapper {
       margin-top: 1rem;
-      color: #696969;
     }
   </style>
-  <div class="box">
-    <a id="verbose-link"></a>
-    <p>Full Link</p>
+  <div class="box-wrapper">
+    <upload-link-box id="verbose-link-box">
+      <slot>Full Link</slot>
+    </upload-link-box>
   </div>
-  <div class="box">
-    <a id="short-link"></a>
-    <p>Shortlink</p>
+  <div class="box-wrapper">
+    <upload-link-box id="short-link-box">
+      <slot>Shortlink</slot>
+    </upload-link-box>
   </div>
 </template>
 
@@ -57,21 +56,13 @@
             return;
           }
 
-          const shortLink = makeShortLink(this.fileId);
-          const shortRoute = new URL(shortLink).pathname;
-
-          const verboseLink = makeVerboseLink(this.fileId, this.filename);
-          const verboseRoute = new URL(verboseLink).pathname;
-
-          const shortLinkEl = this.shadowRoot.getElementById("short-link");
-          shortLinkEl.innerText = shortLink;
-          shortLinkEl.href = shortRoute;
-
-          const verboseLinkEl = this.shadowRoot.getElementById("verbose-link");
-          verboseLinkEl.innerText = verboseLink;
-          verboseLinkEl.href = verboseRoute;
+          this.shadowRoot.getElementById("verbose-link-box").href =
+            makeVerboseLink(this.fileId, this.filename);
+          this.shadowRoot.getElementById("short-link-box").href =
+            makeShortLink(this.fileId);
         }
       }
     );
   })();
 </script>
+</template>
