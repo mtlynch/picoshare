@@ -36,14 +36,15 @@ document.querySelectorAll('[pico-purpose="copy"]').forEach((copyBtn) => {
     const fileId = copyBtn.getAttribute("pico-entry-id");
     const shortLink = makeShortLink(fileId);
 
-    copyToClipboard(shortLink).then(() =>
-      document
-        .querySelector("snackbar-notifications")
-        .addInfoMessage("Copied link")
-    );
-    /*.catch((error) => {
+    copyToClipboard(shortLink)
+      .then(() =>
+        document
+          .querySelector("snackbar-notifications")
+          .addInfoMessage("Copied link")
+      )
+      .catch((error) => {
         document.getElementById("error-message").innerText = error;
         showElement(errorContainer);
-      });*/
+      });
   });
 });
