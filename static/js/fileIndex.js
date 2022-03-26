@@ -34,8 +34,8 @@ document.querySelector("#error .delete").addEventListener("click", () => {
 
 document.querySelectorAll('[pico-purpose="copy"]').forEach((copyBtn) => {
   copyBtn.addEventListener("click", () => {
-    const picoId = copyBtn.getAttribute("pico-entry-id");
-    const shortLink = makeShortLink(picoId);
+    const fileId = copyBtn.getAttribute("pico-entry-id");
+    const shortLink = makeShortLink(fileId);
 
     copyToClipboard(shortLink)
       .then(() => createSnackbar("Link was copied!"))
