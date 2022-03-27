@@ -10,7 +10,7 @@ TIMESTAMP=$(date --iso-8601=minutes | sed 's/://g' | sed 's/+0000/Z/g')
 export DB_PATH="data/store.db"
 export DB_COPY_PATH="data/${TIMESTAMP}.db"
 
-rm ${DB_PATH}* || true
+./dev-scripts/reset-db
 
 set +x
 . prod.env
