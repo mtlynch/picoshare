@@ -38,6 +38,74 @@ func (s Server) indexGet() http.HandlerFunc {
 	}
 }
 
+func (s Server) guestLinkIndexGet() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		type DummyGuestLinks struct {
+			Label    string
+			Created  time.Time
+			LastUsed time.Time
+			Expires  types.ExpirationTime
+		}
+		if err := renderTemplate(w, "guest-link-index.html", struct {
+			commonProps
+			GuestLinks []DummyGuestLinks
+		}{
+			commonProps: commonProps{
+				Title:           "PicoShare - Files",
+				IsAuthenticated: s.isAuthenticated(r),
+			},
+			GuestLinks: []DummyGuestLinks{},
+		}, template.FuncMap{
+			"formatTime": func(t time.Time) string {
+				return t.Format(time.RFC3339)
+			},
+			"formatExpiration": func(et types.ExpirationTime) string {
+				if et == types.NeverExpire {
+					return "Never"
+				}
+				t := time.Time(et)
+				delta := time.Until(t)
+				return fmt.Sprintf("%s (%.0f days)", t.Format(time.RFC3339), delta.Hours()/24)
+			},
+		}); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+}
+
+func (s Server) guestLinksNewGet() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		type expirationOption struct {
+			FriendlyName string
+			Expiration   time.Time
+			IsDefault    bool
+		}
+		if err := renderTemplate(w, "guest-link-create.html", struct {
+			commonProps
+			ExpirationOptions []expirationOption
+		}{
+			commonProps: commonProps{
+				Title:           "PicoShare - New Guest Link",
+				IsAuthenticated: s.isAuthenticated(r),
+			},
+			ExpirationOptions: []expirationOption{
+				{"1 day", time.Now().AddDate(0, 0, 1), false},
+				{"7 days", time.Now().AddDate(0, 0, 7), false},
+				{"30 days", time.Now().AddDate(0, 0, 30), false},
+				{"1 year", time.Now().AddDate(1, 0, 0), false},
+				{"Never", time.Time(types.NeverExpire), true},
+			},
+		}, template.FuncMap{
+			"formatExpiration": func(t time.Time) string {
+				return t.Format(time.RFC3339)
+			}}); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+}
+
 func (s Server) fileIndexGet() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		em, err := s.store.GetEntriesMetadata()

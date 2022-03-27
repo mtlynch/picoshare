@@ -1,0 +1,64 @@
+{{ define "style-tags" }}
+{{ end }}
+
+{{ define "script-tags" }}
+{{ end }}
+
+{{ define "custom-elements" }}
+{{ end }}
+
+{{ define "content" }}
+  <h1 class="title">Guest Links</h1>
+
+  <a class="button is-primary" href="/guest-links/new">Create new</a>
+
+  <div class="table-container">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Label</th>
+          <th>Created</th>
+          <th>Last Used</th>
+          <th>Expires</th>
+          <th class="has-text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{ range .GuestLinks }}
+          <tr>
+            <td class="is-vcentered" test-data-id="filename">
+              {{ .Label }}
+            </td>
+            <td class="is-vcentered">{{ formatTime .Created }}</td>
+            <td class="is-vcentered">{{ formatTime .LastUsed }}</td>
+            <td class="is-vcentered">{{ formatExpiration .Expires }}</td>
+            <td class="is-vcentered">
+              <div class="field is-grouped is-justify-content-flex-end">
+                <p class="control">
+                  <button
+                    class="button is-info"
+                    pico-purpose="copy"
+                    pico-entry-id="{{ .ID }}"
+                  >
+                    <i class="fa-solid fa-copy"></i>
+                  </button>
+                </p>
+                <p class="control">
+                  <button
+                    class="button is-danger"
+                    pico-purpose="delete"
+                    pico-entry-id="{{ .ID }}"
+                  >
+                    <i class="fa fa-trash" aria-hidden="true"></i>
+                  </button>
+                </p>
+              </div>
+            </td>
+          </tr>
+        {{ end }}
+      </tbody>
+    </table>
+  </div>
+{{ end }}
+
+{{ template "base.html" }}
