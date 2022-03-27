@@ -40,24 +40,47 @@ func (s Server) indexGet() http.HandlerFunc {
 
 func (s Server) guestLinkIndexGet() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		type DummyGuestLinks struct {
-			Label    string
-			Created  time.Time
-			LastUsed time.Time
-			Expires  types.ExpirationTime
+		links, err := s.store.GetGuestLinks()
+		if err != nil {
+			log.Printf("failed to retrieve guest links: %v", err)
+			http.Error(w, "Failed to retrieve guest links", http.StatusInternalServerError)
+			return
 		}
 		if err := renderTemplate(w, "guest-link-index.html", struct {
 			commonProps
-			GuestLinks []DummyGuestLinks
+			GuestLinks []types.GuestLink
 		}{
 			commonProps: commonProps{
 				Title:           "PicoShare - Files",
 				IsAuthenticated: s.isAuthenticated(r),
 			},
-			GuestLinks: []DummyGuestLinks{},
+			GuestLinks: links,
 		}, template.FuncMap{
 			"formatTime": func(t time.Time) string {
 				return t.Format(time.RFC3339)
+			},
+			"formatSizeLimit": func(limit *types.GuestUploadSizeLimit) string {
+				if limit == nil {
+					return "Unlimited"
+				}
+				b := int64(*limit)
+				const unit = 1024
+
+				if b < unit {
+					return fmt.Sprintf("%d B", b)
+				}
+				div, exp := int64(unit), 0
+				for n := b / unit; n >= unit; n /= unit {
+					div *= unit
+					exp++
+				}
+				return fmt.Sprintf("%.2f %cB", float64(b)/float64(div), "kMGTPE"[exp])
+			},
+			"formatCountLimit": func(limit *types.GuestUploadCountLimit) string {
+				if limit == nil {
+					return "Unlimited"
+				}
+				return fmt.Sprintf("%d", int64(*limit))
 			},
 			"formatExpiration": func(et types.ExpirationTime) string {
 				if et == types.NeverExpire {

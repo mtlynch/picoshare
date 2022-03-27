@@ -38,7 +38,7 @@ type (
 
 func (s Server) entryPost() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		expiration, err := parseExpiration(r)
+		expiration, err := parseExpirationFromRequest(r)
 		if err != nil {
 			log.Printf("invalid expiration URL parameter: %v", err)
 			http.Error(w, fmt.Sprintf("Invalid expiration URL parameter: %v", err), http.StatusBadRequest)
@@ -145,7 +145,7 @@ func parseContentType(s string) (types.ContentType, error) {
 	return types.ContentType(s), nil
 }
 
-func parseExpiration(r *http.Request) (types.ExpirationTime, error) {
+func parseExpirationFromRequest(r *http.Request) (types.ExpirationTime, error) {
 	expirationRaw, ok := r.URL.Query()["expiration"]
 	if !ok {
 		return types.ExpirationTime{}, errors.New("missing required URL parameter: expiration")
@@ -153,7 +153,11 @@ func parseExpiration(r *http.Request) (types.ExpirationTime, error) {
 	if len(expirationRaw) <= 0 {
 		return types.ExpirationTime{}, errors.New("missing required URL parameter: expiration")
 	}
-	expiration, err := time.Parse(time.RFC3339, expirationRaw[0])
+	return parseExpiration(expirationRaw[0])
+}
+
+func parseExpiration(expirationRaw string) (types.ExpirationTime, error) {
+	expiration, err := time.Parse(time.RFC3339, expirationRaw)
 	if err != nil {
 		log.Printf("invalid expiration URL parameter: %v -> %v", expirationRaw, err)
 		return types.ExpirationTime{}, errors.New("invalid expiration URL parameter")

@@ -12,6 +12,8 @@ type Store interface {
 	GetEntry(id types.EntryID) (types.UploadEntry, error)
 	InsertEntry(reader io.Reader, metadata types.UploadMetadata) error
 	DeleteEntry(id types.EntryID) error
+	GetGuestLinks() ([]types.GuestLink, error)
+	InsertGuestLink(types.GuestLink) error
 }
 
 // EntryNotFoundError occurs when no entry exists with the given ID.

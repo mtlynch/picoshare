@@ -21,8 +21,9 @@ const (
 )
 
 type db struct {
-	ctx       *sql.DB
-	chunkSize int
+	ctx        *sql.DB
+	chunkSize  int
+	guestLinks []types.GuestLink // TODO: Actually insert this into SQLite
 }
 
 func New(path string) store.Store {
@@ -246,6 +247,18 @@ func (d db) DeleteEntry(id types.EntryID) error {
 	}
 
 	return tx.Commit()
+}
+
+func (d db) GetGuestLinks() ([]types.GuestLink, error) {
+	return d.guestLinks, nil
+}
+
+func (d *db) InsertGuestLink(guestLink types.GuestLink) error {
+	log.Printf("saving new guest link %s", guestLink.ID)
+
+	d.guestLinks = append(d.guestLinks, guestLink)
+
+	return nil
 }
 
 func formatTime(t time.Time) string {
