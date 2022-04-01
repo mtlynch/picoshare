@@ -111,16 +111,17 @@ workflows:
   version: 2
   test_deploy:
     jobs:
-      - check_whitespace
-      - check_frontend
-      - test_go
-      - e2e
-      - build_images:
-          requires:
-            - check_whitespace
-            - check_frontend
-            - test_go
-            - e2e
+      #- check_whitespace
+      #- check_frontend
+      #- test_go
+      #- e2e
+      - build_images
+      #- build_images:
+      #    requires:
+      #      - check_whitespace
+      #      - check_frontend
+      #      - test_go
+      #      - e2e
       - deploy:
           requires:
             - check_whitespace
