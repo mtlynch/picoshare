@@ -75,17 +75,17 @@ jobs:
       - setup_remote_docker:
           version: 20.10.11
       - run:
+          name: Log in to Docker Hub
+          command: echo "$DOCKERHUB_ACCESS_TOKEN" | docker login --username "$DOCKERHUB_USERNAME" --password-stdin
+      - run:
           name: Create multiplatform builder context
           command: docker context create multi-arch-build
       - run:
           name: Create multiplatfrom builder
           command: docker buildx create --use multi-arch-build --platform linux/arm/v7,linux/arm64,linux/amd64
       - run:
-          name: List supported platforms
-          command: docker buildx ls
-      - run:
           name: Build docker images
-          command: docker buildx build --platform linux/arm/v7,linux/arm64,linux/amd64 --tag mtlynch/picoshare:experimental-multiarch .
+          command: docker buildx build --push --platform linux/arm/v7,linux/arm64,linux/amd64 --tag mtlynch/picoshare:experimental-multiarch .
   deploy:
     machine:
       image: ubuntu-2004:202010-01
