@@ -78,22 +78,38 @@ jobs:
           version: 20.10.11
       - run:
           name: Log in to Docker Hub
-          command: echo "$DOCKERHUB_ACCESS_TOKEN" | docker login --username "$DOCKERHUB_USERNAME" --password-stdin
+          command: |
+            echo "$DOCKERHUB_ACCESS_TOKEN" | \
+              docker login --username "$DOCKERHUB_USERNAME" --password-stdin
       - run:
           name: Reset QEMU builder
-          command: docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+          command: |
+            docker run \
+              --rm \
+              --privileged multiarch/qemu-user-static \
+              --reset \
+              -p yes
       - run:
           name: Create multiarch build context
           command: docker context create builder
       - run:
           name: Create multiplatform builder
-          command: docker buildx create builder --name builder --driver docker-container --use
+          command: |
+            docker buildx create builder \
+              --name builder \
+              --driver docker-container \
+              --use
       - run:
           name: Ensure builder has booted
           command: docker buildx inspect --bootstrap
       - run:
           name: Build docker images
-          command: docker buildx build --push --platform "$BUILD_TARGETS" --tag mtlynch/picoshare:experimental-multiarch .
+          command: |
+            docker buildx build \
+              --push \
+              --platform "$BUILD_TARGETS" \
+              --tag "mtlynch/picoshare:${CIRCLE_TAG}" \
+              --tag mtlynch/picoshare:latest .
   deploy:
     machine:
       image: ubuntu-2004:202010-01
@@ -132,11 +148,11 @@ workflows:
             - check_frontend
             - test_go
             - e2e
-      #filters:
-      #      tags:
-      #        only: /[0-9]+(\.[0-9]+){2}/
-      #      branches:
-      #        ignore: /.*/
+      filters:
+            tags:
+              only: /[0-9]+(\.[0-9]+){2}/
+            branches:
+              ignore: /.*/
       - deploy:
           requires:
             - check_whitespace
