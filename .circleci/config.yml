@@ -72,8 +72,8 @@ jobs:
       - image: cimg/base:stable
     steps:
       - checkout
-    - setup_remote_docker:
-        version: 20.10.11
+      - setup_remote_docker:
+          version: 20.10.11
       #- run:
       #    name: foo
       #    command: docker buildx create --use --name build --node build --driver-opt network=host
