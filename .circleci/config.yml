@@ -73,7 +73,7 @@ jobs:
     steps:
       - checkout
       - setup_remote_docker:
-          version: 20.10.14
+          version: 20.10.11
       - run:
           name: Create multiplatform builder context
           command: docker context create multi-arch-build
