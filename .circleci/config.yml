@@ -109,7 +109,8 @@ jobs:
               --push \
               --platform "$BUILD_TARGETS" \
               --tag "mtlynch/picoshare:${CIRCLE_TAG}" \
-              --tag mtlynch/picoshare:latest .
+              --tag mtlynch/picoshare:latest \
+              .
   deploy:
     machine:
       image: ubuntu-2004:202010-01
