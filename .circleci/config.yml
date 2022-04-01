@@ -122,12 +122,12 @@ workflows:
       #      - check_frontend
       #      - test_go
       #      - e2e
-      - deploy:
-          requires:
-            - check_whitespace
-            - check_frontend
-            - test_go
-            - e2e
-          filters:
-            branches:
-              only: master
+      #- deploy:
+      #    requires:
+      #      - check_whitespace
+      #      - check_frontend
+      #      - test_go
+      #      - e2e
+      #    filters:
+      #      branches:
+      #        only: master
