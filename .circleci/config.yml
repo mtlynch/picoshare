@@ -68,14 +68,12 @@ jobs:
       - store_artifacts:
           path: e2e/cypress/screenshots
   build_images:
-    resource_class: large
-    machine:
-      # Choose an explicit machine image so that we get the latest version of
-      # docker-compose.
-      image: ubuntu-2004:202010-01
-      docker_layer_caching: true
+    docker:
+      - image: cimg/base:stable
     steps:
       - checkout
+    - setup_remote_docker:
+        version: 20.10.11
       #- run:
       #    name: foo
       #    command: docker buildx create --use --name build --node build --driver-opt network=host
