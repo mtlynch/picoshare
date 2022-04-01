@@ -86,7 +86,7 @@ jobs:
           command: docker context create builder
       - run:
           name: Create multiplatfrom builder
-          command: docker buildx create --name builder --driver docker-container --use
+          command: docker buildx create builder --name builder --driver docker-container --use
       - run:
           command: docker buildx inspect --bootstrap
       - run:
