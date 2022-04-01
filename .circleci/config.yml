@@ -70,6 +70,8 @@ jobs:
   build_images:
     docker:
       - image: cimg/base:stable
+    environment:
+      BUILD_TARGETS: "linux/arm/v7,linux/arm64,linux/amd64"
     steps:
       - checkout
       - setup_remote_docker:
@@ -78,14 +80,16 @@ jobs:
           name: Log in to Docker Hub
           command: echo "$DOCKERHUB_ACCESS_TOKEN" | docker login --username "$DOCKERHUB_USERNAME" --password-stdin
       - run:
-          name: Create multiplatform builder context
-          command: docker context create multi-arch-build
+          name: Remove default builder
+          command: docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
       - run:
           name: Create multiplatfrom builder
-          command: docker buildx create --use multi-arch-build --platform linux/arm/v7,linux/arm64,linux/amd64
+          command: docker buildx create --use multiarch --driver docker-container --use
+      - run:
+          command: docker buildx inspect --bootstrap
       - run:
           name: Build docker images
-          command: docker buildx build --push --platform linux/arm/v7,linux/arm64,linux/amd64 --tag mtlynch/picoshare:experimental-multiarch .
+          command: docker buildx build --push --platform "$BUILD_TARGETS" --tag mtlynch/picoshare:experimental-multiarch .
   deploy:
     machine:
       image: ubuntu-2004:202010-01
@@ -125,6 +129,11 @@ workflows:
       #      - check_frontend
       #      - test_go
       #      - e2e
+      #filters:
+      #      tags:
+      #        only: /[0-9]+(\.[0-9]+){2}/
+      #      branches:
+      #        ignore: /.*/
       #- deploy:
       #    requires:
       #      - check_whitespace
