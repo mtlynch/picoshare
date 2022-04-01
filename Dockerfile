@@ -15,7 +15,13 @@ COPY ./main.go /app/
 WORKDIR /app
 
 RUN set -x && \
-    if [ "$TARGETPLATFORM" = "linux/arm/v7" ] ; then GOARCH="arm" ; elif [ "$TARGETPLATFORM" = "linux/arm64" ] ; then GOARCH="arm64" ; else GOARCH="amd64" ; fi && \
+    if [ "$TARGETPLATFORM" = "linux/arm/v7" ] ; then \
+      GOARCH="arm"; \
+    elif [ "$TARGETPLATFORM" = "linux/arm64" ] ; then \
+      GOARCH="arm64"; \
+    else \
+      GOARCH="amd64"; \
+    fi && \
     set -u && \
     GOOS=linux \
     go build \
@@ -38,7 +44,13 @@ RUN set -x && \
       wget
 
 RUN set -x && \
-    if [ "$TARGETPLATFORM" = "linux/arm/v7" ] ; then ARCH="arm7" ; elif [ "$TARGETPLATFORM" = "linux/arm64" ] ; then ARCH="arm64" ; else ARCH="amd64" ; fi && \
+    if [ "$TARGETPLATFORM" = "linux/arm/v7" ] ; then \
+      ARCH="arm7" ; \
+    elif [ "$TARGETPLATFORM" = "linux/arm64" ] ; then \
+      ARCH="arm64" ; \
+    else \
+      ARCH="amd64" ; \
+    fi && \
     set -u && \
     litestream_binary_tgz_filename="litestream-${litestream_version}-linux-${ARCH}-static.tar.gz" && \
     wget "https://github.com/benbjohnson/litestream/releases/download/${litestream_version}/${litestream_binary_tgz_filename}" && \
