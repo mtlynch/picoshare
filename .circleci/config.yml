@@ -73,10 +73,13 @@ jobs:
     steps:
       - checkout
       - setup_remote_docker:
-          version: 20.10.11
-      #- run:
-      #    name: foo
-      #    command: docker buildx create --use --name build --node build --driver-opt network=host
+          version: 20.10.14
+      - run:
+          name: Create multiplatform builder context
+          command: docker context create multi-arch-build
+      - run:
+          name: Create multiplatfrom builder
+          command: docker buildx create --use multi-arch-build --platform linux/arm/v7,linux/arm64,linux/amd64
       - run:
           name: List supported platforms
           command: docker buildx ls
