@@ -12,14 +12,15 @@ function megabytesToBytes(megabytes) {
 
 function guestLinkFromInputs() {
   // TODO: Validate the inputs.
+  //        Make sure number inputs are ints instead of decimals.
   return {
     label: labelInput.value || null,
     expirationTime: expirationSelect.value,
-    sizeLimit: sizeUploadLimitInput.value
-      ? megabytesToBytes(parseInt(sizeUploadLimitInput.value))
+    sizeLimit: sizeUploadLimitInput.valueAsNumber
+      ? megabytesToBytes(sizeUploadLimitInput.valueAsNumber)
       : null,
-    countLimit: fileUploadLimitInput.value
-      ? parseInt(fileUploadLimitInput.value)
+    countLimit: fileUploadLimitInput.valueAsNumber
+      ? fileUploadLimitInput.valueAsNumber
       : null,
   };
 }
