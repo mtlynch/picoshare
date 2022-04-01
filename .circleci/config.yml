@@ -67,7 +67,7 @@ jobs:
           path: e2e/cypress/videos
       - store_artifacts:
           path: e2e/cypress/screenshots
-  build_images:
+  build_docker_images:
     docker:
       - image: cimg/base:stable
     environment:
@@ -142,7 +142,7 @@ workflows:
       - check_frontend
       - test_go
       - e2e
-      - build_images:
+      - build_docker_images:
           requires:
             - check_whitespace
             - check_frontend
