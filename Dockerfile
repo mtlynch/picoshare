@@ -14,7 +14,9 @@ COPY ./main.go /app/
 
 WORKDIR /app
 
-RUN if [ "$TARGETPLATFORM" = "linux/arm/v7" ] ; then GOARCH="arm" ; else GOARCH="amd64" ; fi && \
+RUN set -x && \
+    if [ "$TARGETPLATFORM" = "linux/arm/v7" ] ; then GOARCH="arm" ; elif [ "$TARGETPLATFORM" = "linux/arm64" ] ; then GOARCH="arm64" ; else GOARCH="amd64" ; fi && \
+    set -u && \
     GOOS=linux \
     go build \
       -tags netgo \
@@ -35,7 +37,9 @@ RUN set -x && \
       ca-certificates \
       wget
 
-RUN if [ "$TARGETPLATFORM" == "linux/arm/v7" ] ; then ARCH="arm7" ; else ARCH="amd64" ; fi && \
+RUN set -x && \
+    if [ "$TARGETPLATFORM" = "linux/arm/v7" ] ; then ARCH="arm7" ; elif [ "$TARGETPLATFORM" = "linux/arm64" ] ; then ARCH="arm64" ; else ARCH="amd64" ; fi && \
+    set -u && \
     litestream_binary_tgz_filename="litestream-${litestream_version}-linux-${ARCH}-static.tar.gz" && \
     wget "https://github.com/benbjohnson/litestream/releases/download/${litestream_version}/${litestream_binary_tgz_filename}" && \
     mv "${litestream_binary_tgz_filename}" litestream.tgz

@@ -67,6 +67,24 @@ jobs:
           path: e2e/cypress/videos
       - store_artifacts:
           path: e2e/cypress/screenshots
+  build_images:
+    resource_class: large
+    machine:
+      # Choose an explicit machine image so that we get the latest version of
+      # docker-compose.
+      image: ubuntu-2004:202010-01
+      docker_layer_caching: true
+    steps:
+      - checkout
+      #- run:
+      #    name: foo
+      #    command: docker buildx create --use --name build --node build --driver-opt network=host
+      - run:
+          name: List supported platforms
+          command: docker buildx ls
+      - run:
+          name: Build docker images
+          command: docker buildx build --platform linux/arm/v7,linux/arm64,linux/amd64 --tag mtlynch/picoshare:experimental-multiarch .
   deploy:
     machine:
       image: ubuntu-2004:202010-01
@@ -99,6 +117,12 @@ workflows:
       - check_frontend
       - test_go
       - e2e
+      - build_images:
+          requires:
+            - check_whitespace
+            - check_frontend
+            - test_go
+            - e2e
       - deploy:
           requires:
             - check_whitespace
