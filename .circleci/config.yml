@@ -83,8 +83,10 @@ jobs:
           name: Remove default builder
           command: docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
       - run:
+          command: docker buildx rm builder
+      - run:
           name: Create multiplatfrom builder
-          command: docker buildx create --use multiarch --driver docker-container --use
+          command: docker buildx create --name builder --driver docker-container --use
       - run:
           command: docker buildx inspect --bootstrap
       - run:
