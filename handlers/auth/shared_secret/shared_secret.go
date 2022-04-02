@@ -99,7 +99,7 @@ func (ssa SharedSecretAuthenticator) ClearSession(w http.ResponseWriter) {
 
 func sharedSecretFromKey(key []byte) (sharedSecret, error) {
 	if len(key) == 0 {
-		return sharedSecret{}, errors.New("invalid shared secret")
+		return sharedSecret{}, errors.New("invalid shared secret key")
 	}
 
 	// These would be insecure values for storing a database of user credentials,
