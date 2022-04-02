@@ -1,5 +1,7 @@
 FROM golang:1.17.4 AS builder
 
+ARG TARGETPLATFORM
+
 COPY ./garbagecollect /app/garbagecollect
 COPY ./handlers /app/handlers
 COPY ./random /app/random
@@ -12,7 +14,16 @@ COPY ./main.go /app/
 
 WORKDIR /app
 
-RUN GOOS=linux GOARCH=amd64 \
+RUN set -x && \
+    if [ "$TARGETPLATFORM" = "linux/arm/v7" ] ; then \
+      GOARCH="arm"; \
+    elif [ "$TARGETPLATFORM" = "linux/arm64" ] ; then \
+      GOARCH="arm64"; \
+    else \
+      GOARCH="amd64"; \
+    fi && \
+    set -u && \
+    GOOS=linux \
     go build \
       -tags netgo \
       -ldflags '-w -extldflags "-static"' \
@@ -21,8 +32,8 @@ RUN GOOS=linux GOARCH=amd64 \
 
 FROM debian:stable-20211011-slim AS litestream_downloader
 
+ARG TARGETPLATFORM
 ARG litestream_version="v0.3.8"
-ARG litestream_binary_tgz_filename="litestream-${litestream_version}-linux-amd64-static.tar.gz"
 
 WORKDIR /litestream
 
@@ -31,8 +42,20 @@ RUN set -x && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y \
       ca-certificates \
       wget
-RUN wget "https://github.com/benbjohnson/litestream/releases/download/${litestream_version}/${litestream_binary_tgz_filename}"
-RUN tar -xvzf "${litestream_binary_tgz_filename}"
+
+RUN set -x && \
+    if [ "$TARGETPLATFORM" = "linux/arm/v7" ] ; then \
+      ARCH="arm7" ; \
+    elif [ "$TARGETPLATFORM" = "linux/arm64" ] ; then \
+      ARCH="arm64" ; \
+    else \
+      ARCH="amd64" ; \
+    fi && \
+    set -u && \
+    litestream_binary_tgz_filename="litestream-${litestream_version}-linux-${ARCH}-static.tar.gz" && \
+    wget "https://github.com/benbjohnson/litestream/releases/download/${litestream_version}/${litestream_binary_tgz_filename}" && \
+    mv "${litestream_binary_tgz_filename}" litestream.tgz
+RUN tar -xvzf litestream.tgz
 
 FROM alpine:3.15
 
