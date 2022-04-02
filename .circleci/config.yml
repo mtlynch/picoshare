@@ -140,10 +140,22 @@ workflows:
   version: 2
   test_deploy:
     jobs:
-      - check_whitespace
-      - check_frontend
-      - test_go
-      - e2e
+      - check_whitespace:
+          filters:
+            tags:
+              only: /.*/
+      - check_frontend:
+          filters:
+            tags:
+              only: /.*/
+      - test_go:
+          filters:
+            tags:
+              only: /.*/
+      - e2e:
+          filters:
+            tags:
+              only: /.*/
       - build_docker_images:
           requires:
             - check_whitespace
@@ -164,3 +176,5 @@ workflows:
           filters:
             branches:
               only: master
+            tags:
+              only: /.*/
