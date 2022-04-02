@@ -1,25 +1,29 @@
 package shared_secret
 
 import (
+	"crypto/sha256"
 	"crypto/subtle"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"net/http"
 	"time"
+
+	"golang.org/x/crypto/pbkdf2"
 )
 
 const authCookieName = "sharedSecret"
 
 type (
-	sharedSecret string
+	sharedSecret []byte
 
 	SharedSecretAuthenticator struct {
 		sharedSecret sharedSecret
 	}
 )
 
-func New(sharedSecret string) (SharedSecretAuthenticator, error) {
-	ss, err := parseSharedSecret(sharedSecret)
+func New(sharedSecretKey string) (SharedSecretAuthenticator, error) {
+	ss, err := sharedSecretFromKey([]byte(sharedSecretKey))
 	if err != nil {
 		return SharedSecretAuthenticator{}, err
 	}
@@ -36,7 +40,7 @@ func (ssa SharedSecretAuthenticator) StartSession(w http.ResponseWriter, r *http
 		return
 	}
 
-	if subtle.ConstantTimeCompare([]byte(ss), []byte(ssa.sharedSecret)) == 0 {
+	if !sharedSecretsEqual(ss, ssa.sharedSecret) {
 		http.Error(w, "Incorrect shared secret", http.StatusUnauthorized)
 		return
 	}
@@ -45,16 +49,16 @@ func (ssa SharedSecretAuthenticator) StartSession(w http.ResponseWriter, r *http
 }
 
 func sharedSecretFromRequest(r *http.Request) (sharedSecret, error) {
-	ar := struct {
-		SharedSecret string `json:"sharedSecret"`
+	body := struct {
+		SharedSecretKey string `json:"sharedSecretKey"`
 	}{}
 	decoder := json.NewDecoder(r.Body)
-	err := decoder.Decode(&ar)
+	err := decoder.Decode(&body)
 	if err != nil {
-		return "", err
+		return sharedSecret{}, err
 	}
 
-	return parseSharedSecret(ar.SharedSecret)
+	return sharedSecretFromKey([]byte(body.SharedSecretKey))
 }
 
 func (ssa SharedSecretAuthenticator) Authenticate(r *http.Request) bool {
@@ -63,22 +67,18 @@ func (ssa SharedSecretAuthenticator) Authenticate(r *http.Request) bool {
 		return false
 	}
 
-	ss, err := parseSharedSecret(authCookie.Value)
+	ss, err := sharedSecretFromBase64(authCookie.Value)
 	if err != nil {
 		return false
 	}
 
-	if ss != ssa.sharedSecret {
-		return false
-	}
-
-	return true
+	return sharedSecretsEqual(ss, ssa.sharedSecret)
 }
 
 func (ssa SharedSecretAuthenticator) createCookie(w http.ResponseWriter) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     authCookieName,
-		Value:    string(ssa.sharedSecret),
+		Value:    base64.StdEncoding.EncodeToString(ssa.sharedSecret),
 		Path:     "/",
 		HttpOnly: true,
 		SameSite: http.SameSiteStrictMode,
@@ -97,9 +97,35 @@ func (ssa SharedSecretAuthenticator) ClearSession(w http.ResponseWriter) {
 	})
 }
 
-func parseSharedSecret(s string) (sharedSecret, error) {
-	if len(s) == 0 {
-		return sharedSecret(""), errors.New("invalid shared secret")
+func sharedSecretFromKey(key []byte) (sharedSecret, error) {
+	if len(key) == 0 {
+		return sharedSecret{}, errors.New("invalid shared secret key")
 	}
-	return sharedSecret(s), nil
+
+	// These would be insecure values for storing a database of user credentials,
+	// but we're only storing a single password, so it's not important to have
+	// random salt or high iteration rounds.
+	staticSalt := []byte{1, 2, 3, 4}
+	iter := 100
+
+	dk := pbkdf2.Key(key, staticSalt, iter, 32, sha256.New)
+
+	return sharedSecret(dk), nil
+}
+
+func sharedSecretFromBase64(b64encoded string) (sharedSecret, error) {
+	if len(b64encoded) == 0 {
+		return sharedSecret{}, errors.New("invalid shared secret")
+	}
+
+	decoded, err := base64.StdEncoding.DecodeString(b64encoded)
+	if err != nil {
+		return sharedSecret{}, err
+	}
+
+	return sharedSecret(decoded), nil
+}
+
+func sharedSecretsEqual(a, b sharedSecret) bool {
+	return subtle.ConstantTimeCompare(a, b) != 0
 }

@@ -6,7 +6,7 @@ export async function authenticate(passphrase) {
     cache: "no-cache",
     redirect: "error",
     body: JSON.stringify({
-      sharedSecret: passphrase,
+      sharedSecretKey: passphrase,
     }),
   }).then((response) => {
     if (!response.ok) {
