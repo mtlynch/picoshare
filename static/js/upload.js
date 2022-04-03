@@ -98,7 +98,9 @@ pasteEl.addEventListener("paste", (evt) => {
       item.getAsString((s) => {
         const timestamp = new Date().toISOString().replaceAll(":", "");
         doUpload(
-          new File([new Blob([s])], `pasted-${timestamp}.txt`),
+          new File([new Blob([s])], `pasted-${timestamp}.txt`, {
+            type: "text/plain",
+          }),
           expirationSelect.value
         );
       });
