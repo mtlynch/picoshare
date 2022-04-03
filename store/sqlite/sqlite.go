@@ -8,6 +8,8 @@ import (
 	"io"
 	"log"
 	"path"
+	"sort"
+	"strconv"
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -30,6 +32,11 @@ type (
 	db struct {
 		ctx       *sql.DB
 		chunkSize int
+	}
+
+	dbMigration struct {
+		version int
+		query   string
 	}
 )
 
@@ -65,29 +72,30 @@ func NewWithChunkSize(path string, chunkSize int) store.Store {
 
 	log.Printf("Migration counter: %d/%d", version, len(migrations))
 
-	for i, migration := range migrations[version:] {
-		mIdx := version + i
-
+	for _, migration := range migrations {
+		if migration.version <= version {
+			continue
+		}
 		tx, err := ctx.BeginTx(context.Background(), nil)
 		if err != nil {
-			log.Fatalf("failed to create migration transaction %d: %v", mIdx, err)
+			log.Fatalf("failed to create migration transaction %d: %v", migration.version, err)
 		}
 
-		_, err = tx.Exec(migration)
+		_, err = tx.Exec(migration.query)
 		if err != nil {
-			log.Fatalf("failed to perform DB migration %d: %v", mIdx, err)
+			log.Fatalf("failed to perform DB migration %d: %v", migration.version, err)
 		}
 
-		_, err = tx.Exec(fmt.Sprintf(`pragma user_version=%d`, mIdx+1))
+		_, err = tx.Exec(fmt.Sprintf(`pragma user_version=%d`, migration.version))
 		if err != nil {
-			log.Fatalf("failed to update DB version to %d: %v", mIdx+1, err)
+			log.Fatalf("failed to update DB version to %d: %v", migration.version, err)
 		}
 
 		if err = tx.Commit(); err != nil {
-			log.Fatalf("failed to commit migration %d: %v", mIdx, err)
+			log.Fatalf("failed to commit migration %d: %v", migration.version, err)
 		}
 
-		log.Printf("Migration counter: %d/%d", mIdx+1, len(migrations))
+		log.Printf("Migration counter: %d/%d", migration.version, len(migrations))
 	}
 
 	return &db{
@@ -278,14 +286,14 @@ func (d db) DeleteEntry(id types.EntryID) error {
 	return tx.Commit()
 }
 
-func loadMigrations() ([]string, error) {
-	migrations := []string{}
+func loadMigrations() ([]dbMigration, error) {
+	migrations := []dbMigration{}
 
 	migrationsDir := "migrations"
 
 	entries, err := migrationsFs.ReadDir(migrationsDir)
 	if err != nil {
-		return []string{}, err
+		return []dbMigration{}, err
 	}
 
 	for _, entry := range entries {
@@ -293,15 +301,29 @@ func loadMigrations() ([]string, error) {
 			continue
 		}
 
+		version := migrationVersionFromFilename(entry.Name())
+
 		query, err := migrationsFs.ReadFile(path.Join(migrationsDir, entry.Name()))
 		if err != nil {
-			return []string{}, err
+			return []dbMigration{}, err
 		}
 
-		migrations = append(migrations, string(query))
+		migrations = append(migrations, dbMigration{version, string(query)})
 	}
+	sort.Slice(migrations, func(i, j int) bool {
+		return migrations[i].version < migrations[j].version
+	})
 
 	return migrations, nil
+}
+
+func migrationVersionFromFilename(filename string) int {
+	version, err := strconv.ParseInt(filename[:3], 10, 32)
+	if err != nil {
+		log.Fatalf("invalid migration number in filename: %v", filename)
+	}
+
+	return int(version)
 }
 
 func formatTime(t time.Time) string {
