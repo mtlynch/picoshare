@@ -100,7 +100,7 @@ func NewWithChunkSize(path string, chunkSize int) store.Store {
 			`INSERT INTO entries SELECT *, '' FROM old_entries`,
 			`DROP TABLE old_entries`,
 		},
-		// 4: Create guest_links table and reference it from entries table.
+		// 4: Add label column to entries table.
 		{
 			`ALTER TABLE entries ADD COLUMN label TEXT`,
 		},
