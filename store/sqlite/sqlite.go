@@ -88,22 +88,29 @@ func NewWithChunkSize(path string, chunkSize int) store.Store {
 
 	for i, migration := range migrations[version:] {
 		mIdx := version + i
+
 		tx, err := ctx.BeginTx(context.Background(), nil)
 		if err != nil {
 			log.Fatalf("failed to create migration transaction %d: %v", mIdx, err)
 		}
+
 		for _, stmt := range migration {
 			_, err = tx.Exec(stmt)
 			if err != nil {
 				log.Fatalf("failed to perform DB migration %d: %v", mIdx, err)
 			}
 		}
+
 		_, err = tx.Exec(fmt.Sprintf(`pragma user_version=%d`, mIdx+1))
 		if err != nil {
-			log.Fatalf("failed to update DB version: %v", err)
+			log.Fatalf("failed to update DB version to %d: %v", mIdx+1, err)
 		}
+
+		if err = tx.Commit(); err != nil {
+			log.Fatalf("failed to commit migration %d: %v", mIdx, err)
+		}
+
 		log.Printf("Migration counter: %d/%d", mIdx+1, len(migrations))
-		tx.Commit()
 	}
 
 	return &db{
