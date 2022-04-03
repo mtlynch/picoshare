@@ -56,7 +56,7 @@ func NewWithChunkSize(path string, chunkSize int) store.Store {
 	}
 
 	migrations := []dbMigration{
-		// 0: Create entries table.
+		// 1: Create entries table.
 		{
 			`CREATE TABLE IF NOT EXISTS entries (
 			id TEXT PRIMARY KEY,
@@ -66,7 +66,7 @@ func NewWithChunkSize(path string, chunkSize int) store.Store {
 			expiration_time TEXT
 			)`,
 		},
-		// 1: Create entries_data table.
+		// 2: Create entries_data table.
 		{
 			`CREATE TABLE IF NOT EXISTS entries_data (
 			id TEXT,
