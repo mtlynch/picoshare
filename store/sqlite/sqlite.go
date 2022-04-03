@@ -3,6 +3,7 @@ package sqlite
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"io"
 	"log"
 	"time"
@@ -20,11 +21,15 @@ const (
 	defaultChunkSize = 32768 * 10
 )
 
-type db struct {
-	ctx        *sql.DB
-	chunkSize  int
-	guestLinks []types.GuestLink // TODO: Actually insert this into SQLite
-}
+type (
+	db struct {
+		ctx        *sql.DB
+		chunkSize  int
+		guestLinks []types.GuestLink // TODO: Actually insert this into SQLite
+	}
+
+	dbMigration []string
+)
 
 func New(path string) store.Store {
 	return NewWithChunkSize(path, defaultChunkSize)
@@ -39,26 +44,74 @@ func NewWithChunkSize(path string, chunkSize int) store.Store {
 		log.Fatalln(err)
 	}
 
-	initStmts := []string{
-		`CREATE TABLE IF NOT EXISTS entries (
+	stmt, err := ctx.Prepare(`PRAGMA user_version`)
+	if err != nil {
+		log.Fatalf("failed to get user_version: %v", err)
+	}
+	defer stmt.Close()
+
+	var version int
+	err = stmt.QueryRow().Scan(&version)
+	if err != nil {
+		log.Fatalf("failed to get user_version: %v", err)
+	}
+
+	migrations := []dbMigration{
+		// 1: Create entries table.
+		{
+			`CREATE TABLE IF NOT EXISTS entries (
 			id TEXT PRIMARY KEY,
 			filename TEXT,
 			content_type TEXT,
 			upload_time TEXT,
 			expiration_time TEXT
 			)`,
-		`CREATE TABLE IF NOT EXISTS entries_data (
+		},
+		// 2: Create entries_data table.
+		{
+			`CREATE TABLE IF NOT EXISTS entries_data (
 			id TEXT,
 			chunk_index INTEGER,
 			chunk BLOB,
 			FOREIGN KEY(id) REFERENCES entries(id)
 			)`,
+		},
 	}
-	for _, stmt := range initStmts {
-		_, err = ctx.Exec(stmt)
+
+	// This should never happen in production, but it can happen during
+	// devleopment when running the main branch on code that's been migrated to a
+	// later schema.
+	if version > len(migrations) {
+		log.Fatalf("local DB version (%d) is higher than total migrations (%d)", version, len(migrations))
+	}
+
+	log.Printf("Migration counter: %d/%d", version, len(migrations))
+
+	for i, migration := range migrations[version:] {
+		mIdx := version + i
+
+		tx, err := ctx.BeginTx(context.Background(), nil)
 		if err != nil {
-			log.Fatalln(err)
+			log.Fatalf("failed to create migration transaction %d: %v", mIdx, err)
 		}
+
+		for _, stmt := range migration {
+			_, err = tx.Exec(stmt)
+			if err != nil {
+				log.Fatalf("failed to perform DB migration %d: %v", mIdx, err)
+			}
+		}
+
+		_, err = tx.Exec(fmt.Sprintf(`pragma user_version=%d`, mIdx+1))
+		if err != nil {
+			log.Fatalf("failed to update DB version to %d: %v", mIdx+1, err)
+		}
+
+		if err = tx.Commit(); err != nil {
+			log.Fatalf("failed to commit migration %d: %v", mIdx, err)
+		}
+
+		log.Printf("Migration counter: %d/%d", mIdx+1, len(migrations))
 	}
 
 	return &db{
