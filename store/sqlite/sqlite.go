@@ -3,6 +3,7 @@ package sqlite
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"io"
 	"log"
 	"time"
@@ -20,10 +21,14 @@ const (
 	defaultChunkSize = 32768 * 10
 )
 
-type db struct {
-	ctx       *sql.DB
-	chunkSize int
-}
+type (
+	db struct {
+		ctx       *sql.DB
+		chunkSize int
+	}
+
+	dbMigration []string
+)
 
 func New(path string) store.Store {
 	return NewWithChunkSize(path, defaultChunkSize)
@@ -38,26 +43,96 @@ func NewWithChunkSize(path string, chunkSize int) store.Store {
 		log.Fatalln(err)
 	}
 
-	initStmts := []string{
-		`CREATE TABLE IF NOT EXISTS entries (
+	stmt, err := ctx.Prepare(`PRAGMA user_version`)
+	if err != nil {
+		log.Fatalf("failed to get user_version: %v", err)
+	}
+	defer stmt.Close()
+
+	var version int
+	err = stmt.QueryRow().Scan(&version)
+	if err != nil {
+		log.Fatalf("failed to get user_version: %v", err)
+	}
+
+	// NOTE: Migrations 0 and 1 represent the table schema as of 1.0.6. Migrations
+	// 3 and 4 mutate the table to add functionality for users who have already
+	// provisioned their database in <= 1.0.6.
+	migrations := []dbMigration{
+		// 0: Create entries table.
+		{
+			`CREATE TABLE IF NOT EXISTS entries (
 			id TEXT PRIMARY KEY,
 			filename TEXT,
 			content_type TEXT,
 			upload_time TEXT,
 			expiration_time TEXT
 			)`,
-		`CREATE TABLE IF NOT EXISTS entries_data (
+		},
+		// 1: Create entries_data table.
+		{
+			`CREATE TABLE IF NOT EXISTS entries_data (
 			id TEXT,
 			chunk_index INTEGER,
 			chunk BLOB,
 			FOREIGN KEY(id) REFERENCES entries(id)
 			)`,
+		},
+		// 3: Create guest_links table and reference it from entries table.
+		{
+			`CREATE TABLE IF NOT EXISTS guest_links (
+				id TEXT PRIMARY KEY,
+				label TEXT,
+				uploads_left INTEGER,
+				upload_bytes_left INTEGER,
+				expiration_time TEXT
+				)`,
+			`ALTER TABLE entries RENAME TO old_entries`,
+			`CREATE TABLE IF NOT EXISTS entries (
+				id TEXT PRIMARY KEY,
+				filename TEXT,
+				content_type TEXT,
+				upload_time TEXT,
+				expiration_time TEXT,
+				guest_link_id TEXT,
+				FOREIGN KEY(guest_link_id) REFERENCES guest_links(id)
+				)`,
+			`INSERT INTO entries SELECT *, '' FROM old_entries`,
+			`DROP TABLE old_entries`,
+		},
+		// 4: Create guest_links table and reference it from entries table.
+		{
+			`ALTER TABLE entries ADD COLUMN label TEXT`,
+		},
 	}
-	for _, stmt := range initStmts {
-		_, err = ctx.Exec(stmt)
+
+	log.Printf("Migration counter: %d/%d", version, len(migrations))
+
+	for i, migration := range migrations[version:] {
+		mIdx := version + i
+
+		tx, err := ctx.BeginTx(context.Background(), nil)
 		if err != nil {
-			log.Fatalln(err)
+			log.Fatalf("failed to create migration transaction %d: %v", mIdx, err)
 		}
+
+		for _, stmt := range migration {
+			_, err = tx.Exec(stmt)
+			if err != nil {
+				log.Fatalf("failed to perform DB migration %d: %v", mIdx, err)
+			}
+		}
+
+		_, err = tx.Exec(fmt.Sprintf(`pragma user_version=%d`, mIdx+1))
+		if err != nil {
+			log.Fatalf("failed to update DB version to %d: %v", mIdx+1, err)
+		}
+
+		if err = tx.Commit(); err != nil {
+			log.Fatalf("failed to commit migration %d: %v", mIdx, err)
+		}
+
+		log.Printf("Migration counter: %d/%d", mIdx+1, len(migrations))
 	}
 
 	return &db{
