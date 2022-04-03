@@ -3,9 +3,11 @@ package sqlite
 import (
 	"context"
 	"database/sql"
+	"embed"
 	"fmt"
 	"io"
 	"log"
+	"path"
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -21,13 +23,14 @@ const (
 	defaultChunkSize = 32768 * 10
 )
 
+//go:embed migrations/*.sql
+var migrationsFs embed.FS
+
 type (
 	db struct {
 		ctx       *sql.DB
 		chunkSize int
 	}
-
-	dbMigration []string
 )
 
 func New(path string) store.Store {
@@ -55,55 +58,9 @@ func NewWithChunkSize(path string, chunkSize int) store.Store {
 		log.Fatalf("failed to get user_version: %v", err)
 	}
 
-	// NOTE: Migrations 0 and 1 represent the table schema as of 1.0.6. Migrations
-	// 3 and 4 mutate the table to add functionality for users who have already
-	// provisioned their database in <= 1.0.6.
-	migrations := []dbMigration{
-		// 1: Create entries table.
-		{
-			`CREATE TABLE IF NOT EXISTS entries (
-			id TEXT PRIMARY KEY,
-			filename TEXT,
-			content_type TEXT,
-			upload_time TEXT,
-			expiration_time TEXT
-			)`,
-		},
-		// 2: Create entries_data table.
-		{
-			`CREATE TABLE IF NOT EXISTS entries_data (
-			id TEXT,
-			chunk_index INTEGER,
-			chunk BLOB,
-			FOREIGN KEY(id) REFERENCES entries(id)
-			)`,
-		},
-		// 3: Create guest_links table and reference it from entries table.
-		{
-			`CREATE TABLE IF NOT EXISTS guest_links (
-				id TEXT PRIMARY KEY,
-				label TEXT,
-				uploads_left INTEGER,
-				upload_bytes_left INTEGER,
-				expiration_time TEXT
-				)`,
-			`ALTER TABLE entries RENAME TO old_entries`,
-			`CREATE TABLE IF NOT EXISTS entries (
-				id TEXT PRIMARY KEY,
-				filename TEXT,
-				content_type TEXT,
-				upload_time TEXT,
-				expiration_time TEXT,
-				guest_link_id TEXT,
-				FOREIGN KEY(guest_link_id) REFERENCES guest_links(id)
-				)`,
-			`INSERT INTO entries SELECT *, '' FROM old_entries`,
-			`DROP TABLE old_entries`,
-		},
-		// 4: Add label column to entries table.
-		{
-			`ALTER TABLE entries ADD COLUMN label TEXT`,
-		},
+	migrations, err := loadMigrations()
+	if err != nil {
+		log.Fatalf("error loading database migrations: %v", err)
 	}
 
 	log.Printf("Migration counter: %d/%d", version, len(migrations))
@@ -116,11 +73,9 @@ func NewWithChunkSize(path string, chunkSize int) store.Store {
 			log.Fatalf("failed to create migration transaction %d: %v", mIdx, err)
 		}
 
-		for _, stmt := range migration {
-			_, err = tx.Exec(stmt)
-			if err != nil {
-				log.Fatalf("failed to perform DB migration %d: %v", mIdx, err)
-			}
+		_, err = tx.Exec(migration)
+		if err != nil {
+			log.Fatalf("failed to perform DB migration %d: %v", mIdx, err)
 		}
 
 		_, err = tx.Exec(fmt.Sprintf(`pragma user_version=%d`, mIdx+1))
@@ -321,6 +276,32 @@ func (d db) DeleteEntry(id types.EntryID) error {
 	}
 
 	return tx.Commit()
+}
+
+func loadMigrations() ([]string, error) {
+	migrations := []string{}
+
+	migrationsDir := "migrations"
+
+	entries, err := migrationsFs.ReadDir(migrationsDir)
+	if err != nil {
+		return []string{}, err
+	}
+
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+
+		query, err := migrationsFs.ReadFile(path.Join(migrationsDir, entry.Name()))
+		if err != nil {
+			return []string{}, err
+		}
+
+		migrations = append(migrations, string(query))
+	}
+
+	return migrations, nil
 }
 
 func formatTime(t time.Time) string {
