@@ -93,10 +93,10 @@ uploadEl.addEventListener("dragleave", () => {
 });
 
 pasteEl.addEventListener("paste", (evt) => {
-  const timestamp = new Date().toISOString().replaceAll(":", "");
   for (const item of evt.clipboardData.items) {
     if (item.kind === "string") {
       item.getAsString((s) => {
+        const timestamp = new Date().toISOString().replaceAll(":", "");
         doUpload(
           new File([new Blob([s])], `pasted-${timestamp}.txt`),
           expirationSelect.value
@@ -104,14 +104,9 @@ pasteEl.addEventListener("paste", (evt) => {
       });
       return;
     }
-    let pastedFile = item.getAsFile();
+    const pastedFile = item.getAsFile();
     if (!pastedFile) {
       continue;
-    }
-
-    // Pasted images are named image.png by default, so make a better filename.
-    if (pastedFile.name === "image.png") {
-      pastedFile = new File([pastedFile.stream()], `pasted-${timestamp}.png`);
     }
 
     doUpload(pastedFile, expirationSelect.value);
