@@ -20,9 +20,7 @@ const (
 	EntryIDLength  = 10
 )
 
-var (
-	idCharacters = []rune("abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789")
-)
+var entryIDCharacters = []rune("abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789")
 
 type (
 	EntryPostResponse struct {
@@ -77,7 +75,7 @@ func (s Server) entryPost() http.HandlerFunc {
 }
 
 func generateEntryID() types.EntryID {
-	return types.EntryID(random.String(EntryIDLength, idCharacters))
+	return types.EntryID(random.String(EntryIDLength, entryIDCharacters))
 }
 
 func parseEntryID(s string) (types.EntryID, error) {
@@ -87,7 +85,7 @@ func parseEntryID(s string) (types.EntryID, error) {
 
 	// We could do this outside the function and store the result.
 	idCharsHash := map[rune]bool{}
-	for _, c := range idCharacters {
+	for _, c := range entryIDCharacters {
 		idCharsHash[c] = true
 	}
 

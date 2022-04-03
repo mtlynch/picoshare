@@ -8,8 +8,13 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/mtlynch/picoshare/v2/random"
 	"github.com/mtlynch/picoshare/v2/types"
 )
+
+const GuestLinkIDLength = 10
+
+var guestLinkIDCharacters = []rune("abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789")
 
 func (s Server) guestLinksPost() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -20,8 +25,7 @@ func (s Server) guestLinksPost() http.HandlerFunc {
 			return
 		}
 
-		// TODO: Create a better ID
-		gl.ID = types.GuestLinkID(time.Now().Format(time.RFC3339Nano))
+		gl.ID = guestLinkID()
 
 		gl.Created = time.Now()
 
@@ -110,4 +114,8 @@ func parseUploadCountLimit(limitRaw *int) (*types.GuestUploadCountLimit, error) 
 
 	limit := types.GuestUploadCountLimit(*limitRaw)
 	return &limit, nil
+}
+
+func guestLinkID() types.GuestLinkID {
+	return types.GuestLinkID(random.String(GuestLinkIDLength, guestLinkIDCharacters))
 }

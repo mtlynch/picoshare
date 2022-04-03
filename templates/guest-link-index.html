@@ -2,6 +2,7 @@
 {{ end }}
 
 {{ define "script-tags" }}
+  <script type="module" src="/js/guestLinkIndex.js"></script>
 {{ end }}
 
 {{ define "custom-elements" }}
@@ -29,7 +30,13 @@
         {{ range .GuestLinks }}
           <tr>
             <td class="is-vcentered" test-data-id="filename">
-              {{ .Label }}
+              <a href="/g/{{ .ID }}">
+                {{ if .Label }}
+                  {{ .Label }}
+                {{ else }}
+                  <i>unnamed</i>
+                {{ end }}
+              </a>
             </td>
             <td class="is-vcentered">{{ formatTime .Created }}</td>
             <td class="is-vcentered">{{ formatTime .LastUsed }}</td>
@@ -66,6 +73,16 @@
         {{ end }}
       </tbody>
     </table>
+  </div>
+
+  <div id="error" class="is-hidden my-3">
+    <article class="message is-danger">
+      <div class="message-header">
+        Error
+        <button class="delete" aria-label="delete"></button>
+      </div>
+      <div id="error-message" class="message-body">Placeholder error.</div>
+    </article>
   </div>
 {{ end }}
 
