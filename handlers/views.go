@@ -10,6 +10,8 @@ import (
 	"sort"
 	"time"
 
+	"github.com/gorilla/mux"
+	"github.com/mtlynch/picoshare/v2/store"
 	"github.com/mtlynch/picoshare/v2/types"
 )
 
@@ -199,6 +201,57 @@ func (s Server) authGet() http.HandlerFunc {
 
 func (s Server) uploadGet() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		type expirationOption struct {
+			FriendlyName string
+			Expiration   time.Time
+			IsDefault    bool
+		}
+		if err := renderTemplate(w, "upload.html", struct {
+			commonProps
+			ExpirationOptions []expirationOption
+		}{
+			commonProps: commonProps{
+				Title:           "PicoShare - Upload",
+				IsAuthenticated: s.isAuthenticated(r),
+			},
+			ExpirationOptions: []expirationOption{
+				{"1 day", time.Now().AddDate(0, 0, 1), false},
+				{"7 days", time.Now().AddDate(0, 0, 7), false},
+				{"30 days", time.Now().AddDate(0, 0, 30), true},
+				{"1 year", time.Now().AddDate(1, 0, 0), false},
+				{"Never", time.Time(types.NeverExpire), false},
+			},
+		}, template.FuncMap{
+			"formatExpiration": func(t time.Time) string {
+				return t.Format(time.RFC3339)
+			}}); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+}
+
+func (s Server) guestUploadGet() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		guestLinkID, err := parseGuestLinkID(mux.Vars(r)["guestLinkID"])
+		if err != nil {
+			log.Printf("error parsing guest link ID: %v", err)
+			http.Error(w, fmt.Sprintf("Invalid guest link ID: %v", err), http.StatusBadRequest)
+			return
+		}
+
+		_, err = s.store.GetGuestLink(guestLinkID)
+		if _, ok := err.(store.GuestLinkNotFoundError); ok {
+			http.Error(w, "Invalid guest link ID", http.StatusNotFound)
+			return
+		} else if err != nil {
+			log.Printf("error retrieving guest link with id %v: %v", guestLinkID, err)
+			http.Error(w, "Failed to retrieve guest link", http.StatusInternalServerError)
+			return
+		}
+
+		// TODO: Render something different if guest link's quota is exhausted.
+
 		type expirationOption struct {
 			FriendlyName string
 			Expiration   time.Time

@@ -25,7 +25,7 @@ func (s Server) guestLinksPost() http.HandlerFunc {
 			return
 		}
 
-		gl.ID = guestLinkID()
+		gl.ID = generateGuestLinkID()
 
 		gl.Created = time.Now()
 
@@ -116,6 +116,25 @@ func parseUploadCountLimit(limitRaw *int) (*types.GuestUploadCountLimit, error) 
 	return &limit, nil
 }
 
-func guestLinkID() types.GuestLinkID {
+func generateGuestLinkID() types.GuestLinkID {
 	return types.GuestLinkID(random.String(GuestLinkIDLength, guestLinkIDCharacters))
+}
+
+func parseGuestLinkID(s string) (types.GuestLinkID, error) {
+	if len(s) != GuestLinkIDLength {
+		return types.GuestLinkID(""), fmt.Errorf("guest link ID (%v) has invalid length: got %d, want %d", s, len(s), GuestLinkIDLength)
+	}
+
+	// We could do this outside the function and store the result.
+	idCharsHash := map[rune]bool{}
+	for _, c := range guestLinkIDCharacters {
+		idCharsHash[c] = true
+	}
+
+	for _, c := range s {
+		if _, ok := idCharsHash[c]; !ok {
+			return types.GuestLinkID(""), fmt.Errorf("entry ID (%s) contains invalid character: %v", s, c)
+		}
+	}
+	return types.GuestLinkID(s), nil
 }

@@ -328,6 +328,15 @@ func (d db) GetGuestLinks() ([]types.GuestLink, error) {
 	return d.guestLinks, nil
 }
 
+func (d db) GetGuestLink(id types.GuestLinkID) (types.GuestLink, error) {
+	for _, link := range d.guestLinks {
+		if link.ID == id {
+			return link, nil
+		}
+	}
+	return types.GuestLink{}, store.GuestLinkNotFoundError{ID: id}
+}
+
 func (d *db) InsertGuestLink(guestLink types.GuestLink) error {
 	log.Printf("saving new guest link %s", guestLink.ID)
 
