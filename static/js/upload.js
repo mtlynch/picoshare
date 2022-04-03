@@ -98,7 +98,9 @@ pasteEl.addEventListener("paste", (evt) => {
     if (item.kind === "string") {
       item.getAsString((s) => {
         doUpload(
-          new File([new Blob([s])], `pasted-${timestamp}.txt`),
+          new File([new Blob([s])], `pasted-${timestamp}.txt`, {
+            type: "text/plain",
+          }),
           expirationSelect.value
         );
       });
