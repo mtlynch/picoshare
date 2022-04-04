@@ -15,6 +15,7 @@ jobs:
   lint_sql:
     docker:
       - image: sqlfluff/sqlfluff:0.11.2
+        user: root
     steps:
       - checkout
       - run:
