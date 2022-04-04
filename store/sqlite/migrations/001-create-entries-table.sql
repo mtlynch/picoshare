@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS entries (
-    id TEXT PRIMARY KEY,
+id TEXT PRIMARY KEY,
     filename TEXT,
     content_type TEXT,
     upload_time TEXT,

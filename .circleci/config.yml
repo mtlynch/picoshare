@@ -15,6 +15,8 @@ jobs:
   lint_sql:
     docker:
       - image: sqlfluff/sqlfluff:0.11.2
+        # sqlfluff runs as non-root user, but that user doesn't have permissions
+        # to create the .ssh folder that CircleCI needs to check out the repo.
         user: root
     steps:
       - checkout
