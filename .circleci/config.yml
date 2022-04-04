@@ -12,6 +12,19 @@ jobs:
       - run:
           name: Check that all text files end in a trailing newline
           command: ./dev-scripts/check-trailing-newline
+  lint_sql:
+    docker:
+      - image: sqlfluff/sqlfluff:0.11.2
+        user: root
+    steps:
+      - checkout
+      - run:
+          name: Lint SQL files
+          command: |
+            sqlfluff lint \
+              --disable_progress_bar \
+              --dialect sqlite \
+              store/sqlite/migrations
   check_frontend:
     docker:
       - image: cimg/node:16.14.2
@@ -141,6 +154,10 @@ workflows:
   test_deploy:
     jobs:
       - check_whitespace:
+          filters:
+            tags:
+              only: /.*/
+      - lint_sql:
           filters:
             tags:
               only: /.*/
