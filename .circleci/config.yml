@@ -20,7 +20,11 @@ jobs:
       - checkout
       - run:
           name: Lint SQL files
-          command: sqlfluff lint store/sqlite/migrations
+          command: |
+            sqlfluff lint \
+              --disable_progress_bar \
+              --dialect sqlite \
+              store/sqlite/migrations
   check_frontend:
     docker:
       - image: cimg/node:16.14.2
