@@ -36,7 +36,7 @@ type (
 		Created              time.Time
 		LastUsed             time.Time
 		Expires              ExpirationTime
-		UploadSizeRemaining  *GuestUploadMaxFileSize
+		MaxFileSize          *GuestUploadMaxFileSize
 		UploadCountRemaining *GuestUploadCountLimit
 	}
 )

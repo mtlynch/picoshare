@@ -234,7 +234,7 @@ func (d db) InsertEntry(reader io.Reader, metadata types.UploadMetadata) error {
 		upload_time,
 		expiration_time
 	)
-	VALUES(?,?,?,?,?)`, metadata.ID, metadata.Filename, metadata.ContentType, formatTime(metadata.Uploaded), formatTime(time.Time(metadata.Expires)))
+	VALUES(?,?,?,?,?)`, metadata.ID, metadata.Filename, metadata.ContentType, formatTime(metadata.Uploaded), formatExpirationTime(metadata.Expires))
 	if err != nil {
 		log.Printf("insert into entries table failed, aborting transaction: %v", err)
 		return err
@@ -300,7 +300,19 @@ func (d db) GetGuestLinks() ([]types.GuestLink, error) {
 func (d *db) InsertGuestLink(guestLink types.GuestLink) error {
 	log.Printf("saving new guest link %s", guestLink.ID)
 
-	d.guestLinks = append(d.guestLinks, guestLink)
+	if _, err := d.ctx.Exec(`
+	INSERT INTO guest_links
+		(
+			id,
+			label TEXT,
+			max_file_size INTEGER,
+			uploads_left INTEGER,
+			expiration_time
+		)
+		VALUES (?,?,?,?,?)
+	`, guestLink.ID, guestLink.Label, guestLink.MaxFileSize, guestLink.UploadCountRemaining, formatExpirationTime(guestLink.Expires)); err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -308,6 +320,10 @@ func (d *db) InsertGuestLink(guestLink types.GuestLink) error {
 func (d db) DeleteGuestLink(id types.GuestLinkID) error {
 	// TODO: Actually delete the link from entries table and guest_links table.
 	return nil
+}
+
+func formatExpirationTime(et types.ExpirationTime) string {
+	return formatTime(time.Time(et))
 }
 
 func formatTime(t time.Time) string {

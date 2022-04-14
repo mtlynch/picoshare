@@ -79,7 +79,7 @@ func guestLinkFromRequest(r *http.Request) (types.GuestLink, error) {
 		return types.GuestLink{}, err
 	}
 
-	sizeLimit, err := parseMaxFileSize(pr.MaxFileSize)
+	maxFileSize, err := parseMaxFileSize(pr.MaxFileSize)
 	if err != nil {
 		return types.GuestLink{}, err
 	}
@@ -92,7 +92,7 @@ func guestLinkFromRequest(r *http.Request) (types.GuestLink, error) {
 	return types.GuestLink{
 		Label:                label,
 		Expires:              expiration,
-		UploadSizeRemaining:  sizeLimit,
+		MaxFileSize:          maxFileSize,
 		UploadCountRemaining: countLimit,
 	}, nil
 }
