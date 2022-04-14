@@ -288,6 +288,11 @@ func (d db) GetGuestLinks() ([]types.GuestLink, error) {
 	return d.guestLinks, nil
 }
 
+func (d db) DeleteGuestLink(id types.GuestLinkID) error {
+	// TODO: Actually delete the link
+	return nil
+}
+
 func (d db) GetGuestLink(id types.GuestLinkID) (types.GuestLink, error) {
 	for _, link := range d.guestLinks {
 		if link.ID == id {

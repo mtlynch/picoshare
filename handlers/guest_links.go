@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/gorilla/mux"
 	"github.com/mtlynch/picoshare/v2/random"
 	"github.com/mtlynch/picoshare/v2/types"
 )
@@ -32,6 +33,22 @@ func (s Server) guestLinksPost() http.HandlerFunc {
 		if err := s.store.InsertGuestLink(gl); err != nil {
 			log.Printf("failed to save guest link: %v", err)
 			http.Error(w, fmt.Sprintf("Failed to save guest link: %v", err), http.StatusInternalServerError)
+			return
+		}
+	}
+}
+
+func (s Server) guestLinksDelete() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id, err := parseGuestLinkID(mux.Vars(r)["id"])
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Invalid guest link ID: %v", err), http.StatusBadRequest)
+			return
+		}
+
+		if err := s.store.DeleteGuestLink(id); err != nil {
+			log.Printf("failed to delete guest link: %v", err)
+			http.Error(w, fmt.Sprintf("Failed to delete guest link: %v", err), http.StatusInternalServerError)
 			return
 		}
 	}

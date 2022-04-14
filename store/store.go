@@ -15,6 +15,7 @@ type Store interface {
 	GetGuestLink(types.GuestLinkID) (types.GuestLink, error)
 	GetGuestLinks() ([]types.GuestLink, error)
 	InsertGuestLink(types.GuestLink) error
+	DeleteGuestLink(types.GuestLinkID) error
 }
 
 // EntryNotFoundError occurs when no entry exists with the given ID.
