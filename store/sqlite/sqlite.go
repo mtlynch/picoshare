@@ -284,15 +284,6 @@ func (d db) DeleteEntry(id types.EntryID) error {
 	return tx.Commit()
 }
 
-func (d db) GetGuestLinks() ([]types.GuestLink, error) {
-	return d.guestLinks, nil
-}
-
-func (d db) DeleteGuestLink(id types.GuestLinkID) error {
-	// TODO: Actually delete the link
-	return nil
-}
-
 func (d db) GetGuestLink(id types.GuestLinkID) (types.GuestLink, error) {
 	for _, link := range d.guestLinks {
 		if link.ID == id {
@@ -302,11 +293,20 @@ func (d db) GetGuestLink(id types.GuestLinkID) (types.GuestLink, error) {
 	return types.GuestLink{}, store.GuestLinkNotFoundError{ID: id}
 }
 
+func (d db) GetGuestLinks() ([]types.GuestLink, error) {
+	return d.guestLinks, nil
+}
+
 func (d *db) InsertGuestLink(guestLink types.GuestLink) error {
 	log.Printf("saving new guest link %s", guestLink.ID)
 
 	d.guestLinks = append(d.guestLinks, guestLink)
 
+	return nil
+}
+
+func (d db) DeleteGuestLink(id types.GuestLinkID) error {
+	// TODO: Actually delete the link from entries table and guest_links table.
 	return nil
 }
 
