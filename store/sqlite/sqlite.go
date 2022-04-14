@@ -367,7 +367,16 @@ func (d *db) InsertGuestLink(guestLink types.GuestLink) error {
 }
 
 func (d db) DeleteGuestLink(id types.GuestLinkID) error {
-	// TODO: Actually delete the link from entries table and guest_links table.
+	log.Printf("deleting guest link %s", id)
+	_, err := d.ctx.Exec(`
+	DELETE FROM
+		guest_links
+	WHERE
+		id=?`, id)
+	if err != nil {
+		log.Printf("deleting %s from guest_links table failed: %v", id, err)
+		return err
+	}
 	return nil
 }
 

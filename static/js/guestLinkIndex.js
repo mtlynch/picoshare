@@ -1,4 +1,4 @@
-import { deleteFile } from "./controllers/delete.js";
+import { guestLinkDelete } from "./controllers/guestLinks.js";
 import { copyToClipboard } from "./lib/clipboard.js";
 
 const errorContainer = document.getElementById("error");
@@ -18,7 +18,7 @@ function makeGuestLink(linkId) {
 document.querySelectorAll('[pico-purpose="delete"]').forEach((deleteBtn) => {
   deleteBtn.addEventListener("click", () => {
     const id = deleteBtn.getAttribute("pico-link-id");
-    deleteFile(id)
+    guestLinkDelete(id)
       .then(() => {
         let currentEl = deleteBtn.parentElement;
         while (currentEl && currentEl.nodeName !== "TR") {

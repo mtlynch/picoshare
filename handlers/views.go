@@ -53,7 +53,7 @@ func (s Server) guestLinkIndexGet() http.HandlerFunc {
 			GuestLinks []types.GuestLink
 		}{
 			commonProps: commonProps{
-				Title:           "PicoShare - Files",
+				Title:           "PicoShare - Guest Links",
 				IsAuthenticated: s.isAuthenticated(r),
 			},
 			GuestLinks: links,
