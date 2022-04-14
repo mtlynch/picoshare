@@ -39,10 +39,10 @@ func (s Server) guestLinksPost() http.HandlerFunc {
 
 func guestLinkFromRequest(r *http.Request) (types.GuestLink, error) {
 	type preferencesRequest struct {
-		Label      string `json:"label"`
-		Expiration string `json:"expirationTime"`
-		SizeLimit  *int   `json:"sizeLimit"`
-		CountLimit *int   `json:"countLimit"`
+		Label       string `json:"label"`
+		Expiration  string `json:"expirationTime"`
+		MaxFileSize *int   `json:"maxFileSize"`
+		CountLimit  *int   `json:"countLimit"`
 	}
 	var pr preferencesRequest
 	decoder := json.NewDecoder(r.Body)
@@ -62,7 +62,7 @@ func guestLinkFromRequest(r *http.Request) (types.GuestLink, error) {
 		return types.GuestLink{}, err
 	}
 
-	sizeLimit, err := parseSizeLimit(pr.SizeLimit)
+	sizeLimit, err := parseMaxFileSize(pr.MaxFileSize)
 	if err != nil {
 		return types.GuestLink{}, err
 	}
@@ -90,7 +90,7 @@ func parseLabel(label string) (types.GuestLinkLabel, error) {
 	return types.GuestLinkLabel(label), nil
 }
 
-func parseSizeLimit(limitRaw *int) (*types.GuestUploadSizeLimit, error) {
+func parseMaxFileSize(limitRaw *int) (*types.GuestUploadMaxFileSize, error) {
 	if limitRaw == nil {
 		return nil, nil
 	}
@@ -99,7 +99,7 @@ func parseSizeLimit(limitRaw *int) (*types.GuestUploadSizeLimit, error) {
 		return nil, errors.New("guest upload size limit must be a positive number")
 	}
 
-	limit := types.GuestUploadSizeLimit(*limitRaw)
+	limit := types.GuestUploadMaxFileSize(*limitRaw)
 	return &limit, nil
 }
 

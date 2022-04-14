@@ -2,7 +2,7 @@ import { guestLinkNew } from "./controllers/guestLinks.js";
 
 const labelInput = document.getElementById("label");
 const expirationSelect = document.getElementById("expiration-select");
-const sizeUploadLimitInput = document.getElementById("size-upload-limit");
+const maxFileSizeInput = document.getElementById("max-file-size");
 const fileUploadLimitInput = document.getElementById("file-upload-limit");
 const createBtn = document.getElementById("create-btn");
 
@@ -16,8 +16,8 @@ function guestLinkFromInputs() {
   return {
     label: labelInput.value || null,
     expirationTime: expirationSelect.value,
-    sizeLimit: sizeUploadLimitInput.valueAsNumber
-      ? megabytesToBytes(sizeUploadLimitInput.valueAsNumber)
+    maxFileSize: maxFileSizeInput.valueAsNumber
+      ? megabytesToBytes(maxFileSizeInput.valueAsNumber)
       : null,
     countLimit: fileUploadLimitInput.valueAsNumber
       ? fileUploadLimitInput.valueAsNumber

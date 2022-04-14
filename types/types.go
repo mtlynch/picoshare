@@ -25,10 +25,10 @@ type (
 		Reader io.ReadSeeker
 	}
 
-	GuestLinkID           string
-	GuestLinkLabel        string
-	GuestUploadSizeLimit  uint64
-	GuestUploadCountLimit int
+	GuestLinkID            string
+	GuestLinkLabel         string
+	GuestUploadMaxFileSize uint64
+	GuestUploadCountLimit  int
 
 	GuestLink struct {
 		ID                   GuestLinkID
@@ -36,7 +36,7 @@ type (
 		Created              time.Time
 		LastUsed             time.Time
 		Expires              ExpirationTime
-		UploadSizeRemaining  *GuestUploadSizeLimit
+		UploadSizeRemaining  *GuestUploadMaxFileSize
 		UploadCountRemaining *GuestUploadCountLimit
 	}
 )
