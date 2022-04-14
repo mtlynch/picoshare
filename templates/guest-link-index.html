@@ -20,10 +20,9 @@
         <tr>
           <th>Label</th>
           <th>Created</th>
-          <th>Last Used</th>
           <th>Expires</th>
-          <th>Size Limit</th>
-          <th>Count Limit</th>
+          <th>Max Upload Size</th>
+          <th>Uploads Left</th>
           <th class="has-text-right">Actions</th>
         </tr>
       </thead>
@@ -40,10 +39,9 @@
               </a>
             </td>
             <td class="is-vcentered">{{ formatTime .Created }}</td>
-            <td class="is-vcentered">{{ formatTime .LastUsed }}</td>
             <td class="is-vcentered">{{ formatExpiration .Expires }}</td>
             <td class="is-vcentered">
-              {{ formatSizeLimit .UploadSizeRemaining }}
+              {{ formatSizeLimit .MaxFileSize }}
             </td>
             <td class="is-vcentered">
               {{ formatCountLimit .UploadCountRemaining }}

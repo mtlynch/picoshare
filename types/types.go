@@ -34,7 +34,6 @@ type (
 		ID                   GuestLinkID
 		Label                GuestLinkLabel
 		Created              time.Time
-		LastUsed             time.Time
 		Expires              ExpirationTime
 		MaxFileSize          *GuestUploadMaxFileSize
 		UploadCountRemaining *GuestUploadCountLimit

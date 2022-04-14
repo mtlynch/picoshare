@@ -3,7 +3,8 @@ CREATE TABLE IF NOT EXISTS guest_links (
     label TEXT,
     max_file_size INTEGER,
     uploads_left INTEGER,
-    expiration_time TEXT NOT NULL
+    creation_time TEXT NOT NULL,
+    expiration_time TEXT
 );
 
 ALTER TABLE entries RENAME TO old_entries;
@@ -13,7 +14,7 @@ CREATE TABLE IF NOT EXISTS entries (
     filename TEXT NOT NULL,
     content_type TEXT NOT NULL,
     upload_time TEXT NOT NULL,
-    expiration_time TEXT NOT NULL,
+    expiration_time TEXT,
     guest_link_id TEXT,
     FOREIGN KEY(guest_link_id) REFERENCES guest_links(id)
 );

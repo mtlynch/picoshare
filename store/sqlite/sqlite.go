@@ -294,7 +294,55 @@ func (d db) GetGuestLink(id types.GuestLinkID) (types.GuestLink, error) {
 }
 
 func (d db) GetGuestLinks() ([]types.GuestLink, error) {
-	return d.guestLinks, nil
+	rows, err := d.ctx.Query(`
+	SELECT
+		id,
+		creation_time,
+		label,
+		max_file_size,
+		uploads_left,
+		expiration_time
+	FROM
+		guest_links
+	`)
+	if err != nil {
+		return []types.GuestLink{}, err
+	}
+
+	gls := []types.GuestLink{}
+	for rows.Next() {
+		var id string
+		var creationTimeRaw string
+		var label types.GuestLinkLabel
+		var maxFileSize *types.GuestUploadMaxFileSize
+		var uploadsLeft *types.GuestUploadCountLimit
+		var expirationTimeRaw string
+		err = rows.Scan(&id, &creationTimeRaw, &label, &maxFileSize, &uploadsLeft, &expirationTimeRaw)
+		if err != nil {
+			return []types.GuestLink{}, err
+		}
+
+		ct, err := parseDatetime(creationTimeRaw)
+		if err != nil {
+			return []types.GuestLink{}, err
+		}
+
+		et, err := parseDatetime(expirationTimeRaw)
+		if err != nil {
+			return []types.GuestLink{}, err
+		}
+
+		gls = append(gls, types.GuestLink{
+			ID:                   types.GuestLinkID(id),
+			Created:              ct,
+			Label:                label,
+			MaxFileSize:          maxFileSize,
+			UploadCountRemaining: uploadsLeft,
+			Expires:              types.ExpirationTime(et),
+		})
+	}
+
+	return gls, nil
 }
 
 func (d *db) InsertGuestLink(guestLink types.GuestLink) error {
@@ -304,13 +352,14 @@ func (d *db) InsertGuestLink(guestLink types.GuestLink) error {
 	INSERT INTO guest_links
 		(
 			id,
-			label TEXT,
-			max_file_size INTEGER,
-			uploads_left INTEGER,
+			label,
+			max_file_size,
+			uploads_left,
+			creation_time,
 			expiration_time
 		)
-		VALUES (?,?,?,?,?)
-	`, guestLink.ID, guestLink.Label, guestLink.MaxFileSize, guestLink.UploadCountRemaining, formatExpirationTime(guestLink.Expires)); err != nil {
+		VALUES (?,?,?,?,?,?)
+	`, guestLink.ID, guestLink.Label, guestLink.MaxFileSize, guestLink.UploadCountRemaining, formatTime(time.Now()), formatExpirationTime(guestLink.Expires)); err != nil {
 		return err
 	}
 
