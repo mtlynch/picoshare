@@ -245,7 +245,7 @@ func (s Server) guestUploadGet() http.HandlerFunc {
 			http.Error(w, "Invalid guest link ID", http.StatusNotFound)
 			return
 		} else if err != nil {
-			log.Printf("error retrieving guest link with id %v: %v", guestLinkID, err)
+			log.Printf("error retrieving guest link with ID %v: %v", guestLinkID, err)
 			http.Error(w, "Failed to retrieve guest link", http.StatusInternalServerError)
 			return
 		}

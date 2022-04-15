@@ -27,9 +27,8 @@ var migrationsFs embed.FS
 
 type (
 	db struct {
-		ctx        *sql.DB
-		chunkSize  int
-		guestLinks []types.GuestLink // TODO: Actually insert this into SQLite
+		ctx       *sql.DB
+		chunkSize int
 	}
 
 	dbMigration struct {
@@ -285,22 +284,60 @@ func (d db) DeleteEntry(id types.EntryID) error {
 }
 
 func (d db) GetGuestLink(id types.GuestLinkID) (types.GuestLink, error) {
-	for _, link := range d.guestLinks {
-		if link.ID == id {
-			return link, nil
-		}
+	stmt, err := d.ctx.Prepare(`
+		SELECT
+			id,
+			label,
+			max_file_size,
+			uploads_left,
+			creation_time,
+			expiration_time
+		FROM
+			guest_links
+		WHERE
+			id=?`)
+	if err != nil {
+		return types.GuestLink{}, err
 	}
-	return types.GuestLink{}, store.GuestLinkNotFoundError{ID: id}
+	defer stmt.Close()
+
+	var linkID types.GuestLinkID
+	var creationTimeRaw string
+	var label types.GuestLinkLabel
+	var maxFileSize *types.GuestUploadMaxFileSize
+	var uploadsLeft *types.GuestUploadCountLimit
+	var expirationTimeRaw string
+	err = stmt.QueryRow(id).Scan(&linkID, &label, &maxFileSize, &uploadsLeft, &creationTimeRaw, &expirationTimeRaw)
+	if err != nil {
+		log.Printf("failed to retrieve guest link with ID %v: %v", id, err)
+		return types.GuestLink{}, err
+	}
+
+	ct, err := parseDatetime(creationTimeRaw)
+	if err != nil {
+		return types.GuestLink{}, err
+	}
+
+	et, err := parseDatetime(expirationTimeRaw)
+	if err != nil {
+		return types.GuestLink{}, err
+	}
+
+	return types.GuestLink{
+		ID:      id,
+		Created: ct,
+		Expires: types.ExpirationTime(et),
+	}, nil
 }
 
 func (d db) GetGuestLinks() ([]types.GuestLink, error) {
 	rows, err := d.ctx.Query(`
 	SELECT
 		id,
-		creation_time,
 		label,
 		max_file_size,
 		uploads_left,
+		creation_time,
 		expiration_time
 	FROM
 		guest_links
@@ -311,13 +348,13 @@ func (d db) GetGuestLinks() ([]types.GuestLink, error) {
 
 	gls := []types.GuestLink{}
 	for rows.Next() {
-		var id string
-		var creationTimeRaw string
+		var id types.GuestLinkID
 		var label types.GuestLinkLabel
 		var maxFileSize *types.GuestUploadMaxFileSize
 		var uploadsLeft *types.GuestUploadCountLimit
+		var creationTimeRaw string
 		var expirationTimeRaw string
-		err = rows.Scan(&id, &creationTimeRaw, &label, &maxFileSize, &uploadsLeft, &expirationTimeRaw)
+		err = rows.Scan(&id, &label, &maxFileSize, &uploadsLeft, &creationTimeRaw, &expirationTimeRaw)
 		if err != nil {
 			return []types.GuestLink{}, err
 		}
@@ -333,7 +370,7 @@ func (d db) GetGuestLinks() ([]types.GuestLink, error) {
 		}
 
 		gls = append(gls, types.GuestLink{
-			ID:                   types.GuestLinkID(id),
+			ID:                   id,
 			Created:              ct,
 			Label:                label,
 			MaxFileSize:          maxFileSize,
@@ -368,7 +405,13 @@ func (d *db) InsertGuestLink(guestLink types.GuestLink) error {
 
 func (d db) DeleteGuestLink(id types.GuestLinkID) error {
 	log.Printf("deleting guest link %s", id)
-	_, err := d.ctx.Exec(`
+
+	tx, err := d.ctx.BeginTx(context.Background(), nil)
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.Exec(`
 	DELETE FROM
 		guest_links
 	WHERE
@@ -377,7 +420,20 @@ func (d db) DeleteGuestLink(id types.GuestLinkID) error {
 		log.Printf("deleting %s from guest_links table failed: %v", id, err)
 		return err
 	}
-	return nil
+
+	_, err = tx.Exec(`
+	UPDATE
+		entries
+	SET
+		guest_link_id = NULL
+	WHERE
+		guest_link_id = ?`, id)
+	if err != nil {
+		log.Printf("removing references to guest link %s from entries table failed: %v", id, err)
+		return err
+	}
+
+	return tx.Commit()
 }
 
 func formatExpirationTime(et types.ExpirationTime) string {

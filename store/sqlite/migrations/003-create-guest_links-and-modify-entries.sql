@@ -26,7 +26,7 @@ SELECT
     content_type,
     upload_time,
     expiration_time,
-    '' AS guest_link_id
+    NULL AS guest_link_id
 FROM
     old_entries;
 
