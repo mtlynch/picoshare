@@ -35,6 +35,10 @@ type (
 		version int
 		query   string
 	}
+
+	rowScanner interface {
+		Scan(...interface{}) error
+	}
 )
 
 func New(path string) store.Store {
@@ -301,33 +305,7 @@ func (d db) GetGuestLink(id types.GuestLinkID) (types.GuestLink, error) {
 	}
 	defer stmt.Close()
 
-	var linkID types.GuestLinkID
-	var creationTimeRaw string
-	var label types.GuestLinkLabel
-	var maxFileSize *types.GuestUploadMaxFileSize
-	var uploadsLeft *types.GuestUploadCountLimit
-	var expirationTimeRaw string
-	err = stmt.QueryRow(id).Scan(&linkID, &label, &maxFileSize, &uploadsLeft, &creationTimeRaw, &expirationTimeRaw)
-	if err != nil {
-		log.Printf("failed to retrieve guest link with ID %v: %v", id, err)
-		return types.GuestLink{}, err
-	}
-
-	ct, err := parseDatetime(creationTimeRaw)
-	if err != nil {
-		return types.GuestLink{}, err
-	}
-
-	et, err := parseDatetime(expirationTimeRaw)
-	if err != nil {
-		return types.GuestLink{}, err
-	}
-
-	return types.GuestLink{
-		ID:      id,
-		Created: ct,
-		Expires: types.ExpirationTime(et),
-	}, nil
+	return guestLinkFromRow(stmt.QueryRow(id))
 }
 
 func (d db) GetGuestLinks() ([]types.GuestLink, error) {
@@ -348,35 +326,13 @@ func (d db) GetGuestLinks() ([]types.GuestLink, error) {
 
 	gls := []types.GuestLink{}
 	for rows.Next() {
-		var id types.GuestLinkID
-		var label types.GuestLinkLabel
-		var maxFileSize *types.GuestUploadMaxFileSize
-		var uploadsLeft *types.GuestUploadCountLimit
-		var creationTimeRaw string
-		var expirationTimeRaw string
-		err = rows.Scan(&id, &label, &maxFileSize, &uploadsLeft, &creationTimeRaw, &expirationTimeRaw)
+
+		gl, err := guestLinkFromRow(rows)
 		if err != nil {
 			return []types.GuestLink{}, err
 		}
 
-		ct, err := parseDatetime(creationTimeRaw)
-		if err != nil {
-			return []types.GuestLink{}, err
-		}
-
-		et, err := parseDatetime(expirationTimeRaw)
-		if err != nil {
-			return []types.GuestLink{}, err
-		}
-
-		gls = append(gls, types.GuestLink{
-			ID:                   id,
-			Created:              ct,
-			Label:                label,
-			MaxFileSize:          maxFileSize,
-			UploadCountRemaining: uploadsLeft,
-			Expires:              types.ExpirationTime(et),
-		})
+		gls = append(gls, gl)
 	}
 
 	return gls, nil
@@ -434,6 +390,40 @@ func (d db) DeleteGuestLink(id types.GuestLinkID) error {
 	}
 
 	return tx.Commit()
+}
+
+func guestLinkFromRow(row rowScanner) (types.GuestLink, error) {
+	var id types.GuestLinkID
+	var creationTimeRaw string
+	var label types.GuestLinkLabel
+	var maxFileSize *types.GuestUploadMaxFileSize
+	var uploadsLeft *types.GuestUploadCountLimit
+	var expirationTimeRaw string
+
+	err := row.Scan(&id, &label, &maxFileSize, &uploadsLeft, &creationTimeRaw, &expirationTimeRaw)
+	if err != nil {
+		log.Printf("failed to retrieve guest link with ID %v: %v", id, err)
+		return types.GuestLink{}, err
+	}
+
+	ct, err := parseDatetime(creationTimeRaw)
+	if err != nil {
+		return types.GuestLink{}, err
+	}
+
+	et, err := parseDatetime(expirationTimeRaw)
+	if err != nil {
+		return types.GuestLink{}, err
+	}
+
+	return types.GuestLink{
+		ID:                   id,
+		Label:                label,
+		MaxFileSize:          maxFileSize,
+		UploadCountRemaining: uploadsLeft,
+		Created:              ct,
+		Expires:              types.ExpirationTime(et),
+	}, nil
 }
 
 func formatExpirationTime(et types.ExpirationTime) string {
