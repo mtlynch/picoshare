@@ -29,6 +29,9 @@ function doUpload(file) {
   hideElement(errorContainer);
   hideElement(uploadForm);
   showElement(progressSpinner);
+
+  // TODO: See if file size exceeds guest link size limit.
+
   const guestLinkID = getGuestLinkID();
   let uploader = () => {
     return uploadFile(file, expirationSelect.value);
@@ -64,6 +67,7 @@ function doUpload(file) {
       showElement(uploadForm);
     })
     .finally(() => {
+      // TODO: Show button to upload another file.
       hideElement(progressSpinner);
     });
 }
