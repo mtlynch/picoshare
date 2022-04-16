@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"reflect"
-	"strings"
 	"testing"
 	"time"
 
@@ -93,33 +92,9 @@ func TestEntryPostRejectsInvalidRequest(t *testing.T) {
 			contents:    "dummy bytes",
 		},
 		{
-			description: "filename with backslashes",
-			name:        "file",
-			filename:    `filename\with\backslashes.png`,
-			contents:    "dummy bytes",
-		},
-		{
 			description: "filename that's just a dot",
 			name:        "file",
 			filename:    ".",
-			contents:    "dummy bytes",
-		},
-		{
-			description: "filename that's two dots",
-			name:        "file",
-			filename:    "..",
-			contents:    "dummy bytes",
-		},
-		{
-			description: "filename that's five dots",
-			name:        "file",
-			filename:    ".....",
-			contents:    "dummy bytes",
-		},
-		{
-			description: "filename that's too long",
-			name:        "file",
-			filename:    strings.Repeat("A", handlers.MaxFilenameLen+1),
 			contents:    "dummy bytes",
 		},
 		{
