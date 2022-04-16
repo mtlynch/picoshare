@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/mtlynch/picoshare/v2/handlers"
+	"github.com/mtlynch/picoshare/v2/handlers/auth/shared_secret"
 	"github.com/mtlynch/picoshare/v2/store/test_sqlite"
 	"github.com/mtlynch/picoshare/v2/types"
 )
@@ -150,6 +151,65 @@ func TestEntryPostRejectsInvalidRequest(t *testing.T) {
 	}
 }
 
+func TestGuestUploadValidFile(t *testing.T) {
+	store := test_sqlite.New()
+	store.InsertGuestLink(types.GuestLink{
+		ID:      types.GuestLinkID("abcde23456"),
+		Created: mustParseTime("2022-01-01T00:00:00Z"),
+		Expires: mustParseExpirationTime("2030-01-02T03:04:25Z"),
+	})
+
+	authenticator, err := shared_secret.New("dummypass")
+	if err != nil {
+		t.Fatalf("failed to create shared secret: %v", err)
+	}
+
+	s := handlers.New(authenticator, store)
+
+	filename := "dummyimage.png"
+	contents := "dummy bytes"
+	formData, contentType := createMultipartFormBody("file", filename, makeData(contents))
+
+	req, err := http.NewRequest("POST", "/api/guest/abcde23456", formData)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Add("Content-Type", contentType)
+
+	w := httptest.NewRecorder()
+	s.Router().ServeHTTP(w, req)
+
+	if status := w.Code; status != http.StatusOK {
+		t.Fatalf("handler returned wrong status code: got %v want %v",
+			status, http.StatusOK)
+	}
+
+	var response handlers.EntryPostResponse
+	err = json.Unmarshal(w.Body.Bytes(), &response)
+	if err != nil {
+		t.Fatalf("response is not valid JSON: %v", w.Body.String())
+	}
+
+	entry, err := store.GetEntry(types.EntryID(response.ID))
+	if err != nil {
+		t.Fatalf("failed to get expected entry %v from data store: %v", response.ID, err)
+	}
+
+	actual := mustReadAll(entry.Reader)
+	expected := []byte(contents)
+	if !reflect.DeepEqual(actual, expected) {
+		t.Fatalf("stored entry doesn't match expected: got %v, want %v", actual, expected)
+	}
+
+	if entry.Filename != types.Filename(filename) {
+		t.Fatalf("stored entry filename doesn't match expected: got %v, want %v", entry.Filename, filename)
+	}
+
+	if entry.Expires != types.NeverExpire {
+		t.Fatalf("stored entry expiration doesn't match expected: got %v, want %v", formatExpirationTime(entry.Expires), formatExpirationTime(types.NeverExpire))
+	}
+}
+
 func createMultipartFormBody(name, filename string, r io.Reader) (io.Reader, string) {
 	var b bytes.Buffer
 	bw := bufio.NewWriter(&b)
@@ -167,12 +227,16 @@ func createMultipartFormBody(name, filename string, r io.Reader) (io.Reader, str
 	return bufio.NewReader(&b), mw.FormDataContentType()
 }
 
-func mustParseExpirationTime(s string) types.ExpirationTime {
-	et, err := time.Parse(time.RFC3339, s)
+func mustParseTime(s string) time.Time {
+	t, err := time.Parse(time.RFC3339, s)
 	if err != nil {
 		panic(err)
 	}
-	return types.ExpirationTime(et)
+	return t
+}
+
+func mustParseExpirationTime(s string) types.ExpirationTime {
+	return types.ExpirationTime(mustParseTime(s))
 }
 
 func formatExpirationTime(et types.ExpirationTime) string {

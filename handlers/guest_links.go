@@ -19,6 +19,7 @@ type GuestLinkPostResponse struct {
 	ID string `json:"id"`
 }
 
+// Omit visually similar characters (I,l,1), (0,O)
 var guestLinkIDCharacters = []rune("abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789")
 
 func (s Server) guestLinksPost() http.HandlerFunc {
@@ -162,7 +163,7 @@ func parseGuestLinkID(s string) (types.GuestLinkID, error) {
 
 	for _, c := range s {
 		if _, ok := idCharsHash[c]; !ok {
-			return types.GuestLinkID(""), fmt.Errorf("entry ID (%s) contains invalid character: %v", s, c)
+			return types.GuestLinkID(""), fmt.Errorf("entry ID (%s) contains invalid character: %s", s, string(c))
 		}
 	}
 	return types.GuestLinkID(s), nil
