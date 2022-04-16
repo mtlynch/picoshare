@@ -154,7 +154,7 @@ func TestEntryPostRejectsInvalidRequest(t *testing.T) {
 func TestGuestUploadValidFile(t *testing.T) {
 	store := test_sqlite.New()
 	store.InsertGuestLink(types.GuestLink{
-		ID:      types.GuestLinkID("abcde23456"),
+		ID:      types.GuestLinkID("abcdefgh23456789"),
 		Created: mustParseTime("2022-01-01T00:00:00Z"),
 		Expires: mustParseExpirationTime("2030-01-02T03:04:25Z"),
 	})
@@ -170,7 +170,7 @@ func TestGuestUploadValidFile(t *testing.T) {
 	contents := "dummy bytes"
 	formData, contentType := createMultipartFormBody("file", filename, makeData(contents))
 
-	req, err := http.NewRequest("POST", "/api/guest/abcde23456", formData)
+	req, err := http.NewRequest("POST", "/api/guest/abcdefgh23456789", formData)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -220,17 +220,17 @@ func TestGuestUploadInvalidLink(t *testing.T) {
 		{
 			description: "expired guest link",
 			guestLinkInStore: types.GuestLink{
-				ID:      types.GuestLinkID("abcde23456"),
+				ID:      types.GuestLinkID("abcdefgh23456789"),
 				Created: mustParseTime("2000-01-01T00:00:00Z"),
 				Expires: mustParseExpirationTime("2000-01-02T03:04:25Z"),
 			},
-			guestLinkID:    "abcde23456",
+			guestLinkID:    "abcdefgh23456789",
 			statusExpected: http.StatusUnauthorized,
 		},
 		{
 			description: "invalid guest link",
 			guestLinkInStore: types.GuestLink{
-				ID:      types.GuestLinkID("abcde23456"),
+				ID:      types.GuestLinkID("abcdefgh23456789"),
 				Created: mustParseTime("2000-01-01T00:00:00Z"),
 				Expires: mustParseExpirationTime("2030-01-02T03:04:25Z"),
 			},
@@ -240,23 +240,23 @@ func TestGuestUploadInvalidLink(t *testing.T) {
 		{
 			description: "exhausted upload count",
 			guestLinkInStore: types.GuestLink{
-				ID:                   types.GuestLinkID("abcde23456"),
+				ID:                   types.GuestLinkID("abcdefgh23456789"),
 				Created:              mustParseTime("2000-01-01T00:00:00Z"),
 				Expires:              mustParseExpirationTime("2030-01-02T03:04:25Z"),
 				UploadCountRemaining: makeGuestUploadCountLimitPtr(0),
 			},
-			guestLinkID:    "abcde23456",
+			guestLinkID:    "abcdefgh23456789",
 			statusExpected: http.StatusUnauthorized,
 		},
 		{
 			description: "exhausted upload count",
 			guestLinkInStore: types.GuestLink{
-				ID:           types.GuestLinkID("abcde23456"),
+				ID:           types.GuestLinkID("abcdefgh23456789"),
 				Created:      mustParseTime("2000-01-01T00:00:00Z"),
 				Expires:      mustParseExpirationTime("2030-01-02T03:04:25Z"),
 				MaxFileBytes: makeGuestUploadMaxFileBytesPtr(1),
 			},
-			guestLinkID:    "abcde23456",
+			guestLinkID:    "abcdefgh23456789",
 			statusExpected: http.StatusBadRequest,
 		},
 	}

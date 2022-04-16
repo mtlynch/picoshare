@@ -13,7 +13,7 @@ import (
 	"github.com/mtlynch/picoshare/v2/types"
 )
 
-const GuestLinkIDLength = 10
+const GuestLinkIDLength = 16
 
 type GuestLinkPostResponse struct {
 	ID string `json:"id"`

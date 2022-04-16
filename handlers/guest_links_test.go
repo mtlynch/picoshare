@@ -184,14 +184,14 @@ func makeGuestUploadCountLimitPtr(i int) *types.GuestUploadCountLimit {
 func TestDeleteExistingGuestLink(t *testing.T) {
 	dataStore := test_sqlite.New()
 	dataStore.InsertGuestLink(types.GuestLink{
-		ID:      types.GuestLinkID("hR87apiUCj"),
+		ID:      types.GuestLinkID("abcdefgh23456789"),
 		Created: time.Now(),
 		Expires: mustParseExpirationTime("2030-01-02T03:04:25Z"),
 	})
 
 	s := handlers.New(mockAuthenticator{}, dataStore)
 
-	req, err := http.NewRequest("DELETE", "/api/guest-links/hR87apiUCj", nil)
+	req, err := http.NewRequest("DELETE", "/api/guest-links/abcdefgh23456789", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -206,7 +206,7 @@ func TestDeleteExistingGuestLink(t *testing.T) {
 
 	_, err = dataStore.GetGuestLink(types.GuestLinkID("dummy-guest-link-id"))
 	if _, ok := err.(store.GuestLinkNotFoundError); !ok {
-		t.Fatalf("expected entry %v to be deleted, got: %v", types.EntryID("hR87apiUCj"), err)
+		t.Fatalf("expected entry %v to be deleted, got: %v", types.EntryID("abcdefgh23456789"), err)
 	}
 }
 
@@ -215,7 +215,7 @@ func TestDeleteNonExistentGuestLink(t *testing.T) {
 
 	s := handlers.New(mockAuthenticator{}, dataStore)
 
-	req, err := http.NewRequest("DELETE", "/api/guest-links/AR87apiUCj", nil)
+	req, err := http.NewRequest("DELETE", "/api/guest-links/abcdefgh23456789", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
