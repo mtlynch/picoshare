@@ -233,7 +233,7 @@ func (d db) InsertEntry(reader io.Reader, metadata types.UploadMetadata) error {
 		upload_time,
 		expiration_time
 	)
-	VALUES(?,?,?,?,?)`, metadata.ID, metadata.Filename, metadata.ContentType, formatTime(metadata.Uploaded), formatTime(time.Time(metadata.Expires)))
+	VALUES(?,?,?,?,?)`, metadata.ID, metadata.Filename, metadata.ContentType, formatTime(metadata.Uploaded), formatExpirationTime(metadata.Expires))
 	if err != nil {
 		log.Printf("insert into entries table failed, aborting transaction: %v", err)
 		return err
@@ -282,6 +282,11 @@ func (d db) DeleteEntry(id types.EntryID) error {
 
 	return tx.Commit()
 }
+
+func formatExpirationTime(et types.ExpirationTime) string {
+	return formatTime(time.Time(et))
+}
+
 func formatTime(t time.Time) string {
 	return t.UTC().Format(timeFormat)
 }
