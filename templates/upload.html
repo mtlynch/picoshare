@@ -4,6 +4,14 @@
 
 {{ define "script-tags" }}
   <script type="module" src="/js/upload.js"></script>
+  {{ if .GuestLinkMetadata }}
+    <script type="application/json" id="guest-link-metadata">
+      {
+        "id": "{{ .GuestLinkMetadata.ID }}",
+        "maxFileBytes": {{ .GuestLinkMetadata.MaxFileBytes }}
+      }
+    </script>
+  {{ end }}
 {{ end }}
 
 {{ define "custom-elements" }}

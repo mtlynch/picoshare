@@ -209,6 +209,7 @@ func (s Server) uploadGet() http.HandlerFunc {
 		if err := renderTemplate(w, "upload.html", struct {
 			commonProps
 			ExpirationOptions []expirationOption
+			GuestLinkMetadata types.GuestLink
 		}{
 			commonProps: commonProps{
 				Title:           "PicoShare - Upload",
@@ -240,7 +241,7 @@ func (s Server) guestUploadGet() http.HandlerFunc {
 			return
 		}
 
-		_, err = s.store.GetGuestLink(guestLinkID)
+		gl, err := s.store.GetGuestLink(guestLinkID)
 		if _, ok := err.(store.GuestLinkNotFoundError); ok {
 			http.Error(w, "Invalid guest link ID", http.StatusNotFound)
 			return
@@ -260,11 +261,13 @@ func (s Server) guestUploadGet() http.HandlerFunc {
 		if err := renderTemplate(w, "upload.html", struct {
 			commonProps
 			ExpirationOptions []expirationOption
+			GuestLinkMetadata types.GuestLink
 		}{
 			commonProps: commonProps{
 				Title:           "PicoShare - Upload",
 				IsAuthenticated: s.isAuthenticated(r),
 			},
+			GuestLinkMetadata: gl,
 		}, template.FuncMap{
 			"formatExpiration": func(t time.Time) string {
 				return t.Format(time.RFC3339)

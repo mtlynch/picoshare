@@ -17,28 +17,35 @@ function showElement(el) {
   el.classList.remove("is-hidden");
 }
 
-function getGuestLinkID() {
-  const pathParts = document.location.pathname.split("/");
-  if (pathParts.length !== 3 || pathParts[1] !== "g") {
+function getGuestLinkMetdata() {
+  const el = document.getElementById("guest-link-metadata");
+  if (!el) {
     return null;
   }
-  return pathParts[2];
+  return JSON.parse(el.innerHTML);
 }
 
 function doUpload(file) {
+  const guestLinkMetadata = getGuestLinkMetdata();
+
+  if (file.size > guestLinkMetadata.maxFileBytes) {
+    const friendlySize = `${guestLinkMetadata.maxFileBytes} bytes`;
+    document.getElementById(
+      "error-message"
+    ).innerText = `File is too large. Maximum upload size is ${friendlySize}.`;
+    showElement(errorContainer);
+    return;
+  }
   hideElement(errorContainer);
   hideElement(uploadForm);
   showElement(progressSpinner);
 
-  // TODO: See if file size exceeds guest link size limit.
-
-  const guestLinkID = getGuestLinkID();
   let uploader = () => {
     return uploadFile(file, expirationSelect.value);
   };
-  if (guestLinkID) {
+  if (guestLinkMetadata) {
     uploader = () => {
-      return guestUploadFile(file, guestLinkID);
+      return guestUploadFile(file, guestLinkMetadata.id);
     };
   }
   uploader()
