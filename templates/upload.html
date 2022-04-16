@@ -4,7 +4,7 @@
 
 {{ define "script-tags" }}
   <script type="module" src="/js/upload.js"></script>
-  {{ if .GuestLinkMetadata }}
+  {{ if .GuestLinkMetadata.ID }}
     <script type="application/json" id="guest-link-metadata">
       {
         "id": "{{ .GuestLinkMetadata.ID }}",
