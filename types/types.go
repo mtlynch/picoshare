@@ -55,3 +55,11 @@ func (gl GuestLink) CanAcceptMoreFiles() bool {
 	r := int(*gl.UploadCountRemaining)
 	return r > 0
 }
+
+func (gl *GuestLink) DecrementUploadCount() {
+	if gl.UploadCountRemaining == nil {
+		return
+	}
+	s := GuestUploadCountLimit(int(*gl.UploadCountRemaining) - 1)
+	gl.UploadCountRemaining = &s
+}

@@ -359,6 +359,25 @@ func (d *db) InsertGuestLink(guestLink types.GuestLink) error {
 	return nil
 }
 
+func (d *db) UpdateGuestLink(guestLink types.GuestLink) error {
+	log.Printf("updating guest link %s", guestLink.ID)
+
+	if _, err := d.ctx.Exec(`
+	UPDATE guest_links
+	SET
+			label = ?,
+			max_file_size = ?,
+			uploads_left = ?,
+			expiration_time = ?
+	WHERE
+		id = ?
+	`, guestLink.Label, guestLink.MaxFileBytes, guestLink.UploadCountRemaining, formatExpirationTime(guestLink.Expires), guestLink.ID); err != nil {
+		log.Printf("failed to upload guest link %s: %v", guestLink.ID, err)
+		return err
+	}
+	return nil
+}
+
 func (d db) DeleteGuestLink(id types.GuestLinkID) error {
 	log.Printf("deleting guest link %s", id)
 
