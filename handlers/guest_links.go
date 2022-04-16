@@ -15,6 +15,10 @@ import (
 
 const GuestLinkIDLength = 10
 
+type GuestLinkPostResponse struct {
+	ID string `json:"id"`
+}
+
 var guestLinkIDCharacters = []rune("abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789")
 
 func (s Server) guestLinksPost() http.HandlerFunc {
@@ -34,6 +38,13 @@ func (s Server) guestLinksPost() http.HandlerFunc {
 			log.Printf("failed to save guest link: %v", err)
 			http.Error(w, fmt.Sprintf("Failed to save guest link: %v", err), http.StatusInternalServerError)
 			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(GuestLinkPostResponse{
+			ID: string(gl.ID),
+		}); err != nil {
+			panic(err)
 		}
 	}
 }
