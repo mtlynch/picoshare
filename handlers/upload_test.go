@@ -248,7 +248,17 @@ func TestGuestUploadInvalidLink(t *testing.T) {
 			guestLinkID:    "abcde23456",
 			statusExpected: http.StatusUnauthorized,
 		},
-		// TODO: Test too large a file
+		{
+			description: "exhausted upload count",
+			guestLinkInStore: types.GuestLink{
+				ID:           types.GuestLinkID("abcde23456"),
+				Created:      mustParseTime("2000-01-01T00:00:00Z"),
+				Expires:      mustParseExpirationTime("2030-01-02T03:04:25Z"),
+				MaxFileBytes: makeGuestUploadMaxFileBytesPtr(1),
+			},
+			guestLinkID:    "abcde23456",
+			statusExpected: http.StatusBadRequest,
+		},
 	}
 
 	authenticator, err := shared_secret.New("dummypass")

@@ -105,6 +105,13 @@ func (s Server) guestEntryPost() http.HandlerFunc {
 			return
 		}
 
+		if gl.MaxFileBytes != nil {
+			// We technically allow slightly less than the user specified because
+			// other fields in the request take up some space, but it's a difference
+			// of only a few hundred bytes.
+			r.Body = http.MaxBytesReader(w, r.Body, int64(*gl.MaxFileBytes))
+		}
+
 		uploadedFile, err := fileFromRequest(w, r)
 		if err != nil {
 			log.Printf("error reading body: %v", err)
