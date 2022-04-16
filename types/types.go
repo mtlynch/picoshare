@@ -47,3 +47,11 @@ var NeverExpire = ExpirationTime(time.Date(2999, time.December, 31, 0, 0, 0, 0, 
 func (et ExpirationTime) String() string {
 	return (time.Time(et)).String()
 }
+
+func (gl GuestLink) CanAcceptMoreFiles() bool {
+	if gl.UploadCountRemaining == nil {
+		return true
+	}
+	r := int(*gl.UploadCountRemaining)
+	return r > 0
+}

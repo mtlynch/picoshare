@@ -210,6 +210,78 @@ func TestGuestUploadValidFile(t *testing.T) {
 	}
 }
 
+func TestGuestUploadInvalidLink(t *testing.T) {
+	tests := []struct {
+		description      string
+		guestLinkInStore types.GuestLink
+		guestLinkID      string
+		statusExpected   int
+	}{
+		{
+			description: "expired guest link",
+			guestLinkInStore: types.GuestLink{
+				ID:      types.GuestLinkID("abcde23456"),
+				Created: mustParseTime("2000-01-01T00:00:00Z"),
+				Expires: mustParseExpirationTime("2000-01-02T03:04:25Z"),
+			},
+			guestLinkID:    "abcde23456",
+			statusExpected: http.StatusUnauthorized,
+		},
+		{
+			description: "invalid guest link",
+			guestLinkInStore: types.GuestLink{
+				ID:      types.GuestLinkID("abcde23456"),
+				Created: mustParseTime("2000-01-01T00:00:00Z"),
+				Expires: mustParseExpirationTime("2030-01-02T03:04:25Z"),
+			},
+			guestLinkID:    "i-am-an-invalid-guest-link",
+			statusExpected: http.StatusBadRequest,
+		},
+		{
+			description: "exhausted upload count",
+			guestLinkInStore: types.GuestLink{
+				ID:                   types.GuestLinkID("abcde23456"),
+				Created:              mustParseTime("2000-01-01T00:00:00Z"),
+				Expires:              mustParseExpirationTime("2030-01-02T03:04:25Z"),
+				UploadCountRemaining: makeGuestUploadCountLimitPtr(0),
+			},
+			guestLinkID:    "abcde23456",
+			statusExpected: http.StatusUnauthorized,
+		},
+		// TODO: Test too large a file
+	}
+
+	authenticator, err := shared_secret.New("dummypass")
+	if err != nil {
+		t.Fatalf("failed to create shared secret: %v", err)
+	}
+
+	for _, tt := range tests {
+		store := test_sqlite.New()
+		store.InsertGuestLink(tt.guestLinkInStore)
+
+		s := handlers.New(authenticator, store)
+
+		filename := "dummyimage.png"
+		contents := "dummy bytes"
+		formData, contentType := createMultipartFormBody("file", filename, makeData(contents))
+
+		req, err := http.NewRequest("POST", "/api/guest/"+tt.guestLinkID, formData)
+		if err != nil {
+			t.Fatal(err)
+		}
+		req.Header.Add("Content-Type", contentType)
+
+		w := httptest.NewRecorder()
+		s.Router().ServeHTTP(w, req)
+
+		if status := w.Code; status != tt.statusExpected {
+			t.Fatalf("%s: handler returned wrong status code: got %v want %v",
+				tt.description, status, tt.statusExpected)
+		}
+	}
+}
+
 func createMultipartFormBody(name, filename string, r io.Reader) (io.Reader, string) {
 	var b bytes.Buffer
 	bw := bufio.NewWriter(&b)

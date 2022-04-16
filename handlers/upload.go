@@ -85,7 +85,7 @@ func (s Server) guestEntryPost() http.HandlerFunc {
 			return
 		}
 
-		_, err = s.store.GetGuestLink(guestLinkID)
+		gl, err := s.store.GetGuestLink(guestLinkID)
 		if _, ok := err.(store.GuestLinkNotFoundError); ok {
 			http.Error(w, "Invalid guest link ID", http.StatusNotFound)
 			return
@@ -95,7 +95,15 @@ func (s Server) guestEntryPost() http.HandlerFunc {
 			return
 		}
 
-		// TODO: Apply guest upload restrictions
+		if time.Now().After(time.Time(gl.Expires)) {
+			http.Error(w, "Guest link is expired", http.StatusUnauthorized)
+			return
+		}
+
+		if !gl.CanAcceptMoreFiles() {
+			http.Error(w, "Guest link has no uploads remaining", http.StatusUnauthorized)
+			return
+		}
 
 		uploadedFile, err := fileFromRequest(w, r)
 		if err != nil {
