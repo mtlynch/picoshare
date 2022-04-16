@@ -16,7 +16,7 @@ it("creates a guest link and uploads a file as a guest", () => {
   cy.get("#label").type("For e2e testing");
   cy.get("#max-file-size").type("50");
   cy.get("#file-upload-limit").type("10");
-  cy.get("#create-btn").click();
+  cy.get("#create-guest-link-form").submit();
 
   cy.location("pathname").should("eq", "/guest-links");
   cy.get('.table td[test-data-id="guest-link-label"] a').click();

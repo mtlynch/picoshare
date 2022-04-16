@@ -11,7 +11,7 @@
 {{ define "content" }}
   <h1 class="title">Create Guest Link</h1>
 
-  <div id="upload-form">
+  <form id="create-guest-link-form">
     <div class="field my-3">
       <label class="label">Label <i>(optional)</i></label>
       <div class="control">
@@ -84,10 +84,10 @@
 
     <div class="field">
       <div class="control">
-        <button class="button is-link" id="create-btn">Create</button>
+        <input type="submit" class="button is-link" value="Create" />
       </div>
     </div>
-  </div>
+  </form>
 {{ end }}
 
 {{ template "base.html" }}

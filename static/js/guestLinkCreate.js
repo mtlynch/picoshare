@@ -4,7 +4,7 @@ const labelInput = document.getElementById("label");
 const expirationSelect = document.getElementById("expiration-select");
 const maxFileBytesInput = document.getElementById("max-file-size");
 const fileUploadLimitInput = document.getElementById("file-upload-limit");
-const createBtn = document.getElementById("create-btn");
+const createLinkForm = document.getElementById("create-guest-link-form");
 
 function megabytesToBytes(megabytes) {
   return megabytes * 1024 * 1024;
@@ -25,9 +25,8 @@ function guestLinkFromInputs() {
   };
 }
 
-// TODO: Probably want a normal form submit so that it works for button click,
-// keyboard, etc.
-createBtn.addEventListener("click", () => {
+createLinkForm.addEventListener("submit", (evt) => {
+  evt.preventDefault();
   guestLinkNew(guestLinkFromInputs()).then(() => {
     document.location = "/guest-links";
   });
