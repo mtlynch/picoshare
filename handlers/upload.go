@@ -7,21 +7,16 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"strings"
 	"time"
 
+	"github.com/mtlynch/picoshare/v2/handlers/parse"
 	"github.com/mtlynch/picoshare/v2/random"
 	"github.com/mtlynch/picoshare/v2/types"
 )
 
 const (
-	// MaxFilenameLen is the maximum number of characters allowed for uploaded
-	// files. There's no technical reason on PicoShare's side for this limitation,
-	// but it's useful to have some upper bound to limit malicious inputs, and 255
-	// is a common filename limit across most filesystems.
-	MaxFilenameLen = 255
-	FileLifetime   = 7 * 24 * time.Hour
-	EntryIDLength  = 10
+	FileLifetime  = 7 * 24 * time.Hour
+	EntryIDLength = 10
 )
 
 var (
@@ -113,7 +108,7 @@ func fileFromRequest(w http.ResponseWriter, r *http.Request) (fileUpload, error)
 		return fileUpload{}, err
 	}
 
-	filename, err := parseFilename(metadata.Filename)
+	filename, err := parse.Filename(metadata.Filename)
 	if err != nil {
 		return fileUpload{}, err
 	}
@@ -128,19 +123,6 @@ func fileFromRequest(w http.ResponseWriter, r *http.Request) (fileUpload, error)
 		Filename:    filename,
 		ContentType: contentType,
 	}, nil
-}
-
-func parseFilename(s string) (types.Filename, error) {
-	if len(s) > MaxFilenameLen {
-		return types.Filename(""), errors.New("filename too long")
-	}
-	if s == "." || strings.HasPrefix(s, "..") {
-		return types.Filename(""), errors.New("illegal filename")
-	}
-	if strings.ContainsAny(s, "\\") {
-		return types.Filename(""), errors.New("illegal characters in filename")
-	}
-	return types.Filename(s), nil
 }
 
 func parseContentType(s string) (types.ContentType, error) {
