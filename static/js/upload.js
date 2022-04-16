@@ -17,11 +17,11 @@ function showElement(el) {
   el.classList.remove("is-hidden");
 }
 
-function doUpload(file, expiration) {
+function doUpload(file) {
   hideElement(errorContainer);
   hideElement(uploadForm);
   showElement(progressSpinner);
-  uploadFile(file, expiration)
+  uploadFile(file, expirationSelect.value)
     .then((res) => {
       const entryId = res.id;
 
@@ -56,7 +56,7 @@ function resetPasteInstructions() {
 document
   .querySelector('.file-input[name="resume"]')
   .addEventListener("change", (evt) => {
-    doUpload(evt.target.files[0], expirationSelect.value);
+    doUpload(evt.target.files[0]);
   });
 
 uploadForm.addEventListener("drop", (evt) => {
@@ -70,7 +70,7 @@ uploadForm.addEventListener("drop", (evt) => {
   for (var i = 0; i < evt.dataTransfer.items.length; i++) {
     if (evt.dataTransfer.items[i].kind === "file") {
       var file = evt.dataTransfer.items[i].getAsFile();
-      doUpload(file, expirationSelect.value);
+      doUpload(file);
       return;
     }
   }
@@ -118,7 +118,7 @@ pasteEl.addEventListener("paste", (evt) => {
       });
     }
 
-    doUpload(pastedFile, expirationSelect.value);
+    doUpload(pastedFile);
     return;
   }
 });
