@@ -132,7 +132,7 @@ func TestGuestLinksPostRejectsInvalidRequest(t *testing.T) {
 				}`,
 		},
 		{
-			description: "invalid maxFileBytes field",
+			description: "negative maxFileBytes field",
 			payload: `{
 					"label": null,
 					"expirationTime":"2025-01-01T00:00:00Z",
@@ -141,12 +141,30 @@ func TestGuestLinksPostRejectsInvalidRequest(t *testing.T) {
 				}`,
 		},
 		{
-			description: "invalid countLimit field",
+			description: "decimal maxFileBytes field",
+			payload: `{
+					"label": null,
+					"expirationTime":"2025-01-01T00:00:00Z",
+					"maxFileBytes": 1.5,
+					"countLimit": null
+				}`,
+		},
+		{
+			description: "negative countLimit field",
 			payload: `{
 					"label": null,
 					"expirationTime":"2025-01-01T00:00:00Z",
 					"maxFileBytes": null,
 					"countLimit": -5
+				}`,
+		},
+		{
+			description: "decimal countLimit field",
+			payload: `{
+					"label": null,
+					"expirationTime":"2025-01-01T00:00:00Z",
+					"maxFileBytes": null,
+					"countLimit": 1.5
 				}`,
 		},
 	}
