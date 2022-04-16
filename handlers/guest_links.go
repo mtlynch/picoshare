@@ -53,6 +53,7 @@ func (s Server) guestLinksDelete() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id, err := parseGuestLinkID(mux.Vars(r)["id"])
 		if err != nil {
+			log.Printf("failed to parse guest link ID %s: %v", mux.Vars(r)["id"], err)
 			http.Error(w, fmt.Sprintf("Invalid guest link ID: %v", err), http.StatusBadRequest)
 			return
 		}

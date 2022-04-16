@@ -7,8 +7,10 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/mtlynch/picoshare/v2/handlers"
+	"github.com/mtlynch/picoshare/v2/store"
 	"github.com/mtlynch/picoshare/v2/store/test_sqlite"
 	"github.com/mtlynch/picoshare/v2/types"
 )
@@ -177,4 +179,53 @@ func makeGuestUploadMaxFileBytesPtr(i int64) *types.GuestUploadMaxFileBytes {
 func makeGuestUploadCountLimitPtr(i int) *types.GuestUploadCountLimit {
 	c := types.GuestUploadCountLimit(i)
 	return &c
+}
+
+func TestDeleteExistingGuestLink(t *testing.T) {
+	dataStore := test_sqlite.New()
+	dataStore.InsertGuestLink(types.GuestLink{
+		ID:      types.GuestLinkID("hR87apiUCj"),
+		Created: time.Now(),
+		Expires: mustParseExpirationTime("2030-01-02T03:04:25Z"),
+	})
+
+	s := handlers.New(mockAuthenticator{}, dataStore)
+
+	req, err := http.NewRequest("DELETE", "/api/guest-links/hR87apiUCj", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	w := httptest.NewRecorder()
+	s.Router().ServeHTTP(w, req)
+
+	if status := w.Code; status != http.StatusOK {
+		t.Fatalf("DELETE /api/entry returned wrong status code: got %v want %v",
+			status, http.StatusOK)
+	}
+
+	_, err = dataStore.GetGuestLink(types.GuestLinkID("dummy-guest-link-id"))
+	if _, ok := err.(store.GuestLinkNotFoundError); !ok {
+		t.Fatalf("expected entry %v to be deleted, got: %v", types.EntryID("hR87apiUCj"), err)
+	}
+}
+
+func TestDeleteNonExistentGuestLink(t *testing.T) {
+	dataStore := test_sqlite.New()
+
+	s := handlers.New(mockAuthenticator{}, dataStore)
+
+	req, err := http.NewRequest("DELETE", "/api/guest-links/AR87apiUCj", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	w := httptest.NewRecorder()
+	s.Router().ServeHTTP(w, req)
+
+	// File doesn't exist, but there's no error for deleting a non-existent file.
+	if status := w.Code; status != http.StatusOK {
+		t.Fatalf("DELETE /api/entry returned wrong status code: got %v want %v",
+			status, http.StatusOK)
+	}
 }

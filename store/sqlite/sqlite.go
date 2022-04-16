@@ -401,8 +401,9 @@ func guestLinkFromRow(row rowScanner) (types.GuestLink, error) {
 	var expirationTimeRaw string
 
 	err := row.Scan(&id, &label, &maxFileBytes, &uploadsLeft, &creationTimeRaw, &expirationTimeRaw)
-	if err != nil {
-		log.Printf("failed to retrieve guest link with ID %v: %v", id, err)
+	if err == sql.ErrNoRows {
+		return types.GuestLink{}, store.GuestLinkNotFoundError{ID: id}
+	} else if err != nil {
 		return types.GuestLink{}, err
 	}
 
