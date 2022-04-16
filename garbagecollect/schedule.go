@@ -9,25 +9,24 @@ import (
 
 type Scheduler struct {
 	collector Collector
-	interval  time.Duration
+	ticker    *time.Ticker
 }
 
 func NewScheduler(store store.Store, interval time.Duration) Scheduler {
 	return Scheduler{
 		collector: NewCollector(store),
-		interval:  interval,
+		ticker:    time.NewTicker(interval),
 	}
 }
 
 func (s Scheduler) StartAsync() {
 	go func() {
-		for {
+		for range s.ticker.C {
 			log.Printf("cleaning up expired entries")
 			err := s.collector.Collect()
 			if err != nil {
 				log.Printf("garbage collection failed: %v", err)
 			}
-			time.Sleep(s.interval)
 		}
 	}()
 }

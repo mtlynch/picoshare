@@ -17,7 +17,11 @@ import (
 )
 
 const (
-	MaxFilenameLen = 100
+	// MaxFilenameLen is the maximum number of characters allowed for uploaded
+	// files. There's no technical reason on PicoShare's side for this limitation,
+	// but it's useful to have some upper bound to limit malicious inputs, and 255
+	// is a common filename limit across most filesystems.
+	MaxFilenameLen = 255
 	FileLifetime   = 7 * 24 * time.Hour
 	EntryIDLength  = 10
 )
