@@ -29,23 +29,26 @@
 
     <textarea id="pastebox" class="mt-5"></textarea>
 
-    <div class="field my-3 expiration-container">
-      <label class="label">Expiration</label>
-      <div class="control">
-        <div class="select">
-          <select id="expiration-select">
-            {{ range .ExpirationOptions }}
-              <option
-                value="{{ formatExpiration .Expiration }}"
-                {{ if .IsDefault }}selected{{ end }}
-              >
-                {{ .FriendlyName }}
-              </option>
-            {{ end }}
-          </select>
+    {{ if gt (len .ExpirationOptions) 0 }}
+      <div class="field my-3 expiration-container">
+        <label class="label">Expiration</label>
+        <div class="control">
+          <div class="select">
+            <select id="expiration-select">
+              {{ range .ExpirationOptions }}
+                <option
+                  value="{{ formatExpiration .Expiration }}"
+                  {{ if .IsDefault }}selected{{ end }}
+                >
+                  {{ .FriendlyName }}
+                </option>
+              {{ end }}
+            </select>
+          </div>
         </div>
       </div>
-    </div>
+    {{ end }}
+
   </div>
 
   <div class="fa-3x is-hidden" id="progress-spinner">

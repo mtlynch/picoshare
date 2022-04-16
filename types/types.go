@@ -13,6 +13,7 @@ type (
 
 	UploadMetadata struct {
 		ID          EntryID
+		GuestLinkID GuestLinkID
 		Filename    Filename
 		ContentType ContentType
 		Uploaded    time.Time

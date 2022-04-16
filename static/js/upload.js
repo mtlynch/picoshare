@@ -1,4 +1,4 @@
-import { uploadFile } from "./controllers/upload.js";
+import { guestUploadFile, uploadFile } from "./controllers/upload.js";
 
 const uploadEl = document.querySelector(".file");
 const resultEl = document.getElementById("upload-result");
@@ -17,11 +17,28 @@ function showElement(el) {
   el.classList.remove("is-hidden");
 }
 
-function doUpload(file, expiration) {
+function getGuestLinkID() {
+  const pathParts = document.location.pathname.split("/");
+  if (pathParts.length !== 3 || pathParts[1] !== "g") {
+    return null;
+  }
+  return pathParts[2];
+}
+
+function doUpload(file) {
   hideElement(errorContainer);
   hideElement(uploadForm);
   showElement(progressSpinner);
-  uploadFile(file, expiration)
+  const guestLinkID = getGuestLinkID();
+  let uploader = () => {
+    return uploadFile(file, expirationSelect.value);
+  };
+  if (guestLinkID) {
+    uploader = () => {
+      return guestUploadFile(file, guestLinkID);
+    };
+  }
+  uploader()
     .then((res) => {
       const entryId = res.id;
 
@@ -37,7 +54,9 @@ function doUpload(file, expiration) {
       showElement(resultEl);
 
       uploadEl.style.display = "none";
-      expirationContainer.style.display = "none";
+      if (expirationContainer) {
+        expirationContainer.style.display = "none";
+      }
     })
     .catch((error) => {
       document.getElementById("error-message").innerText = error;
@@ -56,7 +75,7 @@ function resetPasteInstructions() {
 document
   .querySelector('.file-input[name="resume"]')
   .addEventListener("change", (evt) => {
-    doUpload(evt.target.files[0], expirationSelect.value);
+    doUpload(evt.target.files[0]);
   });
 
 uploadForm.addEventListener("drop", (evt) => {
@@ -70,7 +89,7 @@ uploadForm.addEventListener("drop", (evt) => {
   for (var i = 0; i < evt.dataTransfer.items.length; i++) {
     if (evt.dataTransfer.items[i].kind === "file") {
       var file = evt.dataTransfer.items[i].getAsFile();
-      doUpload(file, expirationSelect.value);
+      doUpload(file);
       return;
     }
   }
@@ -100,8 +119,7 @@ pasteEl.addEventListener("paste", (evt) => {
         doUpload(
           new File([new Blob([s])], `pasted-${timestamp}.txt`, {
             type: "text/plain",
-          }),
-          expirationSelect.value
+          })
         );
       });
       return;
@@ -118,7 +136,7 @@ pasteEl.addEventListener("paste", (evt) => {
       });
     }
 
-    doUpload(pastedFile, expirationSelect.value);
+    doUpload(pastedFile);
     return;
   }
 });

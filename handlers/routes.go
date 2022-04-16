@@ -13,6 +13,9 @@ func (s *Server) routes() {
 	authenticatedApis.HandleFunc("/guest-links", s.guestLinksPost()).Methods(http.MethodPost)
 	authenticatedApis.HandleFunc("/guest-links/{id}", s.guestLinksDelete()).Methods(http.MethodDelete)
 
+	publicApis := s.router.PathPrefix("/api").Subrouter()
+	publicApis.HandleFunc("/guest/{guestLinkID}", s.guestEntryPost()).Methods(http.MethodPost)
+
 	static := s.router.PathPrefix("/").Subrouter()
 	static.PathPrefix("/css/").HandlerFunc(serveStaticResource()).Methods(http.MethodGet)
 	static.PathPrefix("/js/").HandlerFunc(serveStaticResource()).Methods(http.MethodGet)

@@ -265,13 +265,6 @@ func (s Server) guestUploadGet() http.HandlerFunc {
 				Title:           "PicoShare - Upload",
 				IsAuthenticated: s.isAuthenticated(r),
 			},
-			ExpirationOptions: []expirationOption{
-				{"1 day", time.Now().AddDate(0, 0, 1), false},
-				{"7 days", time.Now().AddDate(0, 0, 7), false},
-				{"30 days", time.Now().AddDate(0, 0, 30), true},
-				{"1 year", time.Now().AddDate(1, 0, 0), false},
-				{"Never", time.Time(types.NeverExpire), false},
-			},
 		}, template.FuncMap{
 			"formatExpiration": func(t time.Time) string {
 				return t.Format(time.RFC3339)
