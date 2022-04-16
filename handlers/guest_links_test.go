@@ -1,14 +1,94 @@
 package handlers_test
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"strings"
 	"testing"
 
 	"github.com/mtlynch/picoshare/v2/handlers"
 	"github.com/mtlynch/picoshare/v2/store/test_sqlite"
+	"github.com/mtlynch/picoshare/v2/types"
 )
+
+func TestGuestLinksPostAcceptsValidRequest(t *testing.T) {
+	tests := []struct {
+		description string
+		payload     string
+		expected    types.GuestLink
+	}{
+		{
+			description: "minimally populated request",
+			payload: `{
+					"label": null,
+					"expirationTime":"2030-01-02T03:04:25Z",
+					"maxFileBytes": null,
+					"countLimit": null
+				}`,
+			expected: types.GuestLink{
+				Label:                types.GuestLinkLabel(""),
+				Expires:              mustParseExpirationTime("2030-01-02T03:04:25Z"),
+				MaxFileBytes:         nil,
+				UploadCountRemaining: nil,
+			},
+		},
+		{
+			description: "fully populated request",
+			payload: `{
+					"label": "For my good pal, Maurice",
+					"expirationTime":"2030-01-02T03:04:25Z",
+					"maxFileBytes": 200,
+					"countLimit": 1
+				}`,
+			expected: types.GuestLink{
+				Label:                types.GuestLinkLabel("For my good pal, Maurice"),
+				Expires:              mustParseExpirationTime("2030-01-02T03:04:25Z"),
+				MaxFileBytes:         makeGuestUploadMaxFileBytesPtr(200),
+				UploadCountRemaining: makeGuestUploadCountLimitPtr(1),
+			},
+		},
+	}
+	for _, tt := range tests {
+		dataStore := test_sqlite.New()
+
+		s := handlers.New(mockAuthenticator{}, dataStore)
+
+		req, err := http.NewRequest("POST", "/api/guest-links", strings.NewReader(tt.payload))
+		if err != nil {
+			t.Fatal(err)
+		}
+		req.Header.Add("Content-Type", "text/json")
+
+		w := httptest.NewRecorder()
+		s.Router().ServeHTTP(w, req)
+
+		if status := w.Code; status != http.StatusOK {
+			t.Fatalf("%s: handler returned wrong status code: got %v want %v",
+				tt.description, status, http.StatusOK)
+		}
+
+		var response handlers.GuestLinkPostResponse
+		err = json.Unmarshal(w.Body.Bytes(), &response)
+		if err != nil {
+			t.Fatalf("response is not valid JSON: %v", w.Body.String())
+		}
+
+		gl, err := dataStore.GetGuestLink(types.GuestLinkID(response.ID))
+		if err != nil {
+			t.Fatalf("%s: failed to retrieve guest link from datastore: %v", tt.description, err)
+		}
+
+		// Copy the values that we can't predict in advance.
+		tt.expected.ID = types.GuestLinkID(response.ID)
+		tt.expected.Created = gl.Created
+
+		if !reflect.DeepEqual(gl, tt.expected) {
+			t.Fatalf("%s: guest link does not match expected: got %+v, want %+v", tt.description, gl, tt.expected)
+		}
+	}
+}
 
 func TestGuestLinksPostRejectsInvalidRequest(t *testing.T) {
 	tests := []struct {
@@ -87,4 +167,14 @@ func TestGuestLinksPostRejectsInvalidRequest(t *testing.T) {
 				tt.description, status, http.StatusBadRequest)
 		}
 	}
+}
+
+func makeGuestUploadMaxFileBytesPtr(i int64) *types.GuestUploadMaxFileBytes {
+	g := types.GuestUploadMaxFileBytes(i)
+	return &g
+}
+
+func makeGuestUploadCountLimitPtr(i int) *types.GuestUploadCountLimit {
+	c := types.GuestUploadCountLimit(i)
+	return &c
 }
