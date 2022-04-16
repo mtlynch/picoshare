@@ -135,6 +135,8 @@ func (s Server) guestEntryPost() http.HandlerFunc {
 			return
 		}
 
+		// TODO: Decrement guest link count.
+
 		w.Header().Set("Content-Type", "application/json")
 		if err := json.NewEncoder(w).Encode(EntryPostResponse{
 			ID: string(id),
@@ -194,6 +196,7 @@ func fileFromRequest(w http.ResponseWriter, r *http.Request) (fileUpload, error)
 	}, nil
 }
 
+// TODO: Move this to a separate package.
 func parseFilename(s string) (types.Filename, error) {
 	if len(s) > MaxFilenameLen {
 		return types.Filename(""), errors.New("filename too long")
