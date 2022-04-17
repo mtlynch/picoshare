@@ -165,8 +165,8 @@ func (s Server) fileIndexGet() http.HandlerFunc {
 			},
 			Files: em,
 		}, template.FuncMap{
-			"formatTime": func(t time.Time) string {
-				return t.Format(time.RFC3339)
+			"formatDate": func(t time.Time) string {
+				return t.Format("2006-01-02")
 			},
 			"formatExpiration": func(et types.ExpirationTime) string {
 				if et == types.NeverExpire {
@@ -174,7 +174,7 @@ func (s Server) fileIndexGet() http.HandlerFunc {
 				}
 				t := time.Time(et)
 				delta := time.Until(t)
-				return fmt.Sprintf("%s (%.0f days)", t.Format(time.RFC3339), delta.Hours()/24)
+				return fmt.Sprintf("%s (%.0f days)", t.Format("2006-01-02"), delta.Hours()/24)
 			},
 			"formatFileSize": func(b int) string {
 				const unit = 1024
