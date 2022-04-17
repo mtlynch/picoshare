@@ -122,7 +122,7 @@ func parseLabel(label string) (types.GuestLinkLabel, error) {
 
 func parseMaxFileBytes(limitRaw *uint64) (types.GuestUploadMaxFileBytes, error) {
 	if limitRaw == nil {
-		return nil, nil
+		return types.GuestUploadUnlimitedFileSize, nil
 	}
 	// TODO: Check more rigorously
 	if *limitRaw <= 0 {

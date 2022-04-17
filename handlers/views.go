@@ -62,7 +62,7 @@ func (s Server) guestLinkIndexGet() http.HandlerFunc {
 				return t.Format(time.RFC3339)
 			},
 			"formatSizeLimit": func(limit types.GuestUploadMaxFileBytes) string {
-				if limit == nil {
+				if limit == types.GuestUploadUnlimitedFileSize {
 					return "Unlimited"
 				}
 				b := uint64(*limit)

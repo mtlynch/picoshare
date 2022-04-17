@@ -18,6 +18,8 @@ type (
 	}
 )
 
+var GuestUploadUnlimitedFileSize = GuestUploadMaxFileBytes(nil)
+
 func (gl GuestLink) CanAcceptMoreFiles() bool {
 	if gl.UploadCountRemaining == nil {
 		return true
