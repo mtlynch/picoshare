@@ -80,7 +80,7 @@ func TestUploadValidFile(t *testing.T) {
 }
 
 func TestEntryPostRejectsInvalidRequest(t *testing.T) {
-	tests := []struct {
+	for _, tt := range []struct {
 		description string
 		name        string
 		filename    string
@@ -104,26 +104,27 @@ func TestEntryPostRejectsInvalidRequest(t *testing.T) {
 			filename:    "dummy.png",
 			contents:    "",
 		},
-	}
-	for _, tt := range tests {
-		store := test_sqlite.New()
-		s := handlers.New(mockAuthenticator{}, store)
+	} {
+		t.Run(tt.description, func(t *testing.T) {
+			store := test_sqlite.New()
+			s := handlers.New(mockAuthenticator{}, store)
 
-		formData, contentType := createMultipartFormBody(tt.name, tt.filename, bytes.NewBuffer([]byte(tt.contents)))
+			formData, contentType := createMultipartFormBody(tt.name, tt.filename, bytes.NewBuffer([]byte(tt.contents)))
 
-		req, err := http.NewRequest("POST", "/api/entry", formData)
-		if err != nil {
-			t.Fatal(err)
-		}
-		req.Header.Add("Content-Type", contentType)
+			req, err := http.NewRequest("POST", "/api/entry", formData)
+			if err != nil {
+				t.Fatal(err)
+			}
+			req.Header.Add("Content-Type", contentType)
 
-		w := httptest.NewRecorder()
-		s.Router().ServeHTTP(w, req)
+			w := httptest.NewRecorder()
+			s.Router().ServeHTTP(w, req)
 
-		if status := w.Code; status != http.StatusBadRequest {
-			t.Errorf("%s: handler returned wrong status code: got %v want %v",
-				tt.description, status, http.StatusBadRequest)
-		}
+			if status := w.Code; status != http.StatusBadRequest {
+				t.Errorf("%s: handler returned wrong status code: got %v want %v",
+					tt.description, status, http.StatusBadRequest)
+			}
+		})
 	}
 }
 
