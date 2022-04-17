@@ -253,8 +253,7 @@ func TestDeleteExistingGuestLink(t *testing.T) {
 	s.Router().ServeHTTP(w, req)
 
 	if status := w.Code; status != http.StatusOK {
-		t.Fatalf("DELETE /api/entry returned wrong status code: got %v want %v",
-			status, http.StatusOK)
+		t.Fatalf("DELETE returned wrong status code: got %v want %v", status, http.StatusOK)
 	}
 
 	_, err = dataStore.GetGuestLink(types.GuestLinkID("dummy-guest-link-id"))
@@ -278,7 +277,25 @@ func TestDeleteNonExistentGuestLink(t *testing.T) {
 
 	// File doesn't exist, but there's no error for deleting a non-existent file.
 	if status := w.Code; status != http.StatusOK {
-		t.Fatalf("DELETE /api/entry returned wrong status code: got %v want %v",
+		t.Fatalf("DELETE returned wrong status code: got %v want %v",
 			status, http.StatusOK)
+	}
+}
+
+func TestDeleteInvalidGuestLink(t *testing.T) {
+	dataStore := test_sqlite.New()
+
+	s := handlers.New(mockAuthenticator{}, dataStore)
+
+	req, err := http.NewRequest("DELETE", "/api/guest-links/i-am-an-invalid-link", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	w := httptest.NewRecorder()
+	s.Router().ServeHTTP(w, req)
+
+	if status := w.Code; status != http.StatusBadRequest {
+		t.Fatalf("DELETE returned wrong status code: got %v want %v", status, http.StatusBadRequest)
 	}
 }
