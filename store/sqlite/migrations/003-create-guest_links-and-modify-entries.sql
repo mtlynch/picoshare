@@ -2,7 +2,7 @@ CREATE TABLE IF NOT EXISTS guest_links (
     id TEXT PRIMARY KEY,
     label TEXT,
     max_file_bytes INTEGER,
-    uploads_left INTEGER,
+    max_file_uploads INTEGER,
     creation_time TEXT NOT NULL,
     expiration_time TEXT
 );

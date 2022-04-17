@@ -293,7 +293,7 @@ func (d db) GetGuestLink(id types.GuestLinkID) (types.GuestLink, error) {
 			id,
 			label,
 			max_file_bytes,
-			uploads_left,
+			max_file_uploads,
 			creation_time,
 			expiration_time
 		FROM
@@ -314,7 +314,7 @@ func (d db) GetGuestLinks() ([]types.GuestLink, error) {
 		id,
 		label,
 		max_file_bytes,
-		uploads_left,
+		max_file_uploads,
 		creation_time,
 		expiration_time
 	FROM
@@ -347,7 +347,7 @@ func (d *db) InsertGuestLink(guestLink types.GuestLink) error {
 			id,
 			label,
 			max_file_bytes,
-			uploads_left,
+			max_file_uploads,
 			creation_time,
 			expiration_time
 		)
@@ -367,7 +367,7 @@ func (d *db) UpdateGuestLink(guestLink types.GuestLink) error {
 	SET
 			label = ?,
 			max_file_bytes = ?,
-			uploads_left = ?,
+			max_file_uploads = ?,
 			expiration_time = ?
 	WHERE
 		id = ?
