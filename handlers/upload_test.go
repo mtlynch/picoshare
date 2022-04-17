@@ -215,6 +215,16 @@ func TestGuestUploadInvalidLink(t *testing.T) {
 			statusExpected: http.StatusBadRequest,
 		},
 		{
+			description: "non-existent guest link",
+			guestLinkInStore: types.GuestLink{
+				ID:      types.GuestLinkID("abcdefgh23456789"),
+				Created: mustParseTime("2000-01-01T00:00:00Z"),
+				Expires: mustParseExpirationTime("2000-01-02T03:04:25Z"),
+			},
+			guestLinkID:    "doesntexistaaaaa",
+			statusExpected: http.StatusNotFound,
+		},
+		{
 			description: "exhausted upload count",
 			guestLinkInStore: types.GuestLink{
 				ID:             types.GuestLinkID("abcdefgh23456789"),
