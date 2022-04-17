@@ -71,36 +71,36 @@ func (s Server) guestLinksDelete() http.HandlerFunc {
 }
 
 func guestLinkFromRequest(r *http.Request) (types.GuestLink, error) {
-	type preferencesRequest struct {
+	type createGuestLinkRequest struct {
 		Label          string  `json:"label"`
 		Expiration     string  `json:"expirationTime"`
 		MaxFileBytes   *uint64 `json:"maxFileBytes"`
 		MaxFileUploads *int    `json:"maxFileUploads"`
 	}
-	var pr preferencesRequest
+	var cr createGuestLinkRequest
 	decoder := json.NewDecoder(r.Body)
-	err := decoder.Decode(&pr)
+	err := decoder.Decode(&cr)
 	if err != nil {
 		log.Printf("failed to decode JSON request: %v", err)
 		return types.GuestLink{}, err
 	}
 
-	label, err := parseLabel(pr.Label)
+	label, err := parseLabel(cr.Label)
 	if err != nil {
 		return types.GuestLink{}, err
 	}
 
-	expiration, err := parseExpiration(pr.Expiration)
+	expiration, err := parseExpiration(cr.Expiration)
 	if err != nil {
 		return types.GuestLink{}, err
 	}
 
-	maxFileBytes, err := parseMaxFileBytes(pr.MaxFileBytes)
+	maxFileBytes, err := parseMaxFileBytes(cr.MaxFileBytes)
 	if err != nil {
 		return types.GuestLink{}, err
 	}
 
-	maxFileUploads, err := parseUploadCountLimit(pr.MaxFileUploads)
+	maxFileUploads, err := parseUploadCountLimit(cr.MaxFileUploads)
 	if err != nil {
 		return types.GuestLink{}, err
 	}
