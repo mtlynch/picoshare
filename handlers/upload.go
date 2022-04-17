@@ -21,6 +21,7 @@ const (
 	EntryIDLength = 10
 )
 
+// Omit visually similar characters (I,l,1), (0,O)
 var entryIDCharacters = []rune("abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789")
 
 type (
