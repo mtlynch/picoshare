@@ -49,6 +49,11 @@ func (s Server) guestLinkIndexGet() http.HandlerFunc {
 			http.Error(w, "Failed to retrieve guest links", http.StatusInternalServerError)
 			return
 		}
+
+		sort.Slice(links, func(i, j int) bool {
+			return links[i].Created.After(links[j].Created)
+		})
+
 		if err := renderTemplate(w, "guest-link-index.html", struct {
 			commonProps
 			GuestLinks []types.GuestLink
