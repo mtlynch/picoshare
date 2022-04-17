@@ -47,7 +47,7 @@ func TestGuestLinksPostAcceptsValidRequest(t *testing.T) {
 			expected: types.GuestLink{
 				Label:                types.GuestLinkLabel("For my good pal, Maurice"),
 				Expires:              mustParseExpirationTime("2030-01-02T03:04:25Z"),
-				MaxFileBytes:         makeGuestUploadMaxFileBytesPtr(200),
+				MaxFileBytes:         makeGuestUploadMaxFileBytes(200),
 				UploadCountRemaining: makeGuestUploadCountLimitPtr(1),
 			},
 		},
@@ -189,9 +189,9 @@ func TestGuestLinksPostRejectsInvalidRequest(t *testing.T) {
 	}
 }
 
-func makeGuestUploadMaxFileBytesPtr(i int64) *types.GuestUploadMaxFileBytes {
-	g := types.GuestUploadMaxFileBytes(i)
-	return &g
+func makeGuestUploadMaxFileBytes(i uint64) types.GuestUploadMaxFileBytes {
+	pi := &i
+	return types.GuestUploadMaxFileBytes(pi)
 }
 
 func makeGuestUploadCountLimitPtr(i int) *types.GuestUploadCountLimit {

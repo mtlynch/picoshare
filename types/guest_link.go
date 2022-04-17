@@ -5,7 +5,7 @@ import "time"
 type (
 	GuestLinkID             string
 	GuestLinkLabel          string
-	GuestUploadMaxFileBytes uint64
+	GuestUploadMaxFileBytes *uint64
 	GuestUploadCountLimit   int
 
 	GuestLink struct {
@@ -13,7 +13,7 @@ type (
 		Label                GuestLinkLabel
 		Created              time.Time
 		Expires              ExpirationTime
-		MaxFileBytes         *GuestUploadMaxFileBytes
+		MaxFileBytes         GuestUploadMaxFileBytes
 		UploadCountRemaining *GuestUploadCountLimit
 	}
 )

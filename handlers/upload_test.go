@@ -229,7 +229,7 @@ func TestGuestUploadInvalidLink(t *testing.T) {
 				ID:           types.GuestLinkID("abcdefgh23456789"),
 				Created:      mustParseTime("2000-01-01T00:00:00Z"),
 				Expires:      mustParseExpirationTime("2030-01-02T03:04:25Z"),
-				MaxFileBytes: makeGuestUploadMaxFileBytesPtr(1),
+				MaxFileBytes: makeGuestUploadMaxFileBytes(1),
 			},
 			guestLinkID:    "abcdefgh23456789",
 			statusExpected: http.StatusBadRequest,
