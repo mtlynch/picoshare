@@ -9,7 +9,7 @@ import (
 )
 
 func TestFilename(t *testing.T) {
-	var tests = []struct {
+	for _, tt := range []struct {
 		description    string
 		filename       string
 		validExpected  bool
@@ -46,14 +46,14 @@ func TestFilename(t *testing.T) {
 			filename:      strings.Repeat("A", parse.MaxFilenameLen+1),
 			validExpected: false,
 		},
-	}
-
-	for _, tt := range tests {
-		parsedActual, errActual := parse.Filename(tt.filename)
-		if (errActual == nil) != tt.validExpected {
-			t.Errorf("%s: input [%s], got %v, want %v", tt.description, tt.filename, errActual, tt.validExpected)
-		} else if parsedActual != tt.parsedExpected {
-			t.Errorf("%s: input [%s], got %v, want %v", tt.description, tt.filename, parsedActual, tt.parsedExpected)
-		}
+	} {
+		t.Run(tt.description, func(t *testing.T) {
+			parsedActual, errActual := parse.Filename(tt.filename)
+			if (errActual == nil) != tt.validExpected {
+				t.Errorf("%s: input [%s], got %v, want %v", tt.description, tt.filename, errActual, tt.validExpected)
+			} else if parsedActual != tt.parsedExpected {
+				t.Errorf("%s: input [%s], got %v, want %v", tt.description, tt.filename, parsedActual, tt.parsedExpected)
+			}
+		})
 	}
 }
