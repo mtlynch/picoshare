@@ -18,11 +18,11 @@
       <div id="navbar-links" class="navbar-menu">
         {{ if .IsAuthenticated }}
           <div class="navbar-start">
-            <a class="navbar-item" href="/files">Files</a>
-            <a class="navbar-item" href="/guest-links">Guest Links</a>
             <div class="navbar-item">
               <a class="button is-primary" href="/">Upload</a>
             </div>
+            <a class="navbar-item" href="/files">Files</a>
+            <a class="navbar-item" href="/guest-links">Guest Links</a>
           </div>
         {{ end }}
         <div class="navbar-end">
