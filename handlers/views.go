@@ -78,7 +78,7 @@ func (s Server) guestLinkIndexGet() http.HandlerFunc {
 				}
 				return fmt.Sprintf("%.2f %cB", float64(b)/float64(div), "kMGTPE"[exp])
 			},
-			"formatCountLimit": func(limit *types.GuestUploadCountLimit) string {
+			"formatCountLimit": func(limit types.GuestUploadCountLimit) string {
 				if limit == nil {
 					return "Unlimited"
 				}

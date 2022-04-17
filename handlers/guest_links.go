@@ -132,7 +132,7 @@ func parseMaxFileBytes(limitRaw *uint64) (types.GuestUploadMaxFileBytes, error) 
 	return types.GuestUploadMaxFileBytes(limitRaw), nil
 }
 
-func parseUploadCountLimit(limitRaw *int) (*types.GuestUploadCountLimit, error) {
+func parseUploadCountLimit(limitRaw *int) (types.GuestUploadCountLimit, error) {
 	if limitRaw == nil {
 		return nil, nil
 	}
@@ -141,8 +141,7 @@ func parseUploadCountLimit(limitRaw *int) (*types.GuestUploadCountLimit, error) 
 		return nil, errors.New("guest upload count limit must be a positive number")
 	}
 
-	limit := types.GuestUploadCountLimit(*limitRaw)
-	return &limit, nil
+	return types.GuestUploadCountLimit(limitRaw), nil
 }
 
 func generateGuestLinkID() types.GuestLinkID {

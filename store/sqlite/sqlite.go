@@ -416,7 +416,7 @@ func guestLinkFromRow(row rowScanner) (types.GuestLink, error) {
 	var creationTimeRaw string
 	var label types.GuestLinkLabel
 	var maxFileBytes types.GuestUploadMaxFileBytes
-	var uploadsLeft *types.GuestUploadCountLimit
+	var uploadsLeft types.GuestUploadCountLimit
 	var expirationTimeRaw string
 
 	err := row.Scan(&id, &label, &maxFileBytes, &uploadsLeft, &creationTimeRaw, &expirationTimeRaw)

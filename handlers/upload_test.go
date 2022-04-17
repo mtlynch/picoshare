@@ -218,7 +218,7 @@ func TestGuestUploadInvalidLink(t *testing.T) {
 				ID:                   types.GuestLinkID("abcdefgh23456789"),
 				Created:              mustParseTime("2000-01-01T00:00:00Z"),
 				Expires:              mustParseExpirationTime("2030-01-02T03:04:25Z"),
-				UploadCountRemaining: makeGuestUploadCountLimitPtr(0),
+				UploadCountRemaining: makeGuestUploadCountLimit(0),
 			},
 			guestLinkID:    "abcdefgh23456789",
 			statusExpected: http.StatusUnauthorized,

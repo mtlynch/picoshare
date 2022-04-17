@@ -6,7 +6,7 @@ type (
 	GuestLinkID             string
 	GuestLinkLabel          string
 	GuestUploadMaxFileBytes *uint64
-	GuestUploadCountLimit   int
+	GuestUploadCountLimit   *int
 
 	GuestLink struct {
 		ID                   GuestLinkID
@@ -14,7 +14,7 @@ type (
 		Created              time.Time
 		Expires              ExpirationTime
 		MaxFileBytes         GuestUploadMaxFileBytes
-		UploadCountRemaining *GuestUploadCountLimit
+		UploadCountRemaining GuestUploadCountLimit
 	}
 )
 
@@ -30,6 +30,6 @@ func (gl *GuestLink) DecrementUploadCount() {
 	if gl.UploadCountRemaining == nil {
 		return
 	}
-	s := GuestUploadCountLimit(int(*gl.UploadCountRemaining) - 1)
-	gl.UploadCountRemaining = &s
+	r := int(*gl.UploadCountRemaining)
+	gl.UploadCountRemaining = GuestUploadCountLimit(&r)
 }
