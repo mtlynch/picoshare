@@ -27,7 +27,13 @@ function guestLinkFromInputs() {
 
 createLinkForm.addEventListener("submit", (evt) => {
   evt.preventDefault();
-  guestLinkNew(guestLinkFromInputs()).then(() => {
+  const guestLink = guestLinkFromInputs();
+  guestLinkNew(
+    guestLink.label,
+    guestLink.expirationTime,
+    guestLink.maxFileBytes,
+    guestLink.maxFileUploads
+  ).then(() => {
     document.location = "/guest-links";
   });
 });

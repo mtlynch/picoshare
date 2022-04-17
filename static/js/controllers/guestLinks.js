@@ -1,10 +1,20 @@
 "use strict";
 
-export async function guestLinkNew(guestLink) {
+export async function guestLinkNew(
+  label,
+  expirationTime,
+  maxFileBytes,
+  maxFileUploads
+) {
   return fetch("/api/guest-links", {
     method: "POST",
     credentials: "include",
-    body: JSON.stringify(guestLink),
+    body: JSON.stringify({
+      label,
+      expirationTime,
+      maxFileBytes,
+      maxFileUploads,
+    }),
   })
     .then((response) => {
       if (!response.ok) {
