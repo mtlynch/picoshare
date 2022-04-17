@@ -11,8 +11,6 @@ function megabytesToBytes(megabytes) {
 }
 
 function guestLinkFromInputs() {
-  // TODO: Validate the inputs.
-  //        Make sure number inputs are ints instead of decimals.
   return {
     label: labelInput.value || null,
     expirationTime: expirationSelect.value,
