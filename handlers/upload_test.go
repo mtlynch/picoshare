@@ -211,7 +211,17 @@ func TestGuestUploadInvalidLink(t *testing.T) {
 				Created: mustParseTime("2000-01-01T00:00:00Z"),
 				Expires: mustParseExpirationTime("2030-01-02T03:04:25Z"),
 			},
-			guestLinkID:    "i-am-an-invalid-guest-link",
+			guestLinkID:    "i-am-an-invalid-guest-link", // Too long
+			statusExpected: http.StatusBadRequest,
+		},
+		{
+			description: "invalid guest link",
+			guestLinkInStore: types.GuestLink{
+				ID:      types.GuestLinkID("abcdefgh23456789"),
+				Created: mustParseTime("2000-01-01T00:00:00Z"),
+				Expires: mustParseExpirationTime("2030-01-02T03:04:25Z"),
+			},
+			guestLinkID:    "I0OI0OI0OI0OI0OI", // Contains all invalid characters
 			statusExpected: http.StatusBadRequest,
 		},
 		{
