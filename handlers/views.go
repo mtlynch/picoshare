@@ -103,7 +103,7 @@ func (s Server) guestLinkIndexGet() http.HandlerFunc {
 				return fmt.Sprintf("%s (%.0f days%s)", t.Format("2006-01-02"), math.Abs(delta.Hours())/24, suffix)
 			},
 			"isActive": func(gl types.GuestLink) bool {
-				return !gl.IsExpired() && gl.CanAcceptMoreFiles()
+				return gl.IsActive()
 			},
 		}); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -264,7 +264,20 @@ func (s Server) guestUploadGet() http.HandlerFunc {
 			return
 		}
 
-		// TODO: Render something different if guest link's quota is exhausted.
+		if !gl.IsActive() {
+			if err := renderTemplate(w, "guest-link-inactive.html", struct {
+				commonProps
+			}{
+				commonProps: commonProps{
+					Title:           "PicoShare - Guest Link Inactive",
+					IsAuthenticated: s.isAuthenticated(r),
+				},
+			}, template.FuncMap{}); err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			return
+		}
 
 		type expirationOption struct {
 			FriendlyName string

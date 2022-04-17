@@ -37,3 +37,7 @@ func (gl GuestLink) IsExpired() bool {
 	}
 	return time.Now().After(time.Time(gl.Expires))
 }
+
+func (gl GuestLink) IsActive() bool {
+	return !gl.IsExpired() && gl.CanAcceptMoreFiles()
+}
