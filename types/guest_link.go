@@ -30,3 +30,10 @@ func (gl GuestLink) CanAcceptMoreFiles() bool {
 	}
 	return gl.FilesUploaded < *gl.MaxFileUploads
 }
+
+func (gl GuestLink) IsExpired() bool {
+	if gl.Expires == NeverExpire {
+		return false
+	}
+	return time.Now().After(time.Time(gl.Expires))
+}

@@ -5,6 +5,7 @@ import (
 	"html/template"
 	"io/ioutil"
 	"log"
+	"math"
 	"net/http"
 	"path"
 	"sort"
@@ -58,8 +59,8 @@ func (s Server) guestLinkIndexGet() http.HandlerFunc {
 			},
 			GuestLinks: links,
 		}, template.FuncMap{
-			"formatTime": func(t time.Time) string {
-				return t.Format(time.RFC3339)
+			"formatDate": func(t time.Time) string {
+				return t.Format("2006-01-02")
 			},
 			"formatSizeLimit": func(limit types.GuestUploadMaxFileBytes) string {
 				if limit == types.GuestUploadUnlimitedFileSize {
@@ -90,7 +91,14 @@ func (s Server) guestLinkIndexGet() http.HandlerFunc {
 				}
 				t := time.Time(et)
 				delta := time.Until(t)
-				return fmt.Sprintf("%s (%.0f days)", t.Format(time.RFC3339), delta.Hours()/24)
+				suffix := ""
+				if delta.Seconds() < 0 {
+					suffix = " ago"
+				}
+				return fmt.Sprintf("%s (%.0f days%s)", t.Format("2006-01-02"), math.Abs(delta.Hours())/24, suffix)
+			},
+			"isActive": func(gl types.GuestLink) bool {
+				return !gl.IsExpired() && gl.CanAcceptMoreFiles()
 			},
 		}); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)

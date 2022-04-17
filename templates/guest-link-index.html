@@ -9,18 +9,26 @@
 {{ define "custom-elements" }}
 {{ end }}
 
+{{ define "label-formatted" }}
+  {{ if .Label }}
+    {{ .Label }}
+  {{ else }}
+    <i>unnamed</i>
+  {{ end }}
+{{ end }}
+
 {{ define "content" }}
   <h1 class="title">Guest Links</h1>
 
   <a class="button is-primary" href="/guest-links/new">Create new</a>
 
-  <div class="table-container">
+  <div class="table-container mt-5">
     <table class="table">
       <thead>
         <tr>
           <th>Label</th>
           <th>Created</th>
-          <th>Expires</th>
+          <th>Expiration</th>
           <th>Max Upload Size</th>
           <th>Uploads</th>
           <th class="has-text-right">Actions</th>
@@ -28,18 +36,20 @@
       </thead>
       <tbody>
         {{ range .GuestLinks }}
-          <tr>
+          <tr {{ if not (isActive .) }}class="inactive"{{ end }}>
             <td class="is-vcentered" test-data-id="guest-link-label">
-              <a href="/g/{{ .ID }}">
-                {{ if .Label }}
-                  {{ .Label }}
-                {{ else }}
-                  <i>unnamed</i>
-                {{ end }}
-              </a>
+              {{ if isActive . }}
+                <a href="/g/{{ .ID }}">
+                  {{ template "label-formatted" . }}
+                </a>
+              {{ else }}
+                {{ template "label-formatted" . }}
+              {{ end }}
             </td>
-            <td class="is-vcentered">{{ formatTime .Created }}</td>
-            <td class="is-vcentered">{{ formatExpiration .Expires }}</td>
+            <td class="is-vcentered">{{ formatDate .Created }}</td>
+            <td class="is-vcentered expiration">
+              {{ formatExpiration .Expires }}
+            </td>
             <td class="is-vcentered">
               {{ formatSizeLimit .MaxFileBytes }}
             </td>

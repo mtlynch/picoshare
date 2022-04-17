@@ -94,7 +94,7 @@ func (s Server) guestEntryPost() http.HandlerFunc {
 			return
 		}
 
-		if time.Now().After(time.Time(gl.Expires)) {
+		if gl.IsExpired() {
 			http.Error(w, "Guest link is expired", http.StatusUnauthorized)
 			return
 		}
