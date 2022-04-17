@@ -13,7 +13,10 @@ import (
 	"github.com/mtlynch/picoshare/v2/types"
 )
 
-const GuestLinkIDLength = 16
+const (
+	GuestLinkIDLength         = 16
+	GuestLinkByteLimitMinimum = 1024 * 1024
+)
 
 type GuestLinkPostResponse struct {
 	ID string `json:"id"`
@@ -124,9 +127,8 @@ func parseMaxFileBytes(limitRaw *uint64) (types.GuestUploadMaxFileBytes, error) 
 	if limitRaw == nil {
 		return types.GuestUploadUnlimitedFileSize, nil
 	}
-	// TODO: Check more rigorously
-	if *limitRaw <= 0 {
-		return nil, errors.New("guest upload size limit must be a positive number")
+	if *limitRaw < GuestLinkByteLimitMinimum {
+		return nil, fmt.Errorf("guest upload size limit must be at at least %d bytes", GuestLinkByteLimitMinimum)
 	}
 
 	return types.GuestUploadMaxFileBytes(limitRaw), nil
@@ -136,7 +138,6 @@ func parseUploadCountLimit(limitRaw *int) (types.GuestUploadCountLimit, error) {
 	if limitRaw == nil {
 		return types.GuestUploadUnlimitedFileUploads, nil
 	}
-	// TODO: Check more rigorously
 	if *limitRaw <= 0 {
 		return nil, errors.New("guest upload count limit must be a positive number")
 	}

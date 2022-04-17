@@ -41,13 +41,13 @@ func TestGuestLinksPostAcceptsValidRequest(t *testing.T) {
 			payload: `{
 					"label": "For my good pal, Maurice",
 					"expirationTime":"2030-01-02T03:04:25Z",
-					"maxFileBytes": 200,
+					"maxFileBytes": 1048576,
 					"maxFileUploads": 1
 				}`,
 			expected: types.GuestLink{
 				Label:          types.GuestLinkLabel("For my good pal, Maurice"),
 				Expires:        mustParseExpirationTime("2030-01-02T03:04:25Z"),
-				MaxFileBytes:   makeGuestUploadMaxFileBytes(200),
+				MaxFileBytes:   makeGuestUploadMaxFileBytes(1048576),
 				MaxFileUploads: makeGuestUploadCountLimit(1),
 			},
 		},
@@ -150,6 +150,24 @@ func TestGuestLinksPostRejectsInvalidRequest(t *testing.T) {
 				}`,
 		},
 		{
+			description: "too low a maxFileBytes field",
+			payload: `{
+					"label": null,
+					"expirationTime":"2025-01-01T00:00:00Z",
+					"maxFileBytes": 1,
+					"maxFileUploads": null
+				}`,
+		},
+		{
+			description: "zero maxFileBytes field",
+			payload: `{
+					"label": null,
+					"expirationTime":"2025-01-01T00:00:00Z",
+					"maxFileBytes": 0,
+					"maxFileUploads": null
+				}`,
+		},
+		{
 			description: "negative maxFileUploads field",
 			payload: `{
 					"label": null,
@@ -165,6 +183,15 @@ func TestGuestLinksPostRejectsInvalidRequest(t *testing.T) {
 					"expirationTime":"2025-01-01T00:00:00Z",
 					"maxFileBytes": null,
 					"maxFileUploads": 1.5
+				}`,
+		},
+		{
+			description: "zero maxFileUploads field",
+			payload: `{
+					"label": null,
+					"expirationTime":"2025-01-01T00:00:00Z",
+					"maxFileBytes": null,
+					"maxFileUploads": 0
 				}`,
 		},
 	}
