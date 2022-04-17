@@ -78,7 +78,6 @@ function doUpload(file) {
       showElement(uploadForm);
     })
     .finally(() => {
-      // TODO: Show button to upload another file.
       hideElement(progressSpinner);
     });
 }
