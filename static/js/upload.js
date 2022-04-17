@@ -28,7 +28,11 @@ function getGuestLinkMetdata() {
 function doUpload(file) {
   const guestLinkMetadata = getGuestLinkMetdata();
 
-  if (guestLinkMetadata && file.size > guestLinkMetadata.maxFileBytes) {
+  if (
+    guestLinkMetadata &&
+    guestLinkMetadata.maxFileBytes &&
+    file.size > guestLinkMetadata.maxFileBytes
+  ) {
     const friendlySize = `${guestLinkMetadata.maxFileBytes} bytes`;
     document.getElementById(
       "error-message"
