@@ -32,8 +32,8 @@ func TestGuestLinksPostAcceptsValidRequest(t *testing.T) {
 			expected: types.GuestLink{
 				Label:                types.GuestLinkLabel(""),
 				Expires:              mustParseExpirationTime("2030-01-02T03:04:25Z"),
-				MaxFileBytes:         nil,
-				UploadCountRemaining: nil,
+				MaxFileBytes:         types.GuestUploadUnlimitedFileSize,
+				UploadCountRemaining: types.GuestUploadUnlimitedFileUploads,
 			},
 		},
 		{

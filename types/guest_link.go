@@ -18,10 +18,13 @@ type (
 	}
 )
 
-var GuestUploadUnlimitedFileSize = GuestUploadMaxFileBytes(nil)
+var (
+	GuestUploadUnlimitedFileSize    = GuestUploadMaxFileBytes(nil)
+	GuestUploadUnlimitedFileUploads = GuestUploadCountLimit(nil)
+)
 
 func (gl GuestLink) CanAcceptMoreFiles() bool {
-	if gl.UploadCountRemaining == nil {
+	if gl.UploadCountRemaining == GuestUploadUnlimitedFileUploads {
 		return true
 	}
 	r := int(*gl.UploadCountRemaining)
@@ -29,7 +32,7 @@ func (gl GuestLink) CanAcceptMoreFiles() bool {
 }
 
 func (gl *GuestLink) DecrementUploadCount() {
-	if gl.UploadCountRemaining == nil {
+	if gl.UploadCountRemaining == GuestUploadUnlimitedFileUploads {
 		return
 	}
 	r := int(*gl.UploadCountRemaining)
