@@ -27,7 +27,7 @@ func TestGuestLinksPostAcceptsValidRequest(t *testing.T) {
 					"label": null,
 					"expirationTime":"2030-01-02T03:04:25Z",
 					"maxFileBytes": null,
-					"countLimit": null
+					"maxFileUploads": null
 				}`,
 			expected: types.GuestLink{
 				Label:                types.GuestLinkLabel(""),
@@ -42,7 +42,7 @@ func TestGuestLinksPostAcceptsValidRequest(t *testing.T) {
 					"label": "For my good pal, Maurice",
 					"expirationTime":"2030-01-02T03:04:25Z",
 					"maxFileBytes": 200,
-					"countLimit": 1
+					"maxFileUploads": 1
 				}`,
 			expected: types.GuestLink{
 				Label:                types.GuestLinkLabel("For my good pal, Maurice"),
@@ -111,7 +111,7 @@ func TestGuestLinksPostRejectsInvalidRequest(t *testing.T) {
 					"label": 5,
 					"expirationTime":"2025-01-01T00:00:00Z",
 					"maxFileBytes": null,
-					"countLimit": null
+					"maxFileUploads": null
 				}`,
 		},
 		{
@@ -119,7 +119,7 @@ func TestGuestLinksPostRejectsInvalidRequest(t *testing.T) {
 			payload: `{
 					"label": null,
 					"maxFileBytes": null,
-					"countLimit": null
+					"maxFileUploads": null
 				}`,
 		},
 		{
@@ -128,7 +128,7 @@ func TestGuestLinksPostRejectsInvalidRequest(t *testing.T) {
 					"label": null,
 					"expirationTime": 25,
 					"maxFileBytes": null,
-					"countLimit": null
+					"maxFileUploads": null
 				}`,
 		},
 		{
@@ -137,7 +137,7 @@ func TestGuestLinksPostRejectsInvalidRequest(t *testing.T) {
 					"label": null,
 					"expirationTime":"2025-01-01T00:00:00Z",
 					"maxFileBytes": -5,
-					"countLimit": null
+					"maxFileUploads": null
 				}`,
 		},
 		{
@@ -146,25 +146,25 @@ func TestGuestLinksPostRejectsInvalidRequest(t *testing.T) {
 					"label": null,
 					"expirationTime":"2025-01-01T00:00:00Z",
 					"maxFileBytes": 1.5,
-					"countLimit": null
+					"maxFileUploads": null
 				}`,
 		},
 		{
-			description: "negative countLimit field",
+			description: "negative maxFileUploads field",
 			payload: `{
 					"label": null,
 					"expirationTime":"2025-01-01T00:00:00Z",
 					"maxFileBytes": null,
-					"countLimit": -5
+					"maxFileUploads": -5
 				}`,
 		},
 		{
-			description: "decimal countLimit field",
+			description: "decimal maxFileUploads field",
 			payload: `{
 					"label": null,
 					"expirationTime":"2025-01-01T00:00:00Z",
 					"maxFileBytes": null,
-					"countLimit": 1.5
+					"maxFileUploads": 1.5
 				}`,
 		},
 	}

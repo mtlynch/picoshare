@@ -19,7 +19,7 @@ function guestLinkFromInputs() {
     maxFileBytes: maxFileBytesInput.valueAsNumber
       ? megabytesToBytes(maxFileBytesInput.valueAsNumber)
       : null,
-    countLimit: fileUploadLimitInput.valueAsNumber
+    maxFileUploads: fileUploadLimitInput.valueAsNumber
       ? fileUploadLimitInput.valueAsNumber
       : null,
   };
