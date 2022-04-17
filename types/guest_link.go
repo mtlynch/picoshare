@@ -9,12 +9,13 @@ type (
 	GuestUploadCountLimit   *int
 
 	GuestLink struct {
-		ID                   GuestLinkID
-		Label                GuestLinkLabel
-		Created              time.Time
-		Expires              ExpirationTime
-		MaxFileBytes         GuestUploadMaxFileBytes
-		UploadCountRemaining GuestUploadCountLimit
+		ID             GuestLinkID
+		Label          GuestLinkLabel
+		Created        time.Time
+		Expires        ExpirationTime
+		MaxFileBytes   GuestUploadMaxFileBytes
+		MaxFileUploads GuestUploadCountLimit
+		FilesUploaded  int
 	}
 )
 
@@ -24,17 +25,8 @@ var (
 )
 
 func (gl GuestLink) CanAcceptMoreFiles() bool {
-	if gl.UploadCountRemaining == GuestUploadUnlimitedFileUploads {
+	if gl.MaxFileUploads == GuestUploadUnlimitedFileUploads {
 		return true
 	}
-	r := int(*gl.UploadCountRemaining)
-	return r > 0
-}
-
-func (gl *GuestLink) DecrementUploadCount() {
-	if gl.UploadCountRemaining == GuestUploadUnlimitedFileUploads {
-		return
-	}
-	r := int(*gl.UploadCountRemaining)
-	gl.UploadCountRemaining = GuestUploadCountLimit(&r)
+	return gl.FilesUploaded < *gl.MaxFileUploads
 }

@@ -134,14 +134,6 @@ func (s Server) guestEntryPost() http.HandlerFunc {
 			return
 		}
 
-		// There's a race condition here, but we're not so worried about an attacker
-		// squeezing out a few extra uploads.
-		gl.DecrementUploadCount()
-		if err = s.store.UpdateGuestLink(gl); err != nil {
-			log.Printf("failed to decrement upload count of guest link %v: %v", gl.ID, err)
-			// Continue, as this is a non-fatal error
-		}
-
 		w.Header().Set("Content-Type", "application/json")
 		if err := json.NewEncoder(w).Encode(EntryPostResponse{
 			ID: string(id),

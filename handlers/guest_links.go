@@ -103,10 +103,10 @@ func guestLinkFromRequest(r *http.Request) (types.GuestLink, error) {
 	}
 
 	return types.GuestLink{
-		Label:                label,
-		Expires:              expiration,
-		MaxFileBytes:         maxFileBytes,
-		UploadCountRemaining: maxFileUploads,
+		Label:          label,
+		Expires:        expiration,
+		MaxFileBytes:   maxFileBytes,
+		MaxFileUploads: maxFileUploads,
 	}, nil
 }
 
@@ -134,7 +134,7 @@ func parseMaxFileBytes(limitRaw *uint64) (types.GuestUploadMaxFileBytes, error) 
 
 func parseUploadCountLimit(limitRaw *int) (types.GuestUploadCountLimit, error) {
 	if limitRaw == nil {
-		return nil, nil
+		return types.GuestUploadUnlimitedFileUploads, nil
 	}
 	// TODO: Check more rigorously
 	if *limitRaw <= 0 {

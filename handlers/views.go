@@ -82,7 +82,7 @@ func (s Server) guestLinkIndexGet() http.HandlerFunc {
 				if limit == types.GuestUploadUnlimitedFileUploads {
 					return "Unlimited"
 				}
-				return fmt.Sprintf("%d", int64(*limit))
+				return fmt.Sprintf("%d", int(*limit))
 			},
 			"formatExpiration": func(et types.ExpirationTime) string {
 				if et == types.NeverExpire {

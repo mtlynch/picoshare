@@ -232,12 +232,13 @@ func (d db) InsertEntry(reader io.Reader, metadata types.UploadMetadata) error {
 		entries
 	(
 		id,
+		guest_link_id,
 		filename,
 		content_type,
 		upload_time,
 		expiration_time
 	)
-	VALUES(?,?,?,?,?)`, metadata.ID, metadata.Filename, metadata.ContentType, formatTime(metadata.Uploaded), formatExpirationTime(metadata.Expires))
+	VALUES(?,?,?,?,?,?)`, metadata.ID, metadata.GuestLinkID, metadata.Filename, metadata.ContentType, formatTime(metadata.Uploaded), formatExpirationTime(metadata.Expires))
 	if err != nil {
 		log.Printf("insert into entries table failed, aborting transaction: %v", err)
 		return err
@@ -352,29 +353,10 @@ func (d *db) InsertGuestLink(guestLink types.GuestLink) error {
 			expiration_time
 		)
 		VALUES (?,?,?,?,?,?)
-	`, guestLink.ID, guestLink.Label, guestLink.MaxFileBytes, guestLink.UploadCountRemaining, formatTime(time.Now()), formatExpirationTime(guestLink.Expires)); err != nil {
+	`, guestLink.ID, guestLink.Label, guestLink.MaxFileBytes, guestLink.MaxFileUploads, formatTime(time.Now()), formatExpirationTime(guestLink.Expires)); err != nil {
 		return err
 	}
 
-	return nil
-}
-
-func (d *db) UpdateGuestLink(guestLink types.GuestLink) error {
-	log.Printf("updating guest link %s", guestLink.ID)
-
-	if _, err := d.ctx.Exec(`
-	UPDATE guest_links
-	SET
-			label = ?,
-			max_file_bytes = ?,
-			max_file_uploads = ?,
-			expiration_time = ?
-	WHERE
-		id = ?
-	`, guestLink.Label, guestLink.MaxFileBytes, guestLink.UploadCountRemaining, formatExpirationTime(guestLink.Expires), guestLink.ID); err != nil {
-		log.Printf("failed to upload guest link %s: %v", guestLink.ID, err)
-		return err
-	}
 	return nil
 }
 
@@ -437,12 +419,12 @@ func guestLinkFromRow(row rowScanner) (types.GuestLink, error) {
 	}
 
 	return types.GuestLink{
-		ID:                   id,
-		Label:                label,
-		MaxFileBytes:         maxFileBytes,
-		UploadCountRemaining: uploadsLeft,
-		Created:              ct,
-		Expires:              types.ExpirationTime(et),
+		ID:             id,
+		Label:          label,
+		MaxFileBytes:   maxFileBytes,
+		MaxFileUploads: uploadsLeft,
+		Created:        ct,
+		Expires:        types.ExpirationTime(et),
 	}, nil
 }
 

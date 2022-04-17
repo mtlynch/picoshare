@@ -212,17 +212,18 @@ func TestGuestUploadInvalidLink(t *testing.T) {
 			guestLinkID:    "i-am-an-invalid-guest-link",
 			statusExpected: http.StatusBadRequest,
 		},
-		{
+		/*{
 			description: "exhausted upload count",
 			guestLinkInStore: types.GuestLink{
-				ID:                   types.GuestLinkID("abcdefgh23456789"),
-				Created:              mustParseTime("2000-01-01T00:00:00Z"),
-				Expires:              mustParseExpirationTime("2030-01-02T03:04:25Z"),
-				UploadCountRemaining: makeGuestUploadCountLimit(0),
+				ID:             types.GuestLinkID("abcdefgh23456789"),
+				Created:        mustParseTime("2000-01-01T00:00:00Z"),
+				Expires:        mustParseExpirationTime("2030-01-02T03:04:25Z"),
+				MaxFileUploads: makeGuestUploadCountLimit(2),
+				//FilesUploaded:  2,
 			},
 			guestLinkID:    "abcdefgh23456789",
 			statusExpected: http.StatusUnauthorized,
-		},
+		},*/
 		{
 			description: "exhausted upload count",
 			guestLinkInStore: types.GuestLink{

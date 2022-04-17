@@ -30,10 +30,10 @@ func TestGuestLinksPostAcceptsValidRequest(t *testing.T) {
 					"maxFileUploads": null
 				}`,
 			expected: types.GuestLink{
-				Label:                types.GuestLinkLabel(""),
-				Expires:              mustParseExpirationTime("2030-01-02T03:04:25Z"),
-				MaxFileBytes:         types.GuestUploadUnlimitedFileSize,
-				UploadCountRemaining: types.GuestUploadUnlimitedFileUploads,
+				Label:          types.GuestLinkLabel(""),
+				Expires:        mustParseExpirationTime("2030-01-02T03:04:25Z"),
+				MaxFileBytes:   types.GuestUploadUnlimitedFileSize,
+				MaxFileUploads: types.GuestUploadUnlimitedFileUploads,
 			},
 		},
 		{
@@ -45,10 +45,10 @@ func TestGuestLinksPostAcceptsValidRequest(t *testing.T) {
 					"maxFileUploads": 1
 				}`,
 			expected: types.GuestLink{
-				Label:                types.GuestLinkLabel("For my good pal, Maurice"),
-				Expires:              mustParseExpirationTime("2030-01-02T03:04:25Z"),
-				MaxFileBytes:         makeGuestUploadMaxFileBytes(200),
-				UploadCountRemaining: makeGuestUploadCountLimit(1),
+				Label:          types.GuestLinkLabel("For my good pal, Maurice"),
+				Expires:        mustParseExpirationTime("2030-01-02T03:04:25Z"),
+				MaxFileBytes:   makeGuestUploadMaxFileBytes(200),
+				MaxFileUploads: makeGuestUploadCountLimit(1),
 			},
 		},
 	}

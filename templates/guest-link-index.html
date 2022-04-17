@@ -22,7 +22,7 @@
           <th>Created</th>
           <th>Expires</th>
           <th>Max Upload Size</th>
-          <th>Uploads Left</th>
+          <th>Uploads</th>
           <th class="has-text-right">Actions</th>
         </tr>
       </thead>
@@ -44,7 +44,8 @@
               {{ formatSizeLimit .MaxFileBytes }}
             </td>
             <td class="is-vcentered">
-              {{ formatCountLimit .UploadCountRemaining }}
+              XX /
+              {{ formatCountLimit .MaxFileUploads }}
             </td>
             <td class="is-vcentered">
               <div class="field is-grouped is-justify-content-flex-end">
