@@ -187,7 +187,12 @@ func TestGuestUploadValidFile(t *testing.T) {
 }
 
 func TestGuestUploadInvalidLink(t *testing.T) {
-	tests := []struct {
+	authenticator, err := shared_secret.New("dummypass")
+	if err != nil {
+		t.Fatalf("failed to create shared secret: %v", err)
+	}
+
+	for _, tt := range []struct {
 		description      string
 		guestLinkInStore types.GuestLink
 		entriesInStore   []types.UploadEntry
@@ -270,43 +275,38 @@ func TestGuestUploadInvalidLink(t *testing.T) {
 			guestLinkID:    "abcdefgh23456789",
 			statusExpected: http.StatusBadRequest,
 		},
-	}
-
-	authenticator, err := shared_secret.New("dummypass")
-	if err != nil {
-		t.Fatalf("failed to create shared secret: %v", err)
-	}
-
-	for _, tt := range tests {
-		store := test_sqlite.New()
-		if err := store.InsertGuestLink(tt.guestLinkInStore); err != nil {
-			t.Fatalf("%s: failed to insert dummy guest link: %v", tt.description, err)
-		}
-		for _, entry := range tt.entriesInStore {
-			if err := store.InsertEntry(strings.NewReader("dummy data"), entry.UploadMetadata); err != nil {
-				t.Fatalf("%s: failed to insert dummy entry: %v", tt.description, err)
+	} {
+		t.Run(tt.description, func(t *testing.T) {
+			store := test_sqlite.New()
+			if err := store.InsertGuestLink(tt.guestLinkInStore); err != nil {
+				t.Fatalf("%s: failed to insert dummy guest link: %v", tt.description, err)
 			}
-		}
+			for _, entry := range tt.entriesInStore {
+				if err := store.InsertEntry(strings.NewReader("dummy data"), entry.UploadMetadata); err != nil {
+					t.Fatalf("%s: failed to insert dummy entry: %v", tt.description, err)
+				}
+			}
 
-		s := handlers.New(authenticator, store)
+			s := handlers.New(authenticator, store)
 
-		filename := "dummyimage.png"
-		contents := "dummy bytes"
-		formData, contentType := createMultipartFormBody("file", filename, makeData(contents))
+			filename := "dummyimage.png"
+			contents := "dummy bytes"
+			formData, contentType := createMultipartFormBody("file", filename, makeData(contents))
 
-		req, err := http.NewRequest("POST", "/api/guest/"+tt.guestLinkID, formData)
-		if err != nil {
-			t.Fatal(err)
-		}
-		req.Header.Add("Content-Type", contentType)
+			req, err := http.NewRequest("POST", "/api/guest/"+tt.guestLinkID, formData)
+			if err != nil {
+				t.Fatal(err)
+			}
+			req.Header.Add("Content-Type", contentType)
 
-		w := httptest.NewRecorder()
-		s.Router().ServeHTTP(w, req)
+			w := httptest.NewRecorder()
+			s.Router().ServeHTTP(w, req)
 
-		if status := w.Code; status != tt.statusExpected {
-			t.Fatalf("%s: handler returned wrong status code: got %v want %v",
-				tt.description, status, tt.statusExpected)
-		}
+			if status := w.Code; status != tt.statusExpected {
+				t.Fatalf("%s: handler returned wrong status code: got %v want %v",
+					tt.description, status, tt.statusExpected)
+			}
+		})
 	}
 }
 

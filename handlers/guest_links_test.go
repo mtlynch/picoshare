@@ -17,7 +17,7 @@ import (
 )
 
 func TestGuestLinksPostAcceptsValidRequest(t *testing.T) {
-	tests := []struct {
+	for _, tt := range []struct {
 		description string
 		payload     string
 		expected    types.GuestLink
@@ -52,49 +52,50 @@ func TestGuestLinksPostAcceptsValidRequest(t *testing.T) {
 				MaxFileUploads: makeGuestUploadCountLimit(1),
 			},
 		},
-	}
-	for _, tt := range tests {
-		dataStore := test_sqlite.New()
+	} {
+		t.Run(tt.description, func(t *testing.T) {
+			dataStore := test_sqlite.New()
 
-		s := handlers.New(mockAuthenticator{}, dataStore)
+			s := handlers.New(mockAuthenticator{}, dataStore)
 
-		req, err := http.NewRequest("POST", "/api/guest-links", strings.NewReader(tt.payload))
-		if err != nil {
-			t.Fatal(err)
-		}
-		req.Header.Add("Content-Type", "text/json")
+			req, err := http.NewRequest("POST", "/api/guest-links", strings.NewReader(tt.payload))
+			if err != nil {
+				t.Fatal(err)
+			}
+			req.Header.Add("Content-Type", "text/json")
 
-		w := httptest.NewRecorder()
-		s.Router().ServeHTTP(w, req)
+			w := httptest.NewRecorder()
+			s.Router().ServeHTTP(w, req)
 
-		if status := w.Code; status != http.StatusOK {
-			t.Fatalf("%s: handler returned wrong status code: got %v want %v",
-				tt.description, status, http.StatusOK)
-		}
+			if status := w.Code; status != http.StatusOK {
+				t.Fatalf("%s: handler returned wrong status code: got %v want %v",
+					tt.description, status, http.StatusOK)
+			}
 
-		var response handlers.GuestLinkPostResponse
-		err = json.Unmarshal(w.Body.Bytes(), &response)
-		if err != nil {
-			t.Fatalf("response is not valid JSON: %v", w.Body.String())
-		}
+			var response handlers.GuestLinkPostResponse
+			err = json.Unmarshal(w.Body.Bytes(), &response)
+			if err != nil {
+				t.Fatalf("response is not valid JSON: %v", w.Body.String())
+			}
 
-		gl, err := dataStore.GetGuestLink(types.GuestLinkID(response.ID))
-		if err != nil {
-			t.Fatalf("%s: failed to retrieve guest link from datastore: %v", tt.description, err)
-		}
+			gl, err := dataStore.GetGuestLink(types.GuestLinkID(response.ID))
+			if err != nil {
+				t.Fatalf("%s: failed to retrieve guest link from datastore: %v", tt.description, err)
+			}
 
-		// Copy the values that we can't predict in advance.
-		tt.expected.ID = types.GuestLinkID(response.ID)
-		tt.expected.Created = gl.Created
+			// Copy the values that we can't predict in advance.
+			tt.expected.ID = types.GuestLinkID(response.ID)
+			tt.expected.Created = gl.Created
 
-		if !reflect.DeepEqual(gl, tt.expected) {
-			t.Fatalf("%s: guest link does not match expected: got %+v, want %+v", tt.description, gl, tt.expected)
-		}
+			if !reflect.DeepEqual(gl, tt.expected) {
+				t.Fatalf("%s: guest link does not match expected: got %+v, want %+v", tt.description, gl, tt.expected)
+			}
+		})
 	}
 }
 
 func TestGuestLinksPostRejectsInvalidRequest(t *testing.T) {
-	tests := []struct {
+	for _, tt := range []struct {
 		description string
 		payload     string
 	}{
@@ -204,25 +205,26 @@ func TestGuestLinksPostRejectsInvalidRequest(t *testing.T) {
 					"maxFileUploads": 0
 				}`,
 		},
-	}
-	for _, tt := range tests {
-		dataStore := test_sqlite.New()
+	} {
+		t.Run(tt.description, func(t *testing.T) {
+			dataStore := test_sqlite.New()
 
-		s := handlers.New(mockAuthenticator{}, dataStore)
+			s := handlers.New(mockAuthenticator{}, dataStore)
 
-		req, err := http.NewRequest("POST", "/api/guest-links", strings.NewReader(tt.payload))
-		if err != nil {
-			t.Fatal(err)
-		}
-		req.Header.Add("Content-Type", "text/json")
+			req, err := http.NewRequest("POST", "/api/guest-links", strings.NewReader(tt.payload))
+			if err != nil {
+				t.Fatal(err)
+			}
+			req.Header.Add("Content-Type", "text/json")
 
-		w := httptest.NewRecorder()
-		s.Router().ServeHTTP(w, req)
+			w := httptest.NewRecorder()
+			s.Router().ServeHTTP(w, req)
 
-		if status := w.Code; status != http.StatusBadRequest {
-			t.Fatalf("%s: handler returned wrong status code: got %v want %v",
-				tt.description, status, http.StatusBadRequest)
-		}
+			if status := w.Code; status != http.StatusBadRequest {
+				t.Fatalf("%s: handler returned wrong status code: got %v want %v",
+					tt.description, status, http.StatusBadRequest)
+			}
+		})
 	}
 }
 
