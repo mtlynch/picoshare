@@ -18,10 +18,10 @@
       <div id="navbar-links" class="navbar-menu">
         {{ if .IsAuthenticated }}
           <div class="navbar-start">
-            <a class="navbar-item" href="/files">Files</a>
             <div class="navbar-item">
               <a class="button is-primary" href="/">Upload</a>
             </div>
+            <a class="navbar-item" href="/files">Files</a>
           </div>
         {{ end }}
         <div class="navbar-end">
