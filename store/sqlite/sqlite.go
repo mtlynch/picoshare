@@ -291,16 +291,21 @@ func (d db) DeleteEntry(id types.EntryID) error {
 func (d db) GetGuestLink(id types.GuestLinkID) (types.GuestLink, error) {
 	stmt, err := d.ctx.Prepare(`
 		SELECT
-			id,
-			label,
-			max_file_bytes,
-			max_file_uploads,
-			creation_time,
-			expiration_time
+			guest_links.id AS id,
+			guest_links.label AS label,
+			guest_links.max_file_bytes AS max_file_bytes,
+			guest_links.max_file_uploads AS max_file_uploads,
+			guest_links.creation_time AS creation_time,
+			guest_links.expiration_time AS expiration_time,
+			SUM(CASE WHEN entries.id IS NOT NULL THEN 1 ELSE 0 END) AS entries
 		FROM
 			guest_links
+		LEFT JOIN
+			entries ON guest_links.id = entries.guest_link_id
 		WHERE
-			id=?`)
+			guest_links.id=?
+		GROUP BY
+			guest_links.id`)
 	if err != nil {
 		return types.GuestLink{}, err
 	}
@@ -311,16 +316,20 @@ func (d db) GetGuestLink(id types.GuestLinkID) (types.GuestLink, error) {
 
 func (d db) GetGuestLinks() ([]types.GuestLink, error) {
 	rows, err := d.ctx.Query(`
-	SELECT
-		id,
-		label,
-		max_file_bytes,
-		max_file_uploads,
-		creation_time,
-		expiration_time
-	FROM
-		guest_links
-	`)
+		SELECT
+			guest_links.id AS id,
+			guest_links.label AS label,
+			guest_links.max_file_bytes AS max_file_bytes,
+			guest_links.max_file_uploads AS max_file_uploads,
+			guest_links.creation_time AS creation_time,
+			guest_links.expiration_time AS expiration_time,
+			SUM(CASE WHEN entries.id IS NOT NULL THEN 1 ELSE 0 END) AS entries
+		FROM
+			guest_links
+		LEFT JOIN
+			entries ON guest_links.id = entries.guest_link_id
+		GROUP BY
+			guest_links.id`)
 	if err != nil {
 		return []types.GuestLink{}, err
 	}
@@ -398,10 +407,11 @@ func guestLinkFromRow(row rowScanner) (types.GuestLink, error) {
 	var creationTimeRaw string
 	var label types.GuestLinkLabel
 	var maxFileBytes types.GuestUploadMaxFileBytes
-	var uploadsLeft types.GuestUploadCountLimit
+	var maxFileUploads types.GuestUploadCountLimit
 	var expirationTimeRaw string
+	var filesUploaded int
 
-	err := row.Scan(&id, &label, &maxFileBytes, &uploadsLeft, &creationTimeRaw, &expirationTimeRaw)
+	err := row.Scan(&id, &label, &maxFileBytes, &maxFileUploads, &creationTimeRaw, &expirationTimeRaw, &filesUploaded)
 	if err == sql.ErrNoRows {
 		return types.GuestLink{}, store.GuestLinkNotFoundError{ID: id}
 	} else if err != nil {
@@ -422,7 +432,8 @@ func guestLinkFromRow(row rowScanner) (types.GuestLink, error) {
 		ID:             id,
 		Label:          label,
 		MaxFileBytes:   maxFileBytes,
-		MaxFileUploads: uploadsLeft,
+		MaxFileUploads: maxFileUploads,
+		FilesUploaded:  filesUploaded,
 		Created:        ct,
 		Expires:        types.ExpirationTime(et),
 	}, nil

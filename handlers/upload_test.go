@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -189,6 +190,7 @@ func TestGuestUploadInvalidLink(t *testing.T) {
 	tests := []struct {
 		description      string
 		guestLinkInStore types.GuestLink
+		entriesInStore   []types.UploadEntry
 		guestLinkID      string
 		statusExpected   int
 	}{
@@ -212,18 +214,31 @@ func TestGuestUploadInvalidLink(t *testing.T) {
 			guestLinkID:    "i-am-an-invalid-guest-link",
 			statusExpected: http.StatusBadRequest,
 		},
-		/*{
+		{
 			description: "exhausted upload count",
 			guestLinkInStore: types.GuestLink{
 				ID:             types.GuestLinkID("abcdefgh23456789"),
 				Created:        mustParseTime("2000-01-01T00:00:00Z"),
 				Expires:        mustParseExpirationTime("2030-01-02T03:04:25Z"),
 				MaxFileUploads: makeGuestUploadCountLimit(2),
-				//FilesUploaded:  2,
+			},
+			entriesInStore: []types.UploadEntry{
+				{
+					UploadMetadata: types.UploadMetadata{
+						ID:          types.EntryID("dummy-entry1"),
+						GuestLinkID: types.GuestLinkID("abcdefgh23456789"),
+					},
+				},
+				{
+					UploadMetadata: types.UploadMetadata{
+						ID:          types.EntryID("dummy-entry2"),
+						GuestLinkID: types.GuestLinkID("abcdefgh23456789"),
+					},
+				},
 			},
 			guestLinkID:    "abcdefgh23456789",
 			statusExpected: http.StatusUnauthorized,
-		},*/
+		},
 		{
 			description: "exhausted upload count",
 			guestLinkInStore: types.GuestLink{
@@ -244,7 +259,14 @@ func TestGuestUploadInvalidLink(t *testing.T) {
 
 	for _, tt := range tests {
 		store := test_sqlite.New()
-		store.InsertGuestLink(tt.guestLinkInStore)
+		if err := store.InsertGuestLink(tt.guestLinkInStore); err != nil {
+			t.Fatalf("%s: failed to insert dummy guest link: %v", tt.description, err)
+		}
+		for _, entry := range tt.entriesInStore {
+			if err := store.InsertEntry(strings.NewReader("dummy data"), entry.UploadMetadata); err != nil {
+				t.Fatalf("%s: failed to insert dummy entry: %v", tt.description, err)
+			}
+		}
 
 		s := handlers.New(authenticator, store)
 
