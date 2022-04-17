@@ -217,8 +217,7 @@ func TestGuestLinksPostRejectsInvalidRequest(t *testing.T) {
 }
 
 func makeGuestUploadMaxFileBytes(i uint64) types.GuestUploadMaxFileBytes {
-	pi := &i
-	return types.GuestUploadMaxFileBytes(pi)
+	return types.GuestUploadMaxFileBytes(&i)
 }
 
 func makeGuestUploadCountLimit(i int) types.GuestUploadCountLimit {
