@@ -2,6 +2,7 @@ package handlers_test
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
@@ -113,6 +114,15 @@ func TestGuestLinksPostRejectsInvalidRequest(t *testing.T) {
 					"maxFileBytes": null,
 					"maxFileUploads": null
 				}`,
+		},
+		{
+			description: "invalid label field",
+			payload: fmt.Sprintf(`{
+					"label": "%s",
+					"expirationTime":"2025-01-01T00:00:00Z",
+					"maxFileBytes": null,
+					"maxFileUploads": null
+				}`, strings.Repeat("A", 201)),
 		},
 		{
 			description: "missing expirationTime field",
