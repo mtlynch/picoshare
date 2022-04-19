@@ -8,6 +8,7 @@ const progressSpinner = document.getElementById("progress-spinner");
 const uploadForm = document.getElementById("upload-form");
 const expirationContainer = document.querySelector(".expiration-container");
 const expirationSelect = document.getElementById("expiration-select");
+const uploadAnotherBtn = document.getElementById("upload-another-btn");
 
 function hideElement(el) {
   el.classList.add("is-hidden");
@@ -66,6 +67,7 @@ function doUpload(file) {
       });
       resultEl.append(uploadLinksEl);
       showElement(resultEl);
+      showElement(uploadAnotherBtn);
 
       uploadEl.style.display = "none";
       if (expirationContainer) {
@@ -163,6 +165,10 @@ pasteEl.addEventListener("change", (evt) => {
 pasteEl.addEventListener("input", (evt) => {
   evt.preventDefault();
   resetPasteInstructions();
+});
+
+uploadAnotherBtn.addEventListener("click", () => {
+  window.location.reload();
 });
 
 document.addEventListener("DOMContentLoaded", function () {
