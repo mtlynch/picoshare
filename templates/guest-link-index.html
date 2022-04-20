@@ -1,0 +1,109 @@
+{{ define "style-tags" }}
+  <link rel="stylesheet" type="text/css" href="/css/guest-link-index.css" />
+{{ end }}
+
+{{ define "script-tags" }}
+  <script type="module" src="/js/guestLinkIndex.js"></script>
+{{ end }}
+
+{{ define "custom-elements" }}
+{{ end }}
+
+{{ define "label-formatted" }}
+  {{ if .Label }}
+    {{ .Label }}
+  {{ else }}
+    <i>unnamed</i>
+  {{ end }}
+{{ end }}
+
+{{ define "content" }}
+  <h1 class="title">Guest Links</h1>
+
+  <p>
+    Guest links allow other users to upload files to this PicoShare server
+    without signing in.
+  </p>
+
+  <p>
+    Share a guest link with someone if you want an easy way for them to share a
+    file with you.
+  </p>
+
+  <a class="button is-primary" href="/guest-links/new">Create new</a>
+
+  <div class="table-container mt-5">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Label</th>
+          <th>Created</th>
+          <th>Expiration</th>
+          <th>Max Upload Size</th>
+          <th>Uploads</th>
+          <th class="has-text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{ range .GuestLinks }}
+          <tr {{ if not (isActive .) }}class="inactive"{{ end }}>
+            <td class="is-vcentered" test-data-id="guest-link-label">
+              {{ if isActive . }}
+                <a href="/g/{{ .ID }}">
+                  {{ template "label-formatted" . }}
+                </a>
+              {{ else }}
+                {{ template "label-formatted" . }}
+              {{ end }}
+            </td>
+            <td class="is-vcentered">{{ formatDate .Created }}</td>
+            <td class="is-vcentered expiration">
+              {{ formatExpiration .Expires }}
+            </td>
+            <td class="is-vcentered">
+              {{ formatSizeLimit .MaxFileBytes }}
+            </td>
+            <td class="is-vcentered">
+              {{ .FilesUploaded }} /
+              {{ formatCountLimit .MaxFileUploads }}
+            </td>
+            <td class="is-vcentered">
+              <div class="field is-grouped is-justify-content-flex-end">
+                <p class="control">
+                  <button
+                    class="button is-info"
+                    pico-purpose="copy"
+                    pico-link-id="{{ .ID }}"
+                  >
+                    <i class="fa-solid fa-copy"></i>
+                  </button>
+                </p>
+                <p class="control">
+                  <button
+                    class="button is-danger"
+                    pico-purpose="delete"
+                    pico-link-id="{{ .ID }}"
+                  >
+                    <i class="fa fa-trash" aria-hidden="true"></i>
+                  </button>
+                </p>
+              </div>
+            </td>
+          </tr>
+        {{ end }}
+      </tbody>
+    </table>
+  </div>
+
+  <div id="error" class="is-hidden my-3">
+    <article class="message is-danger">
+      <div class="message-header">
+        Error
+        <button class="delete" aria-label="delete"></button>
+      </div>
+      <div id="error-message" class="message-body">Placeholder error.</div>
+    </article>
+  </div>
+{{ end }}
+
+{{ template "base.html" }}

@@ -35,6 +35,10 @@ type (
 		version int
 		query   string
 	}
+
+	rowScanner interface {
+		Scan(...interface{}) error
+	}
 )
 
 func New(path string) store.Store {
@@ -228,12 +232,13 @@ func (d db) InsertEntry(reader io.Reader, metadata types.UploadMetadata) error {
 		entries
 	(
 		id,
+		guest_link_id,
 		filename,
 		content_type,
 		upload_time,
 		expiration_time
 	)
-	VALUES(?,?,?,?,?)`, metadata.ID, metadata.Filename, metadata.ContentType, formatTime(metadata.Uploaded), formatExpirationTime(metadata.Expires))
+	VALUES(?,?,?,?,?,?)`, metadata.ID, metadata.GuestLinkID, metadata.Filename, metadata.ContentType, formatTime(metadata.Uploaded), formatExpirationTime(metadata.Expires))
 	if err != nil {
 		log.Printf("insert into entries table failed, aborting transaction: %v", err)
 		return err
@@ -281,6 +286,156 @@ func (d db) DeleteEntry(id types.EntryID) error {
 	}
 
 	return tx.Commit()
+}
+
+func (d db) GetGuestLink(id types.GuestLinkID) (types.GuestLink, error) {
+	stmt, err := d.ctx.Prepare(`
+		SELECT
+			guest_links.id AS id,
+			guest_links.label AS label,
+			guest_links.max_file_bytes AS max_file_bytes,
+			guest_links.max_file_uploads AS max_file_uploads,
+			guest_links.creation_time AS creation_time,
+			guest_links.expiration_time AS expiration_time,
+			SUM(CASE WHEN entries.id IS NOT NULL THEN 1 ELSE 0 END) AS entry_count
+		FROM
+			guest_links
+		LEFT JOIN
+			entries ON guest_links.id = entries.guest_link_id
+		WHERE
+			guest_links.id=?
+		GROUP BY
+			guest_links.id`)
+	if err != nil {
+		return types.GuestLink{}, err
+	}
+	defer stmt.Close()
+
+	return guestLinkFromRow(stmt.QueryRow(id))
+}
+
+func (d db) GetGuestLinks() ([]types.GuestLink, error) {
+	rows, err := d.ctx.Query(`
+		SELECT
+			guest_links.id AS id,
+			guest_links.label AS label,
+			guest_links.max_file_bytes AS max_file_bytes,
+			guest_links.max_file_uploads AS max_file_uploads,
+			guest_links.creation_time AS creation_time,
+			guest_links.expiration_time AS expiration_time,
+			SUM(CASE WHEN entries.id IS NOT NULL THEN 1 ELSE 0 END) AS entry_count
+		FROM
+			guest_links
+		LEFT JOIN
+			entries ON guest_links.id = entries.guest_link_id
+		GROUP BY
+			guest_links.id`)
+	if err != nil {
+		return []types.GuestLink{}, err
+	}
+
+	gls := []types.GuestLink{}
+	for rows.Next() {
+		gl, err := guestLinkFromRow(rows)
+		if err != nil {
+			return []types.GuestLink{}, err
+		}
+
+		gls = append(gls, gl)
+	}
+
+	return gls, nil
+}
+
+func (d *db) InsertGuestLink(guestLink types.GuestLink) error {
+	log.Printf("saving new guest link %s", guestLink.ID)
+
+	if _, err := d.ctx.Exec(`
+	INSERT INTO guest_links
+		(
+			id,
+			label,
+			max_file_bytes,
+			max_file_uploads,
+			creation_time,
+			expiration_time
+		)
+		VALUES (?,?,?,?,?,?)
+	`, guestLink.ID, guestLink.Label, guestLink.MaxFileBytes, guestLink.MaxFileUploads, formatTime(time.Now()), formatExpirationTime(guestLink.Expires)); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (d db) DeleteGuestLink(id types.GuestLinkID) error {
+	log.Printf("deleting guest link %s", id)
+
+	tx, err := d.ctx.BeginTx(context.Background(), nil)
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.Exec(`
+	DELETE FROM
+		guest_links
+	WHERE
+		id=?`, id)
+	if err != nil {
+		log.Printf("deleting %s from guest_links table failed: %v", id, err)
+		return err
+	}
+
+	_, err = tx.Exec(`
+	UPDATE
+		entries
+	SET
+		guest_link_id = NULL
+	WHERE
+		guest_link_id = ?`, id)
+	if err != nil {
+		log.Printf("removing references to guest link %s from entries table failed: %v", id, err)
+		return err
+	}
+
+	return tx.Commit()
+}
+
+func guestLinkFromRow(row rowScanner) (types.GuestLink, error) {
+	var id types.GuestLinkID
+	var label types.GuestLinkLabel
+	var maxFileBytes types.GuestUploadMaxFileBytes
+	var maxFileUploads types.GuestUploadCountLimit
+	var creationTimeRaw string
+	var expirationTimeRaw string
+	var filesUploaded int
+
+	err := row.Scan(&id, &label, &maxFileBytes, &maxFileUploads, &creationTimeRaw, &expirationTimeRaw, &filesUploaded)
+	if err == sql.ErrNoRows {
+		return types.GuestLink{}, store.GuestLinkNotFoundError{ID: id}
+	} else if err != nil {
+		return types.GuestLink{}, err
+	}
+
+	ct, err := parseDatetime(creationTimeRaw)
+	if err != nil {
+		return types.GuestLink{}, err
+	}
+
+	et, err := parseDatetime(expirationTimeRaw)
+	if err != nil {
+		return types.GuestLink{}, err
+	}
+
+	return types.GuestLink{
+		ID:             id,
+		Label:          label,
+		MaxFileBytes:   maxFileBytes,
+		MaxFileUploads: maxFileUploads,
+		FilesUploaded:  filesUploaded,
+		Created:        ct,
+		Expires:        types.ExpirationTime(et),
+	}, nil
 }
 
 func formatExpirationTime(et types.ExpirationTime) string {

@@ -1,0 +1,22 @@
+.deleted-entry {
+  text-decoration: line-through;
+  color: darkgray;
+  visibility: collapse;
+  opacity: 0;
+}
+
+.table tr {
+  transition: all 1000ms ease-out;
+}
+
+.table .inactive {
+  background-color: #d9d9d9;
+}
+
+.table .inactive [pico-purpose="copy"] {
+  display: none;
+}
+
+#error {
+  max-width: 60ch;
+}

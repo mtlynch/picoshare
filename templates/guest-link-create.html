@@ -1,0 +1,93 @@
+{{ define "style-tags" }}
+{{ end }}
+
+{{ define "script-tags" }}
+  <script type="module" src="/js/guestLinkCreate.js"></script>
+{{ end }}
+
+{{ define "custom-elements" }}
+{{ end }}
+
+{{ define "content" }}
+  <h1 class="title">Create Guest Link</h1>
+
+  <form id="create-guest-link-form">
+    <div class="field my-3">
+      <label class="label">Label <i>(optional)</i></label>
+      <div class="control">
+        <input
+          id="label"
+          class="input"
+          type="text"
+          placeholder="For Joe at ExampleCo"
+        />
+      </div>
+    </div>
+
+    <div class="field my-3">
+      <label class="label">Guest Link Expires</label>
+      <div class="control">
+        <div class="select">
+          <select id="expiration-select">
+            {{ range .ExpirationOptions }}
+              <option
+                value="{{ formatExpiration .Expiration }}"
+                {{ if .IsDefault }}selected{{ end }}
+              >
+                {{ .FriendlyName }}
+              </option>
+            {{ end }}
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label class="label">Max file size <i>(optional)</i></label>
+      <div class="control">
+        <div class="field has-addons my-3">
+          <div class="control">
+            <input
+              id="max-file-size"
+              class="input"
+              type="number"
+              min="1"
+              placeholder="40"
+            />
+          </div>
+          <p class="control">
+            <a class="button is-static">MB</a>
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label class="label">Upload limit <i>(optional)</i></label>
+      <div class="control">
+        <div class="field has-addons my-3">
+          <div class="control">
+            <input
+              id="file-upload-limit"
+              class="input"
+              type="number"
+              min="1"
+              placeholder="5"
+            />
+          </div>
+          <p class="control">
+            <a class="button is-static">file uploads</a>
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="field">
+      <div class="control">
+        <input type="submit" class="button is-link" value="Create" />
+      </div>
+    </div>
+  </form>
+{{ end }}
+
+{{ template "base.html" }}

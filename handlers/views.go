@@ -5,11 +5,14 @@ import (
 	"html/template"
 	"io/ioutil"
 	"log"
+	"math"
 	"net/http"
 	"path"
 	"sort"
 	"time"
 
+	"github.com/gorilla/mux"
+	"github.com/mtlynch/picoshare/v2/store"
 	"github.com/mtlynch/picoshare/v2/types"
 )
 
@@ -32,6 +35,109 @@ func (s Server) indexGet() http.HandlerFunc {
 				IsAuthenticated: s.isAuthenticated(r),
 			},
 		}, template.FuncMap{}); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+}
+
+func (s Server) guestLinkIndexGet() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		links, err := s.store.GetGuestLinks()
+		if err != nil {
+			log.Printf("failed to retrieve guest links: %v", err)
+			http.Error(w, "Failed to retrieve guest links", http.StatusInternalServerError)
+			return
+		}
+
+		sort.Slice(links, func(i, j int) bool {
+			return links[i].Created.After(links[j].Created)
+		})
+
+		if err := renderTemplate(w, "guest-link-index.html", struct {
+			commonProps
+			GuestLinks []types.GuestLink
+		}{
+			commonProps: commonProps{
+				Title:           "PicoShare - Guest Links",
+				IsAuthenticated: s.isAuthenticated(r),
+			},
+			GuestLinks: links,
+		}, template.FuncMap{
+			"formatDate": func(t time.Time) string {
+				return t.Format("2006-01-02")
+			},
+			"formatSizeLimit": func(limit types.GuestUploadMaxFileBytes) string {
+				if limit == types.GuestUploadUnlimitedFileSize {
+					return "Unlimited"
+				}
+				b := uint64(*limit)
+				const unit = 1024
+
+				if b < unit {
+					return fmt.Sprintf("%d B", b)
+				}
+				div, exp := int64(unit), 0
+				for n := b / unit; n >= unit; n /= unit {
+					div *= unit
+					exp++
+				}
+				return fmt.Sprintf("%.2f %cB", float64(b)/float64(div), "kMGTPE"[exp])
+			},
+			"formatCountLimit": func(limit types.GuestUploadCountLimit) string {
+				if limit == types.GuestUploadUnlimitedFileUploads {
+					return "Unlimited"
+				}
+				return fmt.Sprintf("%d", int(*limit))
+			},
+			"formatExpiration": func(et types.ExpirationTime) string {
+				if et == types.NeverExpire {
+					return "Never"
+				}
+				t := time.Time(et)
+				delta := time.Until(t)
+				suffix := ""
+				if delta.Seconds() < 0 {
+					suffix = " ago"
+				}
+				return fmt.Sprintf("%s (%.0f days%s)", t.Format("2006-01-02"), math.Abs(delta.Hours())/24, suffix)
+			},
+			"isActive": func(gl types.GuestLink) bool {
+				return gl.IsActive()
+			},
+		}); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+}
+
+func (s Server) guestLinksNewGet() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		type expirationOption struct {
+			FriendlyName string
+			Expiration   time.Time
+			IsDefault    bool
+		}
+		if err := renderTemplate(w, "guest-link-create.html", struct {
+			commonProps
+			ExpirationOptions []expirationOption
+		}{
+			commonProps: commonProps{
+				Title:           "PicoShare - New Guest Link",
+				IsAuthenticated: s.isAuthenticated(r),
+			},
+			ExpirationOptions: []expirationOption{
+				{"1 day", time.Now().AddDate(0, 0, 1), false},
+				{"7 days", time.Now().AddDate(0, 0, 7), false},
+				{"30 days", time.Now().AddDate(0, 0, 30), false},
+				{"1 year", time.Now().AddDate(1, 0, 0), false},
+				{"Never", time.Time(types.NeverExpire), true},
+			},
+		}, template.FuncMap{
+			"formatExpiration": func(t time.Time) string {
+				return t.Format(time.RFC3339)
+			}}); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -116,6 +222,7 @@ func (s Server) uploadGet() http.HandlerFunc {
 		if err := renderTemplate(w, "upload.html", struct {
 			commonProps
 			ExpirationOptions []expirationOption
+			GuestLinkMetadata types.GuestLink
 		}{
 			commonProps: commonProps{
 				Title:           "PicoShare - Upload",
@@ -128,6 +235,60 @@ func (s Server) uploadGet() http.HandlerFunc {
 				{"1 year", time.Now().AddDate(1, 0, 0), false},
 				{"Never", time.Time(types.NeverExpire), false},
 			},
+		}, template.FuncMap{
+			"formatExpiration": func(t time.Time) string {
+				return t.Format(time.RFC3339)
+			}}); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+}
+
+func (s Server) guestUploadGet() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		guestLinkID, err := parseGuestLinkID(mux.Vars(r)["guestLinkID"])
+		if err != nil {
+			log.Printf("error parsing guest link ID: %v", err)
+			http.Error(w, fmt.Sprintf("Invalid guest link ID: %v", err), http.StatusBadRequest)
+			return
+		}
+
+		gl, err := s.store.GetGuestLink(guestLinkID)
+		if _, ok := err.(store.GuestLinkNotFoundError); ok {
+			http.Error(w, "Invalid guest link ID", http.StatusNotFound)
+			return
+		} else if err != nil {
+			log.Printf("error retrieving guest link with ID %v: %v", guestLinkID, err)
+			http.Error(w, "Failed to retrieve guest link", http.StatusInternalServerError)
+			return
+		}
+
+		if !gl.IsActive() {
+			if err := renderTemplate(w, "guest-link-inactive.html", struct {
+				commonProps
+			}{
+				commonProps: commonProps{
+					Title:           "PicoShare - Guest Link Inactive",
+					IsAuthenticated: s.isAuthenticated(r),
+				},
+			}, template.FuncMap{}); err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			return
+		}
+
+		if err := renderTemplate(w, "upload.html", struct {
+			commonProps
+			ExpirationOptions []interface{}
+			GuestLinkMetadata types.GuestLink
+		}{
+			commonProps: commonProps{
+				Title:           "PicoShare - Upload",
+				IsAuthenticated: s.isAuthenticated(r),
+			},
+			GuestLinkMetadata: gl,
 		}, template.FuncMap{
 			"formatExpiration": func(t time.Time) string {
 				return t.Format(time.RFC3339)
