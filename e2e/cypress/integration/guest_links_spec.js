@@ -15,7 +15,7 @@ it("creates a guest link and uploads a file as a guest", () => {
 
   cy.get("#label").type("For e2e testing");
   cy.get("#max-file-size").type("50");
-  cy.get("#file-upload-limit").type("10");
+  cy.get("#file-upload-limit").type("1");
   cy.get("#create-guest-link-form").submit();
 
   cy.location("pathname").should("eq", "/guest-links");
@@ -49,4 +49,9 @@ it("creates a guest link and uploads a file as a guest", () => {
     .shadow()
     .find("#link")
     .should("be.visible");
+
+  cy.get("#upload-another-btn").click();
+
+  cy.get("h1").should("contain", "Guest Link Inactive");
+  cy.get(".file-input").should("not.exist");
 });
