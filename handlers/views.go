@@ -279,14 +279,9 @@ func (s Server) guestUploadGet() http.HandlerFunc {
 			return
 		}
 
-		type expirationOption struct {
-			FriendlyName string
-			Expiration   time.Time
-			IsDefault    bool
-		}
 		if err := renderTemplate(w, "upload.html", struct {
 			commonProps
-			ExpirationOptions []expirationOption
+			ExpirationOptions []interface{}
 			GuestLinkMetadata types.GuestLink
 		}{
 			commonProps: commonProps{
