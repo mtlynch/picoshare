@@ -27,7 +27,6 @@ var guestLinkIDCharacters = []rune("abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTU
 
 func (s Server) guestLinksPost() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
 		gl, err := guestLinkFromRequest(r)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Invalid request: %v", err), http.StatusBadRequest)
@@ -35,7 +34,6 @@ func (s Server) guestLinksPost() http.HandlerFunc {
 		}
 
 		gl.ID = generateGuestLinkID()
-
 		gl.Created = time.Now()
 
 		if err := s.store.InsertGuestLink(gl); err != nil {
