@@ -403,10 +403,10 @@ func (d db) DeleteGuestLink(id types.GuestLinkID) error {
 
 func guestLinkFromRow(row rowScanner) (types.GuestLink, error) {
 	var id types.GuestLinkID
-	var creationTimeRaw string
 	var label types.GuestLinkLabel
 	var maxFileBytes types.GuestUploadMaxFileBytes
 	var maxFileUploads types.GuestUploadCountLimit
+	var creationTimeRaw string
 	var expirationTimeRaw string
 	var filesUploaded int
 
