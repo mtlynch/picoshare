@@ -95,14 +95,8 @@ func (s Server) guestEntryPost() http.HandlerFunc {
 			return
 		}
 
-		if gl.IsExpired() {
-			http.Error(w, "Guest link is expired", http.StatusUnauthorized)
-			return
-		}
-
-		if !gl.CanAcceptMoreFiles() {
-			http.Error(w, "Guest link has no uploads remaining", http.StatusUnauthorized)
-			return
+		if !gl.IsActive() {
+			http.Error(w, "Guest link is no longer active", http.StatusUnauthorized)
 		}
 
 		if gl.MaxFileBytes != types.GuestUploadUnlimitedFileSize {
