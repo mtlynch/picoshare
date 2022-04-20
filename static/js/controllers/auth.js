@@ -6,7 +6,7 @@ export async function authenticate(passphrase) {
     cache: "no-cache",
     redirect: "error",
     body: JSON.stringify({
-      sharedSecret: passphrase,
+      sharedSecretKey: passphrase,
     }),
   }).then((response) => {
     if (!response.ok) {
@@ -19,5 +19,18 @@ export async function authenticate(passphrase) {
 }
 
 export function logOut() {
-  document.cookie = "sharedSecret=; Max-Age=-99999999;";
+  return fetch("/api/auth", {
+    method: "DELETE",
+    mode: "same-origin",
+    credentials: "include",
+    cache: "no-cache",
+    redirect: "error",
+  }).then((response) => {
+    if (!response.ok) {
+      return response.text().then((error) => {
+        return Promise.reject(error);
+      });
+    }
+    return Promise.resolve();
+  });
 }

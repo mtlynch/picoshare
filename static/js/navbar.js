@@ -20,7 +20,8 @@ document.addEventListener("DOMContentLoaded", () => {
 const logOutEl = document.getElementById("navbar-log-out");
 if (logOutEl) {
   logOutEl.addEventListener("click", () => {
-    logOut();
-    document.location = "/";
+    logOut().then(() => {
+      document.location = "/";
+    });
   });
 }

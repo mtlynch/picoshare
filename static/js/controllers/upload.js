@@ -3,7 +3,7 @@
 export async function uploadFile(file, expirationTime) {
   const formData = new FormData();
   formData.append("file", file);
-  return fetch(`/api/entry?expiration=${expirationTime}`, {
+  return fetch(`/api/entry?expiration=${encodeURIComponent(expirationTime)}`, {
     method: "POST",
     credentials: "include",
     body: formData,
@@ -17,7 +17,7 @@ export async function uploadFile(file, expirationTime) {
       return response.json();
     })
     .then((data) => {
-      if (!data.hasOwnProperty("id")) {
+      if (!Object.prototype.hasOwnProperty.call(data, "id")) {
         throw new Error("Missing expected id field");
       }
       return Promise.resolve(data);

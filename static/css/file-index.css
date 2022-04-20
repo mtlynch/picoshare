@@ -1,4 +1,14 @@
 .deleted-entry {
   text-decoration: line-through;
   color: darkgray;
+  visibility: collapse;
+  opacity: 0;
+}
+
+.table tr {
+  transition: all 1000ms ease-out;
+}
+
+#error {
+  max-width: 60ch;
 }

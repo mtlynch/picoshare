@@ -10,6 +10,12 @@ func (s Server) authPost() http.HandlerFunc {
 	}
 }
 
+func (s Server) authDelete() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		s.authenticator.ClearSession(w)
+	}
+}
+
 func (s Server) isAuthenticated(r *http.Request) bool {
 	return s.authenticator.Authenticate(r)
 }

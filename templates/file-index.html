@@ -1,45 +1,74 @@
 {{ define "style-tags" }}
-<link rel="stylesheet" type="text/css" href="/css/file-index.css" />
+  <link rel="stylesheet" type="text/css" href="/css/file-index.css" />
 {{ end }}
 
 {{ define "script-tags" }}
-<script type="module" src="/js/fileIndex.js"></script>
+  <script type="module" src="/js/fileIndex.js"></script>
 {{ end }}
 
 {{ define "custom-elements" }}
 {{ end }}
 
 {{ define "content" }}
-<h1 class="title">Files</h1>
+  <h1 class="title">Files</h1>
 
-<div class="table-container">
-  <table class="table">
-    <thead>
-      <tr>
-        <th>Filename</th>
-        <th>Size</th>
-        <th>Uploaded</th>
-        <th>Expires</th>
-        <th></th>
-      </tr>
-    </thead>
-    <tbody>
-      {{ range .Files }}
-      <tr>
-        <td class="is-vcentered" test-data-id="filename"><a href="/!{{ .ID }}">{{ .Filename }}</a></td>
-        <td class="is-vcentered">{{ formatFileSize .Size }}</td>
-        <td class="is-vcentered">{{ formatTime .Uploaded }}</td>
-        <td class="is-vcentered">{{ formatExpiration .Expires }}</td>
-        <td class="is-vcentered">
-          <button class="button is-danger" pico-purpose="delete" pico-entry-id="{{ .ID }}">
-            <i class="fa fa-trash" aria-hidden="true"></i>
-          </button>
-        </td>
-      </tr>
-      {{ end }}
-    </tbody>
-  </table>
-</div>
+  <div class="table-container">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Filename</th>
+          <th>Size</th>
+          <th>Uploaded</th>
+          <th>Expires</th>
+          <th class="has-text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{ range .Files }}
+          <tr>
+            <td class="is-vcentered" test-data-id="filename">
+              <a href="/!{{ .ID }}">{{ .Filename }}</a>
+            </td>
+            <td class="is-vcentered">{{ formatFileSize .Size }}</td>
+            <td class="is-vcentered">{{ formatDate .Uploaded }}</td>
+            <td class="is-vcentered">{{ formatExpiration .Expires }}</td>
+            <td class="is-vcentered">
+              <div class="field is-grouped is-justify-content-flex-end">
+                <p class="control">
+                  <button
+                    class="button is-info"
+                    pico-purpose="copy"
+                    pico-entry-id="{{ .ID }}"
+                  >
+                    <i class="fa-solid fa-copy"></i>
+                  </button>
+                </p>
+                <p class="control">
+                  <button
+                    class="button is-danger"
+                    pico-purpose="delete"
+                    pico-entry-id="{{ .ID }}"
+                  >
+                    <i class="fa fa-trash" aria-hidden="true"></i>
+                  </button>
+                </p>
+              </div>
+            </td>
+          </tr>
+        {{ end }}
+      </tbody>
+    </table>
+  </div>
+
+  <div id="error" class="is-hidden my-3">
+    <article class="message is-danger">
+      <div class="message-header">
+        Error
+        <button class="delete" aria-label="delete"></button>
+      </div>
+      <div id="error-message" class="message-body">Placeholder error.</div>
+    </article>
+  </div>
 {{ end }}
 
 {{ template "base.html" }}

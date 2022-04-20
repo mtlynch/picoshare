@@ -9,12 +9,6 @@ const uploadForm = document.getElementById("upload-form");
 const expirationContainer = document.querySelector(".expiration-container");
 const expirationSelect = document.getElementById("expiration-select");
 
-function minutesInFuture(minutesFromNow) {
-  let d = new Date();
-  d.setMinutes(d.getMinutes() + minutesFromNow);
-  return d;
-}
-
 function hideElement(el) {
   el.classList.add("is-hidden");
 }
@@ -23,24 +17,28 @@ function showElement(el) {
   el.classList.remove("is-hidden");
 }
 
-function doUpload(file, expiration) {
+function doUpload(file) {
   if (file.size > 10 * 1000 * 1000) {
     document.getElementById("error-message").innerText =
       "File must be 10 MB or smaller on demo instance.";
     showElement(errorContainer);
     return;
   }
-  console.log(file.size);
   hideElement(errorContainer);
   hideElement(uploadForm);
   showElement(progressSpinner);
-  uploadFile(file, expiration)
+  uploadFile(file, expirationSelect.value)
     .then((res) => {
       const entryId = res.id;
 
       const uploadLinksEl = document.createElement("upload-links");
       uploadLinksEl.fileId = entryId;
       uploadLinksEl.filename = file.name;
+      uploadLinksEl.addEventListener("link-copied", () => {
+        document
+          .querySelector("snackbar-notifications")
+          .addInfoMessage("Copied link");
+      });
       resultEl.append(uploadLinksEl);
       showElement(resultEl);
 
@@ -64,7 +62,7 @@ function resetPasteInstructions() {
 document
   .querySelector('.file-input[name="resume"]')
   .addEventListener("change", (evt) => {
-    doUpload(evt.target.files[0], expirationSelect.value);
+    doUpload(evt.target.files[0]);
   });
 
 uploadForm.addEventListener("drop", (evt) => {
@@ -78,7 +76,7 @@ uploadForm.addEventListener("drop", (evt) => {
   for (var i = 0; i < evt.dataTransfer.items.length; i++) {
     if (evt.dataTransfer.items[i].kind === "file") {
       var file = evt.dataTransfer.items[i].getAsFile();
-      doUpload(file, expirationSelect.value);
+      doUpload(file);
       return;
     }
   }
@@ -96,28 +94,37 @@ uploadEl.addEventListener("dragenter", (evt) => {
   uploadEl.classList.add("accepting-drop");
 });
 
-uploadEl.addEventListener("dragleave", (evt) => {
+uploadEl.addEventListener("dragleave", () => {
   uploadEl.classList.remove("accepting-drop");
 });
 
 pasteEl.addEventListener("paste", (evt) => {
+  const timestamp = new Date().toISOString().replaceAll(":", "");
   for (const item of evt.clipboardData.items) {
     if (item.kind === "string") {
       item.getAsString((s) => {
-        const timestamp = new Date().toISOString().replaceAll(":", "");
         doUpload(
-          new File([new Blob([s])], `pasted-${timestamp}.txt`),
+          new File([new Blob([s])], `pasted-${timestamp}.txt`, {
+            type: "text/plain",
+          }),
           expirationSelect.value
         );
       });
       return;
     }
-    const pastedFile = item.getAsFile();
+    let pastedFile = item.getAsFile();
     if (!pastedFile) {
       continue;
     }
 
-    doUpload(pastedFile, expirationSelect.value);
+    // Pasted images are named image.png by default, so make a better filename.
+    if (pastedFile.name === "image.png") {
+      pastedFile = new File([pastedFile], `pasted-${timestamp}.png`, {
+        type: pastedFile.type,
+      });
+    }
+
+    doUpload(pastedFile);
     return;
   }
 });

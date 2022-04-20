@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"path"
+	"sort"
 	"time"
 
 	"github.com/mtlynch/picoshare/v2/types"
@@ -46,6 +47,10 @@ func (s Server) fileIndexGet() http.HandlerFunc {
 			return
 		}
 
+		sort.Slice(em, func(i, j int) bool {
+			return em[i].Uploaded.After(em[j].Uploaded)
+		})
+
 		// Only show uploads that match the client's IP.
 		clientIp, err := clientIPFromRemoteAddr(r.RemoteAddr)
 		if err != nil {
@@ -70,8 +75,8 @@ func (s Server) fileIndexGet() http.HandlerFunc {
 			},
 			Files: emFiltered,
 		}, template.FuncMap{
-			"formatTime": func(t time.Time) string {
-				return t.Format(time.RFC3339)
+			"formatDate": func(t time.Time) string {
+				return t.Format("2006-01-02")
 			},
 			"formatExpiration": func(et types.ExpirationTime) string {
 				if et == types.NeverExpire {
@@ -79,7 +84,7 @@ func (s Server) fileIndexGet() http.HandlerFunc {
 				}
 				t := time.Time(et)
 				delta := time.Until(t)
-				return fmt.Sprintf("%s (%.0f days)", t.Format(time.RFC3339), delta.Hours()/24)
+				return fmt.Sprintf("%s (%.0f days)", t.Format("2006-01-02"), delta.Hours()/24)
 			},
 			"formatFileSize": func(b int) string {
 				const unit = 1024

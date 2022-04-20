@@ -4,6 +4,7 @@ import "net/http"
 
 func (s *Server) routes() {
 	s.router.HandleFunc("/api/auth", s.authPost()).Methods(http.MethodPost)
+	s.router.HandleFunc("/api/auth", s.authDelete()).Methods(http.MethodDelete)
 
 	authenticatedApis := s.router.PathPrefix("/api").Subrouter()
 	authenticatedApis.Use(s.requireAuthentication)

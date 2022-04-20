@@ -34,7 +34,7 @@ func (db *mockSqlTx) Exec(query string, args ...interface{}) (sql.Result, error)
 }
 
 func TestWriteFile(t *testing.T) {
-	tests := []struct {
+	for _, tt := range []struct {
 		explanation  string
 		id           types.EntryID
 		data         []byte
@@ -103,24 +103,25 @@ func TestWriteFile(t *testing.T) {
 				},
 			},
 		},
-	}
-	for _, tt := range tests {
-		tx := mockSqlTx{}
+	} {
+		t.Run(tt.explanation, func(t *testing.T) {
+			tx := mockSqlTx{}
 
-		w := file.NewWriter(&tx, tt.id, tt.chunkSize)
-		n, err := w.Write(tt.data)
-		if err != nil {
-			t.Fatalf("%s: failed to write data: %v", tt.explanation, err)
-		}
-		if n != len(tt.data) {
-			t.Fatalf("%s: wrong size data written: got %d, want %d", tt.explanation, n, len(tt.data))
-		}
-		if err := w.Close(); err != nil {
-			t.Fatalf("%s: failed to close writer: %v", tt.explanation, err)
-		}
+			w := file.NewWriter(&tx, tt.id, tt.chunkSize)
+			n, err := w.Write(tt.data)
+			if err != nil {
+				t.Fatalf("%s: failed to write data: %v", tt.explanation, err)
+			}
+			if n != len(tt.data) {
+				t.Fatalf("%s: wrong size data written: got %d, want %d", tt.explanation, n, len(tt.data))
+			}
+			if err := w.Close(); err != nil {
+				t.Fatalf("%s: failed to close writer: %v", tt.explanation, err)
+			}
 
-		if !reflect.DeepEqual(tx.rows, tt.rowsExpected) {
-			t.Fatalf("%s: unexpected DB transactions: got %v, want %v", tt.explanation, tx.rows, tt.rowsExpected)
-		}
+			if !reflect.DeepEqual(tx.rows, tt.rowsExpected) {
+				t.Fatalf("%s: unexpected DB transactions: got %v, want %v", tt.explanation, tx.rows, tt.rowsExpected)
+			}
+		})
 	}
 }
