@@ -297,7 +297,7 @@ func (d db) GetGuestLink(id types.GuestLinkID) (types.GuestLink, error) {
 			guest_links.max_file_uploads AS max_file_uploads,
 			guest_links.creation_time AS creation_time,
 			guest_links.expiration_time AS expiration_time,
-			SUM(CASE WHEN entries.id IS NOT NULL THEN 1 ELSE 0 END) AS entries
+			SUM(CASE WHEN entries.id IS NOT NULL THEN 1 ELSE 0 END) AS entry_count
 		FROM
 			guest_links
 		LEFT JOIN
@@ -323,7 +323,7 @@ func (d db) GetGuestLinks() ([]types.GuestLink, error) {
 			guest_links.max_file_uploads AS max_file_uploads,
 			guest_links.creation_time AS creation_time,
 			guest_links.expiration_time AS expiration_time,
-			SUM(CASE WHEN entries.id IS NOT NULL THEN 1 ELSE 0 END) AS entries
+			SUM(CASE WHEN entries.id IS NOT NULL THEN 1 ELSE 0 END) AS entry_count
 		FROM
 			guest_links
 		LEFT JOIN
