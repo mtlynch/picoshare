@@ -3,6 +3,8 @@ package sqlite
 import (
 	"context"
 	"database/sql"
+	"embed"
+	"fmt"
 	"io"
 	"log"
 	"net"
@@ -21,10 +23,20 @@ const (
 	defaultChunkSize = 32768 * 10
 )
 
-type db struct {
-	ctx       *sql.DB
-	chunkSize int
-}
+//go:embed migrations/*.sql
+var migrationsFs embed.FS
+
+type (
+	db struct {
+		ctx       *sql.DB
+		chunkSize int
+	}
+
+	dbMigration struct {
+		version int
+		query   string
+	}
+)
 
 func New(path string) store.Store {
 	return NewWithChunkSize(path, defaultChunkSize)
@@ -39,27 +51,49 @@ func NewWithChunkSize(path string, chunkSize int) store.Store {
 		log.Fatalln(err)
 	}
 
-	initStmts := []string{
-		`CREATE TABLE IF NOT EXISTS entries (
-			id TEXT PRIMARY KEY,
-			filename TEXT,
-			content_type TEXT,
-			upload_time TEXT,
-			expiration_time TEXT,
-			uploader_ip TEXT
-			)`,
-		`CREATE TABLE IF NOT EXISTS entries_data (
-			id TEXT,
-			chunk_index INTEGER,
-			chunk BLOB,
-			FOREIGN KEY(id) REFERENCES entries(id)
-			)`,
+	stmt, err := ctx.Prepare(`PRAGMA user_version`)
+	if err != nil {
+		log.Fatalf("failed to get user_version: %v", err)
 	}
-	for _, stmt := range initStmts {
-		_, err = ctx.Exec(stmt)
-		if err != nil {
-			log.Fatalln(err)
+	defer stmt.Close()
+
+	var version int
+	err = stmt.QueryRow().Scan(&version)
+	if err != nil {
+		log.Fatalf("failed to get user_version: %v", err)
+	}
+
+	migrations, err := loadMigrations()
+	if err != nil {
+		log.Fatalf("error loading database migrations: %v", err)
+	}
+
+	log.Printf("Migration counter: %d/%d", version, len(migrations))
+
+	for _, migration := range migrations {
+		if migration.version <= version {
+			continue
 		}
+		tx, err := ctx.BeginTx(context.Background(), nil)
+		if err != nil {
+			log.Fatalf("failed to create migration transaction %d: %v", migration.version, err)
+		}
+
+		_, err = tx.Exec(migration.query)
+		if err != nil {
+			log.Fatalf("failed to perform DB migration %d: %v", migration.version, err)
+		}
+
+		_, err = tx.Exec(fmt.Sprintf(`pragma user_version=%d`, migration.version))
+		if err != nil {
+			log.Fatalf("failed to update DB version to %d: %v", migration.version, err)
+		}
+
+		if err = tx.Commit(); err != nil {
+			log.Fatalf("failed to commit migration %d: %v", migration.version, err)
+		}
+
+		log.Printf("Migration counter: %d/%d", migration.version, len(migrations))
 	}
 
 	return &db{
@@ -207,7 +241,7 @@ func (d db) InsertEntry(reader io.Reader, metadata types.UploadMetadata) error {
 		expiration_time,
 		uploader_ip
 	)
-	VALUES(?,?,?,?,?,?)`, metadata.ID, metadata.Filename, metadata.ContentType, formatTime(metadata.Uploaded), formatTime(time.Time(metadata.Expires)), metadata.UploaderIP.String())
+	VALUES(?,?,?,?,?,?)`, metadata.ID, metadata.Filename, metadata.ContentType, formatTime(metadata.Uploaded), formatExpirationTime(metadata.Expires), metadata.UploaderIP.String())
 	if err != nil {
 		log.Printf("insert into entries table failed, aborting transaction: %v", err)
 		return err
@@ -255,6 +289,10 @@ func (d db) DeleteEntry(id types.EntryID) error {
 	}
 
 	return tx.Commit()
+}
+
+func formatExpirationTime(et types.ExpirationTime) string {
+	return formatTime(time.Time(et))
 }
 
 func formatTime(t time.Time) string {

@@ -1,0 +1,11 @@
+#!/bin/bash
+
+set -eux
+
+# Change directory to repository root.
+readonly SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+cd "${SCRIPT_DIR}/.."
+
+readonly DB_PATH="data/store.db"
+
+rm ${DB_PATH}* || true

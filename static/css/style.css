@@ -12,6 +12,10 @@ p {
   max-width: 70ch;
 }
 
+ul {
+  max-width: 70ch;
+}
+
 .navbar .navbar-brand {
   font-size: 1.6em;
 }

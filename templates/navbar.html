@@ -1,48 +1,46 @@
 {{ define "navbar" }}
-<nav class="navbar" role="navigation">
-  <div class="container">
-    <div class="navbar-brand">
-      <a class="navbar-item" href="/">PicoShare</a>
-      <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbar-links">
-        <span aria-hidden="true"></span>
-        <span aria-hidden="true"></span>
-        <span aria-hidden="true"></span>
-      </a>
-    </div>
-    <div id="navbar-links" class="navbar-menu">
-      {{ if .IsAuthenticated }}
-      <div class="navbar-start">
-        <a class="navbar-item" href="/files">
-          Files
+  <nav class="navbar" role="navigation">
+    <div class="container">
+      <div class="navbar-brand">
+        <a class="navbar-item" href="/">PicoShare</a>
+        <a
+          role="button"
+          class="navbar-burger"
+          aria-label="menu"
+          aria-expanded="false"
+          data-target="navbar-links"
+        >
+          <span aria-hidden="true"></span>
+          <span aria-hidden="true"></span>
+          <span aria-hidden="true"></span>
         </a>
-        <div class="navbar-item">
-          <a class="button is-primary" href="/">
-            Upload
-          </a>
-        </div>
       </div>
-      {{ end }}
-      <div class="navbar-end">
+      <div id="navbar-links" class="navbar-menu">
         {{ if .IsAuthenticated }}
-        <div class="navbar-item has-dropdown is-hoverable">
-          <a class="navbar-link">
-            Account
-          </a>
-          <div class="navbar-dropdown">
-            <a class="navbar-item" id="navbar-log-out">
-              Log Out
-            </a>
+          <div class="navbar-start">
+            <div class="navbar-item">
+              <a class="button is-primary" href="/">Upload</a>
+            </div>
+            <a class="navbar-item" href="/files">Files</a>
           </div>
-        </div>
-        {{ else }}
-        <div class="navbar-item">
-          <a class="button is-primary" data-test-id="log-in" href="/login">
-            Log In
-          </a>
-        </div>
         {{ end }}
+        <div class="navbar-end">
+          {{ if .IsAuthenticated }}
+            <div class="navbar-item has-dropdown is-hoverable">
+              <a class="navbar-link">Account</a>
+              <div class="navbar-dropdown">
+                <a class="navbar-item" id="navbar-log-out">Log Out</a>
+              </div>
+            </div>
+          {{ else }}
+            <div class="navbar-item">
+              <a class="button is-primary" data-test-id="log-in" href="/login">
+                Log In
+              </a>
+            </div>
+          {{ end }}
+        </div>
       </div>
     </div>
-  </div>
-</nav>
+  </nav>
 {{ end }}

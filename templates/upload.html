@@ -1,68 +1,68 @@
 {{ define "style-tags" }}
-<link rel="stylesheet" type="text/css" href="/css/upload.css" />
+  <link rel="stylesheet" type="text/css" href="/css/upload.css" />
 {{ end }}
 
 {{ define "script-tags" }}
-<script type="module" src="/js/upload.js"></script>
+  <script type="module" src="/js/upload.js"></script>
 {{ end }}
 
 {{ define "custom-elements" }}
-{{ template "upload-links.html" }}
+  {{ template "upload-link-box.html" }}
+  {{ template "upload-links.html" }}
 {{ end }}
 
-{{define "content"}}
-<h1 class="title">Upload</h1>
+{{ define "content" }}
+  <h1 class="title">Upload</h1>
 
-<div id="upload-form">
-  <div class="file is-boxed">
-    <label class="file-label">
-      <input class="file-input" type="file" name="resume">
-      <span class="file-cta">
-        <span class="file-icon">
-          <i class="fas fa-upload"></i>
+  <div id="upload-form">
+    <div class="file is-boxed">
+      <label class="file-label">
+        <input class="file-input" type="file" name="resume" />
+        <span class="file-cta">
+          <span class="file-icon">
+            <i class="fas fa-upload"></i>
+          </span>
+          <span class="file-label"> Choose a file… </span>
         </span>
-        <span class="file-label">
-          Choose a file…
-        </span>
-      </span>
-    </label>
-  </div>
+      </label>
+    </div>
 
-  <textarea id="pastebox" class="mt-5"></textarea>
+    <textarea id="pastebox" class="mt-5"></textarea>
 
-  <div class="field my-3 expiration-container">
-    <label class="label">Expiration</label>
-    <div class="control">
-      <div class="select">
-        <select id="expiration-select">
-          {{ range .ExpirationOptions }}
-            <option
-              value="{{ formatExpiration .Expiration }}"
-              {{ if .IsDefault }}selected{{ end }}>{{ .FriendlyName }}</option>
-          {{ end }}
-        </select>
+    <div class="field my-3 expiration-container">
+      <label class="label">Expiration</label>
+      <div class="control">
+        <div class="select">
+          <select id="expiration-select">
+            {{ range .ExpirationOptions }}
+              <option
+                value="{{ formatExpiration .Expiration }}"
+                {{ if .IsDefault }}selected{{ end }}
+              >
+                {{ .FriendlyName }}
+              </option>
+            {{ end }}
+          </select>
+        </div>
       </div>
     </div>
   </div>
-</div>
 
-<div class="fa-3x is-hidden" id="progress-spinner">
-  <i class="fas fa-spinner fa-spin"></i>
-</div>
+  <div class="fa-3x is-hidden" id="progress-spinner">
+    <i class="fas fa-spinner fa-spin"></i>
+  </div>
 
-<div id="upload-result" class="is-hidden">
-  <article class="message is-primary">
-    <div class="message-body">
-      Upload complete!
-    </div>
-  </article>
-</div>
+  <div id="upload-result" class="is-hidden">
+    <article class="message is-primary">
+      <div class="message-body">Upload complete!</div>
+    </article>
+  </div>
 
-<div id="error" class="is-hidden my-3">
-  <article class="message is-danger">
-    <div id="error-message" class="message-body">Placeholder error.</div>
-  </article>
-</div>
+  <div id="error" class="is-hidden my-3">
+    <article class="message is-danger">
+      <div id="error-message" class="message-body">Placeholder error.</div>
+    </article>
+  </div>
 {{ end }}
 
 {{ template "base.html" }}

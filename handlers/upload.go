@@ -8,22 +8,21 @@ import (
 	"log"
 	"net"
 	"net/http"
-	"strings"
 	"time"
 
+	"github.com/mtlynch/picoshare/v2/handlers/parse"
 	"github.com/mtlynch/picoshare/v2/random"
 	"github.com/mtlynch/picoshare/v2/types"
 )
 
 const (
-	MaxFilenameLen = 100
-	FileLifetime   = 7 * 24 * time.Hour
-	EntryIDLength  = 10
+	FileLifetime  = 7 * 24 * time.Hour
+	EntryIDLength = 10
 )
 
 var (
-	maxUploadBytes = megabytesToBytes(10)
-	idCharacters   = []rune("abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789")
+	maxUploadBytes    = megabytesToBytes(10)
+	entryIDCharacters = []rune("abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789")
 )
 
 type (
@@ -87,7 +86,7 @@ func (s Server) entryPost() http.HandlerFunc {
 }
 
 func generateEntryID() types.EntryID {
-	return types.EntryID(random.String(EntryIDLength, idCharacters))
+	return types.EntryID(random.String(EntryIDLength, entryIDCharacters))
 }
 
 func parseEntryID(s string) (types.EntryID, error) {
@@ -97,7 +96,7 @@ func parseEntryID(s string) (types.EntryID, error) {
 
 	// We could do this outside the function and store the result.
 	idCharsHash := map[rune]bool{}
-	for _, c := range idCharacters {
+	for _, c := range entryIDCharacters {
 		idCharsHash[c] = true
 	}
 
@@ -117,7 +116,7 @@ func fileFromRequest(w http.ResponseWriter, r *http.Request) (fileUpload, error)
 		return fileUpload{}, err
 	}
 
-	filename, err := parseFilename(metadata.Filename)
+	filename, err := parse.Filename(metadata.Filename)
 	if err != nil {
 		return fileUpload{}, err
 	}
@@ -132,19 +131,6 @@ func fileFromRequest(w http.ResponseWriter, r *http.Request) (fileUpload, error)
 		Filename:    filename,
 		ContentType: contentType,
 	}, nil
-}
-
-func parseFilename(s string) (types.Filename, error) {
-	if len(s) > MaxFilenameLen {
-		return types.Filename(""), errors.New("filename too long")
-	}
-	if s == "." || strings.HasPrefix(s, "..") {
-		return types.Filename(""), errors.New("illegal filename")
-	}
-	if strings.ContainsAny(s, "\\") {
-		return types.Filename(""), errors.New("illegal characters in filename")
-	}
-	return types.Filename(s), nil
 }
 
 func parseContentType(s string) (types.ContentType, error) {

@@ -17,11 +17,15 @@ it("uploads a file", () => {
     .and("equal", "kittyface.jpg");
   cy.get("#upload-result upload-links")
     .shadow()
-    .find("#verbose-link")
+    .find("#verbose-link-box")
+    .shadow()
+    .find("#link")
     .should("be.visible");
   cy.get("#upload-result upload-links")
     .shadow()
-    .find("#short-link")
+    .find("#short-link-box")
+    .shadow()
+    .find("#link")
     .should("be.visible");
 
   cy.get('.navbar a[href="/files"]').click();
