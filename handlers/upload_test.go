@@ -121,8 +121,7 @@ func TestEntryPostRejectsInvalidRequest(t *testing.T) {
 			s.Router().ServeHTTP(w, req)
 
 			if status := w.Code; status != http.StatusBadRequest {
-				t.Errorf("%s: handler returned wrong status code: got %v want %v",
-					tt.description, status, http.StatusBadRequest)
+				t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusBadRequest)
 			}
 		})
 	}
@@ -280,11 +279,11 @@ func TestGuestUploadInvalidLink(t *testing.T) {
 		t.Run(tt.description, func(t *testing.T) {
 			store := test_sqlite.New()
 			if err := store.InsertGuestLink(tt.guestLinkInStore); err != nil {
-				t.Fatalf("%s: failed to insert dummy guest link: %v", tt.description, err)
+				t.Fatalf("failed to insert dummy guest link: %v", err)
 			}
 			for _, entry := range tt.entriesInStore {
 				if err := store.InsertEntry(strings.NewReader("dummy data"), entry.UploadMetadata); err != nil {
-					t.Fatalf("%s: failed to insert dummy entry: %v", tt.description, err)
+					t.Fatalf("failed to insert dummy entry: %v", err)
 				}
 			}
 
@@ -304,8 +303,7 @@ func TestGuestUploadInvalidLink(t *testing.T) {
 			s.Router().ServeHTTP(w, req)
 
 			if status := w.Code; status != tt.statusExpected {
-				t.Fatalf("%s: handler returned wrong status code: got %v want %v",
-					tt.description, status, tt.statusExpected)
+				t.Fatalf("handler returned wrong status code: got %v want %v", status, tt.statusExpected)
 			}
 		})
 	}

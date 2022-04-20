@@ -108,7 +108,7 @@ func TestGuestLinksPostRejectsInvalidRequest(t *testing.T) {
 			payload:     "{}",
 		},
 		{
-			description: "invalid label field",
+			description: "invalid label field (non-string)",
 			payload: `{
 					"label": 5,
 					"expirationTime":"2025-01-01T00:00:00Z",
@@ -117,7 +117,7 @@ func TestGuestLinksPostRejectsInvalidRequest(t *testing.T) {
 				}`,
 		},
 		{
-			description: "invalid label field",
+			description: "invalid label field (too long)",
 			payload: fmt.Sprintf(`{
 					"label": "%s",
 					"expirationTime":"2025-01-01T00:00:00Z",
