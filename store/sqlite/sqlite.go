@@ -336,7 +336,6 @@ func (d db) GetGuestLinks() ([]types.GuestLink, error) {
 
 	gls := []types.GuestLink{}
 	for rows.Next() {
-
 		gl, err := guestLinkFromRow(rows)
 		if err != nil {
 			return []types.GuestLink{}, err
