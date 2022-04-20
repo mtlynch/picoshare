@@ -37,7 +37,6 @@ export async function guestUploadFile(file, guestLinkID) {
   formData.append("file", file);
   return fetch(`/api/guest/${guestLinkID}`, {
     method: "POST",
-    credentials: "include",
     body: formData,
   })
     .then((response) => {
