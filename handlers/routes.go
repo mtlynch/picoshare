@@ -20,16 +20,21 @@ func (s *Server) routes() {
 	static.PathPrefix("/css/").HandlerFunc(serveStaticResource()).Methods(http.MethodGet)
 	static.PathPrefix("/js/").HandlerFunc(serveStaticResource()).Methods(http.MethodGet)
 	static.PathPrefix("/third-party/").HandlerFunc(serveStaticResource()).Methods(http.MethodGet)
-	static.Path("/android-chrome-192x192.png").HandlerFunc(serveStaticResource()).Methods(http.MethodGet)
-	static.Path("/android-chrome-384x384.png").HandlerFunc(serveStaticResource()).Methods(http.MethodGet)
-	static.Path("/apple-touch-icon.png").HandlerFunc(serveStaticResource()).Methods(http.MethodGet)
-	static.Path("/browserconfig.xml").HandlerFunc(serveStaticResource()).Methods(http.MethodGet)
-	static.Path("/favicon.ico").HandlerFunc(serveStaticResource()).Methods(http.MethodGet)
-	static.Path("/favicon-16x16.png").HandlerFunc(serveStaticResource()).Methods(http.MethodGet)
-	static.Path("/favicon-32x32.png").HandlerFunc(serveStaticResource()).Methods(http.MethodGet)
-	static.Path("/mstile-150x150.png").HandlerFunc(serveStaticResource()).Methods(http.MethodGet)
-	static.Path("/safari-pinned-tab.svg").HandlerFunc(serveStaticResource()).Methods(http.MethodGet)
-	static.Path("/site.webmanifest").HandlerFunc(serveStaticResource()).Methods(http.MethodGet)
+
+	// Add all the root-level static resources.
+	for _, f := range []string{
+		"/android-chrome-192x192.png",
+		"/android-chrome-256x256.png",
+		"/apple-touch-icon.png",
+		"/browserconfig.xml",
+		"/favicon-16x16.png",
+		"/favicon-32x32.png",
+		"/favicon.ico",
+		"/mstile-150x150.png",
+		"/site.webmanifest",
+	} {
+		static.Path(f).HandlerFunc(serveStaticResource()).Methods(http.MethodGet)
+	}
 
 	authenticatedViews := s.router.PathPrefix("/").Subrouter()
 	authenticatedViews.Use(s.requireAuthentication)
