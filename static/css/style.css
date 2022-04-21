@@ -8,11 +8,10 @@ a {
   text-decoration: none;
 }
 
-p {
-  max-width: 70ch;
-}
-
-ul {
+p,
+ul,
+article,
+form {
   max-width: 70ch;
 }
 

@@ -12,19 +12,20 @@
   <h1 class="title">Create Guest Link</h1>
 
   <form id="create-guest-link-form">
-    <div class="field my-3">
+    <div class="field my-5">
       <label class="label">Label <i>(optional)</i></label>
       <div class="control">
         <input
           id="label"
-          class="input"
+          class="input is-normal"
           type="text"
           placeholder="For Joe at ExampleCo"
         />
       </div>
+      <p class="help">Label is not visible to guests</p>
     </div>
 
-    <div class="field my-3">
+    <div class="field my-5">
       <label class="label">Guest Link Expires</label>
       <div class="control">
         <div class="select">
@@ -42,7 +43,7 @@
       </div>
     </div>
 
-    <div class="field">
+    <div class="field my-5">
       <label class="label">Max file size <i>(optional)</i></label>
       <div class="control">
         <div class="field has-addons my-3">
@@ -62,7 +63,7 @@
       </div>
     </div>
 
-    <div class="field">
+    <div class="field my-5">
       <label class="label">Upload limit <i>(optional)</i></label>
       <div class="control">
         <div class="field has-addons my-3">
@@ -84,7 +85,7 @@
 
     <div class="field">
       <div class="control">
-        <input type="submit" class="button is-link" value="Create" />
+        <input type="submit" class="button is-primary" value="Create" />
       </div>
     </div>
   </form>
