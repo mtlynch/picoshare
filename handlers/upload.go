@@ -32,6 +32,7 @@ type (
 	fileUpload struct {
 		Reader      io.Reader
 		Filename    types.Filename
+		Note        types.FileNote
 		ContentType types.ContentType
 	}
 )
@@ -56,6 +57,7 @@ func (s Server) entryPost() http.HandlerFunc {
 		err = s.store.InsertEntry(uploadedFile.Reader,
 			types.UploadMetadata{
 				Filename:    uploadedFile.Filename,
+				Note:        uploadedFile.Note,
 				ContentType: uploadedFile.ContentType,
 				ID:          id,
 				Uploaded:    time.Now(),
@@ -184,8 +186,17 @@ func fileFromRequest(w http.ResponseWriter, r *http.Request) (fileUpload, error)
 	return fileUpload{
 		Reader:      reader,
 		Filename:    filename,
+		Note:        parseFileNote(r.FormValue("note")),
 		ContentType: contentType,
 	}, nil
+}
+
+func parseFileNote(note string) types.FileNote {
+	if note == "" {
+		return nil
+	}
+	// TODO: Check more rigorously
+	return types.FileNote(&note)
 }
 
 func parseContentType(s string) (types.ContentType, error) {

@@ -8,6 +8,7 @@ import (
 type (
 	EntryID        string
 	Filename       string
+	FileNote       *string
 	ContentType    string
 	ExpirationTime time.Time
 
@@ -15,6 +16,7 @@ type (
 		ID          EntryID
 		GuestLinkID GuestLinkID
 		Filename    Filename
+		Note        FileNote
 		ContentType ContentType
 		Uploaded    time.Time
 		Expires     ExpirationTime
