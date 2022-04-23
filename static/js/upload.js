@@ -8,6 +8,7 @@ const progressSpinner = document.getElementById("progress-spinner");
 const uploadForm = document.getElementById("upload-form");
 const expirationContainer = document.querySelector(".expiration-container");
 const expirationSelect = document.getElementById("expiration-select");
+const noteInput = document.getElementById("note");
 const uploadAnotherBtn = document.getElementById("upload-another-btn");
 
 function hideElement(el) {
@@ -24,6 +25,10 @@ function getGuestLinkMetdata() {
     return null;
   }
   return JSON.parse(el.innerHTML);
+}
+
+function readNote() {
+  return noteInput.value || null;
 }
 
 function doUpload(file) {
@@ -46,7 +51,7 @@ function doUpload(file) {
   showElement(progressSpinner);
 
   let uploader = () => {
-    return uploadFile(file, expirationSelect.value);
+    return uploadFile(file, expirationSelect.value, readNote());
   };
   if (guestLinkMetadata) {
     uploader = () => {

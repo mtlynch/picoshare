@@ -17,6 +17,7 @@
       <thead>
         <tr>
           <th>Filename</th>
+          <th>Note</th>
           <th>Size</th>
           <th>Uploaded</th>
           <th>Expires</th>
@@ -28,6 +29,14 @@
           <tr>
             <td class="is-vcentered" test-data-id="filename">
               <a href="/!{{ .ID }}">{{ .Filename }}</a>
+            </td>
+            <td class="is-vcentered" test-data-id="note">
+              {{ if .Note }}
+                <div class="tooltip">
+                  <i class="fa-solid fa-note-sticky mx-auto"></i>
+                  <span class="tooltip-text">{{ .Note }}</span>
+                </div>
+              {{ end }}
             </td>
             <td class="is-vcentered">{{ formatFileSize .Size }}</td>
             <td class="is-vcentered">{{ formatDate .Uploaded }}</td>

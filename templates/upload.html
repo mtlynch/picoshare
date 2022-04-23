@@ -38,7 +38,7 @@
     <textarea id="pastebox" class="mt-5"></textarea>
 
     {{ if gt (len .ExpirationOptions) 0 }}
-      <div class="field my-3 expiration-container">
+      <div class="field my-5 expiration-container">
         <label class="label">Expiration</label>
         <div class="control">
           <div class="select">
@@ -57,6 +57,21 @@
       </div>
     {{ end }}
 
+    {{ if not .GuestLinkMetadata.ID }}
+      <div class="field my-5">
+        <label class="label">Note <i>(optional)</i></label>
+        <div class="control">
+          <input
+            id="note"
+            class="input is-normal"
+            type="text"
+            placeholder="For Joe at ExampleCo"
+            maxlength="{{ .MaxNoteLength }}"
+          />
+        </div>
+        <p class="help">Note is only visible to you</p>
+      </div>
+    {{ end }}
   </div>
 
   <div class="fa-3x is-hidden" id="progress-spinner">

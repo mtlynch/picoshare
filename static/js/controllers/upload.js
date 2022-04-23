@@ -1,8 +1,9 @@
 "use strict";
 
-export async function uploadFile(file, expirationTime) {
+export async function uploadFile(file, expirationTime, note) {
   const formData = new FormData();
   formData.append("file", file);
+  formData.append("note", note);
   return fetch(`/api/entry?expiration=${encodeURIComponent(expirationTime)}`, {
     method: "POST",
     credentials: "include",

@@ -32,6 +32,7 @@ type (
 	fileUpload struct {
 		Reader      io.Reader
 		Filename    types.Filename
+		Note        types.FileNote
 		ContentType types.ContentType
 	}
 )
@@ -56,6 +57,7 @@ func (s Server) entryPost() http.HandlerFunc {
 		err = s.store.InsertEntry(uploadedFile.Reader,
 			types.UploadMetadata{
 				Filename:    uploadedFile.Filename,
+				Note:        uploadedFile.Note,
 				ContentType: uploadedFile.ContentType,
 				ID:          id,
 				Uploaded:    time.Now(),
@@ -110,6 +112,11 @@ func (s Server) guestEntryPost() http.HandlerFunc {
 		if err != nil {
 			log.Printf("error reading body: %v", err)
 			http.Error(w, fmt.Sprintf("can't read request body: %s", err), http.StatusBadRequest)
+			return
+		}
+
+		if uploadedFile.Note != nil {
+			http.Error(w, "Guest uploads cannot have file notes", http.StatusBadRequest)
 			return
 		}
 
@@ -185,9 +192,15 @@ func fileFromRequest(w http.ResponseWriter, r *http.Request) (fileUpload, error)
 		return fileUpload{}, err
 	}
 
+	note, err := parse.FileNote(r.FormValue("note"))
+	if err != nil {
+		return fileUpload{}, err
+	}
+
 	return fileUpload{
 		Reader:      reader,
 		Filename:    filename,
+		Note:        note,
 		ContentType: contentType,
 	}, nil
 }

@@ -16,6 +16,7 @@ import (
 
 	"github.com/mtlynch/picoshare/v2/handlers"
 	"github.com/mtlynch/picoshare/v2/handlers/auth/shared_secret"
+	"github.com/mtlynch/picoshare/v2/handlers/parse"
 	"github.com/mtlynch/picoshare/v2/store/test_sqlite"
 	"github.com/mtlynch/picoshare/v2/types"
 )
@@ -36,14 +37,31 @@ func TestEntryPost(t *testing.T) {
 		filename    string
 		contents    string
 		expiration  string
+		note        string
 		status      int
 	}{
 		{
-			description: "valid file",
+			description: "valid file with no note",
 			filename:    "dummyimage.png",
 			contents:    "dummy bytes",
 			expiration:  "2040-01-01T00:00:00Z",
 			status:      http.StatusOK,
+		},
+		{
+			description: "valid file with a note",
+			filename:    "dummyimage.png",
+			contents:    "dummy bytes",
+			note:        "for my homeboy, willy",
+			expiration:  "2040-01-01T00:00:00Z",
+			status:      http.StatusOK,
+		},
+		{
+			description: "valid file with a too-long note",
+			filename:    "dummyimage.png",
+			contents:    "dummy bytes",
+			note:        strings.Repeat("A", parse.MaxFileNoteLen+1),
+			expiration:  "2040-01-01T00:00:00Z",
+			status:      http.StatusBadRequest,
 		},
 		{
 			description: "filename that's just a dot",
@@ -78,7 +96,7 @@ func TestEntryPost(t *testing.T) {
 			store := test_sqlite.New()
 			s := handlers.New(mockAuthenticator{}, store)
 
-			formData, contentType := createMultipartFormBody(tt.filename, bytes.NewBuffer([]byte(tt.contents)))
+			formData, contentType := createMultipartFormBody(tt.filename, tt.note, bytes.NewBuffer([]byte(tt.contents)))
 
 			req, err := http.NewRequest("POST", "/api/entry?expiration="+tt.expiration, formData)
 			if err != nil {
@@ -135,6 +153,7 @@ func TestGuestUpload(t *testing.T) {
 		guestLinkInStore types.GuestLink
 		entriesInStore   []types.UploadEntry
 		guestLinkID      string
+		note             string
 		status           int
 	}{
 		{
@@ -188,6 +207,17 @@ func TestGuestUpload(t *testing.T) {
 			status:      http.StatusNotFound,
 		},
 		{
+			description: "reject upload that includes a note",
+			guestLinkInStore: types.GuestLink{
+				ID:      types.GuestLinkID("abcdefgh23456789"),
+				Created: mustParseTime("2022-01-01T00:00:00Z"),
+				Expires: mustParseExpirationTime("2030-01-02T03:04:25Z"),
+			},
+			guestLinkID: "abcdefgh23456789",
+			note:        "I'm a disallowed note",
+			status:      http.StatusBadRequest,
+		},
+		{
 			description: "exhausted upload count",
 			guestLinkInStore: types.GuestLink{
 				ID:             types.GuestLinkID("abcdefgh23456789"),
@@ -239,7 +269,7 @@ func TestGuestUpload(t *testing.T) {
 
 			filename := "dummyimage.png"
 			contents := "dummy bytes"
-			formData, contentType := createMultipartFormBody(filename, makeData(contents))
+			formData, contentType := createMultipartFormBody(filename, tt.note, makeData(contents))
 
 			req, err := http.NewRequest("POST", "/api/guest/"+tt.guestLinkID, formData)
 			if err != nil {
@@ -286,7 +316,7 @@ func TestGuestUpload(t *testing.T) {
 	}
 }
 
-func createMultipartFormBody(filename string, r io.Reader) (io.Reader, string) {
+func createMultipartFormBody(filename, note string, r io.Reader) (io.Reader, string) {
 	var b bytes.Buffer
 	bw := bufio.NewWriter(&b)
 	mw := multipart.NewWriter(bw)
@@ -296,6 +326,12 @@ func createMultipartFormBody(filename string, r io.Reader) (io.Reader, string) {
 		panic(err)
 	}
 	io.Copy(f, r)
+
+	nf, err := mw.CreateFormField("note")
+	if err != nil {
+		panic(err)
+	}
+	nf.Write([]byte(note))
 
 	mw.Close()
 	bw.Flush()

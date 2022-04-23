@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/mtlynch/picoshare/v2/handlers/parse"
 	"github.com/mtlynch/picoshare/v2/store"
 	"github.com/mtlynch/picoshare/v2/types"
 )
@@ -222,12 +223,14 @@ func (s Server) uploadGet() http.HandlerFunc {
 		if err := renderTemplate(w, "upload.html", struct {
 			commonProps
 			ExpirationOptions []expirationOption
+			MaxNoteLength     int
 			GuestLinkMetadata types.GuestLink
 		}{
 			commonProps: commonProps{
 				Title:           "PicoShare - Upload",
 				IsAuthenticated: s.isAuthenticated(r),
 			},
+			MaxNoteLength: parse.MaxFileNoteLen,
 			ExpirationOptions: []expirationOption{
 				{"1 day", time.Now().AddDate(0, 0, 1), false},
 				{"7 days", time.Now().AddDate(0, 0, 7), false},

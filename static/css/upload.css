@@ -9,3 +9,7 @@
   text-align: center;
   caret-color: transparent;
 }
+
+.control {
+  max-width: 70ch;
+}
