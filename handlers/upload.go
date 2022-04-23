@@ -171,6 +171,10 @@ func fileFromRequest(w http.ResponseWriter, r *http.Request) (fileUpload, error)
 		return fileUpload{}, err
 	}
 
+	if metadata.Size == 0 {
+		return fileUpload{}, errors.New("file is empty")
+	}
+
 	filename, err := parse.Filename(metadata.Filename)
 	if err != nil {
 		return fileUpload{}, err
