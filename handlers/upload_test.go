@@ -16,6 +16,7 @@ import (
 
 	"github.com/mtlynch/picoshare/v2/handlers"
 	"github.com/mtlynch/picoshare/v2/handlers/auth/shared_secret"
+	"github.com/mtlynch/picoshare/v2/handlers/parse"
 	"github.com/mtlynch/picoshare/v2/store/test_sqlite"
 	"github.com/mtlynch/picoshare/v2/types"
 )
@@ -55,6 +56,14 @@ func TestEntryPost(t *testing.T) {
 			status:      http.StatusOK,
 		},
 		{
+			description: "valid file with a too-long note",
+			filename:    "dummyimage.png",
+			contents:    "dummy bytes",
+			note:        strings.Repeat("A", parse.MaxFileNoteLen+1),
+			expiration:  "2040-01-01T00:00:00Z",
+			status:      http.StatusBadRequest,
+		},
+		{
 			description: "filename that's just a dot",
 			filename:    ".",
 			contents:    "dummy bytes",
@@ -82,8 +91,6 @@ func TestEntryPost(t *testing.T) {
 			expiration:  "invalid-expiration-date",
 			status:      http.StatusBadRequest,
 		},
-		// TODO: Too long a note
-		// TODO: Valid note
 	} {
 		t.Run(tt.description, func(t *testing.T) {
 			store := test_sqlite.New()
