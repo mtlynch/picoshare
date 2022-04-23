@@ -2,7 +2,7 @@ FROM golang:1.17.4 AS builder
 
 ARG TARGETPLATFORM
 
-COPY ./cmd /app/
+COPY ./cmd /app/cmd
 COPY ./garbagecollect /app/garbagecollect
 COPY ./handlers /app/handlers
 COPY ./random /app/random
