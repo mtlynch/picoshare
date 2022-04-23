@@ -30,6 +30,7 @@ func (ma mockAuthenticator) Authenticate(r *http.Request) bool {
 	return true
 }
 
+// TODO: Fold this into next test
 func TestUploadValidFile(t *testing.T) {
 	store := test_sqlite.New()
 	s := handlers.New(mockAuthenticator{}, store)
@@ -110,6 +111,9 @@ func TestEntryPostRejectsInvalidRequest(t *testing.T) {
 			expiration:  "2040-01-01T00:00:00Z",
 			status:      http.StatusBadRequest,
 		},
+		// TODO: Too long a note
+		// TODO: Valid note
+		// TODO: Invalid expiration
 	} {
 		t.Run(tt.description, func(t *testing.T) {
 			store := test_sqlite.New()
