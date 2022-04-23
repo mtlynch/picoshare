@@ -8,30 +8,41 @@ import (
 
 func enforceContentSecurityPolicy(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		directives := map[string][]string{
-			"default-src": {
-				"self",
+		type cspDirective struct {
+			name   string
+			values []string
+		}
+		directives := []cspDirective{
+			{
+				name: "default-src",
+				values: []string{
+					"self",
+				},
 			},
-			"script-src": {
-				"self",
-				// HTML custom elements require unsafe-inline.
-				"unsafe-inline",
+			{
+				name: "script-src",
+				values: []string{
+					"self",
+					"unsafe-inline",
+				},
 			},
-			"style-src": {
-				"self",
-				// HTML custom elements require unsafe-inline.
-				"unsafe-inline",
+			{
+				name: "style-src",
+				values: []string{
+					"self",
+					"unsafe-inline",
+				},
 			},
 		}
 		policyParts := []string{}
-		for directive, keywords := range directives {
-			keywordsFormatted := make([]string, len(keywords))
-			for i, keyword := range keywords {
-				keywordsFormatted[i] = fmt.Sprintf("'%s'", keyword)
+		for _, directive := range directives {
+			valuesFormatted := make([]string, len(directive.values))
+			for i, value := range directive.values {
+				valuesFormatted[i] = fmt.Sprintf("'%s'", value)
 			}
-			policyParts = append(policyParts, fmt.Sprintf("%s %s", directive, strings.Join(keywordsFormatted, " ")))
+			policyParts = append(policyParts, fmt.Sprintf("%s %s", directive.name, strings.Join(valuesFormatted, " ")))
 		}
-		policy := strings.Join(policyParts, "; ")
+		policy := strings.Join(policyParts, "; ") + ";"
 
 		w.Header().Set("Content-Security-Policy", policy)
 		next.ServeHTTP(w, r)
