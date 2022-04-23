@@ -408,6 +408,19 @@ func (d db) DeleteGuestLink(id types.GuestLinkID) error {
 	return tx.Commit()
 }
 
+func (d db) Compact() error {
+	log.Printf("vacuuming database")
+
+	if _, err := d.ctx.Exec("VACUUM"); err != nil {
+		log.Printf("failed to vacuum database: %v", err)
+		return err
+	}
+
+	log.Printf("vacuuming complete")
+
+	return nil
+}
+
 func guestLinkFromRow(row rowScanner) (types.GuestLink, error) {
 	var id types.GuestLinkID
 	var label types.GuestLinkLabel
