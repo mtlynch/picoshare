@@ -36,7 +36,8 @@ func TestUploadValidFile(t *testing.T) {
 
 	filename := "dummyimage.png"
 	contents := "dummy bytes"
-	formData, contentType := createMultipartFormBody("file", filename, makeData(contents))
+	note := ""
+	formData, contentType := createMultipartFormBody(filename, note, makeData(contents))
 
 	req, err := http.NewRequest("POST", "/api/entry?expiration=2040-01-01T00:00:00Z", formData)
 	if err != nil {
@@ -82,36 +83,41 @@ func TestUploadValidFile(t *testing.T) {
 func TestEntryPostRejectsInvalidRequest(t *testing.T) {
 	for _, tt := range []struct {
 		description string
-		name        string
 		filename    string
 		contents    string
+		expiration  string
+		note        string
+		status      int
 	}{
 		{
-			description: "wrong form part name",
-			name:        "badname",
-			filename:    "dummy.png",
+			description: "valid file with no note",
+			filename:    "dummyimage.png",
 			contents:    "dummy bytes",
+			expiration:  "2040-01-01T00:00:00Z",
+			status:      http.StatusOK,
 		},
 		{
 			description: "filename that's just a dot",
-			name:        "file",
 			filename:    ".",
 			contents:    "dummy bytes",
+			expiration:  "2040-01-01T00:00:00Z",
+			status:      http.StatusBadRequest,
 		},
 		{
 			description: "empty upload",
-			name:        "file",
 			filename:    "dummy.png",
 			contents:    "",
+			expiration:  "2040-01-01T00:00:00Z",
+			status:      http.StatusBadRequest,
 		},
 	} {
 		t.Run(tt.description, func(t *testing.T) {
 			store := test_sqlite.New()
 			s := handlers.New(mockAuthenticator{}, store)
 
-			formData, contentType := createMultipartFormBody(tt.name, tt.filename, bytes.NewBuffer([]byte(tt.contents)))
+			formData, contentType := createMultipartFormBody(tt.filename, tt.note, bytes.NewBuffer([]byte(tt.contents)))
 
-			req, err := http.NewRequest("POST", "/api/entry", formData)
+			req, err := http.NewRequest("POST", "/api/entry?expiration="+tt.expiration, formData)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -120,8 +126,8 @@ func TestEntryPostRejectsInvalidRequest(t *testing.T) {
 			w := httptest.NewRecorder()
 			s.Router().ServeHTTP(w, req)
 
-			if status := w.Code; status != http.StatusBadRequest {
-				t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusBadRequest)
+			if got, want := w.Code, tt.status; got != want {
+				t.Errorf("status=%d, want=%d", got, want)
 			}
 		})
 	}
@@ -144,7 +150,8 @@ func TestGuestUploadValidFile(t *testing.T) {
 
 	filename := "dummyimage.png"
 	contents := "dummy bytes"
-	formData, contentType := createMultipartFormBody("file", filename, makeData(contents))
+	note := "" // Guest uploads can't have notes
+	formData, contentType := createMultipartFormBody(filename, note, makeData(contents))
 
 	req, err := http.NewRequest("POST", "/api/guest/abcdefgh23456789", formData)
 	if err != nil {
@@ -186,6 +193,39 @@ func TestGuestUploadValidFile(t *testing.T) {
 	}
 }
 
+func TestGuestUploadRejectsRequestWithNote(t *testing.T) {
+	store := test_sqlite.New()
+	store.InsertGuestLink(types.GuestLink{
+		ID:      types.GuestLinkID("abcdefgh23456789"),
+		Created: mustParseTime("2022-01-01T00:00:00Z"),
+		Expires: mustParseExpirationTime("2030-01-02T03:04:25Z"),
+	})
+
+	authenticator, err := shared_secret.New("dummypass")
+	if err != nil {
+		t.Fatalf("failed to create shared secret: %v", err)
+	}
+
+	s := handlers.New(authenticator, store)
+
+	filename := "dummyimage.png"
+	contents := "dummy bytes"
+	note := "this note should be rejected"
+	formData, contentType := createMultipartFormBody(filename, note, makeData(contents))
+
+	req, err := http.NewRequest("POST", "/api/guest/abcdefgh23456789", formData)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Add("Content-Type", contentType)
+
+	w := httptest.NewRecorder()
+	s.Router().ServeHTTP(w, req)
+
+	if got, want := w.Code, http.StatusBadRequest; got != want {
+		t.Fatalf("handler returned wrong status code: got=%v want=%v", got, want)
+	}
+}
 func TestGuestUploadInvalidLink(t *testing.T) {
 	authenticator, err := shared_secret.New("dummypass")
 	if err != nil {
@@ -291,7 +331,8 @@ func TestGuestUploadInvalidLink(t *testing.T) {
 
 			filename := "dummyimage.png"
 			contents := "dummy bytes"
-			formData, contentType := createMultipartFormBody("file", filename, makeData(contents))
+			note := ""
+			formData, contentType := createMultipartFormBody(filename, note, makeData(contents))
 
 			req, err := http.NewRequest("POST", "/api/guest/"+tt.guestLinkID, formData)
 			if err != nil {
@@ -309,16 +350,22 @@ func TestGuestUploadInvalidLink(t *testing.T) {
 	}
 }
 
-func createMultipartFormBody(name, filename string, r io.Reader) (io.Reader, string) {
+func createMultipartFormBody(filename, note string, r io.Reader) (io.Reader, string) {
 	var b bytes.Buffer
 	bw := bufio.NewWriter(&b)
 	mw := multipart.NewWriter(bw)
 
-	part, err := mw.CreateFormFile(name, filename)
+	f, err := mw.CreateFormFile("file", filename)
 	if err != nil {
 		panic(err)
 	}
-	io.Copy(part, r)
+	io.Copy(f, r)
+
+	nf, err := mw.CreateFormField("note")
+	if err != nil {
+		panic(err)
+	}
+	nf.Write([]byte(note))
 
 	mw.Close()
 	bw.Flush()

@@ -115,6 +115,11 @@ func (s Server) guestEntryPost() http.HandlerFunc {
 			return
 		}
 
+		if uploadedFile.Note != nil {
+			http.Error(w, "Guest uploads cannot have file notes", http.StatusBadRequest)
+			return
+		}
+
 		id := generateEntryID()
 		err = s.store.InsertEntry(uploadedFile.Reader,
 			types.UploadMetadata{
@@ -173,6 +178,10 @@ func fileFromRequest(w http.ResponseWriter, r *http.Request) (fileUpload, error)
 		return fileUpload{}, err
 	}
 
+	if metadata.Size == 0 {
+		return fileUpload{}, errors.New("file is empty")
+	}
+
 	filename, err := parse.Filename(metadata.Filename)
 	if err != nil {
 		return fileUpload{}, err
@@ -183,20 +192,17 @@ func fileFromRequest(w http.ResponseWriter, r *http.Request) (fileUpload, error)
 		return fileUpload{}, err
 	}
 
+	note, err := parse.FileNote(r.FormValue("note"))
+	if err != nil {
+		return fileUpload{}, err
+	}
+
 	return fileUpload{
 		Reader:      reader,
 		Filename:    filename,
-		Note:        parseFileNote(r.FormValue("note")),
+		Note:        note,
 		ContentType: contentType,
 	}, nil
-}
-
-func parseFileNote(note string) types.FileNote {
-	if note == "" {
-		return nil
-	}
-	// TODO: Check more rigorously
-	return types.FileNote(&note)
 }
 
 func parseContentType(s string) (types.ContentType, error) {
