@@ -141,7 +141,6 @@ func TestGuestUploadValidFile(t *testing.T) {
 
 	filename := "dummyimage.png"
 	contents := "dummy bytes"
-	// Guest uploads can't have notes
 	formData, contentType := createMultipartFormBody(filename, makeData(contents))
 
 	req, err := http.NewRequest("POST", "/api/guest/abcdefgh23456789", formData)
