@@ -26,6 +26,21 @@ func TestFileNote(t *testing.T) {
 			input:       strings.Repeat("A", parse.MaxFileNoteLen+1),
 			valid:       false,
 		},
+		{
+			description: "contains a <script> tag",
+			input:       "<script>alert(1)</script>",
+			valid:       false,
+		},
+		{
+			description: "contains a <script> tag with extra whitespace",
+			input:       "< \n\t script  >alert(1)</ \n\tscript >",
+			valid:       false,
+		},
+		{
+			description: "contains an <iframe> tag with extra whitespace",
+			input:       "< \n\t iframe  >foo</ \n\tiframe >",
+			valid:       false,
+		},
 	} {
 		t.Run(tt.description, func(t *testing.T) {
 			note, err := parse.FileNote(tt.input)
