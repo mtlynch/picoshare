@@ -32,5 +32,9 @@ func (c Collector) Collect() error {
 		}
 	}
 
+	if err := c.store.Compact(); err != nil {
+		return err
+	}
+
 	return nil
 }
