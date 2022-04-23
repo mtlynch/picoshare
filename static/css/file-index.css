@@ -16,17 +16,27 @@
 
 .tooltip .tooltip-text {
   visibility: hidden;
-  width: 120px;
-  top: 100%;
-  left: 50%;
-  margin-left: -60px;
-  padding: 5px 0;
-  background-color: black;
-  color: #fff;
+  width: max-content;
+  max-width: 400px;
+  position: absolute;
+  top: -9px;
+  left: 150%;
+  padding: 0.5rem 0.75rem;
+  background-color: #f5faff;
+  border: 1px solid #004e9c;
+  color: black;
   text-align: center;
   border-radius: 6px;
-  position: absolute;
   z-index: 1;
+}
+
+.tooltip:before {
+  opacity: 0;
+  transition: 0.3s opacity;
+}
+
+.tooltip:hover:before {
+  opacity: 1;
 }
 
 .tooltip:hover .tooltip-text {
