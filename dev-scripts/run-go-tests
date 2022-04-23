@@ -8,7 +8,7 @@ set -x
 
 if [ "$1" = "--full" ]; then
   full_test="1"
-  flags="-race --coverprofile=.coverage.out"
+  flags="-v -race --coverprofile=.coverage.out"
 else
   full_test=""
   flags=""
@@ -28,7 +28,7 @@ if [ ! -f "${STATICCHECK_PATH}" ]; then
     go install "honnef.co/go/tools/cmd/staticcheck@${STATICCHECK_VERSION}"
 fi
 
-go test -v $flags ./...
+go test $flags ./...
 go vet ./...
 $STATICCHECK_PATH ./...
 

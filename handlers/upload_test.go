@@ -135,64 +135,6 @@ func TestEntryPost(t *testing.T) {
 	}
 }
 
-func TestGuestUploadValidFile(t *testing.T) {
-	store := test_sqlite.New()
-	store.InsertGuestLink(types.GuestLink{
-		ID:      types.GuestLinkID("abcdefgh23456789"),
-		Created: mustParseTime("2022-01-01T00:00:00Z"),
-		Expires: mustParseExpirationTime("2030-01-02T03:04:25Z"),
-	})
-
-	authenticator, err := shared_secret.New("dummypass")
-	if err != nil {
-		t.Fatalf("failed to create shared secret: %v", err)
-	}
-
-	s := handlers.New(authenticator, store)
-
-	filename := "dummyimage.png"
-	contents := "dummy bytes"
-	note := "" // Guest uploads can't have notes
-	formData, contentType := createMultipartFormBody(filename, note, makeData(contents))
-
-	req, err := http.NewRequest("POST", "/api/guest/abcdefgh23456789", formData)
-	if err != nil {
-		t.Fatal(err)
-	}
-	req.Header.Add("Content-Type", contentType)
-
-	w := httptest.NewRecorder()
-	s.Router().ServeHTTP(w, req)
-
-	if status := w.Code; status != http.StatusOK {
-		t.Fatalf("handler returned wrong status code: got %v want %v",
-			status, http.StatusOK)
-	}
-
-	var response handlers.EntryPostResponse
-	err = json.Unmarshal(w.Body.Bytes(), &response)
-	if err != nil {
-		t.Fatalf("response is not valid JSON: %v", w.Body.String())
-	}
-
-	entry, err := store.GetEntry(types.EntryID(response.ID))
-	if err != nil {
-		t.Fatalf("failed to get expected entry %v from data store: %v", response.ID, err)
-	}
-
-	if got, want := mustReadAll(entry.Reader), []byte(contents); !reflect.DeepEqual(got, want) {
-		t.Errorf("stored contents= %v, want=%v", got, want)
-	}
-
-	if got, want := entry.Filename, types.Filename(filename); got != want {
-		t.Errorf("filename=%v, want=%v", got, want)
-	}
-
-	if got, want := entry.Expires, types.NeverExpire; got != want {
-		t.Errorf("expiration=%v, want=%v", got, want)
-	}
-}
-
 func TestGuestUploadRejectsRequestWithNote(t *testing.T) {
 	store := test_sqlite.New()
 	store.InsertGuestLink(types.GuestLink{
@@ -226,7 +168,7 @@ func TestGuestUploadRejectsRequestWithNote(t *testing.T) {
 		t.Fatalf("handler returned wrong status code: got=%v want=%v", got, want)
 	}
 }
-func TestGuestUploadInvalidLink(t *testing.T) {
+func TestGuestUpload(t *testing.T) {
 	authenticator, err := shared_secret.New("dummypass")
 	if err != nil {
 		t.Fatalf("failed to create shared secret: %v", err)
@@ -237,8 +179,19 @@ func TestGuestUploadInvalidLink(t *testing.T) {
 		guestLinkInStore types.GuestLink
 		entriesInStore   []types.UploadEntry
 		guestLinkID      string
+		note             string
 		status           int
 	}{
+		{
+			description: "valid upload to guest link",
+			guestLinkInStore: types.GuestLink{
+				ID:      types.GuestLinkID("abcdefgh23456789"),
+				Created: mustParseTime("2022-01-01T00:00:00Z"),
+				Expires: mustParseExpirationTime("2030-01-02T03:04:25Z"),
+			},
+			guestLinkID: "abcdefgh23456789",
+			status:      http.StatusOK,
+		},
 		{
 			description: "expired guest link",
 			guestLinkInStore: types.GuestLink{
@@ -278,6 +231,17 @@ func TestGuestUploadInvalidLink(t *testing.T) {
 			},
 			guestLinkID: "doesntexistaaaaa",
 			status:      http.StatusNotFound,
+		},
+		{
+			description: "reject upload that includes a note",
+			guestLinkInStore: types.GuestLink{
+				ID:      types.GuestLinkID("abcdefgh23456789"),
+				Created: mustParseTime("2022-01-01T00:00:00Z"),
+				Expires: mustParseExpirationTime("2030-01-02T03:04:25Z"),
+			},
+			guestLinkID: "abcdefgh23456789",
+			note:        "I'm a disallowed note",
+			status:      http.StatusBadRequest,
 		},
 		{
 			description: "exhausted upload count",
@@ -331,8 +295,8 @@ func TestGuestUploadInvalidLink(t *testing.T) {
 
 			filename := "dummyimage.png"
 			contents := "dummy bytes"
-			note := ""
-			formData, contentType := createMultipartFormBody(filename, note, makeData(contents))
+			//formData, contentType := createMultipartFormBody(filename, tt.note, makeData(contents))
+			formData, contentType := createMultipartFormBody(filename, "", makeData(contents))
 
 			req, err := http.NewRequest("POST", "/api/guest/"+tt.guestLinkID, formData)
 			if err != nil {
@@ -344,7 +308,36 @@ func TestGuestUploadInvalidLink(t *testing.T) {
 			s.Router().ServeHTTP(w, req)
 
 			if got, want := w.Code, tt.status; got != want {
-				t.Errorf("status=%d, want=%d", got, want)
+				t.Fatalf("status=%d, want=%d", got, want)
+			}
+
+			// Only check the response if the request succeeded.
+			if w.Code != http.StatusOK {
+				return
+			}
+
+			var response handlers.EntryPostResponse
+			err = json.Unmarshal(w.Body.Bytes(), &response)
+			if err != nil {
+				t.Fatalf("response is not valid JSON: %v", w.Body.String())
+			}
+
+			entry, err := store.GetEntry(types.EntryID(response.ID))
+			if err != nil {
+				t.Fatalf("failed to get expected entry %v from data store: %v", response.ID, err)
+			}
+
+			if got, want := mustReadAll(entry.Reader), []byte(contents); !reflect.DeepEqual(got, want) {
+				t.Errorf("stored contents= %v, want=%v", got, want)
+			}
+
+			if got, want := entry.Filename, types.Filename(filename); got != want {
+				t.Errorf("filename=%v, want=%v", got, want)
+			}
+
+			// Guest uploads never expire.
+			if got, want := entry.Expires, types.NeverExpire; got != want {
+				t.Errorf("expiration=%v, want=%v", got, want)
 			}
 		})
 	}
