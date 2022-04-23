@@ -39,7 +39,7 @@ func (s *Server) routes() {
 
 	authenticatedViews := s.router.PathPrefix("/").Subrouter()
 	authenticatedViews.Use(s.requireAuthentication)
-	authenticatedApis.Use(enforceContentSecurityPolicy)
+	authenticatedViews.Use(enforceContentSecurityPolicy)
 	authenticatedViews.HandleFunc("/files", s.fileIndexGet()).Methods(http.MethodGet)
 	authenticatedViews.HandleFunc("/guest-links", s.guestLinkIndexGet()).Methods(http.MethodGet)
 	authenticatedViews.HandleFunc("/guest-links/new", s.guestLinksNewGet()).Methods(http.MethodGet)
