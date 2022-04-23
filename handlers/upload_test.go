@@ -30,58 +30,7 @@ func (ma mockAuthenticator) Authenticate(r *http.Request) bool {
 	return true
 }
 
-// TODO: Fold this into next test
-func TestUploadValidFile(t *testing.T) {
-	store := test_sqlite.New()
-	s := handlers.New(mockAuthenticator{}, store)
-
-	filename := "dummyimage.png"
-	contents := "dummy bytes"
-	note := ""
-	formData, contentType := createMultipartFormBody(filename, note, makeData(contents))
-
-	req, err := http.NewRequest("POST", "/api/entry?expiration=2040-01-01T00:00:00Z", formData)
-	if err != nil {
-		t.Fatal(err)
-	}
-	req.Header.Add("Content-Type", contentType)
-
-	w := httptest.NewRecorder()
-	s.Router().ServeHTTP(w, req)
-
-	if status := w.Code; status != http.StatusOK {
-		t.Fatalf("handler returned wrong status code: got %v want %v",
-			status, http.StatusOK)
-	}
-
-	var response handlers.EntryPostResponse
-	err = json.Unmarshal(w.Body.Bytes(), &response)
-	if err != nil {
-		t.Fatalf("response is not valid JSON: %v", w.Body.String())
-	}
-
-	entry, err := store.GetEntry(types.EntryID(response.ID))
-	if err != nil {
-		t.Fatalf("failed to get expected entry %v from data store: %v", response.ID, err)
-	}
-
-	actual := mustReadAll(entry.Reader)
-	expected := []byte(contents)
-	if !reflect.DeepEqual(actual, expected) {
-		t.Fatalf("stored entry doesn't match expected: got %v, want %v", actual, expected)
-	}
-
-	if entry.Filename != types.Filename(filename) {
-		t.Fatalf("stored entry filename doesn't match expected: got %v, want %v", entry.Filename, filename)
-	}
-
-	expirationExpected := mustParseExpirationTime("2040-01-01T00:00:00Z")
-	if entry.Expires != expirationExpected {
-		t.Fatalf("stored entry expiration doesn't match expected: got %v, want %v", formatExpirationTime(entry.Expires), formatExpirationTime(expirationExpected))
-	}
-}
-
-func TestEntryPostRejectsInvalidRequest(t *testing.T) {
+func TestEntryPost(t *testing.T) {
 	for _, tt := range []struct {
 		description string
 		filename    string
@@ -94,6 +43,14 @@ func TestEntryPostRejectsInvalidRequest(t *testing.T) {
 			description: "valid file with no note",
 			filename:    "dummyimage.png",
 			contents:    "dummy bytes",
+			expiration:  "2040-01-01T00:00:00Z",
+			status:      http.StatusOK,
+		},
+		{
+			description: "valid file with a note",
+			filename:    "dummyimage.png",
+			contents:    "dummy bytes",
+			note:        "for my homeboy, willy",
 			expiration:  "2040-01-01T00:00:00Z",
 			status:      http.StatusOK,
 		},
@@ -111,9 +68,22 @@ func TestEntryPostRejectsInvalidRequest(t *testing.T) {
 			expiration:  "2040-01-01T00:00:00Z",
 			status:      http.StatusBadRequest,
 		},
+		{
+			description: "expiration in the past",
+			filename:    "dummy.png",
+			contents:    "dummy bytes",
+			expiration:  "2000-01-01T00:00:00Z",
+			status:      http.StatusBadRequest,
+		},
+		{
+			description: "invalid expiration",
+			filename:    "dummy.png",
+			contents:    "dummy bytes",
+			expiration:  "invalid-expiration-date",
+			status:      http.StatusBadRequest,
+		},
 		// TODO: Too long a note
 		// TODO: Valid note
-		// TODO: Invalid expiration
 	} {
 		t.Run(tt.description, func(t *testing.T) {
 			store := test_sqlite.New()
@@ -132,6 +102,34 @@ func TestEntryPostRejectsInvalidRequest(t *testing.T) {
 
 			if got, want := w.Code, tt.status; got != want {
 				t.Errorf("status=%d, want=%d", got, want)
+			}
+
+			// Only check the response if the request succeeded.
+			if w.Code != http.StatusOK {
+				return
+			}
+
+			var response handlers.EntryPostResponse
+			err = json.Unmarshal(w.Body.Bytes(), &response)
+			if err != nil {
+				t.Fatalf("response is not valid JSON: %v", w.Body.String())
+			}
+
+			entry, err := store.GetEntry(types.EntryID(response.ID))
+			if err != nil {
+				t.Fatalf("failed to get expected entry %v from data store: %v", response.ID, err)
+			}
+
+			if got, want := mustReadAll(entry.Reader), []byte(tt.contents); !reflect.DeepEqual(got, want) {
+				t.Errorf("stored contents= %v, want=%v", got, want)
+			}
+
+			if got, want := entry.Filename, types.Filename(tt.filename); got != want {
+				t.Errorf("filename=%v, want=%v", got, want)
+			}
+
+			if got, want := entry.Expires, mustParseExpirationTime(tt.expiration); got != want {
+				t.Errorf("expiration=%v, want=%v", got, want)
 			}
 		})
 	}
@@ -182,18 +180,16 @@ func TestGuestUploadValidFile(t *testing.T) {
 		t.Fatalf("failed to get expected entry %v from data store: %v", response.ID, err)
 	}
 
-	actual := mustReadAll(entry.Reader)
-	expected := []byte(contents)
-	if !reflect.DeepEqual(actual, expected) {
-		t.Fatalf("stored entry doesn't match expected: got %v, want %v", actual, expected)
+	if got, want := mustReadAll(entry.Reader), []byte(contents); !reflect.DeepEqual(got, want) {
+		t.Errorf("stored contents= %v, want=%v", got, want)
 	}
 
-	if entry.Filename != types.Filename(filename) {
-		t.Fatalf("stored entry filename doesn't match expected: got %v, want %v", entry.Filename, filename)
+	if got, want := entry.Filename, types.Filename(filename); got != want {
+		t.Errorf("filename=%v, want=%v", got, want)
 	}
 
-	if entry.Expires != types.NeverExpire {
-		t.Fatalf("stored entry expiration doesn't match expected: got %v, want %v", formatExpirationTime(entry.Expires), formatExpirationTime(types.NeverExpire))
+	if got, want := entry.Expires, types.NeverExpire; got != want {
+		t.Errorf("expiration=%v, want=%v", got, want)
 	}
 }
 
@@ -241,7 +237,7 @@ func TestGuestUploadInvalidLink(t *testing.T) {
 		guestLinkInStore types.GuestLink
 		entriesInStore   []types.UploadEntry
 		guestLinkID      string
-		statusExpected   int
+		status           int
 	}{
 		{
 			description: "expired guest link",
@@ -250,8 +246,8 @@ func TestGuestUploadInvalidLink(t *testing.T) {
 				Created: mustParseTime("2000-01-01T00:00:00Z"),
 				Expires: mustParseExpirationTime("2000-01-02T03:04:25Z"),
 			},
-			guestLinkID:    "abcdefgh23456789",
-			statusExpected: http.StatusUnauthorized,
+			guestLinkID: "abcdefgh23456789",
+			status:      http.StatusUnauthorized,
 		},
 		{
 			description: "invalid guest link",
@@ -260,8 +256,8 @@ func TestGuestUploadInvalidLink(t *testing.T) {
 				Created: mustParseTime("2000-01-01T00:00:00Z"),
 				Expires: mustParseExpirationTime("2030-01-02T03:04:25Z"),
 			},
-			guestLinkID:    "i-am-an-invalid-guest-link", // Too long
-			statusExpected: http.StatusBadRequest,
+			guestLinkID: "i-am-an-invalid-guest-link", // Too long
+			status:      http.StatusBadRequest,
 		},
 		{
 			description: "invalid guest link",
@@ -270,8 +266,8 @@ func TestGuestUploadInvalidLink(t *testing.T) {
 				Created: mustParseTime("2000-01-01T00:00:00Z"),
 				Expires: mustParseExpirationTime("2030-01-02T03:04:25Z"),
 			},
-			guestLinkID:    "I0OI0OI0OI0OI0OI", // Contains all invalid characters
-			statusExpected: http.StatusBadRequest,
+			guestLinkID: "I0OI0OI0OI0OI0OI", // Contains all invalid characters
+			status:      http.StatusBadRequest,
 		},
 		{
 			description: "non-existent guest link",
@@ -280,8 +276,8 @@ func TestGuestUploadInvalidLink(t *testing.T) {
 				Created: mustParseTime("2000-01-01T00:00:00Z"),
 				Expires: mustParseExpirationTime("2000-01-02T03:04:25Z"),
 			},
-			guestLinkID:    "doesntexistaaaaa",
-			statusExpected: http.StatusNotFound,
+			guestLinkID: "doesntexistaaaaa",
+			status:      http.StatusNotFound,
 		},
 		{
 			description: "exhausted upload count",
@@ -305,8 +301,8 @@ func TestGuestUploadInvalidLink(t *testing.T) {
 					},
 				},
 			},
-			guestLinkID:    "abcdefgh23456789",
-			statusExpected: http.StatusUnauthorized,
+			guestLinkID: "abcdefgh23456789",
+			status:      http.StatusUnauthorized,
 		},
 		{
 			description: "exhausted upload count",
@@ -316,8 +312,8 @@ func TestGuestUploadInvalidLink(t *testing.T) {
 				Expires:      mustParseExpirationTime("2030-01-02T03:04:25Z"),
 				MaxFileBytes: makeGuestUploadMaxFileBytes(1),
 			},
-			guestLinkID:    "abcdefgh23456789",
-			statusExpected: http.StatusBadRequest,
+			guestLinkID: "abcdefgh23456789",
+			status:      http.StatusBadRequest,
 		},
 	} {
 		t.Run(tt.description, func(t *testing.T) {
@@ -347,8 +343,8 @@ func TestGuestUploadInvalidLink(t *testing.T) {
 			w := httptest.NewRecorder()
 			s.Router().ServeHTTP(w, req)
 
-			if status := w.Code; status != tt.statusExpected {
-				t.Fatalf("handler returned wrong status code: got %v want %v", status, tt.statusExpected)
+			if got, want := w.Code, tt.status; got != want {
+				t.Errorf("status=%d, want=%d", got, want)
 			}
 		})
 	}
@@ -387,10 +383,6 @@ func mustParseTime(s string) time.Time {
 
 func mustParseExpirationTime(s string) types.ExpirationTime {
 	return types.ExpirationTime(mustParseTime(s))
-}
-
-func formatExpirationTime(et types.ExpirationTime) string {
-	return time.Time(et).Format(time.RFC3339)
 }
 
 func mustReadAll(r io.Reader) []byte {
