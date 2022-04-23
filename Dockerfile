@@ -2,6 +2,7 @@ FROM golang:1.17.4 AS builder
 
 ARG TARGETPLATFORM
 
+COPY ./cmd /app/cmd
 COPY ./garbagecollect /app/garbagecollect
 COPY ./handlers /app/handlers
 COPY ./random /app/random
@@ -10,7 +11,6 @@ COPY ./store /app/store
 COPY ./templates /app/templates
 COPY ./types /app/types
 COPY ./go.* /app/
-COPY ./main.go /app/
 
 WORKDIR /app
 
@@ -28,7 +28,7 @@ RUN set -x && \
       -tags netgo \
       -ldflags '-w -extldflags "-static"' \
       -o /app/picoshare \
-      main.go
+      cmd/picoshare/main.go
 
 FROM debian:stable-20211011-slim AS litestream_downloader
 

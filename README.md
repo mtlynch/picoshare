@@ -29,7 +29,7 @@ There are a million services for sharing files, but none of them are quite like 
 
 ```bash
 PS_SHARED_SECRET=somesecretpass PORT=3001 \
-  go run main.go
+  go run cmd/picoshare/main.go
 ```
 
 ### From Docker
