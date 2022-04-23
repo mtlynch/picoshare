@@ -135,39 +135,6 @@ func TestEntryPost(t *testing.T) {
 	}
 }
 
-func TestGuestUploadRejectsRequestWithNote(t *testing.T) {
-	store := test_sqlite.New()
-	store.InsertGuestLink(types.GuestLink{
-		ID:      types.GuestLinkID("abcdefgh23456789"),
-		Created: mustParseTime("2022-01-01T00:00:00Z"),
-		Expires: mustParseExpirationTime("2030-01-02T03:04:25Z"),
-	})
-
-	authenticator, err := shared_secret.New("dummypass")
-	if err != nil {
-		t.Fatalf("failed to create shared secret: %v", err)
-	}
-
-	s := handlers.New(authenticator, store)
-
-	filename := "dummyimage.png"
-	contents := "dummy bytes"
-	note := "this note should be rejected"
-	formData, contentType := createMultipartFormBody(filename, note, makeData(contents))
-
-	req, err := http.NewRequest("POST", "/api/guest/abcdefgh23456789", formData)
-	if err != nil {
-		t.Fatal(err)
-	}
-	req.Header.Add("Content-Type", contentType)
-
-	w := httptest.NewRecorder()
-	s.Router().ServeHTTP(w, req)
-
-	if got, want := w.Code, http.StatusBadRequest; got != want {
-		t.Fatalf("handler returned wrong status code: got=%v want=%v", got, want)
-	}
-}
 func TestGuestUpload(t *testing.T) {
 	authenticator, err := shared_secret.New("dummypass")
 	if err != nil {
