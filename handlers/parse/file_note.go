@@ -23,8 +23,23 @@ func FileNote(s string) (types.FileNote, error) {
 	if len(s) > MaxFileNoteLen {
 		return nil, errors.New("note is too long")
 	}
+	if err := checkJavaScriptNullOrUndefined(s); err != nil {
+		return nil, err
+	}
 	if illegalNoteTagPattern.MatchString(s) {
 		return nil, errors.New("note must not contain HTML tags")
 	}
 	return types.FileNote(&s), nil
+}
+
+// If the client sent a value of 'null' or 'undefined', it's likely a JS error
+// and not literally what the end-user submitted, so reject it.
+func checkJavaScriptNullOrUndefined(s string) error {
+	if s == "null" {
+		return errors.New("value of 'null' is not allowed")
+	}
+	if s == "undefined" {
+		return errors.New("value of 'undefined' is not allowed")
+	}
+	return nil
 }
