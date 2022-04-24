@@ -29,9 +29,11 @@ it("uploads a file without specifying any parameters", () => {
     .should("be.visible");
 
   cy.get('.navbar a[href="/files"]').click();
-  cy.get('.table td[test-data-id="filename"]')
-    .eq(0)
-    .should("contain", "kittyface.jpg");
+  cy.get('.table tr:first-child td[test-data-id="filename"]').should(
+    "contain",
+    "kittyface.jpg"
+  );
+  cy.get('.table tr:first-child td[test-data-id="note"]').should("not.exist");
 });
 
 it("uploads a file with a note", () => {
@@ -67,10 +69,12 @@ it("uploads a file with a note", () => {
     .should("be.visible");
 
   cy.get('.navbar a[href="/files"]').click();
-  cy.get('.table td[test-data-id="filename"]')
-    .eq(0)
-    .should("contain", "kittyface.jpg");
-  cy.get('.table td[test-data-id="note"]')
-    .eq(0)
-    .should("contain", "For Pico, with Love and Squalor");
+  cy.get('.table tr:first-child td[test-data-id="filename"]').should(
+    "contain",
+    "kittyface.jpg"
+  );
+  cy.get('.table tr:first-child td[test-data-id="note"]').should(
+    "contain",
+    "For Pico, with Love and Squalor"
+  );
 });
