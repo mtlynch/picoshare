@@ -1,4 +1,4 @@
-import { guestUploadFile, uploadFile } from "./controllers/upload.js";
+import { guestUploadFile, uploadFile } from "./controllers/files.js";
 
 const uploadEl = document.querySelector(".file");
 const resultEl = document.getElementById("upload-result");
