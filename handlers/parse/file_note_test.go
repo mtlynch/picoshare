@@ -27,6 +27,16 @@ func TestFileNote(t *testing.T) {
 			valid:       false,
 		},
 		{
+			description: "literal null string",
+			input:       "null",
+			valid:       false,
+		},
+		{
+			description: "literal undefined string",
+			input:       "undefined",
+			valid:       false,
+		},
+		{
 			description: "contains a <script> tag",
 			input:       "<script>alert(1)</script>",
 			valid:       false,
