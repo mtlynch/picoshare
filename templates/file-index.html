@@ -30,11 +30,13 @@
             <td class="is-vcentered" test-data-id="filename">
               <a href="/!{{ .ID }}">{{ .Filename }}</a>
             </td>
-            <td class="is-vcentered" test-data-id="note">
+            <td class="is-vcentered">
               {{ if .Note }}
                 <div class="tooltip">
                   <i class="fa-solid fa-note-sticky mx-auto"></i>
-                  <span class="tooltip-text">{{ .Note }}</span>
+                  <span class="tooltip-text" test-data-id="note"
+                    >{{ .Note }}</span
+                  >
                 </div>
               {{ end }}
             </td>
