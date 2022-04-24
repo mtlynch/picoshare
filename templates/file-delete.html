@@ -2,6 +2,7 @@
 {{ end }}
 
 {{ define "script-tags" }}
+  <script type="module" src="/js/fileDelete.js"></script>
 {{ end }}
 
 {{ define "custom-elements" }}
@@ -13,17 +14,30 @@
   <p>Are you sure you want to delete this file?</p>
 
   {{ with .Metadata }}
-    <a class="button is-link" href="/files/{{ .ID }}/edit" pico-purpose="edit">
-      Cancel
-    </a>
-    <a
-      class="button is-danger"
-      href="/files/{{ .ID }}/confirm-delete"
-      pico-purpose="delete"
-    >
-      <i class="fa fa-trash"></i>
-      Delete
-    </a>
+
+    <form>
+      <div class="field is-grouped is-flex is-justify-content-flex-end">
+        <div class="control">
+          <a
+            class="button is-link is-light"
+            href="/files/{{ .ID }}/edit"
+            pico-purpose="edit"
+          >
+            Cancel
+          </a>
+        </div>
+        <div class="control">
+          <button
+            class="button is-danger"
+            id="delete-btn"
+            data-entry-id="{{ .ID }}"
+          >
+            <i class="fa fa-trash mr-2"></i>
+            Delete
+          </button>
+        </div>
+      </div>
+    </form>
   {{ end }}
 {{ end }}
 

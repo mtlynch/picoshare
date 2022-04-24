@@ -216,10 +216,6 @@ func (s Server) fileEditGet() http.HandlerFunc {
 			return
 		}
 
-		log.Printf("meta: %+v", entry.UploadMetadata)       // DEBUG
-		log.Printf("note: %+v", entry.UploadMetadata.Note)  // DEBUG
-		log.Printf("note: %+v", *entry.UploadMetadata.Note) // DEBUG
-
 		if err := renderTemplate(w, "file-edit.html", struct {
 			commonProps
 			Metadata types.UploadMetadata
