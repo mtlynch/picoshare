@@ -1,4 +1,4 @@
-import { deleteFile } from "./controllers/delete.js";
+import { deleteFile } from "./controllers/files.js";
 import { copyToClipboard } from "./lib/clipboard.js";
 import { makeShortLink } from "./lib/links.js";
 
