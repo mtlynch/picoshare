@@ -264,6 +264,22 @@ func (d db) InsertEntry(reader io.Reader, metadata types.UploadMetadata) error {
 	return tx.Commit()
 }
 
+func (d db) UpdateEntryMetadata(id types.EntryID, metadata types.UploadMetadata) error {
+	log.Printf("updating metadata for entry %s", id)
+
+	if _, err := d.ctx.Exec(`
+	UPDATE entries
+	SET
+		filename = ?,
+		note = ?
+	WHERE
+		id=?`, metadata.Filename, metadata.Note, id); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (d db) DeleteEntry(id types.EntryID) error {
 	log.Printf("deleting entry %v", id)
 

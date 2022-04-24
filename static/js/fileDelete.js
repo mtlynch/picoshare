@@ -1,4 +1,4 @@
-import { deleteFile } from "./controllers/delete.js";
+import { deleteFile } from "./controllers/files.js";
 
 document.getElementById("delete-btn").addEventListener("click", (evt) => {
   evt.preventDefault();

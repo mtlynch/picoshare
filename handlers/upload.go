@@ -145,6 +145,61 @@ func (s Server) guestEntryPost() http.HandlerFunc {
 	}
 }
 
+func (s Server) entryPut() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id, err := parseEntryID(mux.Vars(r)["id"])
+		if err != nil {
+			log.Printf("error parsing ID: %v", err)
+			http.Error(w, fmt.Sprintf("bad entry ID: %v", err), http.StatusBadRequest)
+			return
+		}
+
+		log.Printf("request to edit %v", id) // DEBUG
+
+		metadata, err := entryMetadataFromRequest(r)
+		if err != nil {
+			log.Printf("error parsing entry edit request: %v", err)
+			http.Error(w, fmt.Sprintf("Bad request: %v", err), http.StatusBadRequest)
+			return
+		}
+
+		log.Printf("new metadata: %+v", metadata) // DEBUG
+
+		if err := s.store.UpdateEntryMetadata(id, metadata); err != nil {
+			log.Printf("error saving entry metadata: %v", err)
+			http.Error(w, fmt.Sprintf("Failed to save new entry data: %v", err), http.StatusInternalServerError)
+			return
+		}
+	}
+}
+
+func entryMetadataFromRequest(r *http.Request) (types.UploadMetadata, error) {
+	var payload struct {
+		Filename string `json:"filename"`
+		Note     string `json:"note"`
+	}
+	err := json.NewDecoder(r.Body).Decode(&payload)
+	if err != nil {
+		log.Printf("failed to decode JSON request: %v", err)
+		return types.UploadMetadata{}, err
+	}
+
+	filename, err := parse.Filename(payload.Filename)
+	if err != nil {
+		return types.UploadMetadata{}, err
+	}
+
+	note, err := parse.FileNote(payload.Note)
+	if err != nil {
+		return types.UploadMetadata{}, err
+	}
+
+	return types.UploadMetadata{
+		Filename: filename,
+		Note:     note,
+	}, nil
+}
+
 func generateEntryID() types.EntryID {
 	return types.EntryID(random.String(EntryIDLength, entryIDCharacters))
 }
