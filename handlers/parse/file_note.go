@@ -32,6 +32,8 @@ func FileNote(s string) (types.FileNote, error) {
 	return types.FileNote(&s), nil
 }
 
+// If the client sent a value of 'null' or 'undefined', it's likely a JS error
+// and not literally what the end-user submitted, so reject it.
 func checkJavaScriptNullOrUndefined(s string) error {
 	if s == "null" {
 		return errors.New("value of 'null' is not allowed")
