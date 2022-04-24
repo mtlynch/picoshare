@@ -2,6 +2,7 @@
 {{ end }}
 
 {{ define "script-tags" }}
+  <script type="module" src="/js/fileEdit.js"></script>
 {{ end }}
 
 {{ define "custom-elements" }}
@@ -11,7 +12,7 @@
   <h1 class="title">Edit File</h1>
 
   {{ with .Metadata }}
-    <form>
+    <form id="save-form" data-entry-id="{{ .ID }}">
       <div class="field my-5">
         <label class="label">Filename</label>
         <div class="control">
@@ -54,12 +55,16 @@
 
       <div class="field is-grouped is-flex is-justify-content-flex-end">
         <div class="control">
-          <button class="button is-link is-light" pico-purpose="cancel">
+          <a
+            href="/files"
+            class="button is-link is-light"
+            pico-purpose="cancel"
+          >
             Cancel
-          </button>
+          </a>
         </div>
         <div class="control">
-          <button class="button is-primary" pico-purpose="save">
+          <button class="button is-primary" id="save-btn">
             <i class="fa fa-save mr-2"></i>
             Save
           </button>
