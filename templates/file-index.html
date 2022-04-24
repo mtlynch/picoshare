@@ -53,13 +53,14 @@
                   </button>
                 </p>
                 <p class="control">
-                  <button
-                    class="button is-danger"
-                    pico-purpose="delete"
+                  <a
+                    class="button is-link"
+                    href="/files/{{ .ID }}/edit"
+                    pico-purpose="edit"
                     pico-entry-id="{{ .ID }}"
                   >
-                    <i class="fa fa-trash" aria-hidden="true"></i>
-                  </button>
+                    <i class="fas fa-edit"></i>
+                  </a>
                 </p>
               </div>
             </td>

@@ -1,0 +1,50 @@
+{{ define "style-tags" }}
+{{ end }}
+
+{{ define "script-tags" }}
+{{ end }}
+
+{{ define "custom-elements" }}
+{{ end }}
+
+{{ define "content" }}
+  <h1 class="title">Edit File</h1>
+
+  {{ with .Metadata }}
+
+    <div class="field my-5">
+      <label class="label">Filename</label>
+      <div class="control">
+        <input
+          id="note"
+          class="input is-normal"
+          type="text"
+          value="{{ .Filename }}"
+        />
+      </div>
+    </div>
+
+    <div class="field my-5">
+      <label class="label">Note</label>
+      <div class="control">
+        <input
+          id="note"
+          class="input is-normal"
+          type="text"
+          {{ if .Note }}
+            value="{{ .Note }}"
+          {{ end }}
+        />
+      </div>
+    </div>
+    <a
+      class="button is-danger"
+      href="/files/{{ .ID }}/confirm-delete"
+      pico-purpose="delete"
+    >
+      <i class="fa fa-trash"></i>
+    </a>
+  {{ end }}
+{{ end }}
+
+{{ template "base.html" }}

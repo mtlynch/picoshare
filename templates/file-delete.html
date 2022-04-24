@@ -1,0 +1,30 @@
+{{ define "style-tags" }}
+{{ end }}
+
+{{ define "script-tags" }}
+{{ end }}
+
+{{ define "custom-elements" }}
+{{ end }}
+
+{{ define "content" }}
+  <h1 class="title">Delete File</h1>
+
+  <p>Are you sure you want to delete this file?</p>
+
+  {{ with .Metadata }}
+    <a class="button is-link" href="/files/{{ .ID }}/edit" pico-purpose="edit">
+      Cancel
+    </a>
+    <a
+      class="button is-danger"
+      href="/files/{{ .ID }}/confirm-delete"
+      pico-purpose="delete"
+    >
+      <i class="fa fa-trash"></i>
+      Delete
+    </a>
+  {{ end }}
+{{ end }}
+
+{{ template "base.html" }}
