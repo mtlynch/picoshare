@@ -241,6 +241,7 @@ func (s Server) fileConfirmDeleteGet() http.HandlerFunc {
 			return
 		}
 
+		// TODO: We don't really need the full entry.
 		entry, err := s.store.GetEntry(id)
 		if _, ok := err.(store.EntryNotFoundError); ok {
 			http.Error(w, "entry not found", http.StatusNotFound)
