@@ -60,13 +60,13 @@ func TestFileNote(t *testing.T) {
 			if !tt.valid {
 				return
 			}
-			if got, want := note, tt.output; got == nil || *got != *want {
-				t.Errorf("note=%v, want=%v", *note, *want)
+			if got, want := note.String(), tt.output.String(); got != want {
+				t.Errorf("note=%v, want=%v", note, want)
 			}
 		})
 	}
 }
 
 func makeFileNote(s string) types.FileNote {
-	return types.FileNote(&s)
+	return types.FileNote{Value: &s}
 }
