@@ -14,47 +14,52 @@ func TestFilename(t *testing.T) {
 		description string
 		input       string
 		output      types.Filename
-		valid       bool
+		err         error
 	}{
 		{
 			description: "valid filename",
 			input:       "dummy.png",
-			valid:       true,
 			output:      types.Filename("dummy.png"),
+			err:         nil,
+		},
+		{
+			description: "empty filename",
+			input:       "",
+			err:         parse.ErrFilenameEmpty,
 		},
 		{
 			description: "filename with backslashes",
 			input:       `filename\with\backslashes.png`,
-			valid:       false,
+			err:         parse.ErrFilenameIllegalCharacters,
 		},
 		{
 			description: "filename that's just a dot",
 			input:       ".",
-			valid:       false,
+			err:         parse.ErrFilenameHasDotPrefix,
 		},
 		{
 			description: "filename that's two dots",
 			input:       "..",
-			valid:       false,
+			err:         parse.ErrFilenameHasDotPrefix,
 		},
 		{
 			description: "filename that's five dots",
 			input:       ".....",
-			valid:       false,
+			err:         parse.ErrFilenameHasDotPrefix,
 		},
 		{
 			description: "filename that's too long",
 			input:       strings.Repeat("A", parse.MaxFilenameLen+1),
-			valid:       false,
+			err:         parse.ErrFilenameTooLong,
 		},
 	} {
 		t.Run(fmt.Sprintf("%s [%s]", tt.description, tt.input), func(t *testing.T) {
 			filename, err := parse.Filename(tt.input)
-			if tt.valid && err != nil {
-				t.Fatalf("err=%v, want %v", err, !tt.valid)
+			if got, want := err, tt.err; got != want {
+				t.Fatalf("err=%v, want=%v", err, want)
 			}
 			if got, want := filename, tt.output; got != want {
-				t.Errorf("filename=%v, want %v", filename, want)
+				t.Errorf("filename=%v, want=%v", filename, want)
 			}
 		})
 	}
