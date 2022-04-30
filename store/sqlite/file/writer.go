@@ -62,10 +62,9 @@ func (w *writer) flush(n int) error {
 	(
 		id,
 		chunk_index,
-		chunk,
-		chunk_size
+		chunk
 	)
-	VALUES(?,?,?,?)`, w.entryID, idx, w.buf[0:n], n)
+	VALUES(?,?,?)`, w.entryID, idx, w.buf[0:n])
 
 	return err
 }
