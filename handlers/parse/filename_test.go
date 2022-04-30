@@ -28,11 +28,6 @@ func TestFilename(t *testing.T) {
 			err:         parse.ErrFilenameEmpty,
 		},
 		{
-			description: "empty filename",
-			input:       "",
-			valid:       false,
-		},
-		{
 			description: "filename with backslashes",
 			input:       `filename\with\backslashes.png`,
 			err:         parse.ErrFilenameIllegalCharacters,
