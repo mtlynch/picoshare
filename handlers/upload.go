@@ -32,6 +32,7 @@ type (
 	fileUpload struct {
 		Reader      io.Reader
 		Filename    types.Filename
+		Size        int64
 		Note        types.FileNote
 		ContentType types.ContentType
 	}
@@ -57,6 +58,7 @@ func (s Server) entryPost() http.HandlerFunc {
 		err = s.store.InsertEntry(uploadedFile.Reader,
 			types.UploadMetadata{
 				Filename:    uploadedFile.Filename,
+				Size:        uploadedFile.Size,
 				Note:        uploadedFile.Note,
 				ContentType: uploadedFile.ContentType,
 				ID:          id,
@@ -124,6 +126,7 @@ func (s Server) guestEntryPost() http.HandlerFunc {
 		err = s.store.InsertEntry(uploadedFile.Reader,
 			types.UploadMetadata{
 				Filename:    uploadedFile.Filename,
+				Size:        uploadedFile.Size,
 				ContentType: uploadedFile.ContentType,
 				ID:          id,
 				GuestLinkID: guestLinkID,
@@ -200,6 +203,7 @@ func fileFromRequest(w http.ResponseWriter, r *http.Request) (fileUpload, error)
 	return fileUpload{
 		Reader:      reader,
 		Filename:    filename,
+		Size:        metadata.Size,
 		Note:        note,
 		ContentType: contentType,
 	}, nil

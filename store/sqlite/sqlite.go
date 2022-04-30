@@ -108,25 +108,15 @@ func NewWithChunkSize(path string, chunkSize int) store.Store {
 func (d db) GetEntriesMetadata() ([]types.UploadMetadata, error) {
 	rows, err := d.ctx.Query(`
 	SELECT
-		entries.id AS id,
-		entries.filename AS filename,
-		entries.note AS note,
-		entries.content_type AS content_type,
-		entries.upload_time AS upload_time,
-		entries.expiration_time AS expiration_time,
-		sizes.file_size AS file_size
+		id,
+		filename,
+		size,
+		note,
+		content_type,
+		upload_time,
+		expiration_time
 	FROM
-		entries
-	INNER JOIN
-		(
-			SELECT
-				id,
-				SUM(LENGTH(chunk)) AS file_size
-			FROM
-				entries_data
-			GROUP BY
-				id
-		) sizes ON entries.id = sizes.id`)
+		entries`)
 	if err != nil {
 		return []types.UploadMetadata{}, err
 	}
@@ -135,12 +125,12 @@ func (d db) GetEntriesMetadata() ([]types.UploadMetadata, error) {
 	for rows.Next() {
 		var id string
 		var filename string
+		var size int64
 		var note *string
 		var contentType string
 		var uploadTimeRaw string
 		var expirationTimeRaw string
-		var fileSize int
-		err = rows.Scan(&id, &filename, &note, &contentType, &uploadTimeRaw, &expirationTimeRaw, &fileSize)
+		err = rows.Scan(&id, &filename, &size, &note, &contentType, &uploadTimeRaw, &expirationTimeRaw)
 		if err != nil {
 			return []types.UploadMetadata{}, err
 		}
@@ -162,7 +152,7 @@ func (d db) GetEntriesMetadata() ([]types.UploadMetadata, error) {
 			ContentType: types.ContentType(contentType),
 			Uploaded:    ut,
 			Expires:     types.ExpirationTime(et),
-			Size:        fileSize,
+			Size:        size,
 		})
 	}
 
@@ -240,12 +230,22 @@ func (d db) InsertEntry(reader io.Reader, metadata types.UploadMetadata) error {
 		id,
 		guest_link_id,
 		filename,
+		size,
 		note,
 		content_type,
 		upload_time,
 		expiration_time
 	)
-	VALUES(?,?,?,?,?,?,?)`, metadata.ID, metadata.GuestLinkID, metadata.Filename, metadata.Note, metadata.ContentType, formatTime(metadata.Uploaded), formatExpirationTime(metadata.Expires))
+	VALUES(?,?,?,?,?,?,?,?)`,
+		metadata.ID,
+		metadata.GuestLinkID,
+		metadata.Filename,
+		metadata.Size,
+		metadata.Note,
+		metadata.ContentType,
+		formatTime(metadata.Uploaded),
+		formatExpirationTime(metadata.Expires),
+	)
 	if err != nil {
 		log.Printf("insert into entries table failed, aborting transaction: %v", err)
 		return err
