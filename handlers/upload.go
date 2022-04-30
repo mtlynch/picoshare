@@ -87,16 +87,12 @@ func (s Server) entryPut() http.HandlerFunc {
 			return
 		}
 
-		log.Printf("request to edit %v", id) // DEBUG
-
 		metadata, err := entryMetadataFromRequest(r)
 		if err != nil {
 			log.Printf("error parsing entry edit request: %v", err)
 			http.Error(w, fmt.Sprintf("Bad request: %v", err), http.StatusBadRequest)
 			return
 		}
-
-		log.Printf("new metadata: %+v", metadata) // DEBUG
 
 		if err := s.store.UpdateEntryMetadata(id, metadata); err != nil {
 			log.Printf("error saving entry metadata: %v", err)

@@ -175,6 +175,16 @@ func TestEntryPut(t *testing.T) {
 			noteExpected:     types.FileNote{},
 			status:           http.StatusBadRequest,
 		},
+		{
+			description: "rejects update when note is invalid",
+			payload: `{
+				"filename": "cool-song.mp3",
+				"note":"<script>alert(1)</script>"
+			}`,
+			filenameExpected: "original-filename.mp3",
+			noteExpected:     types.FileNote{},
+			status:           http.StatusBadRequest,
+		},
 	} {
 		t.Run(tt.description, func(t *testing.T) {
 			store := test_sqlite.New()
