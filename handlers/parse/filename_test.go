@@ -23,6 +23,11 @@ func TestFilename(t *testing.T) {
 			output:      types.Filename("dummy.png"),
 		},
 		{
+			description: "empty filename",
+			input:       "",
+			valid:       false,
+		},
+		{
 			description: "filename with backslashes",
 			input:       `filename\with\backslashes.png`,
 			valid:       false,

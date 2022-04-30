@@ -143,6 +143,11 @@ func TestEntryPost(t *testing.T) {
 }
 
 func TestEntryPut(t *testing.T) {
+	originalEntry := types.UploadMetadata{
+		ID:       types.EntryID("AAAAAAAAAA"),
+		Filename: types.Filename("original-filename.mp3"),
+		Note:     types.FileNote{},
+	}
 	for _, tt := range []struct {
 		description      string
 		payload          string
@@ -167,21 +172,16 @@ func TestEntryPut(t *testing.T) {
 				"note":"My latest track"
 			}`,
 			filenameExpected: "original-filename.mp3",
-			noteExpected:     nil,
-			status:           http.StatusOK,
+			noteExpected:     types.FileNote{},
+			status:           http.StatusBadRequest,
 		},
 	} {
 		t.Run(tt.description, func(t *testing.T) {
-			id := types.EntryID("AAAAAAAAAA")
 			store := test_sqlite.New()
-			store.InsertEntry(strings.NewReader(("dummy data")), types.UploadMetadata{
-				ID:       id,
-				Filename: types.Filename("original-filename.mp3"),
-				Note:     nil,
-			})
+			store.InsertEntry(strings.NewReader(("dummy data")), originalEntry)
 			s := handlers.New(mockAuthenticator{}, store)
 
-			req, err := http.NewRequest("PUT", "/api/entry/"+string(id), strings.NewReader(tt.payload))
+			req, err := http.NewRequest("PUT", "/api/entry/"+string(originalEntry.ID), strings.NewReader(tt.payload))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -191,19 +191,19 @@ func TestEntryPut(t *testing.T) {
 			s.Router().ServeHTTP(w, req)
 
 			if got, want := w.Code, tt.status; got != want {
-				t.Errorf("status=%d, want=%d", got, want)
+				t.Fatalf("status=%d, want=%d", got, want)
 			}
 
-			entry, err := store.GetEntry(types.EntryID(id))
+			entry, err := store.GetEntry(types.EntryID(originalEntry.ID))
 			if err != nil {
-				t.Fatalf("failed to get expected entry %v from data store: %v", id, err)
+				t.Fatalf("failed to get expected entry %v from data store: %v", originalEntry.ID, err)
 			}
 
 			if got, want := entry.Filename, types.Filename(tt.filenameExpected); got != want {
 				t.Errorf("filename=%v, want=%v", got, want)
 			}
 
-			if got, want := entry.Note, tt.noteExpected; got != want {
+			if got, want := entry.Note.String(), tt.noteExpected.String(); got != want {
 				t.Errorf("note=%v, want=%v", got, want)
 			}
 		})
@@ -428,5 +428,5 @@ func mustReadAll(r io.Reader) []byte {
 }
 
 func makeNote(s string) types.FileNote {
-	return types.FileNote(&s)
+	return types.FileNote{Value: &s}
 }

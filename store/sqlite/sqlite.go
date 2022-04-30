@@ -281,7 +281,7 @@ func (d db) UpdateEntryMetadata(id types.EntryID, metadata types.UploadMetadata)
 		filename = ?,
 		note = ?
 	WHERE
-		id=?`, metadata.Filename, metadata.Note, id); err != nil {
+		id=?`, metadata.Filename, metadata.Note.Value, id); err != nil {
 		return err
 	}
 
