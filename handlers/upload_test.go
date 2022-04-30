@@ -269,7 +269,7 @@ func TestGuestUpload(t *testing.T) {
 
 			filename := "dummyimage.png"
 			contents := "dummy bytes"
-			formData, contentType := createMultipartFormBody(filename, tt.note, makeData(contents))
+			formData, contentType := createMultipartFormBody(filename, tt.note, strings.NewReader(contents))
 
 			req, err := http.NewRequest("POST", "/api/guest/"+tt.guestLinkID, formData)
 			if err != nil {
