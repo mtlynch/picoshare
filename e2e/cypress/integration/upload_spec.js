@@ -116,7 +116,23 @@ it("uploads a file and deletes it", () => {
     "contain",
     "kittyface.jpg"
   );
-  // TODO: Delete file
+
+  cy.get('.table tbody tr:first-child [pico-purpose="edit"]').click();
+
+  // TODO: Verify route /files/{ID}/edit
+
+  cy.location("pathname").should("match", new RegExp("/files/.+/edit"));
+
+  cy.get('[pico-purpose="delete"]').click();
+
+  cy.location("pathname").should(
+    "match",
+    new RegExp("/files/.+/confirm-delete")
+  );
+
+  cy.get("#delete-btn").click();
+
+  cy.location("pathname").should("eq", "/files");
 });
 
 it("uploads a file and deletes its note", () => {
