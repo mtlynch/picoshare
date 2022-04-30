@@ -66,12 +66,12 @@ func TestCollectExpiredFile(t *testing.T) {
 		{
 			ID:      types.EntryID("BBBBBBBBBBBB"),
 			Expires: mustParseExpirationTime("3000-01-01T00:00:00Z"),
-			Size:    len(d),
+			Size:    int64(len(d)),
 		},
 		{
 			ID:      types.EntryID("CCCCCCCCCCCC"),
 			Expires: types.NeverExpire,
-			Size:    len(d),
+			Size:    int64(len(d)),
 		},
 	}
 	if !reflect.DeepEqual(expected, remaining) {
@@ -118,17 +118,17 @@ func TestCollectDoesNothingWhenNoFilesAreExpired(t *testing.T) {
 		{
 			ID:      types.EntryID("AAAAAAAAAAAA"),
 			Expires: mustParseExpirationTime("4000-01-01T00:00:00Z"),
-			Size:    len(d),
+			Size:    int64(len(d)),
 		},
 		{
 			ID:      types.EntryID("BBBBBBBBBBBB"),
 			Expires: mustParseExpirationTime("3000-01-01T00:00:00Z"),
-			Size:    len(d),
+			Size:    int64(len(d)),
 		},
 		{
 			ID:      types.EntryID("CCCCCCCCCCCC"),
 			Expires: types.NeverExpire,
-			Size:    len(d),
+			Size:    int64(len(d)),
 		},
 	}
 	if !reflect.DeepEqual(expected, remaining) {

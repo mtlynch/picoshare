@@ -139,7 +139,7 @@ func (d db) GetEntriesMetadata() ([]types.UploadMetadata, error) {
 		var contentType string
 		var uploadTimeRaw string
 		var expirationTimeRaw string
-		var fileSize int
+		var fileSize int64
 		err = rows.Scan(&id, &filename, &note, &contentType, &uploadTimeRaw, &expirationTimeRaw, &fileSize)
 		if err != nil {
 			return []types.UploadMetadata{}, err
