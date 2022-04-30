@@ -18,18 +18,18 @@ var illegalNoteTagPattern = regexp.MustCompile(`<\s*/?((script)|(iframe))\s*>`)
 
 func FileNote(s string) (types.FileNote, error) {
 	if s == "" {
-		return nil, nil
+		return types.FileNote{}, nil
 	}
 	if len(s) > MaxFileNoteLen {
-		return nil, errors.New("note is too long")
+		return types.FileNote{}, errors.New("note is too long")
 	}
 	if err := checkJavaScriptNullOrUndefined(s); err != nil {
-		return nil, err
+		return types.FileNote{}, err
 	}
 	if illegalNoteTagPattern.MatchString(s) {
-		return nil, errors.New("note must not contain HTML tags")
+		return types.FileNote{}, errors.New("note must not contain HTML tags")
 	}
-	return types.FileNote(&s), nil
+	return types.FileNote{Value: &s}, nil
 }
 
 // If the client sent a value of 'null' or 'undefined', it's likely a JS error

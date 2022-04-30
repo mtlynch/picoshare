@@ -143,7 +143,7 @@ func (s Server) guestEntryPost() http.HandlerFunc {
 			return
 		}
 
-		if uploadedFile.Note != nil {
+		if uploadedFile.Note.Value != nil {
 			http.Error(w, "Guest uploads cannot have file notes", http.StatusBadRequest)
 			return
 		}

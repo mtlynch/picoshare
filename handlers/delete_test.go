@@ -1,10 +1,9 @@
 package handlers_test
 
 import (
-	"bytes"
-	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/mtlynch/picoshare/v2/handlers"
@@ -15,7 +14,7 @@ import (
 
 func TestDeleteExistingFile(t *testing.T) {
 	dataStore := test_sqlite.New()
-	dataStore.InsertEntry(makeData("dummy data"),
+	dataStore.InsertEntry(strings.NewReader("dummy data"),
 		types.UploadMetadata{
 			ID: types.EntryID("hR87apiUCj"),
 		})
@@ -79,8 +78,4 @@ func TestDeleteInvalidEntryID(t *testing.T) {
 		t.Fatalf("DELETE /api/entry returned wrong status code: got %v want %v",
 			status, http.StatusBadRequest)
 	}
-}
-
-func makeData(s string) io.Reader {
-	return bytes.NewReader([]byte(s))
 }

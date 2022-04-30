@@ -158,7 +158,7 @@ func (d db) GetEntriesMetadata() ([]types.UploadMetadata, error) {
 		ee = append(ee, types.UploadMetadata{
 			ID:          types.EntryID(id),
 			Filename:    types.Filename(filename),
-			Note:        types.FileNote(note),
+			Note:        types.FileNote{Value: note},
 			ContentType: types.ContentType(contentType),
 			Uploaded:    ut,
 			Expires:     types.ExpirationTime(et),
@@ -217,7 +217,7 @@ func (d db) GetEntry(id types.EntryID) (types.UploadEntry, error) {
 		UploadMetadata: types.UploadMetadata{
 			ID:          id,
 			Filename:    types.Filename(filename),
-			Note:        types.FileNote(note),
+			Note:        types.FileNote{Value: note},
 			ContentType: types.ContentType(contentType),
 			Uploaded:    ut,
 			Expires:     types.ExpirationTime(et),
@@ -245,7 +245,15 @@ func (d db) InsertEntry(reader io.Reader, metadata types.UploadMetadata) error {
 		upload_time,
 		expiration_time
 	)
-	VALUES(?,?,?,?,?,?,?)`, metadata.ID, metadata.GuestLinkID, metadata.Filename, metadata.Note, metadata.ContentType, formatTime(metadata.Uploaded), formatExpirationTime(metadata.Expires))
+	VALUES(?,?,?,?,?,?,?)`,
+		metadata.ID,
+		metadata.GuestLinkID,
+		metadata.Filename,
+		metadata.Note.Value,
+		metadata.ContentType,
+		formatTime(metadata.Uploaded),
+		formatExpirationTime(metadata.Expires),
+	)
 	if err != nil {
 		log.Printf("insert into entries table failed, aborting transaction: %v", err)
 		return err
