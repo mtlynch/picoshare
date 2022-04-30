@@ -16,9 +16,12 @@ func TestInsertDeleteSingleEntry(t *testing.T) {
 	chunkSize := 5
 	db := test_sqlite.NewWithChunkSize(chunkSize)
 
-	if err := db.InsertEntry(bytes.NewBufferString("hello, world!"), types.UploadMetadata{
+	contents := "hello, world!"
+
+	if err := db.InsertEntry(bytes.NewBufferString(contents), types.UploadMetadata{
 		ID:       types.EntryID("dummy-id"),
 		Filename: "dummy-file.txt",
+		Size:     int64(len(contents)),
 		Expires:  mustParseExpirationTime("2040-01-01T00:00:00Z"),
 	}); err != nil {
 		t.Fatalf("failed to insert file into sqlite: %v", err)
@@ -29,14 +32,13 @@ func TestInsertDeleteSingleEntry(t *testing.T) {
 		t.Fatalf("failed to get entry from DB: %v", err)
 	}
 
-	contents, err := ioutil.ReadAll(entry.Reader)
+	data, err := ioutil.ReadAll(entry.Reader)
 	if err != nil {
 		t.Fatalf("failed to read entry contents: %v", err)
 	}
 
-	expected := "hello, world!"
-	if string(contents) != expected {
-		log.Fatalf("unexpected file contents: got %v, want %v", string(contents), expected)
+	if got, want := string(data), contents; got != want {
+		t.Fatalf("contents=%s, want=%s", got, want)
 	}
 
 	meta, err := db.GetEntriesMetadata()
@@ -48,8 +50,8 @@ func TestInsertDeleteSingleEntry(t *testing.T) {
 		t.Fatalf("unexpected metadata size: got %v, want %v", len(meta), 1)
 	}
 
-	if meta[0].Size != int64(len(expected)) {
-		t.Fatalf("unexpected file size in entry metadata: got %v, want %v", meta[0].Size, len(expected))
+	if got, want := meta[0].Size, int64(len(contents)); got != want {
+		t.Fatalf("file size=%d, want %d", got, want)
 	}
 
 	expectedFilename := types.Filename("dummy-file.txt")

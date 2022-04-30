@@ -16,11 +16,11 @@ type (
 		ID          EntryID
 		GuestLinkID GuestLinkID
 		Filename    Filename
+		Size        int64
 		Note        FileNote
 		ContentType ContentType
 		Uploaded    time.Time
 		Expires     ExpirationTime
-		Size        int64
 	}
 
 	UploadEntry struct {
