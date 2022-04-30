@@ -1,4 +1,5 @@
 import { guestUploadFile, uploadFile } from "./controllers/files.js";
+import { showElement, hideElement } from "./lib/bulma.js";
 
 const uploadEl = document.querySelector(".file");
 const resultEl = document.getElementById("upload-result");
@@ -10,14 +11,6 @@ const expirationContainer = document.querySelector(".expiration-container");
 const expirationSelect = document.getElementById("expiration-select");
 const noteInput = document.getElementById("note");
 const uploadAnotherBtn = document.getElementById("upload-another-btn");
-
-function hideElement(el) {
-  el.classList.add("is-hidden");
-}
-
-function showElement(el) {
-  el.classList.remove("is-hidden");
-}
 
 function getGuestLinkMetdata() {
   const el = document.getElementById("guest-link-metadata");

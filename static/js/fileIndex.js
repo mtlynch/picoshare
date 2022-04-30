@@ -1,16 +1,9 @@
 import { deleteFile } from "./controllers/files.js";
+import { showElement, hideElement } from "./lib/bulma.js";
 import { copyToClipboard } from "./lib/clipboard.js";
 import { makeShortLink } from "./lib/links.js";
 
 const errorContainer = document.getElementById("error");
-
-function hideElement(el) {
-  el.classList.add("is-hidden");
-}
-
-function showElement(el) {
-  el.classList.remove("is-hidden");
-}
 
 document.querySelectorAll('[pico-purpose="delete"]').forEach((deleteBtn) => {
   deleteBtn.addEventListener("click", () => {

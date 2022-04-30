@@ -177,7 +177,7 @@ func (s Server) fileIndexGet() http.HandlerFunc {
 				delta := time.Until(t)
 				return fmt.Sprintf("%s (%.0f days)", t.Format("2006-01-02"), delta.Hours()/24)
 			},
-			"formatFileSize": func(b int) string {
+			"formatFileSize": func(b int64) string {
 				const unit = 1024
 
 				if b < unit {
