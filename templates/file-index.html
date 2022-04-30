@@ -31,7 +31,7 @@
               <a href="/!{{ .ID }}">{{ .Filename }}</a>
             </td>
             <td class="is-vcentered">
-              {{ if .Note }}
+              {{ if .Note.Value }}
                 <div class="tooltip">
                   <i class="fa-solid fa-note-sticky mx-auto"></i>
                   <span class="tooltip-text" test-data-id="note"
