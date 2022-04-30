@@ -183,7 +183,7 @@ func (s Server) fileIndexGet() http.HandlerFunc {
 				if b < unit {
 					return fmt.Sprintf("%d B", b)
 				}
-				div, exp := unit, 0
+				div, exp := int64(unit), 0
 				for n := b / unit; n >= unit; n /= unit {
 					div *= unit
 					exp++
