@@ -206,7 +206,7 @@ func (s Server) fileEditGet() http.HandlerFunc {
 			return
 		}
 
-		entry, err := s.store.GetEntry(id)
+		metadata, err := s.store.GetEntryMetadata(id)
 		if _, ok := err.(store.EntryNotFoundError); ok {
 			http.Error(w, "entry not found", http.StatusNotFound)
 			return
@@ -224,7 +224,7 @@ func (s Server) fileEditGet() http.HandlerFunc {
 				Title:           "PicoShare - Edit",
 				IsAuthenticated: s.isAuthenticated(r),
 			},
-			Metadata: entry.UploadMetadata,
+			Metadata: metadata,
 		}, template.FuncMap{}); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -241,8 +241,7 @@ func (s Server) fileConfirmDeleteGet() http.HandlerFunc {
 			return
 		}
 
-		// TODO: We don't really need the full entry.
-		entry, err := s.store.GetEntry(id)
+		metadata, err := s.store.GetEntryMetadata(id)
 		if _, ok := err.(store.EntryNotFoundError); ok {
 			http.Error(w, "entry not found", http.StatusNotFound)
 			return
@@ -259,7 +258,7 @@ func (s Server) fileConfirmDeleteGet() http.HandlerFunc {
 				Title:           "PicoShare - Delete",
 				IsAuthenticated: s.isAuthenticated(r),
 			},
-			Metadata: entry.UploadMetadata,
+			Metadata: metadata,
 		}, template.FuncMap{}); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return

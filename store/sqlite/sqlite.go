@@ -170,40 +170,7 @@ func (d db) GetEntriesMetadata() ([]types.UploadMetadata, error) {
 }
 
 func (d db) GetEntry(id types.EntryID) (types.UploadEntry, error) {
-	stmt, err := d.ctx.Prepare(`
-		SELECT
-			filename,
-			note,
-			content_type,
-			upload_time,
-			expiration_time
-		FROM
-			entries
-		WHERE
-			id=?`)
-	if err != nil {
-		return types.UploadEntry{}, err
-	}
-	defer stmt.Close()
-
-	var filename string
-	var note *string
-	var contentType string
-	var uploadTimeRaw string
-	var expirationTimeRaw string
-	err = stmt.QueryRow(id).Scan(&filename, &note, &contentType, &uploadTimeRaw, &expirationTimeRaw)
-	if err == sql.ErrNoRows {
-		return types.UploadEntry{}, store.EntryNotFoundError{ID: id}
-	} else if err != nil {
-		return types.UploadEntry{}, err
-	}
-
-	ut, err := parseDatetime(uploadTimeRaw)
-	if err != nil {
-		return types.UploadEntry{}, err
-	}
-
-	et, err := parseDatetime(expirationTimeRaw)
+	metadata, err := d.GetEntryMetadata(id)
 	if err != nil {
 		return types.UploadEntry{}, err
 	}
@@ -214,15 +181,57 @@ func (d db) GetEntry(id types.EntryID) (types.UploadEntry, error) {
 	}
 
 	return types.UploadEntry{
-		UploadMetadata: types.UploadMetadata{
-			ID:          id,
-			Filename:    types.Filename(filename),
-			Note:        types.FileNote{Value: note},
-			ContentType: types.ContentType(contentType),
-			Uploaded:    ut,
-			Expires:     types.ExpirationTime(et),
-		},
-		Reader: r,
+		UploadMetadata: metadata,
+		Reader:         r,
+	}, nil
+}
+
+func (d db) GetEntryMetadata(id types.EntryID) (types.UploadMetadata, error) {
+	stmt, err := d.ctx.Prepare(`
+	SELECT
+		filename,
+		note,
+		content_type,
+		upload_time,
+		expiration_time
+	FROM
+		entries
+	WHERE
+		id=?`)
+	if err != nil {
+		return types.UploadMetadata{}, err
+	}
+	defer stmt.Close()
+
+	var filename string
+	var note *string
+	var contentType string
+	var uploadTimeRaw string
+	var expirationTimeRaw string
+	err = stmt.QueryRow(id).Scan(&filename, &note, &contentType, &uploadTimeRaw, &expirationTimeRaw)
+	if err == sql.ErrNoRows {
+		return types.UploadMetadata{}, store.EntryNotFoundError{ID: id}
+	} else if err != nil {
+		return types.UploadMetadata{}, err
+	}
+
+	ut, err := parseDatetime(uploadTimeRaw)
+	if err != nil {
+		return types.UploadMetadata{}, err
+	}
+
+	et, err := parseDatetime(expirationTimeRaw)
+	if err != nil {
+		return types.UploadMetadata{}, err
+	}
+
+	return types.UploadMetadata{
+		ID:          id,
+		Filename:    types.Filename(filename),
+		Note:        types.FileNote{Value: note},
+		ContentType: types.ContentType(contentType),
+		Uploaded:    ut,
+		Expires:     types.ExpirationTime(et),
 	}, nil
 }
 
