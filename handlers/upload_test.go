@@ -142,6 +142,74 @@ func TestEntryPost(t *testing.T) {
 	}
 }
 
+func TestEntryPut(t *testing.T) {
+	for _, tt := range []struct {
+		description      string
+		payload          string
+		filenameExpected string
+		noteExpected     types.FileNote
+		status           int
+	}{
+		{
+			description: "updates metadata for valid filename and note",
+			payload: `{
+				"filename": "cool-song.mp3",
+				"note":"My latest track"
+			}`,
+			filenameExpected: "cool-song.mp3",
+			noteExpected:     makeNote("My latest track"),
+			status:           http.StatusOK,
+		},
+		{
+			description: "rejects update when filename is invalid",
+			payload: `{
+				"filename": "",
+				"note":"My latest track"
+			}`,
+			filenameExpected: "original-filename.mp3",
+			noteExpected:     nil,
+			status:           http.StatusOK,
+		},
+	} {
+		t.Run(tt.description, func(t *testing.T) {
+			id := types.EntryID("AAAAAAAAAA")
+			store := test_sqlite.New()
+			store.InsertEntry(strings.NewReader(("dummy data")), types.UploadMetadata{
+				ID:       id,
+				Filename: types.Filename("original-filename.mp3"),
+				Note:     nil,
+			})
+			s := handlers.New(mockAuthenticator{}, store)
+
+			req, err := http.NewRequest("PUT", "/api/entry/"+string(id), strings.NewReader(tt.payload))
+			if err != nil {
+				t.Fatal(err)
+			}
+			req.Header.Add("Content-Type", "text/json")
+
+			w := httptest.NewRecorder()
+			s.Router().ServeHTTP(w, req)
+
+			if got, want := w.Code, tt.status; got != want {
+				t.Errorf("status=%d, want=%d", got, want)
+			}
+
+			entry, err := store.GetEntry(types.EntryID(id))
+			if err != nil {
+				t.Fatalf("failed to get expected entry %v from data store: %v", id, err)
+			}
+
+			if got, want := entry.Filename, types.Filename(tt.filenameExpected); got != want {
+				t.Errorf("filename=%v, want=%v", got, want)
+			}
+
+			if got, want := entry.Note, tt.noteExpected; got != want {
+				t.Errorf("note=%v, want=%v", got, want)
+			}
+		})
+	}
+}
+
 func TestGuestUpload(t *testing.T) {
 	authenticator, err := shared_secret.New("dummypass")
 	if err != nil {
@@ -357,4 +425,8 @@ func mustReadAll(r io.Reader) []byte {
 		panic(err)
 	}
 	return d
+}
+
+func makeNote(s string) types.FileNote {
+	return types.FileNote(&s)
 }

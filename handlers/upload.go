@@ -78,6 +78,34 @@ func (s Server) entryPost() http.HandlerFunc {
 	}
 }
 
+func (s Server) entryPut() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id, err := parseEntryID(mux.Vars(r)["id"])
+		if err != nil {
+			log.Printf("error parsing ID: %v", err)
+			http.Error(w, fmt.Sprintf("bad entry ID: %v", err), http.StatusBadRequest)
+			return
+		}
+
+		log.Printf("request to edit %v", id) // DEBUG
+
+		metadata, err := entryMetadataFromRequest(r)
+		if err != nil {
+			log.Printf("error parsing entry edit request: %v", err)
+			http.Error(w, fmt.Sprintf("Bad request: %v", err), http.StatusBadRequest)
+			return
+		}
+
+		log.Printf("new metadata: %+v", metadata) // DEBUG
+
+		if err := s.store.UpdateEntryMetadata(id, metadata); err != nil {
+			log.Printf("error saving entry metadata: %v", err)
+			http.Error(w, fmt.Sprintf("Failed to save new entry data: %v", err), http.StatusInternalServerError)
+			return
+		}
+	}
+}
+
 func (s Server) guestEntryPost() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		guestLinkID, err := parseGuestLinkID(mux.Vars(r)["guestLinkID"])
@@ -141,34 +169,6 @@ func (s Server) guestEntryPost() http.HandlerFunc {
 			ID: string(id),
 		}); err != nil {
 			panic(err)
-		}
-	}
-}
-
-func (s Server) entryPut() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		id, err := parseEntryID(mux.Vars(r)["id"])
-		if err != nil {
-			log.Printf("error parsing ID: %v", err)
-			http.Error(w, fmt.Sprintf("bad entry ID: %v", err), http.StatusBadRequest)
-			return
-		}
-
-		log.Printf("request to edit %v", id) // DEBUG
-
-		metadata, err := entryMetadataFromRequest(r)
-		if err != nil {
-			log.Printf("error parsing entry edit request: %v", err)
-			http.Error(w, fmt.Sprintf("Bad request: %v", err), http.StatusBadRequest)
-			return
-		}
-
-		log.Printf("new metadata: %+v", metadata) // DEBUG
-
-		if err := s.store.UpdateEntryMetadata(id, metadata); err != nil {
-			log.Printf("error saving entry metadata: %v", err)
-			http.Error(w, fmt.Sprintf("Failed to save new entry data: %v", err), http.StatusInternalServerError)
-			return
 		}
 	}
 }
