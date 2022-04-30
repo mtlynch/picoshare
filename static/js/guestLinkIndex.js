@@ -1,15 +1,8 @@
 import { guestLinkDelete } from "./controllers/guestLinks.js";
+import { showElement, hideElement } from "./lib/bulma.js";
 import { copyToClipboard } from "./lib/clipboard.js";
 
 const errorContainer = document.getElementById("error");
-
-function hideElement(el) {
-  el.classList.add("is-hidden");
-}
-
-function showElement(el) {
-  el.classList.remove("is-hidden");
-}
 
 function makeGuestLink(linkId) {
   return `${window.location.origin}/g/${linkId}`;
