@@ -110,7 +110,7 @@ func (d db) GetEntriesMetadata() ([]types.UploadMetadata, error) {
 	SELECT
 		id,
 		filename,
-		size,
+		file_size,
 		note,
 		content_type,
 		upload_time,
@@ -163,6 +163,7 @@ func (d db) GetEntry(id types.EntryID) (types.UploadEntry, error) {
 	stmt, err := d.ctx.Prepare(`
 		SELECT
 			filename,
+			file_size,
 			note,
 			content_type,
 			upload_time,
@@ -177,11 +178,12 @@ func (d db) GetEntry(id types.EntryID) (types.UploadEntry, error) {
 	defer stmt.Close()
 
 	var filename string
+	var fileSize int64
 	var note *string
 	var contentType string
 	var uploadTimeRaw string
 	var expirationTimeRaw string
-	err = stmt.QueryRow(id).Scan(&filename, &note, &contentType, &uploadTimeRaw, &expirationTimeRaw)
+	err = stmt.QueryRow(id).Scan(&filename, &fileSize, &note, &contentType, &uploadTimeRaw, &expirationTimeRaw)
 	if err == sql.ErrNoRows {
 		return types.UploadEntry{}, store.EntryNotFoundError{ID: id}
 	} else if err != nil {
@@ -230,7 +232,7 @@ func (d db) InsertEntry(reader io.Reader, metadata types.UploadMetadata) error {
 		id,
 		guest_link_id,
 		filename,
-		size,
+		file_size,
 		note,
 		content_type,
 		upload_time,
