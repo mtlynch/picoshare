@@ -124,7 +124,7 @@ func getFileLength(db *sql.DB, id types.EntryID, chunkSize int64) (int64, error)
 	stmt, err := db.Prepare(`
 	SELECT
 		chunk_index,
-		LENGTH(chunk) AS chunk_size
+		chunk_size
 	FROM
 		entries_data
 	WHERE
@@ -151,7 +151,7 @@ func getFileLength(db *sql.DB, id types.EntryID, chunkSize int64) (int64, error)
 func getChunkSize(db *sql.DB, id types.EntryID) (int64, error) {
 	stmt, err := db.Prepare(`
 	SELECT
-		LENGTH(chunk) AS chunk_size
+		chunk_size
 	FROM
 		entries_data
 	WHERE

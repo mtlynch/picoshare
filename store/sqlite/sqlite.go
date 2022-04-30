@@ -121,7 +121,7 @@ func (d db) GetEntriesMetadata() ([]types.UploadMetadata, error) {
 		(
 			SELECT
 				id,
-				SUM(LENGTH(chunk)) AS file_size
+				SUM(chunk_size) AS file_size
 			FROM
 				entries_data
 			GROUP BY
