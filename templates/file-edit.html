@@ -2,7 +2,49 @@
 {{ end }}
 
 {{ define "script-tags" }}
-  <script type="module" src="/js/fileEdit.js"></script>
+  <script type="module">
+    import { editFile } from "/js/controllers/files.js";
+    import { showElement, hideElement } from "/js/lib/bulma.js";
+
+    const editForm = document.getElementById("edit-form");
+    const errorContainer = document.getElementById("error");
+    const progressSpinner = document.getElementById("progress-spinner");
+
+    function readFilename() {
+      return document.getElementById("filename").value || null;
+    }
+
+    function readNote() {
+      return document.getElementById("note").value || null;
+    }
+
+    document.getElementById("save-btn").addEventListener("click", (evt) => {
+      evt.preventDefault();
+      const id = document
+        .getElementById("edit-form")
+        .getAttribute("data-entry-id");
+      if (!id) {
+        return;
+      }
+
+      hideElement(errorContainer);
+      hideElement(editForm);
+      showElement(progressSpinner);
+
+      editFile(id, readFilename(), readNote())
+        .then(() => {
+          document.location = "/files";
+        })
+        .catch((error) => {
+          document.getElementById("error-message").innerText = error;
+          showElement(errorContainer);
+          showElement(editForm);
+        })
+        .finally(() => {
+          hideElement(progressSpinner);
+        });
+    });
+  </script>
 {{ end }}
 
 {{ define "custom-elements" }}
@@ -12,7 +54,7 @@
   <h1 class="title">Edit File</h1>
 
   {{ with .Metadata }}
-    <form id="save-form" data-entry-id="{{ .ID }}">
+    <form id="edit-form" data-entry-id="{{ .ID }}">
       <div class="field my-5">
         <label class="label">Filename</label>
         <div class="control">
@@ -32,7 +74,7 @@
             id="note"
             class="input is-normal"
             type="text"
-            {{ if .Note }}
+            {{ if .Note.Value }}
               value="{{ .Note }}"
             {{ end }}
           />
@@ -71,6 +113,16 @@
         </div>
       </div>
     </form>
+
+    <div class="fa-3x is-hidden" id="progress-spinner">
+      <i class="fas fa-spinner fa-spin"></i>
+    </div>
+
+    <div id="error" class="is-hidden my-3">
+      <article class="message is-danger">
+        <div id="error-message" class="message-body">Placeholder error.</div>
+      </article>
+    </div>
   {{ end }}
 {{ end }}
 
