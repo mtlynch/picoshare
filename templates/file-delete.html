@@ -9,18 +9,11 @@
 {{ define "script-tags" }}
   <script type="module">
     import { deleteFile } from "/js/controllers/files.js";
+    import { showElement, hideElement } from "/js/lib/bulma.js";
 
     const deleteForm = document.getElementById("delete-form");
     const errorContainer = document.getElementById("error");
     const progressSpinner = document.getElementById("progress-spinner");
-
-    function hideElement(el) {
-      el.classList.add("is-hidden");
-    }
-
-    function showElement(el) {
-      el.classList.remove("is-hidden");
-    }
 
     document.getElementById("delete-btn").addEventListener("click", (evt) => {
       evt.preventDefault();
