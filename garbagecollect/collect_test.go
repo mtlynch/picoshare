@@ -39,16 +39,19 @@ func TestCollectExpiredFile(t *testing.T) {
 		types.UploadMetadata{
 			ID:      types.EntryID("AAAAAAAAAAAA"),
 			Expires: mustParseExpirationTime("2000-01-01T00:00:00Z"),
+			Size:    int64(len(d)),
 		})
 	dataStore.InsertEntry(makeData(d),
 		types.UploadMetadata{
 			ID:      types.EntryID("BBBBBBBBBBBB"),
 			Expires: mustParseExpirationTime("3000-01-01T00:00:00Z"),
+			Size:    int64(len(d)),
 		})
 	dataStore.InsertEntry(makeData(d),
 		types.UploadMetadata{
 			ID:      types.EntryID("CCCCCCCCCCCC"),
 			Expires: types.NeverExpire,
+			Size:    int64(len(d)),
 		})
 
 	c := garbagecollect.NewCollector(dataStore)
@@ -85,16 +88,19 @@ func TestCollectDoesNothingWhenNoFilesAreExpired(t *testing.T) {
 	dataStore.InsertEntry(makeData(d),
 		types.UploadMetadata{
 			ID:      types.EntryID("AAAAAAAAAAAA"),
+			Size:    int64(len(d)),
 			Expires: mustParseExpirationTime("4000-01-01T00:00:00Z"),
 		})
 	dataStore.InsertEntry(makeData(d),
 		types.UploadMetadata{
 			ID:      types.EntryID("BBBBBBBBBBBB"),
+			Size:    int64(len(d)),
 			Expires: mustParseExpirationTime("3000-01-01T00:00:00Z"),
 		})
 	dataStore.InsertEntry(makeData(d),
 		types.UploadMetadata{
 			ID:      types.EntryID("CCCCCCCCCCCC"),
+			Size:    int64(len(d)),
 			Expires: types.NeverExpire,
 		})
 
