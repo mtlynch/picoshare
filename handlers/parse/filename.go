@@ -13,15 +13,23 @@ import (
 // common filename limit across most filesystems.
 const MaxFilenameLen = 255
 
+var ErrFilenameEmpty = errors.New("filename must be non-empty")
+var ErrFilenameTooLong = errors.New("filename too long")
+var ErrFilenameHasDotPrefix = errors.New("filename cannot begin with dots")
+var ErrFilenameIllegalCharacters = errors.New("illegal characters in filename")
+
 func Filename(s string) (types.Filename, error) {
+	if s == "" {
+		return types.Filename(""), ErrFilenameEmpty
+	}
 	if len(s) > MaxFilenameLen {
-		return types.Filename(""), errors.New("filename too long")
+		return types.Filename(""), ErrFilenameTooLong
 	}
 	if s == "." || strings.HasPrefix(s, "..") {
-		return types.Filename(""), errors.New("illegal filename")
+		return types.Filename(""), ErrFilenameHasDotPrefix
 	}
 	if strings.ContainsAny(s, "\\") {
-		return types.Filename(""), errors.New("illegal characters in filename")
+		return types.Filename(""), ErrFilenameIllegalCharacters
 	}
 	return types.Filename(s), nil
 }
