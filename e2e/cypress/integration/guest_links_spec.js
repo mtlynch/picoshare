@@ -1,10 +1,6 @@
 it("creates a guest link and uploads a file as a guest", () => {
   cy.visit("/");
-  cy.get('.navbar-item .button[data-test-id="log-in"]').click();
-
-  cy.location("pathname").should("eq", "/login");
-  cy.get('form input[type="password"]').type("dummypass");
-  cy.get("form").submit();
+  cy.login();
 
   cy.location("pathname").should("eq", "/");
   cy.get('nav .navbar-item[href="/guest-links"]').click();
