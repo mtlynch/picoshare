@@ -220,7 +220,6 @@ func (s *Server) fileEditGet() http.HandlerFunc {
 			http.Error(w, "failed to retrieve entry", http.StatusInternalServerError)
 			return
 		}
-		log.Printf("nonce=%s", s.cspNonce)
 
 		if err := renderTemplate(w, "file-edit.html", struct {
 			commonProps
