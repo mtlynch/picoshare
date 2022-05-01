@@ -46,15 +46,6 @@
             <td class="is-vcentered">
               <div class="field is-grouped is-justify-content-flex-end">
                 <p class="control">
-                  <button
-                    class="button is-info"
-                    pico-purpose="copy"
-                    pico-entry-id="{{ .ID }}"
-                  >
-                    <i class="fa-solid fa-copy"></i>
-                  </button>
-                </p>
-                <p class="control">
                   <a
                     class="button is-link"
                     href="/files/{{ .ID }}/edit"
@@ -63,6 +54,15 @@
                   >
                     <i class="fas fa-edit"></i>
                   </a>
+                </p>
+                <p class="control">
+                  <button
+                    class="button is-info"
+                    pico-purpose="copy"
+                    pico-entry-id="{{ .ID }}"
+                  >
+                    <i class="fa-solid fa-copy"></i>
+                  </button>
                 </p>
               </div>
             </td>

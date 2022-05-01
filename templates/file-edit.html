@@ -83,20 +83,6 @@
         </div>
       </div>
 
-      <div class="field my-5">
-        <label class="label">Delete File</label>
-        <div class="control">
-          <a
-            class="button is-danger"
-            href="/files/{{ .ID }}/confirm-delete"
-            pico-purpose="delete"
-          >
-            <i class="fa fa-trash mr-2"></i>
-            Delete
-          </a>
-        </div>
-      </div>
-
       <div class="field is-grouped is-flex is-justify-content-flex-end">
         <div class="control">
           <a
@@ -112,6 +98,22 @@
             <i class="fa fa-save mr-2"></i>
             Save
           </button>
+        </div>
+      </div>
+    </form>
+
+    <form class="is-flex is-justify-content-flex-end has-text-right">
+      <div class="field my-5">
+        <label class="label">Delete File</label>
+        <div class="control">
+          <a
+            class="button is-danger"
+            href="/files/{{ .ID }}/confirm-delete"
+            pico-purpose="delete"
+          >
+            <i class="fa fa-trash mr-2"></i>
+            Delete
+          </a>
         </div>
       </div>
     </form>

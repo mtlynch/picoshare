@@ -82,11 +82,20 @@
     <article class="message is-primary">
       <div class="message-body">Upload complete!</div>
     </article>
-  </div>
 
-  <button id="upload-another-btn" class="button is-success is-hidden mt-5">
-    Upload Another
-  </button>
+    <div id="result-links"></div>
+
+    <div class="field is-grouped my-6">
+      <div class="control">
+        <a id="edit-btn" class="button is-link is-light">Edit</a>
+      </div>
+      <div class="control">
+        <a id="upload-another-btn" class="button is-success" href="/">
+          Upload Another
+        </a>
+      </div>
+    </div>
+  </div>
 
   <div id="error" class="is-hidden my-3">
     <article class="message is-danger">
