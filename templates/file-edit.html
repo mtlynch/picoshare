@@ -18,7 +18,7 @@
       return document.getElementById("note").value || null;
     }
 
-    document.getElementById("save-btn").addEventListener("click", (evt) => {
+    document.getElementById("edit-form").addEventListener("submit", (evt) => {
       evt.preventDefault();
       const id = document
         .getElementById("edit-form")
@@ -63,6 +63,7 @@
             class="input is-normal"
             type="text"
             value="{{ .Filename }}"
+            required
           />
         </div>
       </div>
@@ -78,6 +79,7 @@
               value="{{ .Note }}"
             {{ end }}
           />
+          <p class="help">Note is only visible to you</p>
         </div>
       </div>
 

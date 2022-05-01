@@ -119,8 +119,6 @@ it("uploads a file and deletes it", () => {
 
   cy.get('.table tbody tr:first-child [pico-purpose="edit"]').click();
 
-  // TODO: Verify route /files/{ID}/edit
-
   cy.location("pathname").should("match", new RegExp("/files/.+/edit"));
 
   cy.get('[pico-purpose="delete"]').click();
@@ -172,7 +170,19 @@ it("uploads a file and deletes its note", () => {
     "contain",
     "kittyface.jpg"
   );
-  // TODO: Delete note
+
+  cy.get('.table tbody tr:first-child [pico-purpose="edit"]').click();
+
+  cy.location("pathname").should("match", new RegExp("/files/.+/edit"));
+
+  cy.get("#note").clear();
+  cy.get("form .button.is-primary").click();
+
+  cy.location("pathname").should("eq", "/files");
+
+  cy.get('.table tbody tr:first-child [test-data-id="note"]').should(
+    "not.exist"
+  );
 });
 
 it("uploads a file and edits its note", () => {
@@ -212,5 +222,18 @@ it("uploads a file and edits its note", () => {
     "contain",
     "kittyface.jpg"
   );
-  // TODO: Edit note
+
+  cy.get('.table tbody tr:first-child [pico-purpose="edit"]').click();
+
+  cy.location("pathname").should("match", new RegExp("/files/.+/edit"));
+
+  cy.get("#note").clear();
+  cy.get("#note").type("My favorite kitten!");
+  cy.get("form .button.is-primary").click();
+
+  cy.location("pathname").should("eq", "/files");
+
+  cy.get('.table tbody tr:first-child [test-data-id="note"]').should(
+    "not.exist"
+  );
 });
