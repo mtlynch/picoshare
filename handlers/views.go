@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
 	"html/template"
 	"io/ioutil"
@@ -32,11 +33,7 @@ func (s Server) indexGet() http.HandlerFunc {
 		if err := renderTemplate(w, "index.html", struct {
 			commonProps
 		}{
-			commonProps{
-				Title:           "PicoShare",
-				IsAuthenticated: isAuthenticated(r.Context()),
-				CspNonce:        CSPNonce(r.Context()),
-			},
+			commonProps: makeCommonProps("PicoShare", r.Context()),
 		}, template.FuncMap{}); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -61,12 +58,8 @@ func (s Server) guestLinkIndexGet() http.HandlerFunc {
 			commonProps
 			GuestLinks []types.GuestLink
 		}{
-			commonProps: commonProps{
-				Title:           "PicoShare - Guest Links",
-				IsAuthenticated: isAuthenticated(r.Context()),
-				CspNonce:        CSPNonce(r.Context()),
-			},
-			GuestLinks: links,
+			commonProps: makeCommonProps("PicoShare - Guest Links", r.Context()),
+			GuestLinks:  links,
 		}, template.FuncMap{
 			"formatDate": func(t time.Time) string {
 				return t.Format("2006-01-02")
@@ -127,11 +120,7 @@ func (s Server) guestLinksNewGet() http.HandlerFunc {
 			commonProps
 			ExpirationOptions []expirationOption
 		}{
-			commonProps: commonProps{
-				Title:           "PicoShare - New Guest Link",
-				IsAuthenticated: isAuthenticated(r.Context()),
-				CspNonce:        CSPNonce(r.Context()),
-			},
+			commonProps: makeCommonProps("PicoShare - New Guest Link", r.Context()),
 			ExpirationOptions: []expirationOption{
 				{"1 day", time.Now().AddDate(0, 0, 1), false},
 				{"7 days", time.Now().AddDate(0, 0, 7), false},
@@ -164,12 +153,8 @@ func (s Server) fileIndexGet() http.HandlerFunc {
 			commonProps
 			Files []types.UploadMetadata
 		}{
-			commonProps: commonProps{
-				Title:           "PicoShare - Files",
-				IsAuthenticated: isAuthenticated(r.Context()),
-				CspNonce:        CSPNonce(r.Context()),
-			},
-			Files: em,
+			commonProps: makeCommonProps("PicoShare - Files", r.Context()),
+			Files:       em,
 		}, template.FuncMap{
 			"formatDate": func(t time.Time) string {
 				return t.Format("2006-01-02")
@@ -225,12 +210,8 @@ func (s Server) fileEditGet() http.HandlerFunc {
 			commonProps
 			Metadata types.UploadMetadata
 		}{
-			commonProps: commonProps{
-				Title:           "PicoShare - Edit",
-				IsAuthenticated: isAuthenticated(r.Context()),
-				CspNonce:        CSPNonce(r.Context()),
-			},
-			Metadata: metadata,
+			commonProps: makeCommonProps("PicoShare - Edit", r.Context()),
+			Metadata:    metadata,
 		}, template.FuncMap{}); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -260,12 +241,8 @@ func (s Server) fileConfirmDeleteGet() http.HandlerFunc {
 			commonProps
 			Metadata types.UploadMetadata
 		}{
-			commonProps: commonProps{
-				Title:           "PicoShare - Delete",
-				IsAuthenticated: isAuthenticated(r.Context()),
-				CspNonce:        CSPNonce(r.Context()),
-			},
-			Metadata: metadata,
+			commonProps: makeCommonProps("PicoShare - Delete", r.Context()),
+			Metadata:    metadata,
 		}, template.FuncMap{}); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -278,11 +255,7 @@ func (s Server) authGet() http.HandlerFunc {
 		if err := renderTemplate(w, "auth.html", struct {
 			commonProps
 		}{
-			commonProps{
-				Title:           "PicoShare - Log in",
-				IsAuthenticated: isAuthenticated(r.Context()),
-				CspNonce:        CSPNonce(r.Context()),
-			},
+			commonProps: makeCommonProps("PicoShare - Log in", r.Context()),
 		}, template.FuncMap{}); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -303,11 +276,7 @@ func (s Server) uploadGet() http.HandlerFunc {
 			MaxNoteLength     int
 			GuestLinkMetadata types.GuestLink
 		}{
-			commonProps: commonProps{
-				Title:           "PicoShare - Upload",
-				IsAuthenticated: isAuthenticated(r.Context()),
-				CspNonce:        CSPNonce(r.Context()),
-			},
+			commonProps:   makeCommonProps("PicoShare - Upload", r.Context()),
 			MaxNoteLength: parse.MaxFileNoteLen,
 			ExpirationOptions: []expirationOption{
 				{"1 day", time.Now().AddDate(0, 0, 1), false},
@@ -349,11 +318,7 @@ func (s Server) guestUploadGet() http.HandlerFunc {
 			if err := renderTemplate(w, "guest-link-inactive.html", struct {
 				commonProps
 			}{
-				commonProps: commonProps{
-					Title:           "PicoShare - Guest Link Inactive",
-					IsAuthenticated: isAuthenticated(r.Context()),
-					CspNonce:        CSPNonce(r.Context()),
-				},
+				commonProps: makeCommonProps("PicoShare - Guest Link Inactive", r.Context()),
 			}, template.FuncMap{}); err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
@@ -366,11 +331,7 @@ func (s Server) guestUploadGet() http.HandlerFunc {
 			ExpirationOptions []interface{}
 			GuestLinkMetadata types.GuestLink
 		}{
-			commonProps: commonProps{
-				Title:           "PicoShare - Upload",
-				IsAuthenticated: isAuthenticated(r.Context()),
-				CspNonce:        CSPNonce(r.Context()),
-			},
+			commonProps:       makeCommonProps("PicoShare - Upload", r.Context()),
 			GuestLinkMetadata: gl,
 		}, template.FuncMap{
 			"formatExpiration": func(t time.Time) string {
@@ -379,6 +340,14 @@ func (s Server) guestUploadGet() http.HandlerFunc {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+	}
+}
+
+func makeCommonProps(title string, ctx context.Context) commonProps {
+	return commonProps{
+		Title:           title,
+		IsAuthenticated: isAuthenticated(ctx),
+		CspNonce:        CSPNonce(ctx),
 	}
 }
 
