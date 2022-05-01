@@ -1,0 +1,3 @@
+# sqlfluff fails to parse this file even though it's valid SQLite
+# https://github.com/sqlfluff/sqlfluff/issues/3237
+005-add-chunk-length-index.sql
