@@ -62,7 +62,7 @@ func enforceContentSecurityPolicy(next http.Handler) http.Handler {
 	})
 }
 
-func CSPNonce(ctx context.Context) string {
+func cspNonce(ctx context.Context) string {
 	key, ok := ctx.Value(contextKeyCSPNonce).(string)
 	if !ok {
 		panic("CSP nonce is missing from request context")
