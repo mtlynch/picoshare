@@ -284,14 +284,23 @@ func (d db) InsertEntry(reader io.Reader, metadata types.UploadMetadata) error {
 func (d db) UpdateEntryMetadata(id types.EntryID, metadata types.UploadMetadata) error {
 	log.Printf("updating metadata for entry %s", id)
 
-	if _, err := d.ctx.Exec(`
+	res, err := d.ctx.Exec(`
 	UPDATE entries
 	SET
 		filename = ?,
 		note = ?
 	WHERE
-		id=?`, metadata.Filename, metadata.Note.Value, id); err != nil {
+		id=?`, metadata.Filename, metadata.Note.Value, id)
+	if err != nil {
 		return err
+	}
+
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rows == 0 {
+		return store.EntryNotFoundError{ID: id}
 	}
 
 	return nil

@@ -150,6 +150,7 @@ func TestEntryPut(t *testing.T) {
 	}
 	for _, tt := range []struct {
 		description      string
+		targetID         string
 		payload          string
 		filenameExpected string
 		noteExpected     types.FileNote
@@ -157,6 +158,7 @@ func TestEntryPut(t *testing.T) {
 	}{
 		{
 			description: "updates metadata for valid filename and note",
+			targetID:    "AAAAAAAAAA",
 			payload: `{
 				"filename": "cool-song.mp3",
 				"note":"My latest track"
@@ -167,6 +169,7 @@ func TestEntryPut(t *testing.T) {
 		},
 		{
 			description: "rejects update when filename is invalid",
+			targetID:    "AAAAAAAAAA",
 			payload: `{
 				"filename": "",
 				"note":"My latest track"
@@ -177,6 +180,7 @@ func TestEntryPut(t *testing.T) {
 		},
 		{
 			description: "rejects update when note is invalid",
+			targetID:    "AAAAAAAAAA",
 			payload: `{
 				"filename": "cool-song.mp3",
 				"note":"<script>alert(1)</script>"
@@ -185,13 +189,24 @@ func TestEntryPut(t *testing.T) {
 			noteExpected:     types.FileNote{},
 			status:           http.StatusBadRequest,
 		},
+		{
+			description: "ignores non-existent entry ID",
+			targetID:    "BBBBBBBBBB",
+			payload: `{
+				"filename": "cool-song.mp3",
+				"note":"My latest track"
+			}`,
+			filenameExpected: "original-filename.mp3",
+			noteExpected:     types.FileNote{},
+			status:           http.StatusNotFound,
+		},
 	} {
 		t.Run(tt.description, func(t *testing.T) {
 			store := test_sqlite.New()
 			store.InsertEntry(strings.NewReader(("dummy data")), originalEntry)
 			s := handlers.New(mockAuthenticator{}, store)
 
-			req, err := http.NewRequest("PUT", "/api/entry/"+string(originalEntry.ID), strings.NewReader(tt.payload))
+			req, err := http.NewRequest("PUT", "/api/entry/"+tt.targetID, strings.NewReader(tt.payload))
 			if err != nil {
 				t.Fatal(err)
 			}
