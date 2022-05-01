@@ -11,7 +11,6 @@ type Server struct {
 	router        *mux.Router
 	authenticator auth.Authenticator
 	store         store.Store
-	cspNonce      string
 }
 
 // Router returns the underlying router interface for the server.
