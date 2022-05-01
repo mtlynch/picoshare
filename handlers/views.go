@@ -347,7 +347,7 @@ func makeCommonProps(title string, ctx context.Context) commonProps {
 	return commonProps{
 		Title:           title,
 		IsAuthenticated: isAuthenticated(ctx),
-		CspNonce:        CSPNonce(ctx),
+		CspNonce:        cspNonce(ctx),
 	}
 }
 
