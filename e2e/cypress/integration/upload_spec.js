@@ -71,13 +71,7 @@ it("uploads a file with a note", () => {
 
 it("uploads a file and deletes it", () => {
   cy.visit("/");
-  cy.get('.navbar-item .button[data-test-id="log-in"]').click();
-
-  cy.location("pathname").should("eq", "/login");
-  cy.get('form input[type="password"]').type("dummypass");
-  cy.get("form").submit();
-
-  cy.location("pathname").should("eq", "/");
+  cy.login();
 
   cy.get(".file-input").attachFile("kittyface.jpg");
 
@@ -123,13 +117,7 @@ it("uploads a file and deletes it", () => {
 
 it("uploads a file and deletes its note", () => {
   cy.visit("/");
-  cy.get('.navbar-item .button[data-test-id="log-in"]').click();
-
-  cy.location("pathname").should("eq", "/login");
-  cy.get('form input[type="password"]').type("dummypass");
-  cy.get("form").submit();
-
-  cy.location("pathname").should("eq", "/");
+  cy.login();
 
   cy.get("#note").type("For Pico, with Love and Squalor");
 
@@ -175,13 +163,7 @@ it("uploads a file and deletes its note", () => {
 
 it("uploads a file and edits its note", () => {
   cy.visit("/");
-  cy.get('.navbar-item .button[data-test-id="log-in"]').click();
-
-  cy.location("pathname").should("eq", "/login");
-  cy.get('form input[type="password"]').type("dummypass");
-  cy.get("form").submit();
-
-  cy.location("pathname").should("eq", "/");
+  cy.login();
 
   cy.get("#note").type("For Pico, with Love and Squalor");
 
