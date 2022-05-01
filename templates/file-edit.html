@@ -1,0 +1,133 @@
+{{ define "style-tags" }}
+{{ end }}
+
+{{ define "script-tags" }}
+  <script type="module">
+    import { editFile } from "/js/controllers/files.js";
+    import { showElement, hideElement } from "/js/lib/bulma.js";
+
+    const editForm = document.getElementById("edit-form");
+    const errorContainer = document.getElementById("error");
+    const progressSpinner = document.getElementById("progress-spinner");
+
+    function readFilename() {
+      return document.getElementById("filename").value || null;
+    }
+
+    function readNote() {
+      return document.getElementById("note").value || null;
+    }
+
+    document.getElementById("edit-form").addEventListener("submit", (evt) => {
+      evt.preventDefault();
+      const id = document
+        .getElementById("edit-form")
+        .getAttribute("data-entry-id");
+      if (!id) {
+        return;
+      }
+
+      hideElement(errorContainer);
+      hideElement(editForm);
+      showElement(progressSpinner);
+
+      editFile(id, readFilename(), readNote())
+        .then(() => {
+          document.location = "/files";
+        })
+        .catch((error) => {
+          document.getElementById("error-message").innerText = error;
+          showElement(errorContainer);
+          showElement(editForm);
+        })
+        .finally(() => {
+          hideElement(progressSpinner);
+        });
+    });
+  </script>
+{{ end }}
+
+{{ define "custom-elements" }}
+{{ end }}
+
+{{ define "content" }}
+  <h1 class="title">Edit File</h1>
+
+  {{ with .Metadata }}
+    <form id="edit-form" data-entry-id="{{ .ID }}">
+      <div class="field my-5">
+        <label class="label">Filename</label>
+        <div class="control">
+          <input
+            id="filename"
+            class="input is-normal"
+            type="text"
+            value="{{ .Filename }}"
+            required
+          />
+        </div>
+      </div>
+
+      <div class="field my-5">
+        <label class="label">Note</label>
+        <div class="control">
+          <input
+            id="note"
+            class="input is-normal"
+            type="text"
+            {{ if .Note.Value }}
+              value="{{ .Note }}"
+            {{ end }}
+          />
+          <p class="help">Note is only visible to you</p>
+        </div>
+      </div>
+
+      <div class="field is-grouped is-flex is-justify-content-flex-end">
+        <div class="control">
+          <a
+            href="/files"
+            class="button is-link is-light"
+            pico-purpose="cancel"
+          >
+            Cancel
+          </a>
+        </div>
+        <div class="control">
+          <button class="button is-primary" id="save-btn">
+            <i class="fa fa-save mr-2"></i>
+            Save
+          </button>
+        </div>
+      </div>
+    </form>
+
+    <form class="is-flex is-justify-content-flex-end has-text-right">
+      <div class="field my-5">
+        <label class="label">Delete File</label>
+        <div class="control">
+          <a
+            class="button is-danger"
+            href="/files/{{ .ID }}/confirm-delete"
+            pico-purpose="delete"
+          >
+            <i class="fa fa-trash mr-2"></i>
+            Delete
+          </a>
+        </div>
+      </div>
+    </form>
+
+    <div class="fa-3x is-hidden" id="progress-spinner">
+      <i class="fas fa-spinner fa-spin"></i>
+    </div>
+
+    <div id="error" class="is-hidden my-3">
+      <article class="message is-danger">
+        <div id="error-message" class="message-body">Placeholder error.</div>
+      </article>
+    </div>
+  {{ end }}
+{{ end }}
+
+{{ template "base.html" }}

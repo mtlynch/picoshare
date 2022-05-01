@@ -82,11 +82,22 @@
     <article class="message is-primary">
       <div class="message-body">Upload complete!</div>
     </article>
-  </div>
 
-  <button id="upload-another-btn" class="button is-success is-hidden mt-5">
-    Upload Another
-  </button>
+    <div id="result-links"></div>
+
+    <div class="field is-grouped my-6">
+      {{ if not .GuestLinkMetadata.ID }}
+        <div class="control">
+          <a id="edit-btn" class="button is-link is-light">Edit</a>
+        </div>
+      {{ end }}
+      <div class="control">
+        <button id="upload-another-btn" class="button is-success">
+          Upload Another
+        </button>
+      </div>
+    </div>
+  </div>
 
   <div id="error" class="is-hidden my-3">
     <article class="message is-danger">
