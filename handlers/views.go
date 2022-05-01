@@ -44,7 +44,7 @@ func (s *Server) indexGet() http.HandlerFunc {
 	}
 }
 
-func (s Server) guestLinkIndexGet() http.HandlerFunc {
+func (s *Server) guestLinkIndexGet() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		links, err := s.store.GetGuestLinks()
 		if err != nil {
@@ -116,7 +116,7 @@ func (s Server) guestLinkIndexGet() http.HandlerFunc {
 	}
 }
 
-func (s Server) guestLinksNewGet() http.HandlerFunc {
+func (s *Server) guestLinksNewGet() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		type expirationOption struct {
 			FriendlyName string
@@ -149,7 +149,7 @@ func (s Server) guestLinksNewGet() http.HandlerFunc {
 	}
 }
 
-func (s Server) fileIndexGet() http.HandlerFunc {
+func (s *Server) fileIndexGet() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		em, err := s.store.GetEntriesMetadata()
 		if err != nil {
@@ -202,7 +202,7 @@ func (s Server) fileIndexGet() http.HandlerFunc {
 	}
 }
 
-func (s Server) fileEditGet() http.HandlerFunc {
+func (s *Server) fileEditGet() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id, err := parseEntryID(mux.Vars(r)["id"])
 		if err != nil {
@@ -220,6 +220,7 @@ func (s Server) fileEditGet() http.HandlerFunc {
 			http.Error(w, "failed to retrieve entry", http.StatusInternalServerError)
 			return
 		}
+		log.Printf("nonce=%s", s.cspNonce)
 
 		if err := renderTemplate(w, "file-edit.html", struct {
 			commonProps
@@ -238,7 +239,7 @@ func (s Server) fileEditGet() http.HandlerFunc {
 	}
 }
 
-func (s Server) fileConfirmDeleteGet() http.HandlerFunc {
+func (s *Server) fileConfirmDeleteGet() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id, err := parseEntryID(mux.Vars(r)["id"])
 		if err != nil {
@@ -273,7 +274,7 @@ func (s Server) fileConfirmDeleteGet() http.HandlerFunc {
 	}
 }
 
-func (s Server) authGet() http.HandlerFunc {
+func (s *Server) authGet() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if err := renderTemplate(w, "auth.html", struct {
 			commonProps
@@ -290,7 +291,7 @@ func (s Server) authGet() http.HandlerFunc {
 	}
 }
 
-func (s Server) uploadGet() http.HandlerFunc {
+func (s *Server) uploadGet() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		type expirationOption struct {
 			FriendlyName string
@@ -326,7 +327,7 @@ func (s Server) uploadGet() http.HandlerFunc {
 	}
 }
 
-func (s Server) guestUploadGet() http.HandlerFunc {
+func (s *Server) guestUploadGet() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		guestLinkID, err := parseGuestLinkID(mux.Vars(r)["guestLinkID"])
 		if err != nil {
