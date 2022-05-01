@@ -2,7 +2,7 @@
 {{ end }}
 
 {{ define "script-tags" }}
-  <script type="module">
+  <script type="module" nonce="{{ .CspNonce }}">
     import { editFile } from "/js/controllers/files.js";
     import { showElement, hideElement } from "/js/lib/bulma.js";
 

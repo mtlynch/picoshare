@@ -1,5 +1,5 @@
 {{ define "style-tags" }}
-  <style>
+  <style nonce="{{ .CspNonce }}">
     .filename {
       font-family: "Courier New", Courier, monospace;
     }
@@ -7,7 +7,7 @@
 {{ end }}
 
 {{ define "script-tags" }}
-  <script type="module">
+  <script type="module" nonce="{{ .CspNonce }}">
     import { deleteFile } from "/js/controllers/files.js";
     import { showElement, hideElement } from "/js/lib/bulma.js";
 
