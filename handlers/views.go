@@ -228,6 +228,7 @@ func (s Server) fileEditGet() http.HandlerFunc {
 			commonProps: commonProps{
 				Title:           "PicoShare - Edit",
 				IsAuthenticated: s.isAuthenticated(r),
+				CspNonce:        s.cspNonce,
 			},
 			Metadata: metadata,
 		}, template.FuncMap{}); err != nil {
@@ -262,6 +263,7 @@ func (s Server) fileConfirmDeleteGet() http.HandlerFunc {
 			commonProps: commonProps{
 				Title:           "PicoShare - Delete",
 				IsAuthenticated: s.isAuthenticated(r),
+				CspNonce:        s.cspNonce,
 			},
 			Metadata: metadata,
 		}, template.FuncMap{}); err != nil {
