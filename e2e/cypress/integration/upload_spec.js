@@ -234,6 +234,7 @@ it("uploads a file and edits its note", () => {
   cy.location("pathname").should("eq", "/files");
 
   cy.get('.table tbody tr:first-child [test-data-id="note"]').should(
-    "not.exist"
+    "contain",
+    "My favorite kitten!"
   );
 });
