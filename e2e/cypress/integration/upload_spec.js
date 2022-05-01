@@ -34,8 +34,6 @@ it("uploads a file without specifying any parameters", () => {
 
 it("uploads a file with a note", () => {
   cy.visit("/");
-  cy.get('.navbar-item .button[data-test-id="log-in"]').click();
-
   cy.login();
 
   cy.get("#note").type("For Pico, with Love and Squalor");
