@@ -30,6 +30,8 @@ PS_LAUNCH_CMD="/app/picoshare -db ${DB_PATH}"
 
 if [[ "${IS_LITESTREAM_ENABLED}" == 'true' ]]; then
   /app/litestream version
+  echo "LITESTREAM_BUCKET=${LITESTREAM_BUCKET}"
+  echo "LITESTREAM_ENDPOINT=${LITESTREAM_ENDPOINT}"
 
   if [[ -f "$DB_PATH" ]]; then
     echo "Existing database is $(stat -c %s ${DB_PATH}) bytes"
