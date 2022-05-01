@@ -40,7 +40,7 @@ func (s *Server) routes() {
 
 	authenticatedViews := s.router.PathPrefix("/").Subrouter()
 	authenticatedViews.Use(s.requireAuthentication)
-	authenticatedViews.Use(s.enforceContentSecurityPolicy)
+	authenticatedViews.Use(enforceContentSecurityPolicy)
 	authenticatedViews.HandleFunc("/files", s.fileIndexGet()).Methods(http.MethodGet)
 	authenticatedViews.HandleFunc("/files/{id}/edit", s.fileEditGet()).Methods(http.MethodGet)
 	authenticatedViews.HandleFunc("/files/{id}/confirm-delete", s.fileConfirmDeleteGet()).Methods(http.MethodGet)
@@ -49,7 +49,7 @@ func (s *Server) routes() {
 
 	views := s.router.PathPrefix("/").Subrouter()
 	views.Use(upgradeToHttps)
-	views.Use(s.enforceContentSecurityPolicy)
+	views.Use(enforceContentSecurityPolicy)
 	views.HandleFunc("/login", s.authGet()).Methods(http.MethodGet)
 	views.PathPrefix("/!{id}").HandlerFunc(s.entryGet()).Methods(http.MethodGet)
 	views.PathPrefix("/!{id}/{filename}").HandlerFunc(s.entryGet()).Methods(http.MethodGet)

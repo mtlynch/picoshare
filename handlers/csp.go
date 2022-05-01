@@ -15,7 +15,7 @@ type contextKey struct {
 
 var contextKeyCSPNonce = &contextKey{"csp-nonce"}
 
-func (s *Server) enforceContentSecurityPolicy(next http.Handler) http.Handler {
+func enforceContentSecurityPolicy(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		nonce := random.String(16, []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"))
 
