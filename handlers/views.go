@@ -20,9 +20,10 @@ import (
 type commonProps struct {
 	Title           string
 	IsAuthenticated bool
+	CspNonce        string
 }
 
-func (s Server) indexGet() http.HandlerFunc {
+func (s *Server) indexGet() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if s.isAuthenticated(r) {
 			s.uploadGet()(w, r)
@@ -34,6 +35,7 @@ func (s Server) indexGet() http.HandlerFunc {
 			commonProps{
 				Title:           "PicoShare",
 				IsAuthenticated: s.isAuthenticated(r),
+				CspNonce:        s.cspNonce,
 			},
 		}, template.FuncMap{}); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -62,6 +64,7 @@ func (s Server) guestLinkIndexGet() http.HandlerFunc {
 			commonProps: commonProps{
 				Title:           "PicoShare - Guest Links",
 				IsAuthenticated: s.isAuthenticated(r),
+				CspNonce:        s.cspNonce,
 			},
 			GuestLinks: links,
 		}, template.FuncMap{
@@ -127,6 +130,7 @@ func (s Server) guestLinksNewGet() http.HandlerFunc {
 			commonProps: commonProps{
 				Title:           "PicoShare - New Guest Link",
 				IsAuthenticated: s.isAuthenticated(r),
+				CspNonce:        s.cspNonce,
 			},
 			ExpirationOptions: []expirationOption{
 				{"1 day", time.Now().AddDate(0, 0, 1), false},
@@ -163,6 +167,7 @@ func (s Server) fileIndexGet() http.HandlerFunc {
 			commonProps: commonProps{
 				Title:           "PicoShare - Files",
 				IsAuthenticated: s.isAuthenticated(r),
+				CspNonce:        s.cspNonce,
 			},
 			Files: em,
 		}, template.FuncMap{
@@ -205,6 +210,7 @@ func (s Server) authGet() http.HandlerFunc {
 			commonProps{
 				Title:           "PicoShare - Log in",
 				IsAuthenticated: s.isAuthenticated(r),
+				CspNonce:        s.cspNonce,
 			},
 		}, template.FuncMap{}); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -229,6 +235,7 @@ func (s Server) uploadGet() http.HandlerFunc {
 			commonProps: commonProps{
 				Title:           "PicoShare - Upload",
 				IsAuthenticated: s.isAuthenticated(r),
+				CspNonce:        s.cspNonce,
 			},
 			MaxNoteLength: parse.MaxFileNoteLen,
 			ExpirationOptions: []expirationOption{
@@ -274,6 +281,7 @@ func (s Server) guestUploadGet() http.HandlerFunc {
 				commonProps: commonProps{
 					Title:           "PicoShare - Guest Link Inactive",
 					IsAuthenticated: s.isAuthenticated(r),
+					CspNonce:        s.cspNonce,
 				},
 			}, template.FuncMap{}); err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -290,6 +298,7 @@ func (s Server) guestUploadGet() http.HandlerFunc {
 			commonProps: commonProps{
 				Title:           "PicoShare - Upload",
 				IsAuthenticated: s.isAuthenticated(r),
+				CspNonce:        s.cspNonce,
 			},
 			GuestLinkMetadata: gl,
 		}, template.FuncMap{

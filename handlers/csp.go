@@ -4,10 +4,15 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+
+	"github.com/mtlynch/picoshare/v2/random"
 )
 
-func enforceContentSecurityPolicy(next http.Handler) http.Handler {
+func (s *Server) enforceContentSecurityPolicy(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Cycle nonce.
+		s.cspNonce = random.String(16, []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"))
+
 		type cspDirective struct {
 			name   string
 			values []string
@@ -23,14 +28,14 @@ func enforceContentSecurityPolicy(next http.Handler) http.Handler {
 				name: "script-src",
 				values: []string{
 					"self",
-					"unsafe-inline",
+					"nonce-" + s.cspNonce,
 				},
 			},
 			{
 				name: "style-src",
 				values: []string{
 					"self",
-					"unsafe-inline",
+					"nonce-" + s.cspNonce,
 				},
 			},
 		}
