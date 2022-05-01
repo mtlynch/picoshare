@@ -202,6 +202,75 @@ func (s Server) fileIndexGet() http.HandlerFunc {
 	}
 }
 
+func (s Server) fileEditGet() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id, err := parseEntryID(mux.Vars(r)["id"])
+		if err != nil {
+			log.Printf("error parsing ID: %v", err)
+			http.Error(w, fmt.Sprintf("bad entry ID: %v", err), http.StatusBadRequest)
+			return
+		}
+
+		metadata, err := s.store.GetEntryMetadata(id)
+		if _, ok := err.(store.EntryNotFoundError); ok {
+			http.Error(w, "entry not found", http.StatusNotFound)
+			return
+		} else if err != nil {
+			log.Printf("error retrieving entry with id %v: %v", id, err)
+			http.Error(w, "failed to retrieve entry", http.StatusInternalServerError)
+			return
+		}
+
+		if err := renderTemplate(w, "file-edit.html", struct {
+			commonProps
+			Metadata types.UploadMetadata
+		}{
+			commonProps: commonProps{
+				Title:           "PicoShare - Edit",
+				IsAuthenticated: s.isAuthenticated(r),
+			},
+			Metadata: metadata,
+		}, template.FuncMap{}); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+}
+
+func (s Server) fileConfirmDeleteGet() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id, err := parseEntryID(mux.Vars(r)["id"])
+		if err != nil {
+			log.Printf("error parsing ID: %v", err)
+			http.Error(w, fmt.Sprintf("bad entry ID: %v", err), http.StatusBadRequest)
+			return
+		}
+
+		metadata, err := s.store.GetEntryMetadata(id)
+		if _, ok := err.(store.EntryNotFoundError); ok {
+			http.Error(w, "entry not found", http.StatusNotFound)
+			return
+		} else if err != nil {
+			log.Printf("error retrieving entry with id %v: %v", id, err)
+			http.Error(w, "failed to retrieve entry", http.StatusInternalServerError)
+			return
+		}
+		if err := renderTemplate(w, "file-delete.html", struct {
+			commonProps
+			Metadata types.UploadMetadata
+		}{
+			commonProps: commonProps{
+				Title:           "PicoShare - Delete",
+				IsAuthenticated: s.isAuthenticated(r),
+			},
+			Metadata: metadata,
+		}, template.FuncMap{}); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+}
+
 func (s Server) authGet() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if err := renderTemplate(w, "auth.html", struct {

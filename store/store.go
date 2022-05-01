@@ -10,7 +10,9 @@ import (
 type Store interface {
 	GetEntriesMetadata() ([]types.UploadMetadata, error)
 	GetEntry(id types.EntryID) (types.UploadEntry, error)
+	GetEntryMetadata(id types.EntryID) (types.UploadMetadata, error)
 	InsertEntry(reader io.Reader, metadata types.UploadMetadata) error
+	UpdateEntryMetadata(id types.EntryID, metadata types.UploadMetadata) error
 	DeleteEntry(id types.EntryID) error
 	GetGuestLink(types.GuestLinkID) (types.GuestLink, error)
 	GetGuestLinks() ([]types.GuestLink, error)

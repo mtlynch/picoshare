@@ -66,6 +66,33 @@ export async function guestUploadFile(file, guestLinkID) {
     });
 }
 
+export async function editFile(id, filename, note) {
+  return fetch(`/api/entry/${encodeURIComponent(id)}`, {
+    method: "PUT",
+    credentials: "include",
+    body: JSON.stringify({
+      filename,
+      note,
+    }),
+  })
+    .then((response) => {
+      if (!response.ok) {
+        return response.text().then((error) => {
+          return Promise.reject(error);
+        });
+      }
+      return Promise.resolve();
+    })
+    .catch((error) => {
+      if (error.message) {
+        return Promise.reject(
+          "Failed to communicate with server: " + error.message
+        );
+      }
+      return Promise.reject(error);
+    });
+}
+
 export async function deleteFile(id) {
   return fetch(`/api/entry/${id}`, {
     method: "DELETE",

@@ -142,6 +142,99 @@ func TestEntryPost(t *testing.T) {
 	}
 }
 
+func TestEntryPut(t *testing.T) {
+	originalEntry := types.UploadMetadata{
+		ID:       types.EntryID("AAAAAAAAAA"),
+		Filename: types.Filename("original-filename.mp3"),
+		Note:     types.FileNote{},
+	}
+	for _, tt := range []struct {
+		description      string
+		targetID         string
+		payload          string
+		filenameExpected string
+		noteExpected     types.FileNote
+		status           int
+	}{
+		{
+			description: "updates metadata for valid filename and note",
+			targetID:    "AAAAAAAAAA",
+			payload: `{
+				"filename": "cool-song.mp3",
+				"note":"My latest track"
+			}`,
+			filenameExpected: "cool-song.mp3",
+			noteExpected:     makeNote("My latest track"),
+			status:           http.StatusOK,
+		},
+		{
+			description: "rejects update when filename is invalid",
+			targetID:    "AAAAAAAAAA",
+			payload: `{
+				"filename": "",
+				"note":"My latest track"
+			}`,
+			filenameExpected: "original-filename.mp3",
+			noteExpected:     types.FileNote{},
+			status:           http.StatusBadRequest,
+		},
+		{
+			description: "rejects update when note is invalid",
+			targetID:    "AAAAAAAAAA",
+			payload: `{
+				"filename": "cool-song.mp3",
+				"note":"<script>alert(1)</script>"
+			}`,
+			filenameExpected: "original-filename.mp3",
+			noteExpected:     types.FileNote{},
+			status:           http.StatusBadRequest,
+		},
+		{
+			description: "ignores non-existent entry ID",
+			targetID:    "BBBBBBBBBB",
+			payload: `{
+				"filename": "cool-song.mp3",
+				"note":"My latest track"
+			}`,
+			filenameExpected: "original-filename.mp3",
+			noteExpected:     types.FileNote{},
+			status:           http.StatusNotFound,
+		},
+	} {
+		t.Run(tt.description, func(t *testing.T) {
+			store := test_sqlite.New()
+			store.InsertEntry(strings.NewReader(("dummy data")), originalEntry)
+			s := handlers.New(mockAuthenticator{}, store)
+
+			req, err := http.NewRequest("PUT", "/api/entry/"+tt.targetID, strings.NewReader(tt.payload))
+			if err != nil {
+				t.Fatal(err)
+			}
+			req.Header.Add("Content-Type", "text/json")
+
+			w := httptest.NewRecorder()
+			s.Router().ServeHTTP(w, req)
+
+			if got, want := w.Code, tt.status; got != want {
+				t.Fatalf("status=%d, want=%d", got, want)
+			}
+
+			entry, err := store.GetEntry(types.EntryID(originalEntry.ID))
+			if err != nil {
+				t.Fatalf("failed to get expected entry %v from data store: %v", originalEntry.ID, err)
+			}
+
+			if got, want := entry.Filename, types.Filename(tt.filenameExpected); got != want {
+				t.Errorf("filename=%v, want=%v", got, want)
+			}
+
+			if got, want := entry.Note.String(), tt.noteExpected.String(); got != want {
+				t.Errorf("note=%v, want=%v", got, want)
+			}
+		})
+	}
+}
+
 func TestGuestUpload(t *testing.T) {
 	authenticator, err := shared_secret.New("dummypass")
 	if err != nil {
@@ -357,4 +450,8 @@ func mustReadAll(r io.Reader) []byte {
 		panic(err)
 	}
 	return d
+}
+
+func makeNote(s string) types.FileNote {
+	return types.FileNote{Value: &s}
 }

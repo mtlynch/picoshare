@@ -24,6 +24,16 @@ function readNote() {
   return noteInput.value || null;
 }
 
+function populateEditButton(entryId) {
+  const btn = document.getElementById("edit-btn");
+  // Button does not appear in guest mode.
+  if (!btn) {
+    return;
+  }
+
+  btn.href = `/files/${entryId}/edit`;
+}
+
 function doUpload(file) {
   const guestLinkMetadata = getGuestLinkMetdata();
 
@@ -55,6 +65,8 @@ function doUpload(file) {
     .then((res) => {
       const entryId = res.id;
 
+      populateEditButton(entryId);
+
       const uploadLinksEl = document.createElement("upload-links");
       uploadLinksEl.fileId = entryId;
       uploadLinksEl.filename = file.name;
@@ -63,7 +75,7 @@ function doUpload(file) {
           .querySelector("snackbar-notifications")
           .addInfoMessage("Copied link");
       });
-      resultEl.append(uploadLinksEl);
+      document.getElementById("result-links").append(uploadLinksEl);
       showElement(resultEl);
       showElement(uploadAnotherBtn);
 
