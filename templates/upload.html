@@ -86,9 +86,11 @@
     <div id="result-links"></div>
 
     <div class="field is-grouped my-6">
-      <div class="control">
-        <a id="edit-btn" class="button is-link is-light">Edit</a>
-      </div>
+      {{ if not .GuestLinkMetadata.ID }}
+        <div class="control">
+          <a id="edit-btn" class="button is-link is-light">Edit</a>
+        </div>
+      {{ end }}
       <div class="control">
         <button id="upload-another-btn" class="button is-success">
           Upload Another
