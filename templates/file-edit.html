@@ -27,6 +27,18 @@
       </div>
 
       <div class="field my-5">
+        <label class="label">Expiration</label>
+        <div class="control">
+          <input
+            id="expiration"
+            class="input is-normal"
+            type="text"
+            value="{{ formatExpiration .Expires }}"
+          />
+        </div>
+      </div>
+
+      <div class="field my-5">
         <label class="label">Note</label>
         <div class="control">
           <input

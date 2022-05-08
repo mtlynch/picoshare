@@ -181,8 +181,9 @@ func (s Server) guestEntryPost() http.HandlerFunc {
 
 func entryMetadataFromRequest(r *http.Request) (types.UploadMetadata, error) {
 	var payload struct {
-		Filename string `json:"filename"`
-		Note     string `json:"note"`
+		Filename   string `json:"filename"`
+		Expiration string `json:"expiration"`
+		Note       string `json:"note"`
 	}
 	err := json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil {
@@ -195,6 +196,11 @@ func entryMetadataFromRequest(r *http.Request) (types.UploadMetadata, error) {
 		return types.UploadMetadata{}, err
 	}
 
+	expiration, err := parse.ExpirationDate(payload.Expiration)
+	if err != nil {
+		return types.UploadMetadata{}, err
+	}
+
 	note, err := parse.FileNote(payload.Note)
 	if err != nil {
 		return types.UploadMetadata{}, err
@@ -202,6 +208,7 @@ func entryMetadataFromRequest(r *http.Request) (types.UploadMetadata, error) {
 
 	return types.UploadMetadata{
 		Filename: filename,
+		Expires:  expiration,
 		Note:     note,
 	}, nil
 }

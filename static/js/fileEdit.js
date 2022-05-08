@@ -9,6 +9,10 @@ function readFilename() {
   return document.getElementById("filename").value || null;
 }
 
+function readExpiration() {
+  return document.getElementById("expiration").value || null;
+}
+
 function readNote() {
   return document.getElementById("note").value || null;
 }
@@ -24,7 +28,7 @@ document.getElementById("edit-form").addEventListener("submit", (evt) => {
   hideElement(editForm);
   showElement(progressSpinner);
 
-  editFile(id, readFilename(), readNote())
+  editFile(id, readFilename(), readExpiration(), readNote())
     .then(() => {
       document.location = "/files";
     })

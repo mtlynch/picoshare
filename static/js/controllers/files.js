@@ -66,12 +66,13 @@ export async function guestUploadFile(file, guestLinkID) {
     });
 }
 
-export async function editFile(id, filename, note) {
+export async function editFile(id, filename, expiration, note) {
   return fetch(`/api/entry/${encodeURIComponent(id)}`, {
     method: "PUT",
     credentials: "include",
     body: JSON.stringify({
       filename,
+      expiration,
       note,
     }),
   })
