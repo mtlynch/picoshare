@@ -280,19 +280,5 @@ func parseExpirationFromRequest(r *http.Request) (types.ExpirationTime, error) {
 	if len(expirationRaw) <= 0 {
 		return types.ExpirationTime{}, errors.New("missing required URL parameter: expiration")
 	}
-	return parseExpiration(expirationRaw[0])
-}
-
-func parseExpiration(expirationRaw string) (types.ExpirationTime, error) {
-	expiration, err := time.Parse(time.RFC3339, expirationRaw)
-	if err != nil {
-		log.Printf("invalid expiration URL parameter: %v -> %v", expirationRaw, err)
-		return types.ExpirationTime{}, errors.New("invalid expiration URL parameter")
-	}
-
-	if time.Until(expiration) < (time.Hour * 1) {
-		return types.ExpirationTime{}, errors.New("expire time must be at least one hour in the future")
-	}
-
-	return types.ExpirationTime(expiration), nil
+	return parse.Expiration(expirationRaw[0])
 }
