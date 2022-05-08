@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/mtlynch/picoshare/v2/handlers/parse"
 	"github.com/mtlynch/picoshare/v2/random"
 	"github.com/mtlynch/picoshare/v2/types"
 )
@@ -86,7 +87,7 @@ func guestLinkFromRequest(r *http.Request) (types.GuestLink, error) {
 		return types.GuestLink{}, err
 	}
 
-	expiration, err := parseExpiration(payload.Expiration)
+	expiration, err := parse.Expiration(payload.Expiration)
 	if err != nil {
 		return types.GuestLink{}, err
 	}
