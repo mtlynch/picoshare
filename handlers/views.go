@@ -213,11 +213,14 @@ func (s Server) fileEditGet() http.HandlerFunc {
 			commonProps: makeCommonProps("PicoShare - Edit", r.Context()),
 			Metadata:    metadata,
 		}, template.FuncMap{
+			"isNeverExpire": func(et types.ExpirationTime) bool {
+				return et == types.NeverExpire
+			},
 			"formatExpiration": func(et types.ExpirationTime) string {
 				if et == types.NeverExpire {
 					return "Never"
 				}
-				return time.Time(et).Format("2006-01-02")
+				return time.Time(et).Format(time.RFC3339)
 			},
 		}); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)

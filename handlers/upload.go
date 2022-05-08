@@ -196,9 +196,12 @@ func entryMetadataFromRequest(r *http.Request) (types.UploadMetadata, error) {
 		return types.UploadMetadata{}, err
 	}
 
-	expiration, err := parse.Expiration(payload.Expiration)
-	if err != nil {
-		return types.UploadMetadata{}, err
+	expiration := types.NeverExpire
+	if payload.Expiration != "" {
+		expiration, err = parse.Expiration(payload.Expiration)
+		if err != nil {
+			return types.UploadMetadata{}, err
+		}
 	}
 
 	note, err := parse.FileNote(payload.Note)

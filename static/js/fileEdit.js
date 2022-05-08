@@ -9,8 +9,12 @@ import { showElement, hideElement } from "./lib/bulma.js";
 const editForm = document.getElementById("edit-form");
 const errorContainer = document.getElementById("error");
 const progressSpinner = document.getElementById("progress-spinner");
-const picker = window.datepicker(document.getElementById("expiration"), {
+const expireCheckbox = document.getElementById("expire-checkbox");
+const expirationInput = document.getElementById("expiration");
+
+const picker = window.datepicker(expirationInput, {
   minDate: tomorrow(),
+  dateSelected: defaultExpirationDate(),
   formatter: (input, date) => {
     input.value = date.toLocaleDateString();
   },
@@ -21,11 +25,10 @@ function readFilename() {
 }
 
 function readExpiration() {
-  const expiration = picker.dateSelected;
-  if (!expiration) {
+  if (!expireCheckbox.checked) {
     return null;
   }
-  return expiration.toISOString();
+  return picker.dateSelected.toISOString();
 }
 
 function readNote() {
@@ -33,9 +36,22 @@ function readNote() {
 }
 
 function tomorrow() {
+  return dateInNDays(1);
+}
+
+function dateInNDays(n) {
   let d = new Date();
-  d.setDate(d.getDate() + 1);
+  d.setDate(d.getDate() + n);
   return d;
+}
+
+function defaultExpirationDate() {
+  const expirationRaw = expirationInput.getAttribute("data-expiration-raw");
+
+  if (!expirationRaw) {
+    return dateInNDays(30);
+  }
+  return new Date(expirationRaw);
 }
 
 document.getElementById("edit-form").addEventListener("submit", (evt) => {
@@ -61,4 +77,12 @@ document.getElementById("edit-form").addEventListener("submit", (evt) => {
     .finally(() => {
       hideElement(progressSpinner);
     });
+});
+
+expireCheckbox.addEventListener("change", () => {
+  if (expireCheckbox.checked) {
+    expirationInput.removeAttribute("disabled");
+  } else {
+    expirationInput.setAttribute("disabled", true);
+  }
 });
