@@ -55,7 +55,9 @@ func enforceContentSecurityPolicy(next http.Handler) http.Handler {
 		}
 		policy := strings.Join(policyParts, "; ") + ";"
 
-		w.Header().Set("Content-Security-Policy", policy)
+		if policy == "" { // DEBUG
+			w.Header().Set("Content-Security-Policy", policy) // DEBUG
+		}
 
 		ctx := context.WithValue(r.Context(), contextKeyCSPNonce, nonce)
 		next.ServeHTTP(w, r.WithContext(ctx))
