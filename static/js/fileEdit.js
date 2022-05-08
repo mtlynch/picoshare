@@ -1,11 +1,15 @@
-import datepicker from "/third-party/js-datepicker@5.18.0/js-datepicker.js";
+// Note: I don't know of a cleaner way of doing this. datepicker doesn't seem
+// to export values like a proper JS module, so we import, which populates
+// window.datepicker.
+import "/third-party/js-datepicker@5.18.0/js-datepicker.js";
+
 import { editFile } from "./controllers/files.js";
 import { showElement, hideElement } from "./lib/bulma.js";
 
 const editForm = document.getElementById("edit-form");
 const errorContainer = document.getElementById("error");
 const progressSpinner = document.getElementById("progress-spinner");
-const picker = datepicker(document.getElementById("expiration"), {
+const picker = window.datepicker(document.getElementById("expiration"), {
   minDate: tomorrow(),
   formatter: (input, date) => {
     input.value = date.toLocaleDateString();
