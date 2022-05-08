@@ -157,10 +157,11 @@ func TestEntryPut(t *testing.T) {
 		status           int
 	}{
 		{
-			description: "updates metadata for valid filename and note",
+			description: "updates metadata for valid request",
 			targetID:    "AAAAAAAAAA",
 			payload: `{
 				"filename": "cool-song.mp3",
+				"expiration": "2029-01-02T01:02:03Z",
 				"note":"My latest track"
 			}`,
 			filenameExpected: "cool-song.mp3",
@@ -172,6 +173,7 @@ func TestEntryPut(t *testing.T) {
 			targetID:    "AAAAAAAAAA",
 			payload: `{
 				"filename": "",
+				"expiration": "2029-01-02T01:02:03Z",
 				"note":"My latest track"
 			}`,
 			filenameExpected: "original-filename.mp3",
@@ -183,6 +185,7 @@ func TestEntryPut(t *testing.T) {
 			targetID:    "AAAAAAAAAA",
 			payload: `{
 				"filename": "cool-song.mp3",
+				"expiration": "2029-01-02T01:02:03Z",
 				"note":"<script>alert(1)</script>"
 			}`,
 			filenameExpected: "original-filename.mp3",
@@ -194,6 +197,7 @@ func TestEntryPut(t *testing.T) {
 			targetID:    "BBBBBBBBBB",
 			payload: `{
 				"filename": "cool-song.mp3",
+				"expiration": "2029-01-02T01:02:03Z",
 				"note":"My latest track"
 			}`,
 			filenameExpected: "original-filename.mp3",

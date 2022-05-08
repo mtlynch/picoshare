@@ -2,7 +2,6 @@ package parse_test
 
 import (
 	"fmt"
-	"reflect"
 	"testing"
 	"time"
 
@@ -10,7 +9,7 @@ import (
 	"github.com/mtlynch/picoshare/v2/types"
 )
 
-func TestExpirationDate(t *testing.T) {
+func TestExpiration(t *testing.T) {
 	for _, tt := range []struct {
 		description string
 		input       string
@@ -19,37 +18,43 @@ func TestExpirationDate(t *testing.T) {
 	}{
 		{
 			description: "valid expiration",
-			input:       "2025-01-01",
-			output:      mustParseExpiration("2025-01-01"),
+			input:       "2025-01-01T00:00:00Z",
+			output:      mustParseExpiration("2025-01-01T00:00:00Z"),
 			err:         nil,
 		},
 		{
-			description: "empty string is equivalent to no expiration",
+			description: "reject expiration time in the past",
+			input:       "2000-01-01T00:00:00Z",
+			output:      types.ExpirationTime{},
+			err:         parse.ErrExpirationTooSoon,
+		},
+		{
+			description: "empty string is invalid",
 			input:       "",
-			output:      types.NeverExpire,
-			err:         nil,
+			output:      types.ExpirationTime{},
+			err:         parse.ErrExpirationUnrecognizedFormat,
 		},
 		{
 			description: "string with letters causes error",
 			input:       "banana",
 			output:      types.ExpirationTime{},
-			err:         nil, // TODO: Expect a better error.
+			err:         parse.ErrExpirationUnrecognizedFormat,
 		},
 	} {
 		t.Run(fmt.Sprintf("%s [%s]", tt.description, tt.input), func(t *testing.T) {
-			ed, err := parse.ExpirationDate(tt.input)
+			et, err := parse.Expiration(tt.input)
 			if got, want := err, tt.err; got != want {
-				t.Fatalf("err=%v, want=%v", reflect.TypeOf(err), want)
+				t.Fatalf("err=%v, want=%v", got, want)
 			}
-			if got, want := ed, tt.output; got != want {
-				t.Errorf("filename=%v, want=%v", got, want)
+			if got, want := et, tt.output; got != want {
+				t.Errorf("expiration=%v, want=%v", got, want)
 			}
 		})
 	}
 }
 
 func mustParseExpiration(s string) types.ExpirationTime {
-	et, err := time.Parse("2006-01-02", s)
+	et, err := time.Parse(time.RFC3339, s)
 	if err != nil {
 		panic(err)
 	}
