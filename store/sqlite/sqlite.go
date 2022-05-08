@@ -288,9 +288,14 @@ func (d db) UpdateEntryMetadata(id types.EntryID, metadata types.UploadMetadata)
 	UPDATE entries
 	SET
 		filename = ?,
+		expiration_time = ?,
 		note = ?
 	WHERE
-		id=?`, metadata.Filename, metadata.Note.Value, id)
+		id=?`,
+		metadata.Filename,
+		formatExpirationTime(metadata.Expires),
+		metadata.Note.Value,
+		id)
 	if err != nil {
 		return err
 	}
