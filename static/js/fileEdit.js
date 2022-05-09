@@ -18,6 +18,7 @@ const picker = window.datepicker(expirationInput, {
   formatter: (input, date) => {
     input.value = date.toLocaleDateString();
   },
+  respectDisabledReadOnly: true,
 });
 
 function readFilename() {

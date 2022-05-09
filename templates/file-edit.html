@@ -34,7 +34,11 @@
         <label class="label">Expiration</label>
 
         <label class="checkbox">
-          <input type="checkbox" id="expire-checkbox" />
+          <input
+            type="checkbox"
+            id="expire-checkbox"
+            {{ if not (isNeverExpire .Expires) }}checked{{ end }}
+          />
           Delete after expiration
         </label>
         <div class="control">
