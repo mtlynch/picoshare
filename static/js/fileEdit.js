@@ -5,17 +5,10 @@ const editForm = document.getElementById("edit-form");
 const errorContainer = document.getElementById("error");
 const progressSpinner = document.getElementById("progress-spinner");
 const expireCheckbox = document.getElementById("expire-checkbox");
-const expirationInput = document.getElementById("expiration");
+const expirationPicker = document.getElementById("expiration");
 
 function readFilename() {
   return document.getElementById("filename").value || null;
-}
-
-function readExpiration() {
-  if (!expireCheckbox.checked) {
-    return null;
-  }
-  return picker.dateSelected.toISOString();
 }
 
 function readNote() {
@@ -33,7 +26,7 @@ document.getElementById("edit-form").addEventListener("submit", (evt) => {
   hideElement(editForm);
   showElement(progressSpinner);
 
-  editFile(id, readFilename(), readExpiration(), readNote())
+  editFile(id, readFilename(), expirationPicker.value, readNote())
     .then(() => {
       document.location = "/files";
     })
@@ -49,8 +42,8 @@ document.getElementById("edit-form").addEventListener("submit", (evt) => {
 
 expireCheckbox.addEventListener("change", () => {
   if (expireCheckbox.checked) {
-    expirationInput.removeAttribute("disabled");
+    expirationPicker.removeAttribute("disabled");
   } else {
-    expirationInput.setAttribute("disabled", true);
+    expirationPicker.setAttribute("disabled", true);
   }
 });

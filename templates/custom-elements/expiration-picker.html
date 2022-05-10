@@ -29,10 +29,11 @@
           this.attachShadow({ mode: "open" }).appendChild(
             template.content.cloneNode(true)
           );
+          this.elements = {
+            expirationInput: this.shadowRoot.getElementById('expiration'),
+          }
 
-          const expirationInput = this.shadowRoot.getElementById('expiration');
-
-          const picker = window.datepicker(expirationInput, {
+          const picker = window.datepicker(this.elements.expirationInput, {
             minDate: this._tomorrow(),
             dateSelected: this._defaultExpirationDate(),
             formatter: (input, date) => {
@@ -41,6 +42,37 @@
             respectDisabledReadOnly: true,
           });
         }
+
+        static get observedAttributes() {
+          return ["expiration", "disabled"];
+        }
+
+        attributeChangedCallback(name, oldValue, newValue) {
+          if (!this.elements) {
+            return;
+          }
+          if (name === "disabled") {
+            if (newValue === "true") {
+              this.elements.expirationInput.setAttribute("disabled", true);
+            } else {
+              this.elements.expirationInput.removeAttribute("disabled");
+            }
+          } else if (name === "expiration") {
+            this.elements.expirationInput.value = newValue;
+          }
+        }
+
+        get value() {
+          return this.getAttribute("expiration");
+        }
+/*
+        get expiration() {
+          return this.getAttribute("expiration");
+        }
+
+        set expiration(newValue) {
+          this.setAttribute("expiration", newValue);
+        }*/
 
         _tomorrow() {
           return this._dateInNDays(1);
@@ -53,8 +85,7 @@
         }
 
         _defaultExpirationDate() {
-          const expirationInput = this.shadowRoot.getElementById('expiration');
-          const expirationRaw = expirationInput.getAttribute("data-expiration-raw");
+          const expirationRaw = this.elements.expirationInput.getAttribute("data-expiration-raw");
 
           if (!expirationRaw) {
             return this._dateInNDays(30);
