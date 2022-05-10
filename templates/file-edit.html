@@ -1,8 +1,4 @@
 {{ define "style-tags" }}
-  <link
-    rel="stylesheet"
-    href="/third-party/js-datepicker@5.18.0/datepicker.min.css"
-  />
 {{ end }}
 
 {{ define "script-tags" }}
@@ -10,6 +6,7 @@
 {{ end }}
 
 {{ define "custom-elements" }}
+  {{ template "expiration-picker.html" . }}
 {{ end }}
 
 {{ define "content" }}
@@ -41,18 +38,14 @@
           />
           Delete after expiration
         </label>
-        <div class="control">
-          <input
-            id="expiration"
-            class="input is-normal"
-            type="text"
-            {{ if not (isNeverExpire .Expires) }}
-              data-expiration-raw="{{ formatExpiration .Expires }}"
-            {{ else }}
-              disabled
-            {{ end }}
-          />
-        </div>
+        <expiration-picker
+          id="expiration"
+          {{ if not (isNeverExpire .Expires) }}
+            expiration="{{ formatExpiration .Expires }}"
+          {{ else }}
+            disabled
+          {{ end }}
+        />
       </div>
 
       <div class="field my-5">
