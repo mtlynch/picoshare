@@ -18,3 +18,9 @@ func String(n int, characters []rune) string {
 	}
 	return string(b)
 }
+
+func Bytes(n int) []byte {
+	b := make([]byte, n)
+	rand.Read(b)
+	return b
+}
