@@ -1,6 +1,6 @@
 // Note: I don't know of a cleaner way of doing this. datepicker doesn't seem
-// to export values like a proper JS module, so we import, which populates
-// window.datepicker.
+// to export values like a proper JS module, so we import the whole JS file,
+// which populates window.datepicker.
 import "/third-party/js-datepicker@5.18.0/js-datepicker.js";
 
 import { editFile } from "./controllers/files.js";
