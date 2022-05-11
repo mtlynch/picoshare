@@ -1,0 +1,63 @@
+#!/bin/bash
+
+# Convenience script for creating a new page view.
+#
+# Usage: make-new-page page_name
+
+set -e
+
+if [[ "$1" == "" ]]; then
+  >&2 echo "Usage: make-new-page page_name"
+  exit 1
+fi
+
+# Change directory to repository root.
+readonly SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+cd "${SCRIPT_DIR}/.."
+
+set -u
+
+readonly page_name="$1"
+readonly page_path="templates/${page_name}.html"
+
+if [[ -f "$page_path" ]]; then
+  >&2 echo "page already exists: ${page_path}"
+  exit 1
+fi
+
+cat << EOF > "${page_path}"
+{{ define "style-tags" }}
+{{ end }}
+
+{{ define "script-tags" }}
+{{ end }}
+
+{{ define "custom-elements" }}
+{{ end }}
+
+{{ define "content" }}
+{{ end }}
+
+{{ template "base.html" }}
+EOF
+
+echo "created boilerplate page at ${page_path}"
+
+readonly views_handler="handlers/views.go"
+
+cat << EOF >> "${views_handler}"
+func (s Server) ${page_name}Get() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if err := renderTemplate(w, "${page_name}.html", struct {
+			commonProps
+		}{
+			commonProps:       makeCommonProps("PicoShare - ${page_name}", r.Context()),
+		}, template.FuncMap{}); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+}
+EOF
+
+echo "added ${page_name}Get() in ${views_handler}"
