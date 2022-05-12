@@ -72,10 +72,7 @@ export async function editFile(id, filename, expiration, note) {
     note,
   };
   if (expiration) {
-    payload = {
-      expiration,
-      ...payload,
-    };
+    payload.expiration = expiration;
   }
   return fetch(`/api/entry/${encodeURIComponent(id)}`, {
     method: "PUT",
