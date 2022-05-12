@@ -34,6 +34,18 @@ function populateEditButton(entryId) {
   btn.href = `/files/${entryId}/edit`;
 }
 
+// Sorts clipboard items in descending priority of which format we think the
+// user wants to upload.
+function sortClipboardItems(items) {
+  return items.sort((a, b) => {
+    if (a.kind === "string" && b.kind === "string") {
+      // Prefer text/plain strings ahead of other string types.
+      return a.type === "text/plain" ? -1 : 1;
+    }
+    return 0;
+  });
+}
+
 function doUpload(file) {
   const guestLinkMetadata = getGuestLinkMetdata();
 
@@ -139,7 +151,7 @@ uploadEl.addEventListener("dragleave", () => {
 
 pasteEl.addEventListener("paste", (evt) => {
   const timestamp = new Date().toISOString().replaceAll(":", "");
-  for (const item of evt.clipboardData.items) {
+  for (const item of sortClipboardItems(Array.from(evt.clipboardData.items))) {
     if (item.kind === "string") {
       item.getAsString((s) => {
         doUpload(
