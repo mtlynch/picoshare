@@ -4,13 +4,8 @@
     @import "/third-party/js-datepicker@5.18.0/datepicker.min.css";
   </style>
   <div class="control">
-    <input
-      id="expiration"
-      class="input is-normal"
-      type="text"
-    />
+    <input id="expiration" class="input is-normal" type="text" />
   </div>
-</div>
 </template>
 
 <script type="module" nonce="{{ .CspNonce }}">
@@ -30,8 +25,8 @@
             template.content.cloneNode(true)
           );
           this.elements = {
-            expirationInput: this.shadowRoot.getElementById('expiration'),
-          }
+            expirationInput: this.shadowRoot.getElementById("expiration"),
+          };
 
           let initialExpiration = null;
           if (this.getAttribute("value")) {
@@ -67,14 +62,14 @@
           if (name === "disabled") {
             this._togglePicker();
           } else if (name === "value") {
-            this.picker.dateSelected = new Date(newValue)
+            this.picker.dateSelected = new Date(newValue);
           }
         }
 
         get value() {
           if (
             this.elements.expirationInput.getAttribute("disabled") === "true"
-            ) {
+          ) {
             return null;
           }
           return this.picker.dateSelected.toISOString();
@@ -105,4 +100,3 @@
     );
   })();
 </script>
-</template>
