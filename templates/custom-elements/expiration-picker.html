@@ -52,6 +52,10 @@
           }
         }
 
+        disconnectedCallback() {
+          this.picker.remove();
+        }
+
         static get observedAttributes() {
           return ["value", "disabled"];
         }
