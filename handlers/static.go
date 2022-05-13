@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"strconv"
 )
 
 // serveStaticResource serves any static file under the ./static directory.
@@ -35,6 +36,11 @@ func serveStaticResource() http.HandlerFunc {
 			http.Error(w, "Failed to find file: "+r.URL.Path, http.StatusNotFound)
 			return
 		}
+
+		// Set cache headers
+		etag := "\"" + strconv.FormatInt(stat.ModTime().UnixMilli(), 10) + "\""
+		w.Header().Set("Etag", etag)
+		w.Header().Set("Cache-Control", "max-age=3600")
 
 		http.ServeFile(w, r, path.Join(staticRootDir, r.URL.Path))
 	}

@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"net/http"
 	"strings"
@@ -17,7 +18,7 @@ var contextKeyCSPNonce = &contextKey{"csp-nonce"}
 
 func enforceContentSecurityPolicy(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		nonce := random.String(16, []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"))
+		nonce := base64.StdEncoding.EncodeToString(random.Bytes(16))
 
 		type cspDirective struct {
 			name   string
@@ -41,7 +42,10 @@ func enforceContentSecurityPolicy(next http.Handler) http.Handler {
 				name: "style-src",
 				values: []string{
 					"self",
-					"nonce-" + nonce,
+					// Firefox refuses to load an inline <style> tag in an HTML custom
+					// element, even if we specify a nonce:
+					// https://github.com/mtlynch/picoshare/issues/249
+					"unsafe-inline",
 				},
 			},
 		}

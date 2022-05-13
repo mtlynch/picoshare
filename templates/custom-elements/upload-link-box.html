@@ -11,22 +11,23 @@
       height: 1.5em;
     }
 
-    .box button, .box button span {
+    .box button,
+    .box button span {
       font-size: 7pt;
     }
   </style>
   <div class="box">
-      <div class="is-flex is-align-items-center">
-        <p><a id="link"></a></p>
-        <button id="copy-btn" class="button is-small is-info ml-2">
-          <span class="icon is-small">
-            <i class="fa-solid fa-copy"></i>
-          </span>
-        </button>
-      </div>
-      <p class="light-font mt-3">
-        <slot></slot>
-      </p>
+    <div class="is-flex is-align-items-center">
+      <p><a id="link"></a></p>
+      <button id="copy-btn" class="button is-small is-info ml-2">
+        <span class="icon is-small">
+          <i class="fa-solid fa-copy"></i>
+        </span>
+      </button>
+    </div>
+    <p class="light-font mt-3">
+      <slot></slot>
+    </p>
   </div>
 </template>
 
@@ -44,13 +45,13 @@
             template.content.cloneNode(true)
           );
           this.href = this.getAttribute("href");
-          this.shadowRoot.getElementById("copy-btn").addEventListener("click",
-            () => {
+          this.shadowRoot
+            .getElementById("copy-btn")
+            .addEventListener("click", () => {
               copyToClipboard(this.href).then(() => {
                 this.emitLinkCopied();
               });
-            }
-          )
+            });
         }
 
         attributeChangedCallback(name, oldValue, newValue) {
@@ -82,4 +83,3 @@
     );
   })();
 </script>
-</template>
