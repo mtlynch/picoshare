@@ -32,8 +32,6 @@
           this.elements = {
             expirationInput: this.shadowRoot.getElementById('expiration'),
           }
-          console.log('expiration picker');
-
 
           let initialExpiration = null;
           if (this.getAttribute("value")) {
@@ -47,11 +45,10 @@
             formatter: (input, date) => {
               input.value = date.toLocaleDateString();
             },
-            respectDisabledReadOnly: true,
           });
 
-          if (this.getAttribute("disabled") !== null) {
-            this._disable();
+          if (this.getAttribute("disabled") === null) {
+            this._togglePicker();
           }
         }
 
@@ -64,11 +61,7 @@
             return;
           }
           if (name === "disabled") {
-            if (newValue === "true") {
-              this._disable();
-            } else {
-              this._enable();
-            }
+            this._togglePicker();
           } else if (name === "value") {
             this.picker.dateSelected = new Date(newValue)
           }
@@ -87,13 +80,8 @@
           this.picker.dateSelected = new Date(newValue);
         }
 
-        _disable() {
-          //this.elements.expirationInput.value = "";
-          this.elements.expirationInput.setAttribute("disabled", true);
-        }
-
-        _enable() {
-          this.elements.expirationInput.removeAttribute("disabled");
+        _togglePicker() {
+          this.elements.expirationInput.classList.toggle("is-invisible");
         }
 
         _tomorrow() {
