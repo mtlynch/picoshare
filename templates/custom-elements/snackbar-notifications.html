@@ -1,5 +1,5 @@
-<template id="snackbar-notifications-template"
-  >  <style nonce="{{ .CspNonce }}">
+<template id="snackbar-notifications-template">
+  <style nonce="{{ .CspNonce }}">
     #notifications {
       position: fixed;
       bottom: 0px;
@@ -40,8 +40,10 @@
       }
     }
   </style>
-  <div id="notifications"></div> </template
-><script type="module" nonce="{{ .CspNonce }}">
+  <div id="notifications"></div>
+</template>
+
+<script type="module" nonce="{{ .CspNonce }}">
   (function () {
     const template = document.querySelector("#snackbar-notifications-template");
 
