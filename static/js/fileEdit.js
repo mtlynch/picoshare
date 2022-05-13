@@ -26,9 +26,6 @@ document.getElementById("edit-form").addEventListener("submit", (evt) => {
   hideElement(editForm);
   showElement(progressSpinner);
 
-  console.log(expireCheckbox.checked);
-  console.log(expirationPicker.value);
-  return;
   editFile(
     id,
     readFilename(),

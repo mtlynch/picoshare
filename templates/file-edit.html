@@ -41,7 +41,7 @@
         <expiration-picker
           id="expiration"
           {{ if not (isNeverExpire .Expires) }}
-            expiration="{{ formatExpiration .Expires }}"
+            value="{{ formatExpiration .Expires }}"
           {{ else }}
             disabled
           {{ end }}

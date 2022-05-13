@@ -32,19 +32,31 @@
           this.elements = {
             expirationInput: this.shadowRoot.getElementById('expiration'),
           }
+          console.log('expiration picker');
 
-          const picker = window.datepicker(this.elements.expirationInput, {
+
+          let initialExpiration = null;
+          if (this.getAttribute("value")) {
+            initialExpiration = new Date(this.getAttribute("value"));
+          } else {
+            initialExpiration = this._defaultExpirationDate();
+          }
+          this.picker = window.datepicker(this.elements.expirationInput, {
             minDate: this._tomorrow(),
-            dateSelected: this._defaultExpirationDate(),
+            dateSelected: initialExpiration,
             formatter: (input, date) => {
               input.value = date.toLocaleDateString();
             },
             respectDisabledReadOnly: true,
           });
+
+          if (this.getAttribute("disabled") !== null) {
+            this._disable();
+          }
         }
 
         static get observedAttributes() {
-          return ["expiration", "disabled"];
+          return ["value", "disabled"];
         }
 
         attributeChangedCallback(name, oldValue, newValue) {
@@ -53,27 +65,36 @@
           }
           if (name === "disabled") {
             if (newValue === "true") {
-              this.elements.expirationInput.setAttribute("disabled", true);
+              this._disable();
             } else {
-              this.elements.expirationInput.removeAttribute("disabled");
+              this._enable();
             }
-          } else if (name === "expiration") {
-            this.elements.expirationInput.value = newValue;
+          } else if (name === "value") {
+            this.picker.dateSelected = new Date(newValue)
           }
         }
 
         get value() {
-          console.log("getting value")
-          return this.getAttribute("expiration");
-        }
-/*
-        get expiration() {
-          return this.getAttribute("expiration");
+          if (
+            this.elements.expirationInput.getAttribute("disabled") === "true"
+            ) {
+            return null;
+          }
+          return this.picker.dateSelected.toISOString();
         }
 
-        set expiration(newValue) {
-          this.setAttribute("expiration", newValue);
-        }*/
+        set value(newValue) {
+          this.picker.dateSelected = new Date(newValue);
+        }
+
+        _disable() {
+          //this.elements.expirationInput.value = "";
+          this.elements.expirationInput.setAttribute("disabled", true);
+        }
+
+        _enable() {
+          this.elements.expirationInput.removeAttribute("disabled");
+        }
 
         _tomorrow() {
           return this._dateInNDays(1);
@@ -86,12 +107,7 @@
         }
 
         _defaultExpirationDate() {
-          const expirationRaw = this.elements.expirationInput.getAttribute("data-expiration-raw");
-
-          if (!expirationRaw) {
-            return this._dateInNDays(30);
-          }
-          return new Date(expirationRaw);
+          return this._dateInNDays(30);
         }
       }
     );
