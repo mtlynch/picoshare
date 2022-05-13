@@ -1,5 +1,5 @@
-<template id="upload-links-template"
-  >  <style nonce="{{ .CspNonce }}">
+<template id="upload-links-template">
+  <style nonce="{{ .CspNonce }}">
     .box-wrapper + .box-wrapper {
       margin-top: 1rem;
     }
@@ -13,8 +13,9 @@
     <upload-link-box id="short-link-box">
       <slot>Shortlink</slot>
     </upload-link-box>
-  </div> </template
->
+  </div>
+</template>
+
 <script type="module" nonce="{{ .CspNonce }}">
   import { makeShortLink, makeVerboseLink } from "/js/lib/links.js";
 
@@ -57,8 +58,9 @@
 
           this.shadowRoot.getElementById("verbose-link-box").href =
             makeVerboseLink(this.fileId, this.filename);
-          this.shadowRoot.getElementById("short-link-box").href =
-            makeShortLink(this.fileId);
+          this.shadowRoot.getElementById("short-link-box").href = makeShortLink(
+            this.fileId
+          );
         }
       }
     );

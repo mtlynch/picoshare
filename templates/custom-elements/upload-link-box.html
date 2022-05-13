@@ -1,5 +1,5 @@
-<template id="upload-link-box-template"
-  >  <style nonce="{{ .CspNonce }}">
+<template id="upload-link-box-template">
+  <style nonce="{{ .CspNonce }}">
     @import "/third-party/bulma@0.9.3/bulma.min.css";
     @import "/third-party/fontawesome6/css/all.min.css";
 
@@ -11,7 +11,8 @@
       height: 1.5em;
     }
 
-    .box button, .box button span {
+    .box button,
+    .box button span {
       font-size: 7pt;
     }
   </style>
@@ -27,8 +28,9 @@
     <p class="light-font mt-3">
       <slot></slot>
     </p>
-  </div> </template
->
+  </div>
+</template>
+
 <script type="module" nonce="{{ .CspNonce }}">
   import { copyToClipboard } from "/js/lib/clipboard.js";
 
@@ -43,13 +45,13 @@
             template.content.cloneNode(true)
           );
           this.href = this.getAttribute("href");
-          this.shadowRoot.getElementById("copy-btn").addEventListener("click",
-            () => {
+          this.shadowRoot
+            .getElementById("copy-btn")
+            .addEventListener("click", () => {
               copyToClipboard(this.href).then(() => {
                 this.emitLinkCopied();
               });
-            }
-          )
+            });
         }
 
         attributeChangedCallback(name, oldValue, newValue) {
