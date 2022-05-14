@@ -18,26 +18,19 @@
   (function () {
     const template = document.querySelector("#expiration-picker-template");
 
-    function isNumber(n) {
-      return !isNaN(parseFloat(n)) && !isNaN(n - 0);
-    }
-
     function parseDate(raw) {
-      const dateParts = raw.split("-");
-      if (dateParts.length !== 3) {
-        return null;
-      }
-      const year = dateParts[0];
-      const month = dateParts[1] - 1;
-      const day = dateParts[2];
-      if (!isNumber(year) || !isNumber(month) || !isNumber(day)) {
-        return null;
-      }
-      const timestamp = Date.parse(year, month, day);
+      // Make sure the date is valid.
+      const timestamp = Date.parse(raw);
       if (isNaN(timestamp)) {
         return null;
       }
-      return new Date(timestamp);
+      // Get the date in local time.
+      const date = new Date(timestamp);
+      return new Date(
+        date.getUTCFullYear(),
+        date.getUTCMonth(),
+        date.getUTCDate()
+      );
     }
 
     function formatDate(date) {
@@ -73,7 +66,7 @@
           this.elements.expirationInput.addEventListener("change", (evt) => {
             const newDate = parseDate(evt.target.value);
             if (newDate) {
-              this.picker.setDate();
+              this.picker.setDate(newDate);
             } else {
               this.elements.expirationInput.setCustomValidity(
                 "Date must be in YYYY-MM-DD format"
