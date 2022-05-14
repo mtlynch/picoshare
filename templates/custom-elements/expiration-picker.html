@@ -5,6 +5,8 @@
   </style>
   <div class="control">
     <input id="expiration" class="input is-normal" type="text" />
+
+    <p class="help">Expiration date</p>
   </div>
 </template>
 
@@ -25,6 +27,7 @@
             template.content.cloneNode(true)
           );
           this.elements = {
+            container: this.shadowRoot.querySelector(".control"),
             expirationInput: this.shadowRoot.getElementById("expiration"),
           };
 
@@ -42,9 +45,7 @@
             },
           });
 
-          if (this.getAttribute("disabled") === null) {
-            this._togglePicker();
-          }
+          this._setVisibility(this.getAttribute("disabled") !== null);
         }
 
         disconnectedCallback() {
@@ -60,7 +61,7 @@
             return;
           }
           if (name === "disabled") {
-            this._togglePicker();
+            this._setVisibility(newValue === "true");
           } else if (name === "value") {
             this.picker.dateSelected = new Date(newValue);
           }
@@ -79,8 +80,12 @@
           this.picker.dateSelected = new Date(newValue);
         }
 
-        _togglePicker() {
-          this.elements.expirationInput.classList.toggle("is-invisible");
+        _setVisibility(visible) {
+          if (visible) {
+            this.elements.container.classList.add("is-invisible");
+          } else {
+            this.elements.container.classList.remove("is-invisible");
+          }
         }
 
         _tomorrow() {
