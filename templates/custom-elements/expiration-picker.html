@@ -5,7 +5,6 @@
   </style>
   <div class="control">
     <input id="expiration" class="input is-normal" type="text" />
-
     <p class="help">Expiration date</p>
   </div>
 </template>
@@ -68,9 +67,7 @@
         }
 
         get value() {
-          if (
-            this.elements.expirationInput.getAttribute("disabled") === "true"
-          ) {
+          if (this.getAttribute("disabled") !== null) {
             return null;
           }
           return this.picker.dateSelected.toISOString();
