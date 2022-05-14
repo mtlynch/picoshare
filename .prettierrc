@@ -1,7 +1,7 @@
 {
   "overrides": [
     {
-      "files": ["templates/*.html"],
+      "files": ["*.html"],
       "options": {
         "parser": "go-template"
       }
