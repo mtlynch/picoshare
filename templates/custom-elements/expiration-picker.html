@@ -18,6 +18,10 @@
   (function () {
     const template = document.querySelector("#expiration-picker-template");
 
+    function isNumber(n) {
+      return !isNaN(parseFloat(n)) && !isNaN(n - 0);
+    }
+
     function parseDate(raw) {
       const dateParts = raw.split("-");
       if (dateParts.length !== 3) {
@@ -26,7 +30,14 @@
       const year = dateParts[0];
       const month = dateParts[1] - 1;
       const day = dateParts[2];
-      return new Date(year, month, day);
+      if (!isNumber(year) || !isNumber(month) || !isNumber(day)) {
+        return null;
+      }
+      const timestamp = Date.parse(year, month, day);
+      if (isNaN(timestamp)) {
+        return null;
+      }
+      return new Date(timestamp);
     }
 
     function formatDate(date) {
@@ -60,7 +71,15 @@
           });
 
           this.elements.expirationInput.addEventListener("change", (evt) => {
-            this.picker.setDate(parseDate(evt.target.value));
+            const newDate = parseDate(evt.target.value);
+            if (newDate) {
+              this.picker.setDate();
+            } else {
+              this.elements.expirationInput.setCustomValidity(
+                "Date must be in YYYY-MM-DD format"
+              );
+              this.elements.expirationInput.reportValidity();
+            }
           });
 
           this._setVisibility(this.getAttribute("disabled") !== null);
@@ -86,7 +105,10 @@
         }
 
         get value() {
-          if (this.getAttribute("disabled") !== null) {
+          if (
+            this.getAttribute("disabled") !== null ||
+            !this.elements.expirationInput.validity.valid
+          ) {
             return null;
           }
           return this.picker.dateSelected.toISOString();

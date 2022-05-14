@@ -208,3 +208,49 @@ it("uploads a file and edits its note", () => {
     "My favorite kitten!"
   );
 });
+
+it("uploads a file and changes its expiration time", () => {
+  cy.visit("/");
+  cy.login();
+
+  cy.get(".file-input").attachFile("kittyface.jpg");
+
+  cy.get("#upload-result .message-body").should("contain", "Upload complete!");
+
+  cy.get("#upload-result upload-links")
+    .should("have.attr", "filename")
+    .and("equal", "kittyface.jpg");
+  cy.get("#upload-result upload-links")
+    .shadow()
+    .find("#verbose-link-box")
+    .shadow()
+    .find("#link")
+    .should("be.visible");
+  cy.get("#upload-result upload-links")
+    .shadow()
+    .find("#short-link-box")
+    .shadow()
+    .find("#link")
+    .should("be.visible");
+
+  cy.get('.navbar a[href="/files"]').click();
+  cy.get('.table tbody tr:first-child [test-data-id="filename"]').should(
+    "contain",
+    "kittyface.jpg"
+  );
+
+  cy.get('.table tbody tr:first-child [pico-purpose="edit"]').click();
+
+  cy.location("pathname").should("match", new RegExp("/files/.+/edit"));
+
+  cy.get("#expiration").shadow().find("#expiration").clear();
+  cy.get("#expiration").shadow().find("#expiration").type("2029-09-03");
+  cy.get("form .button.is-primary").click();
+
+  cy.location("pathname").should("eq", "/files");
+
+  cy.get('.table tbody tr:first-child [test-data-id="expiration"]').should(
+    "contain",
+    "2029-09-03"
+  );
+});
