@@ -244,7 +244,11 @@ it("uploads a file and changes its expiration time", () => {
   cy.location("pathname").should("match", new RegExp("/files/.+/edit"));
 
   cy.get("#expiration").shadow().find("#expiration").clear();
-  cy.get("#expiration").shadow().find("#expiration").type("2029-09-03");
+  cy.get("#expiration").shadow().find("#expiration").type(
+    "2029-09-03",
+    // Cypress seems to incorrectly think that the input field is disabled.
+    { force: true }
+  );
   cy.get("form .button.is-primary").click();
 
   cy.location("pathname").should("eq", "/files");
