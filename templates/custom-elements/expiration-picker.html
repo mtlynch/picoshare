@@ -18,6 +18,21 @@
   (function () {
     const template = document.querySelector("#expiration-picker-template");
 
+    function parseDate(raw) {
+      const dateParts = raw.split("-");
+      if (dateParts.length !== 3) {
+        return null;
+      }
+      const year = dateParts[0];
+      const month = dateParts[1] - 1;
+      const day = dateParts[2];
+      return new Date(year, month, day);
+    }
+
+    function formatDate(date) {
+      return date.toISOString().split("T")[0];
+    }
+
     customElements.define(
       "expiration-picker",
       class extends HTMLElement {
@@ -40,8 +55,12 @@
             minDate: this._tomorrow(),
             dateSelected: initialExpiration,
             formatter: (input, date) => {
-              input.value = date.toLocaleDateString();
+              input.value = formatDate(date);
             },
+          });
+
+          this.elements.expirationInput.addEventListener("change", (evt) => {
+            this.picker.setDate(parseDate(evt.target.value));
           });
 
           this._setVisibility(this.getAttribute("disabled") !== null);
