@@ -4,6 +4,8 @@ import { showElement, hideElement } from "./lib/bulma.js";
 const editForm = document.getElementById("edit-form");
 const errorContainer = document.getElementById("error");
 const progressSpinner = document.getElementById("progress-spinner");
+const expireCheckbox = document.getElementById("expire-checkbox");
+const expirationPicker = document.getElementById("expiration");
 
 function readFilename() {
   return document.getElementById("filename").value || null;
@@ -24,7 +26,7 @@ document.getElementById("edit-form").addEventListener("submit", (evt) => {
   hideElement(editForm);
   showElement(progressSpinner);
 
-  editFile(id, readFilename(), readNote())
+  editFile(id, readFilename(), expirationPicker.value, readNote())
     .then(() => {
       document.location = "/files";
     })
@@ -36,4 +38,12 @@ document.getElementById("edit-form").addEventListener("submit", (evt) => {
     .finally(() => {
       hideElement(progressSpinner);
     });
+});
+
+expireCheckbox.addEventListener("change", () => {
+  if (expireCheckbox.checked) {
+    expirationPicker.removeAttribute("disabled");
+  } else {
+    expirationPicker.setAttribute("disabled", true);
+  }
 });

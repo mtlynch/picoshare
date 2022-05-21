@@ -42,7 +42,9 @@
             </td>
             <td class="is-vcentered">{{ formatFileSize .Size }}</td>
             <td class="is-vcentered">{{ formatDate .Uploaded }}</td>
-            <td class="is-vcentered">{{ formatExpiration .Expires }}</td>
+            <td class="is-vcentered" test-data-id="expiration">
+              {{ formatExpiration .Expires }}
+            </td>
             <td class="is-vcentered">
               <div class="field is-grouped is-justify-content-flex-end">
                 <p class="control">

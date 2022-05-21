@@ -66,14 +66,18 @@ export async function guestUploadFile(file, guestLinkID) {
     });
 }
 
-export async function editFile(id, filename, note) {
+export async function editFile(id, filename, expiration, note) {
+  let payload = {
+    filename,
+    note,
+  };
+  if (expiration) {
+    payload.expiration = expiration;
+  }
   return fetch(`/api/entry/${encodeURIComponent(id)}`, {
     method: "PUT",
     credentials: "include",
-    body: JSON.stringify({
-      filename,
-      note,
-    }),
+    body: JSON.stringify(payload),
   })
     .then((response) => {
       if (!response.ok) {

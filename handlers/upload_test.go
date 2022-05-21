@@ -146,6 +146,7 @@ func TestEntryPut(t *testing.T) {
 	originalEntry := types.UploadMetadata{
 		ID:       types.EntryID("AAAAAAAAAA"),
 		Filename: types.Filename("original-filename.mp3"),
+		Expires:  mustParseExpirationTime("2024-12-15T21:52:33Z"),
 		Note:     types.FileNote{},
 	}
 	for _, tt := range []struct {
@@ -153,11 +154,25 @@ func TestEntryPut(t *testing.T) {
 		targetID         string
 		payload          string
 		filenameExpected string
+		expiresExpected  types.ExpirationTime
 		noteExpected     types.FileNote
 		status           int
 	}{
 		{
-			description: "updates metadata for valid filename and note",
+			description: "updates metadata for valid request",
+			targetID:    "AAAAAAAAAA",
+			payload: `{
+				"filename": "cool-song.mp3",
+				"expiration": "2029-01-02T01:02:03Z",
+				"note":"My latest track"
+			}`,
+			filenameExpected: "cool-song.mp3",
+			noteExpected:     makeNote("My latest track"),
+			expiresExpected:  mustParseExpirationTime("2029-01-02T01:02:03Z"),
+			status:           http.StatusOK,
+		},
+		{
+			description: "treats missing expiration time as NeverExpire",
 			targetID:    "AAAAAAAAAA",
 			payload: `{
 				"filename": "cool-song.mp3",
@@ -165,6 +180,7 @@ func TestEntryPut(t *testing.T) {
 			}`,
 			filenameExpected: "cool-song.mp3",
 			noteExpected:     makeNote("My latest track"),
+			expiresExpected:  types.NeverExpire,
 			status:           http.StatusOK,
 		},
 		{
@@ -172,10 +188,12 @@ func TestEntryPut(t *testing.T) {
 			targetID:    "AAAAAAAAAA",
 			payload: `{
 				"filename": "",
+				"expiration": "2029-01-02T01:02:03Z",
 				"note":"My latest track"
 			}`,
 			filenameExpected: "original-filename.mp3",
 			noteExpected:     types.FileNote{},
+			expiresExpected:  mustParseExpirationTime("2024-12-15T21:52:33Z"),
 			status:           http.StatusBadRequest,
 		},
 		{
@@ -183,9 +201,11 @@ func TestEntryPut(t *testing.T) {
 			targetID:    "AAAAAAAAAA",
 			payload: `{
 				"filename": "cool-song.mp3",
+				"expiration": "2029-01-02T01:02:03Z",
 				"note":"<script>alert(1)</script>"
 			}`,
 			filenameExpected: "original-filename.mp3",
+			expiresExpected:  mustParseExpirationTime("2024-12-15T21:52:33Z"),
 			noteExpected:     types.FileNote{},
 			status:           http.StatusBadRequest,
 		},
@@ -194,9 +214,11 @@ func TestEntryPut(t *testing.T) {
 			targetID:    "BBBBBBBBBB",
 			payload: `{
 				"filename": "cool-song.mp3",
+				"expiration": "2029-01-02T01:02:03Z",
 				"note":"My latest track"
 			}`,
 			filenameExpected: "original-filename.mp3",
+			expiresExpected:  mustParseExpirationTime("2024-12-15T21:52:33Z"),
 			noteExpected:     types.FileNote{},
 			status:           http.StatusNotFound,
 		},

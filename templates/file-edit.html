@@ -6,6 +6,7 @@
 {{ end }}
 
 {{ define "custom-elements" }}
+  {{ template "expiration-picker.html" . }}
 {{ end }}
 
 {{ define "content" }}
@@ -24,6 +25,27 @@
             required
           />
         </div>
+      </div>
+
+      <div class="field my-5">
+        <label class="label">Expiration</label>
+
+        <label class="checkbox">
+          <input
+            type="checkbox"
+            id="expire-checkbox"
+            {{ if not (isNeverExpire .Expires) }}checked{{ end }}
+          />
+          Delete after expiration
+        </label>
+        <expiration-picker
+          id="expiration"
+          {{ if not (isNeverExpire .Expires) }}
+            value="{{ formatExpiration .Expires }}"
+          {{ else }}
+            disabled
+          {{ end }}
+        />
       </div>
 
       <div class="field my-5">
