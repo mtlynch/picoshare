@@ -67,6 +67,7 @@ COPY ./docker-entrypoint /app/docker-entrypoint
 COPY ./litestream.yml /etc/litestream.yml
 COPY ./static /app/static
 COPY ./templates /app/templates
+COPY ./LICENSE /app/LICENSE
 
 WORKDIR /app
 
