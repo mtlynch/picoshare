@@ -22,6 +22,12 @@ func TestFileNote(t *testing.T) {
 			output:      makeFileNote("Shared with my college group chat"),
 		},
 		{
+			description: "empty note",
+			input:       "",
+			valid:       true,
+			output:      types.FileNote{},
+		},
+		{
 			description: "note that's too long",
 			input:       strings.Repeat("A", parse.MaxFileNoteLen+1),
 			valid:       false,
