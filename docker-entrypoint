@@ -11,7 +11,7 @@ is_litestream_enabled() {
 
   local IS_ENABLED='false'
 
-  if [[ ! -z "${LITESTREAM_BUCKET}" ]]; then
+  if [[ -n "${LITESTREAM_BUCKET}" ]]; then
     IS_ENABLED='true';
   fi
 
@@ -20,7 +20,8 @@ is_litestream_enabled() {
   echo "${IS_ENABLED}"
 }
 
-readonly IS_LITESTREAM_ENABLED="$(is_litestream_enabled)"
+IS_LITESTREAM_ENABLED="$(is_litestream_enabled)"
+readonly IS_LITESTREAM_ENABLED
 
 # Echo commands to stdout.
 set -x
