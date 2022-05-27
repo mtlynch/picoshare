@@ -3,7 +3,8 @@
 set -eux
 
 # Change directory to repository root.
-readonly SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+readonly SCRIPT_DIR
 cd "${SCRIPT_DIR}/.."
 
 TIMESTAMP=$(date --iso-8601=minutes | sed 's/://g' | sed 's/+0000/Z/g')
@@ -13,6 +14,7 @@ export DB_COPY_PATH="data/${TIMESTAMP}.db"
 ./dev-scripts/reset-db
 
 set +x
+# shellcheck disable=SC1091
 . prod.env
 set -x
 

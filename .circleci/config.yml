@@ -12,6 +12,17 @@ jobs:
       - run:
           name: Check that all text files end in a trailing newline
           command: ./dev-scripts/check-trailing-newline
+  check_bash:
+    docker:
+      - image: koalaman/shellcheck-alpine:v0.8.0
+    steps:
+      - run:
+          name: Install dependencies needed to check out repo
+          command: apk add bash git openssh-client grep
+      - checkout
+      - run:
+          name: Run static analysis on bash scripts
+          command: ./dev-scripts/check-bash
   lint_sql:
     docker:
       - image: sqlfluff/sqlfluff:0.11.2
@@ -157,6 +168,10 @@ workflows:
           filters:
             tags:
               only: /.*/
+      - check_bash:
+          filters:
+            tags:
+              only: /.*/
       - lint_sql:
           filters:
             tags:
@@ -176,6 +191,7 @@ workflows:
       - build_docker_images:
           requires:
             - check_whitespace
+            - check_bash
             - check_frontend
             - test_go
             - e2e
@@ -187,6 +203,7 @@ workflows:
       - deploy:
           requires:
             - check_whitespace
+            - check_bash
             - check_frontend
             - test_go
             - e2e
