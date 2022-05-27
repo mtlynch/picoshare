@@ -14,6 +14,7 @@ export DB_COPY_PATH="data/${TIMESTAMP}.db"
 ./dev-scripts/reset-db
 
 set +x
+# shellcheck disable=SC2236
 . prod.env
 set -x
 

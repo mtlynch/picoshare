@@ -18,6 +18,7 @@ DOCKER_BUILDKIT=1 \
   docker build -t picoshare .
 
 set +x
+# shellcheck disable=SC2236
 . dev.env
 set -x
 
