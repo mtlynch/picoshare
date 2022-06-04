@@ -9,7 +9,7 @@ const progressSpinner = document.getElementById("progress-spinner");
 const uploadForm = document.getElementById("upload-form");
 const expirationContainer = document.querySelector(".expiration-container");
 const expirationSelect = document.getElementById("expiration-select");
-const expirationPicker = document.getElementById("expiration");
+const expirationPicker = document.getElementById("expiration-picker");
 const noteInput = document.getElementById("note");
 const uploadAnotherBtn = document.getElementById("upload-another-btn");
 
@@ -22,12 +22,12 @@ function getGuestLinkMetdata() {
 }
 
 function isCustomExpirationSelected() {
-  return expirationSelect.value === "";
+  return expirationPicker && expirationSelect.value === "";
 }
 
 function readExpiration() {
   if (isCustomExpirationSelected()) {
-    return expirationPicker.value.toISOString();
+    return expirationPicker.value;
   } else {
     return expirationSelect.value;
   }
@@ -202,13 +202,15 @@ pasteEl.addEventListener("input", (evt) => {
   resetPasteInstructions();
 });
 
-expirationSelect.addEventListener("change", () => {
-  if (isCustomExpirationSelected()) {
-    showElement(expirationPicker);
-  } else {
-    hideElement(expirationPicker);
-  }
-});
+if (expirationSelect) {
+  expirationSelect.addEventListener("change", () => {
+    if (isCustomExpirationSelected()) {
+      showElement(expirationPicker);
+    } else {
+      hideElement(expirationPicker);
+    }
+  });
+}
 
 uploadAnotherBtn.addEventListener("click", () => {
   window.location.reload();

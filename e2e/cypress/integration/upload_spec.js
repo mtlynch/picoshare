@@ -36,8 +36,9 @@ it("uploads a file with a custom expiration time", () => {
   cy.visit("/");
   cy.login();
 
-  cy.get("#expiration").shadow().find("#expiration").clear();
-  cy.get("#expiration").shadow().find("#expiration").type(
+  cy.get("#expiration-select").select("Custom");
+  cy.get("#expiration-picker").shadow().find("#expiration").clear();
+  cy.get("#expiration-picker").shadow().find("#expiration").type(
     "2029-09-03",
     // Cypress seems to incorrectly think that the input field is disabled.
     { force: true }
