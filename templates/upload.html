@@ -15,6 +15,7 @@
 {{ end }}
 
 {{ define "custom-elements" }}
+  {{ template "expiration-picker.html" . }}
   {{ template "upload-link-box.html" . }}
   {{ template "upload-links.html" . }}
 {{ end }}
@@ -54,6 +55,11 @@
             </select>
           </div>
         </div>
+
+        <expiration-picker
+          id="expiration-picker"
+          class="control is-hidden mt-3 is-block"
+        />
       </div>
     {{ end }}
 

@@ -9,6 +9,7 @@ const progressSpinner = document.getElementById("progress-spinner");
 const uploadForm = document.getElementById("upload-form");
 const expirationContainer = document.querySelector(".expiration-container");
 const expirationSelect = document.getElementById("expiration-select");
+const expirationPicker = document.getElementById("expiration-picker");
 const noteInput = document.getElementById("note");
 const uploadAnotherBtn = document.getElementById("upload-another-btn");
 
@@ -18,6 +19,18 @@ function getGuestLinkMetdata() {
     return null;
   }
   return JSON.parse(el.innerHTML);
+}
+
+function isCustomExpirationSelected() {
+  return expirationPicker && expirationSelect.value === "";
+}
+
+function readExpiration() {
+  if (isCustomExpirationSelected()) {
+    return expirationPicker.value;
+  } else {
+    return expirationSelect.value;
+  }
 }
 
 function readNote() {
@@ -66,7 +79,7 @@ function doUpload(file) {
   showElement(progressSpinner);
 
   let uploader = () => {
-    return uploadFile(file, expirationSelect.value, readNote());
+    return uploadFile(file, readExpiration(), readNote());
   };
   if (guestLinkMetadata) {
     uploader = () => {
@@ -188,6 +201,16 @@ pasteEl.addEventListener("input", (evt) => {
   evt.preventDefault();
   resetPasteInstructions();
 });
+
+if (expirationSelect) {
+  expirationSelect.addEventListener("change", () => {
+    if (isCustomExpirationSelected()) {
+      showElement(expirationPicker);
+    } else {
+      hideElement(expirationPicker);
+    }
+  });
+}
 
 uploadAnotherBtn.addEventListener("click", () => {
   window.location.reload();
