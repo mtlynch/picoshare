@@ -289,6 +289,7 @@ func (s Server) uploadGet() http.HandlerFunc {
 			commonProps:   makeCommonProps("PicoShare - Upload", r.Context()),
 			MaxNoteLength: parse.MaxFileNoteLen,
 			ExpirationOptions: []expirationOption{
+				{"Custom", time.Time{}, false},
 				{"1 day", time.Now().AddDate(0, 0, 1), false},
 				{"7 days", time.Now().AddDate(0, 0, 7), false},
 				{"30 days", time.Now().AddDate(0, 0, 30), true},
@@ -297,6 +298,9 @@ func (s Server) uploadGet() http.HandlerFunc {
 			},
 		}, template.FuncMap{
 			"formatExpiration": func(t time.Time) string {
+				if t.IsZero() {
+					return ""
+				}
 				return t.Format(time.RFC3339)
 			}}); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)

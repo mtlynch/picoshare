@@ -32,6 +32,48 @@ it("uploads a file without specifying any parameters", () => {
   );
 });
 
+it("uploads a file with a custom expiration time", () => {
+  cy.visit("/");
+  cy.login();
+
+  cy.get("#expiration").shadow().find("#expiration").clear();
+  cy.get("#expiration").shadow().find("#expiration").type(
+    "2029-09-03",
+    // Cypress seems to incorrectly think that the input field is disabled.
+    { force: true }
+  );
+
+  cy.get(".file-input").attachFile("kittyface.jpg");
+
+  cy.get("#upload-result .message-body").should("contain", "Upload complete!");
+
+  cy.get("#upload-result upload-links")
+    .should("have.attr", "filename")
+    .and("equal", "kittyface.jpg");
+  cy.get("#upload-result upload-links")
+    .shadow()
+    .find("#verbose-link-box")
+    .shadow()
+    .find("#link")
+    .should("be.visible");
+  cy.get("#upload-result upload-links")
+    .shadow()
+    .find("#short-link-box")
+    .shadow()
+    .find("#link")
+    .should("be.visible");
+
+  cy.get('.navbar a[href="/files"]').click();
+  cy.get('.table tbody tr:first-child [test-data-id="filename"]').should(
+    "contain",
+    "kittyface.jpg"
+  );
+  cy.get('.table tbody tr:first-child [test-data-id="expiration"]').should(
+    "contain",
+    "2029-09-03"
+  );
+});
+
 it("uploads a file with a note", () => {
   cy.visit("/");
   cy.login();
