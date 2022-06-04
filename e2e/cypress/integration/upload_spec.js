@@ -44,6 +44,9 @@ it("uploads a file with a custom expiration time", () => {
     { force: true }
   );
 
+  // We need a note to break focus from the expiration picker.
+  cy.get("#note").type("Test note");
+
   cy.get(".file-input").attachFile("kittyface.jpg");
 
   cy.get("#upload-result .message-body").should("contain", "Upload complete!");
