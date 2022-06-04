@@ -73,6 +73,17 @@ jobs:
           key: go-mod-v3-{{ checksum "go.sum" }}
           paths:
             - ~/go/pkg/mod
+
+  build_backend:
+    docker:
+      - image: cimg/go:1.17.4
+    steps:
+      - checkout
+      - attach_workspace:
+          at: ./
+      - run:
+          name: Compile backend
+          command: dev-scripts/build-backend
   e2e:
     # We're choosing large even though xlarge is faster because CircleCI takes
     # too long to provision xlarge instances.
