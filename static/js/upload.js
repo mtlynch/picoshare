@@ -123,11 +123,9 @@ function resetPasteInstructions() {
   pasteEl.value = "Or paste something here";
 }
 
-document
-  .querySelector('.file-input[name="resume"]')
-  .addEventListener("change", (evt) => {
-    doUpload(evt.target.files[0]);
-  });
+document.querySelector(".file-input").addEventListener("change", (evt) => {
+  doUpload(evt.target.files[0]);
+});
 
 uploadForm.addEventListener("drop", (evt) => {
   evt.preventDefault();
