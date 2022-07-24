@@ -52,7 +52,7 @@ jobs:
           command: npm run lint
   test_go:
     docker:
-      - image: cimg/go:1.17.4
+      - image: cimg/go:1.18.4
     resource_class: medium
     steps:
       - checkout
@@ -75,7 +75,7 @@ jobs:
             - ~/go/pkg/mod
   build_backend:
     docker:
-      - image: cimg/go:1.17.4
+      - image: cimg/go:1.18.4
     steps:
       - checkout
       - attach_workspace:
