@@ -12,6 +12,9 @@ You'll need:
 ## Create your app
 
 ```bash
+# You can change this to any region from https://fly.io/docs/reference/regions/
+REGION="iad"
+
 RANDOM_SUFFIX="$(head /dev/urandom | tr -dc 'a-z0-9' | head -c 6 ; echo '')"
 APP_NAME="picoshare-${RANDOM_SUFFIX}"
 
@@ -30,7 +33,6 @@ You can add a persistent volume to store PicoShare's data across server deploys.
 ```bash
 VOLUME_NAME="pico_data"
 SIZE_IN_GB=3 # This is the limit of fly.io's free tier as of 2022-02-19
-REGION="iad"
 
 fly volumes create "${VOLUME_NAME}" \
   --region "${REGION}" \
