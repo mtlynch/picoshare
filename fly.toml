@@ -1,4 +1,4 @@
-app = "picoshare"
+app = "picoshare-fly-repro"
 
 kill_signal = "SIGINT"
 kill_timeout = 5
@@ -7,7 +7,7 @@ processes = []
 [env]
   PORT = "8080"
   PS_BEHIND_PROXY="yes"
-  LITESTREAM_BUCKET="picoshare-litestream"
+  LITESTREAM_BUCKET="picoshare-fly-repro"
   LITESTREAM_ENDPOINT="s3.us-west-002.backblazeb2.com"
 
 [experimental]
@@ -15,8 +15,8 @@ processes = []
   auto_rollback = true
 
 [mounts]
-source="pico_data"
-destination="/data"
+source="pico_repro_trace"
+destination="/litestream-trace"
 
 [[services]]
   http_checks = []

@@ -42,8 +42,14 @@ if [[ "${IS_LITESTREAM_ENABLED}" == 'true' ]]; then
     /app/litestream restore -if-replica-exists -v "${DB_PATH}"
   fi
 
+  readonly LITESTREAM_TRACING_PATH='/litestream-trace/litestream-tracing.log'
+  if [[ -f "${LITESTREAM_TRACING_PATH}" ]]; then
+    du -h "${LITESTREAM_TRACING_PATH}"
+    ls -l "${LITESTREAM_TRACING_PATH}"
+  fi
+
   # Let Litestream start PicoShare as a child process
-  exec /app/litestream replicate -exec "$PS_LAUNCH_CMD"
+  exec /app/litestream replicate -exec "$PS_LAUNCH_CMD" -trace "${LITESTREAM_TRACING_PATH}"
 else
   echo "Starting without litestream"
   exec $PS_LAUNCH_CMD
