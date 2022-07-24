@@ -12,6 +12,9 @@ You'll need:
 ## Create your app
 
 ```bash
+# You can change this to any region from https://fly.io/docs/reference/regions/
+REGION="iad"
+
 RANDOM_SUFFIX="$(head /dev/urandom | tr -dc 'a-z0-9' | head -c 6 ; echo '')"
 APP_NAME="picoshare-${RANDOM_SUFFIX}"
 
@@ -30,7 +33,6 @@ You can add a persistent volume to store PicoShare's data across server deploys.
 ```bash
 VOLUME_NAME="pico_data"
 SIZE_IN_GB=3 # This is the limit of fly.io's free tier as of 2022-02-19
-REGION="iad"
 
 fly volumes create "${VOLUME_NAME}" \
   --region "${REGION}" \
@@ -66,6 +68,13 @@ In your `fly.toml` file, add the following lines in the `[env]` section:
   # ...
   LITESTREAM_BUCKET="YOUR-CLOUD-STORAGE-BUCKET"
   LITESTREAM_ENDPOINT="YOUR-CLOUD-STORAGE-ENDPOINT"
+```
+
+For example, if you had a bucket called `my-pico-bucket` on Backblaze B2's `us-west-002` region, your config would look like this:
+
+```toml
+LITESTREAM_BUCKET="my-pico-bucket"
+LITESTREAM_ENDPOINT="s3.us-west-002.backblazeb2.com"
 ```
 
 ## Set a passphrase
