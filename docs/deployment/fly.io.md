@@ -68,6 +68,13 @@ In your `fly.toml` file, add the following lines in the `[env]` section:
   LITESTREAM_ENDPOINT="YOUR-CLOUD-STORAGE-ENDPOINT"
 ```
 
+For example, if you had a bucket called `my-pico-bucket` on Backblaze B2's `us-west-002` region, your config would look like this:
+
+```toml
+LITESTREAM_BUCKET="my-pico-bucket"
+LITESTREAM_ENDPOINT="s3.us-west-002.backblazeb2.com"
+```
+
 ## Set a passphrase
 
 Choose a passphrase to secure your instance.
