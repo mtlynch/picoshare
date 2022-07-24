@@ -56,6 +56,7 @@ func NewWithChunkSize(path string, chunkSize int) store.Store {
 
 	if _, err := ctx.Exec(`
 PRAGMA temp_store = FILE;
+PRAGMA foreign_keys = ON;
 
 -- Apply Litestream recommendations: https://litestream.io/tips/
 PRAGMA busy_timeout = 5000;
@@ -254,6 +255,11 @@ func (d db) InsertEntry(reader io.Reader, metadata types.UploadMetadata) error {
 		return err
 	}
 
+	var guestLinkID *string
+	if metadata.GuestLinkID != "" {
+		guestLinkID = (*string)(&metadata.GuestLinkID)
+	}
+
 	_, err = tx.Exec(`
 	INSERT INTO
 		entries
@@ -268,7 +274,7 @@ func (d db) InsertEntry(reader io.Reader, metadata types.UploadMetadata) error {
 	)
 	VALUES(?,?,?,?,?,?,?)`,
 		metadata.ID,
-		metadata.GuestLinkID,
+		guestLinkID,
 		metadata.Filename,
 		metadata.Note.Value,
 		metadata.ContentType,
