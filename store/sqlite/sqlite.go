@@ -255,11 +255,6 @@ func (d db) InsertEntry(reader io.Reader, metadata types.UploadMetadata) error {
 		return err
 	}
 
-	var guestLinkID *string
-	if metadata.GuestLinkID != "" {
-		guestLinkID = (*string)(&metadata.GuestLinkID)
-	}
-
 	_, err = tx.Exec(`
 	INSERT INTO
 		entries
@@ -274,7 +269,7 @@ func (d db) InsertEntry(reader io.Reader, metadata types.UploadMetadata) error {
 	)
 	VALUES(?,?,?,?,?,?,?)`,
 		metadata.ID,
-		guestLinkID,
+		newNullString(string(metadata.GuestLinkID)),
 		metadata.Filename,
 		metadata.Note.Value,
 		metadata.ContentType,
@@ -533,4 +528,14 @@ func formatTime(t time.Time) string {
 
 func parseDatetime(s string) (time.Time, error) {
 	return time.Parse(timeFormat, s)
+}
+
+func newNullString(s string) sql.NullString {
+	if s == "" {
+		return sql.NullString{}
+	}
+	return sql.NullString{
+		String: s,
+		Valid:  true,
+	}
 }
