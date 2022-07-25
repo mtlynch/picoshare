@@ -103,7 +103,7 @@ If you rebuild the Docker image from source, you can adjust the build behavior w
 
 | Build Arg            | Meaning                                                                     | Default Value |
 | -------------------- | --------------------------------------------------------------------------- | ------------- |
-| `litestream_version` | Version of [Litestream](https://litestream.io/) to use for data replication | `0.3.8`       |
+| `litestream_version` | Version of [Litestream](https://litestream.io/) to use for data replication | `0.3.9`       |
 
 ## Deployment
 
