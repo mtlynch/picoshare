@@ -7,16 +7,16 @@ processes = []
 [env]
   PORT = "8080"
   PS_BEHIND_PROXY="yes"
-  LITESTREAM_BUCKET="picoshare-fly-repro"
+  #LITESTREAM_BUCKET="picoshare-fly-repro"
   LITESTREAM_ENDPOINT="s3.us-west-002.backblazeb2.com"
 
 [experimental]
   allowed_public_ports = []
   auto_rollback = true
 
-[mounts]
-source="pico_repro_trace"
-destination="/litestream-trace"
+#[mounts]
+#source="pico_repro_trace"
+#destination="/litestream-trace"
 
 [[services]]
   http_checks = []
