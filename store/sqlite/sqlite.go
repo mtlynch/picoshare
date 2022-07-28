@@ -9,7 +9,7 @@ import (
 	"log"
 	"time"
 
-	_ "github.com/mattn/go-sqlite3"
+	_ "modernc.org/sqlite"
 
 	"github.com/mtlynch/picoshare/v2/store"
 	"github.com/mtlynch/picoshare/v2/store/sqlite/file"
@@ -49,7 +49,7 @@ func New(path string) store.Store {
 // chunk size for writing files. Most callers should just use New().
 func NewWithChunkSize(path string, chunkSize int) store.Store {
 	log.Printf("reading DB from %s", path)
-	ctx, err := sql.Open("sqlite3", path)
+	ctx, err := sql.Open("sqlite", path)
 	if err != nil {
 		log.Fatalln(err)
 	}
