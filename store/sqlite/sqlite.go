@@ -281,8 +281,7 @@ func (d db) InsertEntry(reader io.Reader, metadata types.UploadMetadata) error {
 		return err
 	}
 
-	// Throttle reads to 5 MB/s.
-	throttleRate := bytesToMB(5)
+	throttleRate := bytesToMB(1)
 	bucket := ratelimit.NewBucketWithRate(float64(throttleRate), throttleRate)
 	throttledReader := ratelimit.Reader(reader, bucket)
 
