@@ -11,5 +11,6 @@ require (
 
 require (
 	github.com/felixge/httpsnoop v1.0.1 // indirect
+	github.com/juju/ratelimit v1.0.2 // indirect
 	github.com/pkg/profile v1.6.0 // indirect
 )
