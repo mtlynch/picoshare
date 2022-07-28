@@ -243,7 +243,7 @@ func fileFromRequest(w http.ResponseWriter, r *http.Request) (fileUpload, error)
 	// We're intentionally not limiting the size of the request because we assume
 	// the the uploading user is trusted, so they can upload files of any size
 	// they want.
-	r.ParseMultipartForm(32 << 20)
+	r.ParseMultipartForm(1 << 20)
 	reader, metadata, err := r.FormFile("file")
 	if err != nil {
 		return fileUpload{}, err
