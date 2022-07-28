@@ -9,7 +9,6 @@ import (
 	"log"
 	"time"
 
-	"github.com/juju/ratelimit"
 	_ "github.com/mattn/go-sqlite3"
 
 	"github.com/mtlynch/picoshare/v2/store"
@@ -281,12 +280,8 @@ func (d db) InsertEntry(reader io.Reader, metadata types.UploadMetadata) error {
 		return err
 	}
 
-	throttleRate := bytesToMB(1)
-	bucket := ratelimit.NewBucketWithRate(float64(throttleRate), throttleRate)
-	throttledReader := ratelimit.Reader(reader, bucket)
-
 	w := file.NewWriter(tx, metadata.ID, d.chunkSize)
-	if _, err := io.Copy(w, throttledReader); err != nil {
+	if _, err := io.Copy(w, reader); err != nil {
 		return err
 	}
 
@@ -532,8 +527,4 @@ func formatTime(t time.Time) string {
 
 func parseDatetime(s string) (time.Time, error) {
 	return time.Parse(timeFormat, s)
-}
-
-func bytesToMB(b int64) int64 {
-	return b * 1024 * 1024
 }
