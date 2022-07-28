@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
 	"runtime"
 	"strconv"
 	"time"
@@ -75,9 +76,17 @@ func (s Server) debugMemory() http.HandlerFunc {
 		runtime.ReadMemStats(&m)
 
 		w.Header().Set("Content-Type", "text/plain")
+		fmt.Fprint(w, "PicoShare's view of its RAM allocations:\r\n")
 		fmt.Fprintf(w, "Alloc:      %s\r\n", formatFileSize(m.Alloc))
 		fmt.Fprintf(w, "TotalAlloc: %s\r\n", formatFileSize(m.TotalAlloc))
 		fmt.Fprintf(w, "NumGC:      %d\r\n", m.NumGC)
+		f, err := os.Open("/proc/meminfo")
+		if err != nil {
+			log.Printf("failed to read /proc/meminfo: %v", err)
+			return
+		}
+		fmt.Fprint(w, "\r\n/proc/meminfo:\r\n")
+		io.Copy(w, f)
 	}
 }
 
