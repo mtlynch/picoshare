@@ -5,10 +5,10 @@ import "net/http"
 func (s *Server) routes() {
 	s.router.HandleFunc("/api/auth", s.authPost()).Methods(http.MethodPost)
 	s.router.HandleFunc("/api/auth", s.authDelete()).Methods(http.MethodDelete)
-	s.router.Use(s.checkAuthentication)
+	// s.router.Use(s.checkAuthentication)
 
 	authenticatedApis := s.router.PathPrefix("/api").Subrouter()
-	authenticatedApis.Use(s.requireAuthentication)
+	// authenticatedApis.Use(s.requireAuthentication)
 	authenticatedApis.HandleFunc("/entry", s.entryPost()).Methods(http.MethodPost)
 	authenticatedApis.HandleFunc("/entry/{id}", s.entryPut()).Methods(http.MethodPut)
 	authenticatedApis.HandleFunc("/entry/{id}", s.entryDelete()).Methods(http.MethodDelete)
@@ -40,7 +40,7 @@ func (s *Server) routes() {
 	}
 
 	authenticatedViews := s.router.PathPrefix("/").Subrouter()
-	authenticatedViews.Use(s.requireAuthentication)
+	// authenticatedViews.Use(s.requireAuthentication)
 	authenticatedViews.Use(enforceContentSecurityPolicy)
 	authenticatedViews.HandleFunc("/files", s.fileIndexGet()).Methods(http.MethodGet)
 	authenticatedViews.HandleFunc("/files/{id}/edit", s.fileEditGet()).Methods(http.MethodGet)
