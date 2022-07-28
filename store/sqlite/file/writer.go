@@ -2,6 +2,7 @@ package file
 
 import (
 	"io"
+	"time"
 
 	"github.com/mtlynch/picoshare/v2/store/sqlite/wrapped"
 	"github.com/mtlynch/picoshare/v2/types"
@@ -55,6 +56,7 @@ func (w *writer) Close() error {
 }
 
 func (w *writer) flush(n int) error {
+	time.Sleep(10 * time.Millisecond)
 	idx := w.written / len(w.buf)
 	_, err := w.tx.Exec(`
 	INSERT INTO
