@@ -39,48 +39,14 @@ type (
 
 func (s Server) entryPost() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// expiration, err := parseExpirationFromRequest(r)
-		// if err != nil {
-		// 	log.Printf("invalid expiration URL parameter: %v", err)
-		// 	http.Error(w, fmt.Sprintf("Invalid expiration URL parameter: %v", err), http.StatusBadRequest)
-		// 	return
-		// }
+		log.Printf("about to parse multipart form")
+		r.ParseMultipartForm(1 * 1024 * 1024)
 
-		uploadedFile, err := fileFromRequest(w, r)
-		if err != nil {
-			log.Printf("error reading body: %v", err)
-			http.Error(w, fmt.Sprintf("can't read request body: %s", err), http.StatusBadRequest)
-			return
-		}
-		discarded, err := readAndDiscard(uploadedFile.Reader)
-		if err != nil {
-			http.Error(w, fmt.Sprintf("failed to copy to /dev/null: %v", err), http.StatusInternalServerError)
-			return
-		}
-		log.Printf("read %s of uploaded data and discarded it", formatFileSize(discarded))
+		log.Printf("finished parsing multipart form")
 
-		id := generateEntryID()
-		// err = s.store.InsertEntry(uploadedFile.Reader,
-		// 	types.UploadMetadata{
-		// 		Filename:    uploadedFile.Filename,
-		// 		Note:        uploadedFile.Note,
-		// 		ContentType: uploadedFile.ContentType,
-		// 		ID:          id,
-		// 		Uploaded:    time.Now(),
-		// 		Expires:     types.ExpirationTime(expiration),
-		// 	})
-		// if err != nil {
-		// 	log.Printf("failed to save entry: %v", err)
-		// 	http.Error(w, "can't save entry", http.StatusInternalServerError)
-		// 	return
-		// }
-
-		w.Header().Set("Content-Type", "application/json")
-		if err := json.NewEncoder(w).Encode(EntryPostResponse{
-			ID: string(id),
-		}); err != nil {
-			panic(err)
-		}
+		log.Printf("removing temporary files")
+		r.MultipartForm.RemoveAll()
+		log.Printf("done removing temporary files")
 	}
 }
 
@@ -301,7 +267,7 @@ func parseExpirationFromRequest(r *http.Request) (types.ExpirationTime, error) {
 
 func readAndDiscard(r io.Reader) (uint64, error) {
 	var tot uint64
-	b := make([]byte, 1<<32)
+	b := make([]byte, 1*1024*1024)
 	for {
 		n, err := r.Read(b)
 		tot += uint64(n)
@@ -311,4 +277,8 @@ func readAndDiscard(r io.Reader) (uint64, error) {
 			return tot, err
 		}
 	}
+}
+
+func bytesToMB(b int64) int64 {
+	return b * 1024 * 1024
 }
