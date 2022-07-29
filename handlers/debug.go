@@ -85,7 +85,6 @@ func (s Server) debugMemory() http.HandlerFunc {
 			log.Printf("failed to read /proc/meminfo: %v", err)
 			return
 		}
-		defer f.Close()
 		fmt.Fprint(w, "\r\n/proc/meminfo:\r\n")
 		io.Copy(w, f)
 	}
