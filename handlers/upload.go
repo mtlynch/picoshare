@@ -52,6 +52,7 @@ func (s Server) entryPost() http.HandlerFunc {
 			http.Error(w, fmt.Sprintf("can't read request body: %s", err), http.StatusBadRequest)
 			return
 		}
+		defer r.MultipartForm.RemoveAll()
 
 		id := generateEntryID()
 		err = s.store.InsertEntry(uploadedFile.Reader,
