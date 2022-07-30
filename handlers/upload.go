@@ -5,8 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
+	"mime"
+	"mime/multipart"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -52,11 +56,6 @@ func (s Server) entryPost() http.HandlerFunc {
 			http.Error(w, fmt.Sprintf("can't read request body: %s", err), http.StatusBadRequest)
 			return
 		}
-		defer func() {
-			log.Printf("removing multipart data")
-			r.MultipartForm.RemoveAll()
-			log.Printf("done removing multipart data")
-		}()
 
 		id := generateEntryID()
 		err = s.store.InsertEntry(uploadedFile.Reader,
@@ -248,33 +247,63 @@ func fileFromRequest(w http.ResponseWriter, r *http.Request) (fileUpload, error)
 	// We're intentionally not limiting the size of the request because we assume
 	// the the uploading user is trusted, so they can upload files of any size
 	// they want.
-	r.ParseMultipartForm(1 << 20)
-	reader, metadata, err := r.FormFile("file")
+	mediaType, params, err := mime.ParseMediaType(r.Header.Get("Content-Type"))
 	if err != nil {
 		return fileUpload{}, err
 	}
 
-	if metadata.Size == 0 {
-		return fileUpload{}, errors.New("file is empty")
+	if !strings.HasPrefix(mediaType, "multipart/") {
+		return fileUpload{}, fmt.Errorf("unexpected media type: %v", err)
 	}
 
-	filename, err := parse.Filename(metadata.Filename)
+	tempFile, err := ioutil.TempFile("", "uploaded.*.dat")
 	if err != nil {
 		return fileUpload{}, err
 	}
 
-	contentType, err := parseContentType(metadata.Header.Get("Content-Type"))
-	if err != nil {
-		return fileUpload{}, err
-	}
+	var filename types.Filename
+	var note types.FileNote
+	var contentType types.ContentType
 
-	note, err := parse.FileNote(r.FormValue("note"))
-	if err != nil {
-		return fileUpload{}, err
+	mr := multipart.NewReader(r.Body, params["boundary"])
+	for {
+		p, err := mr.NextPart()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return fileUpload{}, err
+		}
+		if p.FormName() == "file" {
+			if filename, err = parse.Filename(p.FileName()); err != nil {
+				return fileUpload{}, err
+			}
+			if contentType, err = parseContentType(p.Header.Get("Content-Type")); err != nil {
+				return fileUpload{}, err
+			}
+
+			n, err := io.Copy(tempFile, p)
+			if err != nil {
+				return fileUpload{}, err
+			}
+			log.Printf("wrote %d file bytes to temp file", n)
+		} else if p.FormName() == "note" {
+			b := make([]byte, parse.MaxFileNoteLen+1)
+			n, err := p.Read(b)
+			if err == io.EOF {
+				err = nil
+			}
+			if err != nil {
+				return fileUpload{}, err
+			}
+			if note, err = parse.FileNote(string(b[:n])); err != nil {
+				return fileUpload{}, err
+			}
+		}
 	}
 
 	return fileUpload{
-		Reader:      reader,
+		Reader:      tempFile,
 		Filename:    filename,
 		Note:        note,
 		ContentType: contentType,
@@ -296,4 +325,18 @@ func parseExpirationFromRequest(r *http.Request) (types.ExpirationTime, error) {
 		return types.ExpirationTime{}, errors.New("missing required URL parameter: expiration")
 	}
 	return parse.Expiration(expirationRaw[0])
+}
+
+func readAndDiscard(r io.Reader) (uint64, error) {
+	var tot uint64
+	b := make([]byte, 1*1024*1024)
+	for {
+		n, err := r.Read(b)
+		tot += uint64(n)
+		if err == io.EOF {
+			return tot, nil
+		} else if err != nil {
+			return tot, err
+		}
+	}
 }
