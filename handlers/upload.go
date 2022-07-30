@@ -286,6 +286,10 @@ func fileFromRequest(w http.ResponseWriter, r *http.Request) (fileUpload, error)
 			if err != nil {
 				return fileUpload{}, err
 			}
+			if n == 0 {
+				return fileUpload{}, errors.New("file is empty")
+			}
+
 			log.Printf("wrote %d file bytes to temp file", n)
 		} else if p.FormName() == "note" {
 			b := make([]byte, parse.MaxFileNoteLen+1)
@@ -301,6 +305,7 @@ func fileFromRequest(w http.ResponseWriter, r *http.Request) (fileUpload, error)
 			}
 		}
 	}
+	tempFile.Seek(0, io.SeekStart)
 
 	return fileUpload{
 		Reader:      tempFile,
