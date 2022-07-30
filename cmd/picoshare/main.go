@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 	"time"
 
+	_ "net/http/pprof"
+
 	gorilla "github.com/mtlynch/gorilla-handlers"
 
 	"github.com/mtlynch/picoshare/v2/garbagecollect"
