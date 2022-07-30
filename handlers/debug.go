@@ -16,11 +16,18 @@ import (
 	"github.com/mtlynch/picoshare/v2/handlers/parse"
 	"github.com/mtlynch/picoshare/v2/random"
 	"github.com/mtlynch/picoshare/v2/types"
+	"github.com/pkg/profile"
 )
 
 type randomDataReader struct {
 	bytesRemaining int
 }
+
+type stopper interface {
+	Stop()
+}
+
+var memProfile stopper
 
 func (rdr *randomDataReader) Read(p []byte) (n int, err error) {
 	if len(p) <= rdr.bytesRemaining {
@@ -87,6 +94,19 @@ func (s Server) debugMemory() http.HandlerFunc {
 		}
 		fmt.Fprint(w, "\r\n/proc/meminfo:\r\n")
 		io.Copy(w, f)
+	}
+}
+
+func (s Server) debugProfileStart() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		memProfile = profile.Start(profile.MemProfile)
+
+	}
+}
+
+func (s Server) debugProfileStop() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		memProfile.Stop()
 	}
 }
 

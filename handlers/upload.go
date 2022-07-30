@@ -10,6 +10,7 @@ import (
 	"mime"
 	"mime/multipart"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -282,7 +283,8 @@ func fileFromRequest(w http.ResponseWriter, r *http.Request) (fileUpload, error)
 				return fileUpload{}, err
 			}
 
-			n, err := io.Copy(tempFile, p)
+			buf := make([]byte, 1*1024*1024)
+			n, err := io.CopyBuffer(tempFile, p, buf)
 			if err != nil {
 				return fileUpload{}, err
 			}
@@ -306,6 +308,10 @@ func fileFromRequest(w http.ResponseWriter, r *http.Request) (fileUpload, error)
 		}
 	}
 	tempFile.Seek(0, io.SeekStart)
+	go func() {
+		time.Sleep(5 * time.Minute)
+		os.Remove(tempFile.Name())
+	}()
 
 	return fileUpload{
 		Reader:      tempFile,

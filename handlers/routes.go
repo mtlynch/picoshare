@@ -57,5 +57,7 @@ func (s *Server) routes() {
 	views.PathPrefix("/g/{guestLinkID}").HandlerFunc(s.guestUploadGet()).Methods(http.MethodGet)
 	views.PathPrefix("/debug/writeData/{size}").HandlerFunc(s.debugWriteData()).Methods(http.MethodGet)
 	views.PathPrefix("/debug/memory").HandlerFunc(s.debugMemory()).Methods(http.MethodGet)
+	views.PathPrefix("/debug/profile/start").HandlerFunc(s.debugProfileStart()).Methods(http.MethodGet)
+	views.PathPrefix("/debug/profile/stop").HandlerFunc(s.debugProfileStop()).Methods(http.MethodGet)
 	views.HandleFunc("/", s.indexGet()).Methods(http.MethodGet)
 }
