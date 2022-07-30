@@ -5,12 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"mime"
 	"mime/multipart"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 
@@ -257,14 +255,10 @@ func fileFromRequest(w http.ResponseWriter, r *http.Request) (fileUpload, error)
 		return fileUpload{}, fmt.Errorf("unexpected media type: %v", err)
 	}
 
-	tempFile, err := ioutil.TempFile("", "uploaded.*.dat")
-	if err != nil {
-		return fileUpload{}, err
-	}
-
 	var filename types.Filename
 	var note types.FileNote
 	var contentType types.ContentType
+	var reader io.Reader
 
 	mr := multipart.NewReader(r.Body, params["boundary"])
 	for {
@@ -283,16 +277,14 @@ func fileFromRequest(w http.ResponseWriter, r *http.Request) (fileUpload, error)
 				return fileUpload{}, err
 			}
 
-			buf := make([]byte, 1*1024*1024)
-			n, err := io.CopyBuffer(tempFile, p, buf)
+			n, err := readAndDiscard(p)
 			if err != nil {
 				return fileUpload{}, err
 			}
-			if n == 0 {
-				return fileUpload{}, errors.New("file is empty")
-			}
 
-			log.Printf("wrote %d file bytes to temp file", n)
+			log.Printf("read and discarded %d bytes", n)
+
+			reader = &randomDataReader{int(n)}
 		} else if p.FormName() == "note" {
 			b := make([]byte, parse.MaxFileNoteLen+1)
 			n, err := p.Read(b)
@@ -307,14 +299,9 @@ func fileFromRequest(w http.ResponseWriter, r *http.Request) (fileUpload, error)
 			}
 		}
 	}
-	tempFile.Seek(0, io.SeekStart)
-	go func() {
-		time.Sleep(5 * time.Minute)
-		os.Remove(tempFile.Name())
-	}()
 
 	return fileUpload{
-		Reader:      tempFile,
+		Reader:      reader,
 		Filename:    filename,
 		Note:        note,
 		ContentType: contentType,

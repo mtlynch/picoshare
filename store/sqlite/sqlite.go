@@ -254,7 +254,7 @@ func (d db) InsertEntry(reader io.Reader, metadata types.UploadMetadata) error {
 		return err
 	}
 
-	_, err = tx.Exec(`
+	_, err = d.ctx.Exec(`
 	INSERT INTO
 		entries
 	(

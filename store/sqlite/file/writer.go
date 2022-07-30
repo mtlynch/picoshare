@@ -2,6 +2,7 @@ package file
 
 import (
 	"io"
+	"syscall"
 
 	"github.com/mtlynch/picoshare/v2/store/sqlite/wrapped"
 	"github.com/mtlynch/picoshare/v2/types"
@@ -65,6 +66,7 @@ func (w *writer) flush(n int) error {
 		chunk
 	)
 	VALUES(?,?,?)`, w.entryID, idx, w.buf[0:n])
+	syscall.Sync()
 
 	return err
 }
