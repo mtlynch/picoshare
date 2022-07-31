@@ -146,7 +146,7 @@ func getChunkSize(db *sql.DB, id types.EntryID) (int64, error) {
 	ORDER BY
 		chunk_index ASC
 	LIMIT 1
-	`).Scan(&chunkSize); err != nil {
+	`, id).Scan(&chunkSize); err != nil {
 		return 0, err
 	}
 

@@ -207,7 +207,7 @@ func (d db) GetEntryMetadata(id types.EntryID) (types.UploadMetadata, error) {
 	FROM
 		entries
 	WHERE
-		id=?`).Scan(&filename, &note, &contentType, &uploadTimeRaw, &expirationTimeRaw)
+		id=?`, id).Scan(&filename, &note, &contentType, &uploadTimeRaw, &expirationTimeRaw)
 	if err == sql.ErrNoRows {
 		return types.UploadMetadata{}, store.EntryNotFoundError{ID: id}
 	} else if err != nil {
