@@ -23,8 +23,22 @@ const (
 // Omit visually similar characters (I,l,1), (0,O)
 var entryIDCharacters = []rune("abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789")
 
-type EntryPostResponse struct {
-	ID string `json:"id"`
+type (
+	EntryPostResponse struct {
+		ID string `json:"id"`
+	}
+
+	dbError struct {
+		Err error
+	}
+)
+
+func (dbe dbError) Error() string {
+	return fmt.Sprintf("database error: %s", dbe.Err)
+}
+
+func (dbe dbError) Unwrap() error {
+	return dbe.Err
 }
 
 func (s Server) entryPost() http.HandlerFunc {
@@ -41,8 +55,14 @@ func (s Server) entryPost() http.HandlerFunc {
 		// any size they want.
 		id, err := s.insertFileFromRequest(r, expiration, types.GuestLinkID(""))
 		if err != nil {
-			log.Printf("error reading body: %v", err)
-			http.Error(w, fmt.Sprintf("can't read request body: %s", err), http.StatusBadRequest)
+			var de *dbError
+			if errors.As(err, &de) {
+				log.Printf("failed to insert uploaded file into data store: %v", err)
+				http.Error(w, "failed to insert file into database", http.StatusInternalServerError)
+			} else {
+				log.Printf("invalid upload: %v", err)
+				http.Error(w, fmt.Sprintf("invalid request: %s", err), http.StatusBadRequest)
+			}
 			return
 		}
 
@@ -121,8 +141,14 @@ func (s Server) guestEntryPost() http.HandlerFunc {
 
 		id, err := s.insertFileFromRequest(r, types.NeverExpire, guestLinkID)
 		if err != nil {
-			log.Printf("error reading body: %v", err)
-			http.Error(w, fmt.Sprintf("can't read request body: %s", err), http.StatusBadRequest)
+			var de *dbError
+			if errors.As(err, &de) {
+				log.Printf("failed to insert uploaded file into data store: %v", err)
+				http.Error(w, "failed to insert file into database", http.StatusInternalServerError)
+			} else {
+				log.Printf("invalid upload: %v", err)
+				http.Error(w, fmt.Sprintf("invalid request: %s", err), http.StatusBadRequest)
+			}
 			return
 		}
 
@@ -243,7 +269,7 @@ func (s Server) insertFileFromRequest(r *http.Request, expiration types.Expirati
 		})
 	if err != nil {
 		log.Printf("failed to save entry: %v", err)
-		return types.EntryID(""), err
+		return types.EntryID(""), dbError{err}
 	}
 
 	return id, nil
