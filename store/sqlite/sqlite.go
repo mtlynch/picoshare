@@ -66,15 +66,8 @@ PRAGMA wal_autocheckpoint = 0;
 		log.Fatalf("failed to set pragmas: %v", err)
 	}
 
-	stmt, err := ctx.Prepare(`PRAGMA user_version`)
-	if err != nil {
-		log.Fatalf("failed to get user_version: %v", err)
-	}
-	defer stmt.Close()
-
 	var version int
-	err = stmt.QueryRow().Scan(&version)
-	if err != nil {
+	if err := ctx.QueryRow(`PRAGMA user_version`).Scan(&version); err != nil {
 		log.Fatalf("failed to get user_version: %v", err)
 	}
 
@@ -199,7 +192,12 @@ func (d db) GetEntry(id types.EntryID) (types.UploadEntry, error) {
 }
 
 func (d db) GetEntryMetadata(id types.EntryID) (types.UploadMetadata, error) {
-	stmt, err := d.ctx.Prepare(`
+	var filename string
+	var note *string
+	var contentType string
+	var uploadTimeRaw string
+	var expirationTimeRaw string
+	err := d.ctx.QueryRow(`
 	SELECT
 		filename,
 		note,
@@ -209,18 +207,7 @@ func (d db) GetEntryMetadata(id types.EntryID) (types.UploadMetadata, error) {
 	FROM
 		entries
 	WHERE
-		id=?`)
-	if err != nil {
-		return types.UploadMetadata{}, err
-	}
-	defer stmt.Close()
-
-	var filename string
-	var note *string
-	var contentType string
-	var uploadTimeRaw string
-	var expirationTimeRaw string
-	err = stmt.QueryRow(id).Scan(&filename, &note, &contentType, &uploadTimeRaw, &expirationTimeRaw)
+		id=?`, id).Scan(&filename, &note, &contentType, &uploadTimeRaw, &expirationTimeRaw)
 	if err == sql.ErrNoRows {
 		return types.UploadMetadata{}, store.EntryNotFoundError{ID: id}
 	} else if err != nil {
@@ -355,7 +342,7 @@ func (d db) DeleteEntry(id types.EntryID) error {
 }
 
 func (d db) GetGuestLink(id types.GuestLinkID) (types.GuestLink, error) {
-	stmt, err := d.ctx.Prepare(`
+	row := d.ctx.QueryRow(`
 		SELECT
 			guest_links.id AS id,
 			guest_links.label AS label,
@@ -371,13 +358,9 @@ func (d db) GetGuestLink(id types.GuestLinkID) (types.GuestLink, error) {
 		WHERE
 			guest_links.id=?
 		GROUP BY
-			guest_links.id`)
-	if err != nil {
-		return types.GuestLink{}, err
-	}
-	defer stmt.Close()
+			guest_links.id`, id)
 
-	return guestLinkFromRow(stmt.QueryRow(id))
+	return guestLinkFromRow(row)
 }
 
 func (d db) GetGuestLinks() ([]types.GuestLink, error) {
