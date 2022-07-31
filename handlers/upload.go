@@ -46,7 +46,7 @@ func (s Server) entryPost() http.HandlerFunc {
 			return
 		}
 
-		uploadedFile, err := fileFromRequest(w, r)
+		uploadedFile, err := fileFromRequest(r)
 		if err != nil {
 			log.Printf("error reading body: %v", err)
 			http.Error(w, fmt.Sprintf("can't read request body: %s", err), http.StatusBadRequest)
@@ -142,7 +142,7 @@ func (s Server) guestEntryPost() http.HandlerFunc {
 			r.Body = http.MaxBytesReader(w, r.Body, int64(*gl.MaxFileBytes))
 		}
 
-		uploadedFile, err := fileFromRequest(w, r)
+		uploadedFile, err := fileFromRequest(r)
 		if err != nil {
 			log.Printf("error reading body: %v", err)
 			http.Error(w, fmt.Sprintf("can't read request body: %s", err), http.StatusBadRequest)
@@ -239,7 +239,7 @@ func parseEntryID(s string) (types.EntryID, error) {
 	return types.EntryID(s), nil
 }
 
-func fileFromRequest(w http.ResponseWriter, r *http.Request) (fileUpload, error) {
+func fileFromRequest(r *http.Request) (fileUpload, error) {
 	// We're intentionally not limiting the size of the request because we assume
 	// the the uploading user is trusted, so they can upload files of any size
 	// they want.
