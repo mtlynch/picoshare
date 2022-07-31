@@ -246,7 +246,7 @@ func fileFromRequest(w http.ResponseWriter, r *http.Request) (fileUpload, error)
 
 	// ParseMultipartForm can go above the limit we set, so set a conservative RAM
 	// limit to avoid exhausting RAM on servers with limited resources.
-	multipartMaxMemory := bytesToMB(5)
+	multipartMaxMemory := bytesToMiB(1)
 	r.ParseMultipartForm(multipartMaxMemory)
 	reader, metadata, err := r.FormFile("file")
 	if err != nil {
@@ -297,6 +297,6 @@ func parseExpirationFromRequest(r *http.Request) (types.ExpirationTime, error) {
 	return parse.Expiration(expirationRaw[0])
 }
 
-func bytesToMB(b int64) int64 {
+func bytesToMiB(b int64) int64 {
 	return b * 1024 * 1024
 }
