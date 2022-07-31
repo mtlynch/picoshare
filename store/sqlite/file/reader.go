@@ -95,7 +95,7 @@ func (fr *fileReader) populateBuffer() error {
 				entries_data
 			WHERE
 				id=? AND
-				chunk_index>=?
+				chunk_index=?
 			ORDER BY
 				chunk_index ASC
 			`)
