@@ -243,7 +243,11 @@ func fileFromRequest(w http.ResponseWriter, r *http.Request) (fileUpload, error)
 	// We're intentionally not limiting the size of the request because we assume
 	// the the uploading user is trusted, so they can upload files of any size
 	// they want.
-	r.ParseMultipartForm(32 << 20)
+
+	// ParseMultipartForm can go above the limit we set, so set a conservative RAM
+	// limit to avoid exhausting RAM on servers with limited resources.
+	multipartMaxMemory := mibToBytes(1)
+	r.ParseMultipartForm(multipartMaxMemory)
 	reader, metadata, err := r.FormFile("file")
 	if err != nil {
 		return fileUpload{}, err
@@ -291,4 +295,9 @@ func parseExpirationFromRequest(r *http.Request) (types.ExpirationTime, error) {
 		return types.ExpirationTime{}, errors.New("missing required URL parameter: expiration")
 	}
 	return parse.Expiration(expirationRaw[0])
+}
+
+// mibToBytes converts an amount in MiB to an amount in bytes.
+func mibToBytes(i int64) int64 {
+	return i << 20
 }
