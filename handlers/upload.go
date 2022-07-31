@@ -305,6 +305,8 @@ func fileFromRequest(w http.ResponseWriter, r *http.Request) (fileUpload, error)
 		}
 	}
 
+	tempFile.Seek(0, io.SeekStart)
+
 	return fileUpload{
 		Reader:      reader,
 		Filename:    filename,
