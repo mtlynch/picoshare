@@ -249,12 +249,8 @@ func (d db) GetEntryMetadata(id types.EntryID) (types.UploadMetadata, error) {
 
 func (d db) InsertEntry(reader io.Reader, metadata types.UploadMetadata) error {
 	log.Printf("saving new entry %s", metadata.ID)
-	tx, err := d.ctx.BeginTx(context.Background(), nil)
-	if err != nil {
-		return err
-	}
 
-	_, err = tx.Exec(`
+	_, err := d.ctx.Exec(`
 	INSERT INTO
 		entries
 	(
@@ -280,7 +276,7 @@ func (d db) InsertEntry(reader io.Reader, metadata types.UploadMetadata) error {
 		return err
 	}
 
-	w := file.NewWriter(tx, metadata.ID, d.chunkSize)
+	w := file.NewWriter(d.ctx, metadata.ID, d.chunkSize)
 	if _, err := io.Copy(w, reader); err != nil {
 		return err
 	}
@@ -289,8 +285,7 @@ func (d db) InsertEntry(reader io.Reader, metadata types.UploadMetadata) error {
 	if err := w.Close(); err != nil {
 		return err
 	}
-
-	return tx.Commit()
+	return nil
 }
 
 func (d db) UpdateEntryMetadata(id types.EntryID, metadata types.UploadMetadata) error {

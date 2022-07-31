@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"mime"
 	"mime/multipart"
@@ -256,15 +255,10 @@ func fileFromRequest(w http.ResponseWriter, r *http.Request) (fileUpload, error)
 		return fileUpload{}, fmt.Errorf("unexpected media type: %v", err)
 	}
 
-	tempFile, err := ioutil.TempFile("", "uploaded.*.dat")
-	if err != nil {
-		return fileUpload{}, err
-	}
-	defer tempFile.Close()
-
 	var filename types.Filename
 	var note types.FileNote
 	var contentType types.ContentType
+	var reader io.Reader
 
 	mr := multipart.NewReader(r.Body, params["boundary"])
 	for {
@@ -283,12 +277,14 @@ func fileFromRequest(w http.ResponseWriter, r *http.Request) (fileUpload, error)
 				return fileUpload{}, err
 			}
 
-			buf := make([]byte, 1*1024*1024)
-			n, err := io.CopyBuffer(tempFile, p, buf)
+			n, err := readAndDiscard(p)
 			if err != nil {
 				return fileUpload{}, err
 			}
-			log.Printf("read %d bytes to temp file", n)
+
+			log.Printf("read and discarded %d bytes", n)
+
+			reader = &randomDataReader{int(n)}
 		} else if p.FormName() == "note" {
 			b := make([]byte, parse.MaxFileNoteLen+1)
 			n, err := p.Read(b)
@@ -305,7 +301,7 @@ func fileFromRequest(w http.ResponseWriter, r *http.Request) (fileUpload, error)
 	}
 
 	return fileUpload{
-		Reader:      strings.NewReader("dummy data"),
+		Reader:      reader,
 		Filename:    filename,
 		Note:        note,
 		ContentType: contentType,
