@@ -298,5 +298,5 @@ func parseExpirationFromRequest(r *http.Request) (types.ExpirationTime, error) {
 }
 
 func bytesToMiB(b int64) int64 {
-	return b * 1024 * 1024
+	return b << 20
 }
