@@ -260,11 +260,11 @@ func fileFromRequest(w http.ResponseWriter, r *http.Request) (fileUpload, error)
 	if err != nil {
 		return fileUpload{}, err
 	}
+	defer tempFile.Close()
 
 	var filename types.Filename
 	var note types.FileNote
 	var contentType types.ContentType
-	var reader io.Reader
 
 	mr := multipart.NewReader(r.Body, params["boundary"])
 	for {
@@ -289,7 +289,6 @@ func fileFromRequest(w http.ResponseWriter, r *http.Request) (fileUpload, error)
 				return fileUpload{}, err
 			}
 			log.Printf("read %d bytes to temp file", n)
-			reader = tempFile
 		} else if p.FormName() == "note" {
 			b := make([]byte, parse.MaxFileNoteLen+1)
 			n, err := p.Read(b)
@@ -305,10 +304,8 @@ func fileFromRequest(w http.ResponseWriter, r *http.Request) (fileUpload, error)
 		}
 	}
 
-	tempFile.Seek(0, io.SeekStart)
-
 	return fileUpload{
-		Reader:      reader,
+		Reader:      strings.NewReader("dummy data"),
 		Filename:    filename,
 		Note:        note,
 		ContentType: contentType,
