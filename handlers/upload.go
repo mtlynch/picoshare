@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"time"
@@ -29,13 +28,18 @@ type (
 		ID string `json:"id"`
 	}
 
-	fileUpload struct {
-		Reader      io.Reader
-		Filename    types.Filename
-		Note        types.FileNote
-		ContentType types.ContentType
+	dbError struct {
+		Err error
 	}
 )
+
+func (dbe dbError) Error() string {
+	return fmt.Sprintf("database error: %s", dbe.Err)
+}
+
+func (dbe dbError) Unwrap() error {
+	return dbe.Err
+}
 
 func (s Server) entryPost() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -46,26 +50,19 @@ func (s Server) entryPost() http.HandlerFunc {
 			return
 		}
 
-		uploadedFile, err := fileFromRequest(r)
+		// We're intentionally not limiting the size of the request because we
+		// assume that the uploading user is trusted, so they can upload files of
+		// any size they want.
+		id, err := s.insertFileFromRequest(r, expiration, types.GuestLinkID(""))
 		if err != nil {
-			log.Printf("error reading body: %v", err)
-			http.Error(w, fmt.Sprintf("can't read request body: %s", err), http.StatusBadRequest)
-			return
-		}
-
-		id := generateEntryID()
-		err = s.store.InsertEntry(uploadedFile.Reader,
-			types.UploadMetadata{
-				Filename:    uploadedFile.Filename,
-				Note:        uploadedFile.Note,
-				ContentType: uploadedFile.ContentType,
-				ID:          id,
-				Uploaded:    time.Now(),
-				Expires:     types.ExpirationTime(expiration),
-			})
-		if err != nil {
-			log.Printf("failed to save entry: %v", err)
-			http.Error(w, "can't save entry", http.StatusInternalServerError)
+			var de *dbError
+			if errors.As(err, &de) {
+				log.Printf("failed to insert uploaded file into data store: %v", err)
+				http.Error(w, "failed to insert file into database", http.StatusInternalServerError)
+			} else {
+				log.Printf("invalid upload: %v", err)
+				http.Error(w, fmt.Sprintf("invalid request: %s", err), http.StatusBadRequest)
+			}
 			return
 		}
 
@@ -142,31 +139,16 @@ func (s Server) guestEntryPost() http.HandlerFunc {
 			r.Body = http.MaxBytesReader(w, r.Body, int64(*gl.MaxFileBytes))
 		}
 
-		uploadedFile, err := fileFromRequest(r)
+		id, err := s.insertFileFromRequest(r, types.NeverExpire, guestLinkID)
 		if err != nil {
-			log.Printf("error reading body: %v", err)
-			http.Error(w, fmt.Sprintf("can't read request body: %s", err), http.StatusBadRequest)
-			return
-		}
-
-		if uploadedFile.Note.Value != nil {
-			http.Error(w, "Guest uploads cannot have file notes", http.StatusBadRequest)
-			return
-		}
-
-		id := generateEntryID()
-		err = s.store.InsertEntry(uploadedFile.Reader,
-			types.UploadMetadata{
-				Filename:    uploadedFile.Filename,
-				ContentType: uploadedFile.ContentType,
-				ID:          id,
-				GuestLinkID: guestLinkID,
-				Uploaded:    time.Now(),
-				Expires:     types.NeverExpire,
-			})
-		if err != nil {
-			log.Printf("failed to save entry: %v", err)
-			http.Error(w, "can't save entry", http.StatusInternalServerError)
+			var de *dbError
+			if errors.As(err, &de) {
+				log.Printf("failed to insert uploaded file into data store: %v", err)
+				http.Error(w, "failed to insert file into database", http.StatusInternalServerError)
+			} else {
+				log.Printf("invalid upload: %v", err)
+				http.Error(w, fmt.Sprintf("invalid request: %s", err), http.StatusBadRequest)
+			}
 			return
 		}
 
@@ -239,45 +221,58 @@ func parseEntryID(s string) (types.EntryID, error) {
 	return types.EntryID(s), nil
 }
 
-func fileFromRequest(r *http.Request) (fileUpload, error) {
-	// We're intentionally not limiting the size of the request because we assume
-	// the the uploading user is trusted, so they can upload files of any size
-	// they want.
-
+func (s Server) insertFileFromRequest(r *http.Request, expiration types.ExpirationTime, guestLinkID types.GuestLinkID) (types.EntryID, error) {
 	// ParseMultipartForm can go above the limit we set, so set a conservative RAM
 	// limit to avoid exhausting RAM on servers with limited resources.
 	multipartMaxMemory := mibToBytes(1)
 	r.ParseMultipartForm(multipartMaxMemory)
+
 	reader, metadata, err := r.FormFile("file")
 	if err != nil {
-		return fileUpload{}, err
+		return types.EntryID(""), err
 	}
+	defer r.MultipartForm.RemoveAll()
 
 	if metadata.Size == 0 {
-		return fileUpload{}, errors.New("file is empty")
+		return types.EntryID(""), errors.New("file is empty")
 	}
 
 	filename, err := parse.Filename(metadata.Filename)
 	if err != nil {
-		return fileUpload{}, err
+		return types.EntryID(""), err
 	}
 
 	contentType, err := parseContentType(metadata.Header.Get("Content-Type"))
 	if err != nil {
-		return fileUpload{}, err
+		return types.EntryID(""), err
 	}
 
 	note, err := parse.FileNote(r.FormValue("note"))
 	if err != nil {
-		return fileUpload{}, err
+		return types.EntryID(""), err
 	}
 
-	return fileUpload{
-		Reader:      reader,
-		Filename:    filename,
-		Note:        note,
-		ContentType: contentType,
-	}, nil
+	if guestLinkID != "" && note.Value != nil {
+		return types.EntryID(""), errors.New("guest uploads cannot have file notes")
+	}
+
+	id := generateEntryID()
+	err = s.store.InsertEntry(reader,
+		types.UploadMetadata{
+			ID:          id,
+			Filename:    filename,
+			ContentType: contentType,
+			Note:        note,
+			GuestLinkID: guestLinkID,
+			Uploaded:    time.Now(),
+			Expires:     expiration,
+		})
+	if err != nil {
+		log.Printf("failed to save entry: %v", err)
+		return types.EntryID(""), dbError{err}
+	}
+
+	return id, nil
 }
 
 func parseContentType(s string) (types.ContentType, error) {
