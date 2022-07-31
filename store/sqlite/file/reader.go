@@ -88,7 +88,8 @@ func (fr *fileReader) populateBuffer() error {
 	}
 
 	startChunk := fr.offset / int64(fr.chunkSize)
-	stmt, err := fr.db.Prepare(`
+	var chunk []byte
+	if err := fr.db.QueryRow(`
 			SELECT
 				chunk
 			FROM
@@ -98,16 +99,8 @@ func (fr *fileReader) populateBuffer() error {
 				chunk_index=?
 			ORDER BY
 				chunk_index ASC
-			`)
-	if err != nil {
+			`, fr.entryID, startChunk).Scan(&chunk); err != nil {
 		log.Printf("reading chunk failed: %v", err)
-		return err
-	}
-	defer stmt.Close()
-
-	var chunk []byte
-	err = stmt.QueryRow(fr.entryID, startChunk).Scan(&chunk)
-	if err != nil {
 		return err
 	}
 
@@ -121,7 +114,9 @@ func (fr *fileReader) populateBuffer() error {
 }
 
 func getFileLength(db *sql.DB, id types.EntryID, chunkSize int64) (int64, error) {
-	stmt, err := db.Prepare(`
+	var chunkIndex int64
+	var chunkLen int64
+	if err := db.QueryRow(`
 	SELECT
 		chunk_index,
 		LENGTH(chunk) AS chunk_size
@@ -132,16 +127,7 @@ func getFileLength(db *sql.DB, id types.EntryID, chunkSize int64) (int64, error)
 	ORDER BY
 		chunk_index DESC
 	LIMIT 1
-	`)
-	if err != nil {
-		return 0, err
-	}
-	defer stmt.Close()
-
-	var chunkIndex int64
-	var chunkLen int64
-	err = stmt.QueryRow(id).Scan(&chunkIndex, &chunkLen)
-	if err != nil {
+	`, id).Scan(&chunkIndex, &chunkLen); err != nil {
 		return 0, err
 	}
 
@@ -149,7 +135,8 @@ func getFileLength(db *sql.DB, id types.EntryID, chunkSize int64) (int64, error)
 }
 
 func getChunkSize(db *sql.DB, id types.EntryID) (int64, error) {
-	stmt, err := db.Prepare(`
+	var chunkSize int64
+	if err := db.QueryRow(`
 	SELECT
 		LENGTH(chunk) AS chunk_size
 	FROM
@@ -159,17 +146,10 @@ func getChunkSize(db *sql.DB, id types.EntryID) (int64, error) {
 	ORDER BY
 		chunk_index ASC
 	LIMIT 1
-	`)
-	if err != nil {
+	`).Scan(&chunkSize); err != nil {
 		return 0, err
 	}
-	defer stmt.Close()
 
-	var chunkSize int64
-	err = stmt.QueryRow(id).Scan(&chunkSize)
-	if err != nil {
-		return 0, err
-	}
 	return chunkSize, nil
 }
 
