@@ -23,7 +23,11 @@ func serveStaticResource() http.HandlerFunc {
 			http.Error(w, "Failed to find file: "+r.URL.Path, http.StatusNotFound)
 			return
 		}
-		defer file.Close()
+		defer func() {
+			if err := file.Close(); err != nil {
+				log.Printf("failed to close file handle for %s: %v", r.URL.Path, err)
+			}
+		}()
 
 		stat, err := file.Stat()
 		if err != nil {
