@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"mime"
 	"mime/multipart"
@@ -255,6 +256,11 @@ func fileFromRequest(w http.ResponseWriter, r *http.Request) (fileUpload, error)
 		return fileUpload{}, fmt.Errorf("unexpected media type: %v", err)
 	}
 
+	tempFile, err := ioutil.TempFile("", "uploaded.*.dat")
+	if err != nil {
+		return fileUpload{}, err
+	}
+
 	var filename types.Filename
 	var note types.FileNote
 	var contentType types.ContentType
@@ -277,14 +283,13 @@ func fileFromRequest(w http.ResponseWriter, r *http.Request) (fileUpload, error)
 				return fileUpload{}, err
 			}
 
-			n, err := readAndDiscard(p)
+			buf := make([]byte, 1*1024*1024)
+			n, err := io.CopyBuffer(tempFile, p, buf)
 			if err != nil {
 				return fileUpload{}, err
 			}
-
-			log.Printf("read and discarded %d bytes", n)
-
-			reader = &randomDataReader{int(n)}
+			log.Printf("read %d bytes to temp file", n)
+			reader = tempFile
 		} else if p.FormName() == "note" {
 			b := make([]byte, parse.MaxFileNoteLen+1)
 			n, err := p.Read(b)
