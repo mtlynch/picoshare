@@ -358,7 +358,7 @@ func TestGuestUpload(t *testing.T) {
 			status:      http.StatusUnauthorized,
 		},
 		{
-			description: "exhausted upload count",
+			description: "exhausted upload bytes",
 			guestLinkInStore: types.GuestLink{
 				ID:           types.GuestLinkID("abcdefgh23456789"),
 				Created:      mustParseTime("2000-01-01T00:00:00Z"),
