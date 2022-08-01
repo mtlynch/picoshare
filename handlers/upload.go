@@ -225,13 +225,19 @@ func (s Server) insertFileFromRequest(r *http.Request, expiration types.Expirati
 	// ParseMultipartForm can go above the limit we set, so set a conservative RAM
 	// limit to avoid exhausting RAM on servers with limited resources.
 	multipartMaxMemory := mibToBytes(1)
-	r.ParseMultipartForm(multipartMaxMemory)
+	if err := r.ParseMultipartForm(multipartMaxMemory); err != nil {
+		return types.EntryID(""), err
+	}
+	defer func() {
+		if err := r.MultipartForm.RemoveAll(); err != nil {
+			log.Printf("failed to free multipart form resources: %v", err)
+		}
+	}()
 
 	reader, metadata, err := r.FormFile("file")
 	if err != nil {
 		return types.EntryID(""), err
 	}
-	defer r.MultipartForm.RemoveAll()
 
 	if metadata.Size == 0 {
 		return types.EntryID(""), errors.New("file is empty")

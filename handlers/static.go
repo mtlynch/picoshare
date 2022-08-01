@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log"
 	"net/http"
 	"os"
 	"path"
@@ -30,7 +31,11 @@ func lastModTime(path string) (time.Time, bool) {
 	if err != nil {
 		return time.Time{}, false
 	}
-	defer file.Close()
+	defer func() {
+		if err := file.Close(); err != nil {
+			log.Printf("failed to close file handle for %s: %v", path, err)
+		}
+	}()
 
 	stat, err := file.Stat()
 	if err != nil {
