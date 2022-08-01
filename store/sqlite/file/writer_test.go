@@ -125,7 +125,7 @@ func TestWriteFile(t *testing.T) {
 			}
 
 			if got, want := tx.rows, tt.rowsExpected; !reflect.DeepEqual(got, want) {
-				t.Fatalf("rows=%v, want %v", tx.rows, tt.rowsExpected)
+				t.Errorf("rows=%v, want %v", tx.rows, tt.rowsExpected)
 			}
 		})
 	}
