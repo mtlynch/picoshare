@@ -23,6 +23,8 @@ type (
 	}
 )
 
+var errMockSqlFailure = errors.New("fake SQL error")
+
 func (db *mockSqlTx) Exec(query string, args ...interface{}) (sql.Result, error) {
 	chunk := args[2].([]byte)
 	chunkCopy := make([]byte, len(chunk))
@@ -44,7 +46,6 @@ func TestWriteFile(t *testing.T) {
 		sqlExecErr   error
 		errExpected  error
 		rowsExpected []mockChunkRow
-		errExpected  error
 	}{
 		{
 			explanation: "data is smaller than chunk size",
@@ -113,18 +114,20 @@ func TestWriteFile(t *testing.T) {
 			id:          types.EntryID("dummy-id"),
 			data:        []byte("0123456789"),
 			chunkSize:   5,
-			sqlExecErr:  errors.New("dummy error"),
-			errExpected: errors.New("dummy error"),
+			sqlExecErr:  errMockSqlFailure,
+			errExpected: errMockSqlFailure,
 		},
 	} {
 		t.Run(tt.explanation, func(t *testing.T) {
-			tx := mockSqlTx{}
+			tx := mockSqlTx{
+				err: tt.sqlExecErr,
+			}
 
 			w := file.NewWriter(&tx, tt.id, tt.chunkSize)
 			n, err := w.Write(tt.data)
 
 			if got, want := err, tt.errExpected; got != want {
-				t.Fatalf("%s: failed to write data: %v", tt.explanation, err)
+				t.Fatalf("err=%v, want=%v", err, tt.errExpected)
 			}
 			if err != nil {
 				return
