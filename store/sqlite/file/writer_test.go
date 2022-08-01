@@ -2,6 +2,7 @@ package file_test
 
 import (
 	"database/sql"
+	"errors"
 	"reflect"
 	"testing"
 
@@ -18,6 +19,7 @@ type (
 
 	mockSqlTx struct {
 		rows []mockChunkRow
+		err  error
 	}
 )
 
@@ -30,7 +32,7 @@ func (db *mockSqlTx) Exec(query string, args ...interface{}) (sql.Result, error)
 		chunkIndex: args[1].(int),
 		chunk:      chunkCopy,
 	})
-	return nil, nil
+	return nil, db.err
 }
 
 func TestWriteFile(t *testing.T) {
@@ -39,6 +41,8 @@ func TestWriteFile(t *testing.T) {
 		id           types.EntryID
 		data         []byte
 		chunkSize    int
+		sqlExecErr   error
+		errExpected  error
 		rowsExpected []mockChunkRow
 	}{
 		{
@@ -103,15 +107,28 @@ func TestWriteFile(t *testing.T) {
 				},
 			},
 		},
+		{
+			explanation: "write fails when SQL transaction returns error",
+			id:          types.EntryID("dummy-id"),
+			data:        []byte("0123456789"),
+			chunkSize:   5,
+			sqlExecErr:  errors.New("dummy error"),
+			errExpected: errors.New("dummy error"),
+		},
 	} {
 		t.Run(tt.explanation, func(t *testing.T) {
 			tx := mockSqlTx{}
 
 			w := file.NewWriter(&tx, tt.id, tt.chunkSize)
 			n, err := w.Write(tt.data)
-			if err != nil {
-				t.Fatalf("%s: failed to write data: %v", tt.explanation, err)
+
+			if got, want := err, tt.errExpected; got != want {
+				t.Fatalf("err=%v, want=%v", got, want)
 			}
+			if err != nil {
+				return
+			}
+
 			if n != len(tt.data) {
 				t.Fatalf("%s: wrong size data written: got %d, want %d", tt.explanation, n, len(tt.data))
 			}
