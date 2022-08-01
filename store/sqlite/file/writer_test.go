@@ -44,6 +44,7 @@ func TestWriteFile(t *testing.T) {
 		sqlExecErr   error
 		errExpected  error
 		rowsExpected []mockChunkRow
+		errExpected  error
 	}{
 		{
 			explanation: "data is smaller than chunk size",
@@ -123,21 +124,21 @@ func TestWriteFile(t *testing.T) {
 			n, err := w.Write(tt.data)
 
 			if got, want := err, tt.errExpected; got != want {
-				t.Fatalf("err=%v, want=%v", got, want)
+				t.Fatalf("%s: failed to write data: %v", tt.explanation, err)
 			}
 			if err != nil {
 				return
 			}
-
-			if n != len(tt.data) {
-				t.Fatalf("%s: wrong size data written: got %d, want %d", tt.explanation, n, len(tt.data))
+			if got, want := n, len(tt.data); got != want {
+				t.Errorf("n=%d, want=%d", got, want)
 			}
+
 			if err := w.Close(); err != nil {
-				t.Fatalf("%s: failed to close writer: %v", tt.explanation, err)
+				t.Errorf("failed to close writer: %v", err)
 			}
 
-			if !reflect.DeepEqual(tx.rows, tt.rowsExpected) {
-				t.Fatalf("%s: unexpected DB transactions: got %v, want %v", tt.explanation, tx.rows, tt.rowsExpected)
+			if got, want := tx.rows, tt.rowsExpected; !reflect.DeepEqual(got, want) {
+				t.Errorf("rows=%v, want %v", tx.rows, tt.rowsExpected)
 			}
 		})
 	}
