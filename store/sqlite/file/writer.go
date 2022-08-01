@@ -38,7 +38,9 @@ func (w *writer) Write(p []byte) (int, error) {
 		dstEnd := dstStart + copySize
 		copy(w.buf[dstStart:dstEnd], p[n:n+copySize])
 		if dstEnd == len(w.buf) {
-			w.flush(len(w.buf))
+			if err := w.flush(len(w.buf)); err != nil {
+				return n, err
+			}
 		}
 		w.written += copySize
 		n += copySize
