@@ -99,11 +99,3 @@ fly deploy \
   PICOSHARE_URL="https://${APP_NAME}.fly.dev/" && \
   echo "Your PicoShare instance is now ready at: ${PICOSHARE_URL}"
 ```
-
-## Increase RAM (optional)
-
-By default, fly VMs include 256 MB of RAM. Your instance will need at least 512 MB of RAM to support large uploads.
-
-```bash
-fly scale memory 512
-```
