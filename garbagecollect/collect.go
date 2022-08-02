@@ -32,6 +32,9 @@ func (c Collector) Collect() error {
 		}
 	}
 
+	// TODO: Delete orphaned entries_data rows (rows where file data was
+	// inserted, but there's no matching metadata for the file).
+
 	if err := c.store.Compact(); err != nil {
 		return err
 	}
