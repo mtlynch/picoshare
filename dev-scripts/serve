@@ -16,7 +16,7 @@ cd "${SCRIPT_DIR}/.."
 
 # Install modd if it's not present.
 MODD_PATH="$(go env GOPATH)/bin/modd"
-if [ ! -f "${MODD_PATH}" ]; then
+if [[ ! -f "${MODD_PATH}" ]]; then
     go get github.com/cortesi/modd/cmd/modd
     go install github.com/cortesi/modd/cmd/modd
 fi
