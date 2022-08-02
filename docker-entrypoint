@@ -26,8 +26,7 @@ readonly IS_LITESTREAM_ENABLED
 # Echo commands to stdout.
 set -x
 
-export readonly DB_PATH="/data/store.db"
-PS_LAUNCH_CMD="/app/picoshare -db ${DB_PATH}"
+PS_LAUNCH_CMD="/app/picoshare $@"
 
 if [[ "${IS_LITESTREAM_ENABLED}" == 'true' ]]; then
   /app/litestream version
