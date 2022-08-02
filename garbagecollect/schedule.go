@@ -2,6 +2,7 @@ package garbagecollect
 
 import (
 	"log"
+	"sync"
 	"time"
 
 	"github.com/mtlynch/picoshare/v2/store"
@@ -10,6 +11,7 @@ import (
 type Scheduler struct {
 	collector Collector
 	ticker    *time.Ticker
+	mu        sync.Mutex
 }
 
 func NewScheduler(store store.Store, interval time.Duration) Scheduler {
@@ -19,14 +21,19 @@ func NewScheduler(store store.Store, interval time.Duration) Scheduler {
 	}
 }
 
-func (s Scheduler) StartAsync() {
+func (s *Scheduler) StartAsync() {
 	go func() {
 		for range s.ticker.C {
-			log.Printf("cleaning up expired entries")
-			err := s.collector.Collect()
-			if err != nil {
-				log.Printf("garbage collection failed: %v", err)
-			}
+			s.collect()
 		}
 	}()
+}
+
+func (s *Scheduler) collect() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	log.Printf("cleaning up expired entries")
+	if err := s.collector.Collect(); err != nil {
+		log.Printf("garbage collection failed: %v", err)
+	}
 }
