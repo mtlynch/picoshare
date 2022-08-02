@@ -44,7 +44,7 @@ fi
 ERRCHECK_PATH="$(go env GOPATH)/bin/errcheck"
 readonly ERRCHECK_PATH
 readonly ERRCHECK_VERSION="v1.6.1"
-if [ ! -f "${ERRCHECK_PATH}" ]; then
+if [[ ! -f "${ERRCHECK_PATH}" ]]; then
     go install "github.com/kisielk/errcheck@${ERRCHECK_VERSION}"
 fi
 
