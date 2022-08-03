@@ -22,7 +22,6 @@ func main() {
 	log.Print("Starting picoshare server")
 
 	dbPath := flag.String("db", "data/store.db", "path to database")
-	cleanSchedule := flag.Duration("cleanSchedule", 7*time.Hour, "frequency to clean/compact datastore (e.g., 10h)")
 	flag.Parse()
 
 	authenticator, err := shared_secret.New(requireEnv("PS_SHARED_SECRET"))
@@ -34,7 +33,7 @@ func main() {
 
 	store := sqlite.New(*dbPath)
 
-	gc := garbagecollect.NewScheduler(store, *cleanSchedule)
+	gc := garbagecollect.NewScheduler(store, 7*time.Hour)
 	gc.StartAsync()
 
 	h := gorilla.LoggingHandler(os.Stdout, handlers.New(authenticator, store).Router())
