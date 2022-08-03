@@ -72,3 +72,4 @@ COPY ./LICENSE /app/LICENSE
 WORKDIR /app
 
 ENTRYPOINT ["/app/docker-entrypoint"]
+CMD ["-db" "/data/store.db"]
