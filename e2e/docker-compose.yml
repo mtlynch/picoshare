@@ -6,7 +6,7 @@ services:
     environment:
       - PORT=3333
       - PS_SHARED_SECRET=dummypass
-    command: -db data/store.db -cleanSchedule 1s
+    command: -db data/store.db
     volumes:
       - ./:/app/e2e
   cypress:

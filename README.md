@@ -81,10 +81,9 @@ Notes:
 
 ### Command-line flags
 
-| Flag             | Meaning                                          | Default Value     |
-| ---------------- | ------------------------------------------------ | ----------------- |
-| `-cleanSchedule` | Frequency to clean/compact datastore (e.g., 10h) | `"7h"`            |
-| `-db`            | Path to SQLite database                          | `"data/store.db"` |
+| Flag  | Meaning                 | Default Value     |
+| ----- | ----------------------- | ----------------- |
+| `-db` | Path to SQLite database | `"data/store.db"` |
 
 ### Docker environment variables
 
