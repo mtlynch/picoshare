@@ -15,9 +15,9 @@ COPY ./go.* /app/
 WORKDIR /app
 
 RUN set -x && \
-    if [[ "$TARGETPLATFORM" = "linux/arm/v7" ]]; then \
+    if [ "$TARGETPLATFORM" = "linux/arm/v7" ]; then \
       GOARCH="arm"; \
-    elif [[ "$TARGETPLATFORM" = "linux/arm64" ]]; then \
+    elif [ "$TARGETPLATFORM" = "linux/arm64" ]; then \
       GOARCH="arm64"; \
     else \
       GOARCH="amd64"; \
@@ -44,9 +44,9 @@ RUN set -x && \
       wget
 
 RUN set -x && \
-    if [[ "$TARGETPLATFORM" = "linux/arm/v7" ]]; then \
+    if [ "$TARGETPLATFORM" = "linux/arm/v7" ]; then \
       ARCH="arm7" ; \
-    elif [[ "$TARGETPLATFORM" = "linux/arm64" ]]; then \
+    elif [ "$TARGETPLATFORM" = "linux/arm64" ]; then \
       ARCH="arm64" ; \
     else \
       ARCH="amd64" ; \
@@ -72,3 +72,4 @@ COPY ./LICENSE /app/LICENSE
 WORKDIR /app
 
 ENTRYPOINT ["/app/docker-entrypoint"]
+CMD ["-db", "/data/store.db"]
