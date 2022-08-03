@@ -34,10 +34,11 @@ func main() {
 
 	store := sqlite.New(*dbPath)
 
-	gc := garbagecollect.NewScheduler(store, *cleanSchedule)
+	collector := garbagecollect.NewCollector(store)
+	gc := garbagecollect.NewScheduler(&collector, *cleanSchedule)
 	gc.StartAsync()
 
-	h := gorilla.LoggingHandler(os.Stdout, handlers.New(authenticator, store).Router())
+	h := gorilla.LoggingHandler(os.Stdout, handlers.New(authenticator, store, &collector).Router())
 	if os.Getenv("PS_BEHIND_PROXY") != "" {
 		h = gorilla.ProxyIPHeadersHandler(h)
 	}

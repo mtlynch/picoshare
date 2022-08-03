@@ -2,6 +2,7 @@ package garbagecollect
 
 import (
 	"log"
+	"sync"
 	"time"
 
 	"github.com/mtlynch/picoshare/v2/store"
@@ -9,6 +10,7 @@ import (
 
 type Collector struct {
 	store store.Store
+	mu    sync.Mutex
 }
 
 func NewCollector(store store.Store) Collector {
@@ -17,7 +19,9 @@ func NewCollector(store store.Store) Collector {
 	}
 }
 
-func (c Collector) Collect() error {
+func (c *Collector) Collect() error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	mm, err := c.store.GetEntriesMetadata()
 	if err != nil {
 		return err
