@@ -22,6 +22,9 @@ it("uploads a file without specifying any parameters", () => {
     .find("#link")
     .should("be.visible");
 
+  // Verify that cleanup doesn't incorrectly remove the file.
+  cy.request("POST", "/api/cleanup");
+
   cy.get('.navbar a[href="/files"]').click();
   cy.get('.table tbody tr:first-child [test-data-id="filename"]').should(
     "contain",
@@ -67,6 +70,9 @@ it("uploads a file with a custom expiration time", () => {
     .find("#link")
     .should("be.visible");
 
+  // Verify that cleanup doesn't incorrectly remove the file.
+  cy.request("POST", "/api/cleanup");
+
   cy.get('.navbar a[href="/files"]').click();
   cy.get('.table tbody tr:first-child [test-data-id="filename"]').should(
     "contain",
@@ -103,6 +109,9 @@ it("uploads a file with a note", () => {
     .shadow()
     .find("#link")
     .should("be.visible");
+
+  // Verify that cleanup doesn't incorrectly remove the file.
+  cy.request("POST", "/api/cleanup");
 
   cy.get('.navbar a[href="/files"]').click();
   cy.get('.table tbody tr:first-child [test-data-id="filename"]').should(
@@ -144,6 +153,9 @@ it("uploads a file and deletes it", () => {
     "contain",
     "kittyface.jpg"
   );
+
+  // Verify that cleanup doesn't incorrectly remove the file.
+  cy.request("POST", "/api/cleanup");
 
   cy.get('.table tbody tr:first-child [pico-purpose="edit"]').click();
 
@@ -193,6 +205,9 @@ it("uploads a file and deletes its note", () => {
     "kittyface.jpg"
   );
 
+  // Verify that cleanup doesn't incorrectly remove the file.
+  cy.request("POST", "/api/cleanup");
+
   cy.get('.table tbody tr:first-child [pico-purpose="edit"]').click();
 
   cy.location("pathname").should("match", new RegExp("/files/.+/edit"));
@@ -232,6 +247,9 @@ it("uploads a file and edits its note", () => {
     .shadow()
     .find("#link")
     .should("be.visible");
+
+  // Verify that cleanup doesn't incorrectly remove the file.
+  cy.request("POST", "/api/cleanup");
 
   cy.get('.navbar a[href="/files"]').click();
   cy.get('.table tbody tr:first-child [test-data-id="filename"]').should(
@@ -278,6 +296,9 @@ it("uploads a file and changes its expiration time", () => {
     .shadow()
     .find("#link")
     .should("be.visible");
+
+  // Verify that cleanup doesn't incorrectly remove the file.
+  cy.request("POST", "/api/cleanup");
 
   cy.get('.navbar a[href="/files"]').click();
   cy.get('.table tbody tr:first-child [test-data-id="filename"]').should(
