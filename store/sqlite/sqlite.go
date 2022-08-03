@@ -236,12 +236,23 @@ func (d db) GetEntryMetadata(id types.EntryID) (types.UploadMetadata, error) {
 
 func (d db) InsertEntry(reader io.Reader, metadata types.UploadMetadata) error {
 	log.Printf("saving new entry %s", metadata.ID)
-	tx, err := d.ctx.BeginTx(context.Background(), nil)
-	if err != nil {
+
+	// Note: We deliberately don't use a transaction here, as it bloats memory, so
+	// we can end up in a state with orphaned entries data. We clean it up in
+	// Purge().
+	// See: https://github.com/mtlynch/picoshare/issues/284
+
+	w := file.NewWriter(d.ctx, metadata.ID, d.chunkSize)
+	if _, err := io.Copy(w, reader); err != nil {
 		return err
 	}
 
-	_, err = tx.Exec(`
+	// Close() flushes the buffer, and it can fail.
+	if err := w.Close(); err != nil {
+		return err
+	}
+
+	_, err := d.ctx.Exec(`
 	INSERT INTO
 		entries
 	(
@@ -267,17 +278,7 @@ func (d db) InsertEntry(reader io.Reader, metadata types.UploadMetadata) error {
 		return err
 	}
 
-	w := file.NewWriter(tx, metadata.ID, d.chunkSize)
-	if _, err := io.Copy(w, reader); err != nil {
-		return err
-	}
-
-	// Close() flushes the buffer, and it can fail.
-	if err := w.Close(); err != nil {
-		return err
-	}
-
-	return tx.Commit()
+	return nil
 }
 
 func (d db) UpdateEntryMetadata(id types.EntryID, metadata types.UploadMetadata) error {
@@ -448,6 +449,34 @@ func (d db) DeleteGuestLink(id types.GuestLinkID) error {
 	}
 
 	return tx.Commit()
+}
+
+// Purge clears orphaned rows from the database.
+func (d db) Purge() error {
+	log.Printf("purging orphaned rows from database")
+
+	// Delete rows from entries_data if they don't reference valid rows in
+	// entries. This can happen if the entry insertion fails partway through.
+	if _, err := d.ctx.Exec(`
+		DELETE FROM
+			entries_data
+		WHERE
+		id IN (
+			SELECT
+				DISTINCT entries_data.id AS entry_id
+			FROM
+				entries_data
+			LEFT JOIN
+				entries ON entries_data.id = entries.id
+			WHERE
+				entries.id IS NULL
+			)`); err != nil {
+		return err
+	}
+
+	log.Printf("purge completed successfully")
+
+	return nil
 }
 
 func (d db) Compact() error {

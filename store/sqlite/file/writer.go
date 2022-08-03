@@ -8,7 +8,7 @@ import (
 )
 
 type writer struct {
-	tx      wrapped.SqlTx
+	ctx     wrapped.SqlDB
 	entryID types.EntryID
 	buf     []byte
 	written int
@@ -16,9 +16,9 @@ type writer struct {
 
 // Create a new writer for the entry ID using the given SqlTx and splitting the
 // file into separate rows in the DB of at most chunkSize bytes.
-func NewWriter(tx wrapped.SqlTx, id types.EntryID, chunkSize int) io.WriteCloser {
+func NewWriter(ctx wrapped.SqlDB, id types.EntryID, chunkSize int) io.WriteCloser {
 	return &writer{
-		tx:      tx,
+		ctx:     ctx,
 		entryID: id,
 		buf:     make([]byte, chunkSize),
 	}
@@ -58,7 +58,7 @@ func (w *writer) Close() error {
 
 func (w *writer) flush(n int) error {
 	idx := w.written / len(w.buf)
-	_, err := w.tx.Exec(`
+	_, err := w.ctx.Exec(`
 	INSERT INTO
 		entries_data
 	(

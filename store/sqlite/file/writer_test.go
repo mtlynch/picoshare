@@ -17,7 +17,7 @@ type (
 		chunk      []byte
 	}
 
-	mockSqlTx struct {
+	mockSqlDB struct {
 		rows []mockChunkRow
 		err  error
 	}
@@ -25,7 +25,7 @@ type (
 
 var errMockSqlFailure = errors.New("fake SQL error")
 
-func (db *mockSqlTx) Exec(query string, args ...interface{}) (sql.Result, error) {
+func (db *mockSqlDB) Exec(query string, args ...interface{}) (sql.Result, error) {
 	chunk := args[2].([]byte)
 	chunkCopy := make([]byte, len(chunk))
 	copy(chunkCopy, chunk)
@@ -119,7 +119,7 @@ func TestWriteFile(t *testing.T) {
 		},
 	} {
 		t.Run(tt.explanation, func(t *testing.T) {
-			tx := mockSqlTx{
+			tx := mockSqlDB{
 				err: tt.sqlExecErr,
 			}
 

@@ -18,6 +18,7 @@ type Store interface {
 	GetGuestLinks() ([]types.GuestLink, error)
 	InsertGuestLink(types.GuestLink) error
 	DeleteGuestLink(types.GuestLinkID) error
+	Purge() error
 	Compact() error
 }
 

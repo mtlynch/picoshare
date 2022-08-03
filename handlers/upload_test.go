@@ -94,7 +94,7 @@ func TestEntryPost(t *testing.T) {
 	} {
 		t.Run(tt.description, func(t *testing.T) {
 			store := test_sqlite.New()
-			s := handlers.New(mockAuthenticator{}, store)
+			s := handlers.New(mockAuthenticator{}, store, nilGarbageCollector)
 
 			formData, contentType := createMultipartFormBody(tt.filename, tt.note, bytes.NewBuffer([]byte(tt.contents)))
 
@@ -226,7 +226,7 @@ func TestEntryPut(t *testing.T) {
 		t.Run(tt.description, func(t *testing.T) {
 			store := test_sqlite.New()
 			store.InsertEntry(strings.NewReader(("dummy data")), originalEntry)
-			s := handlers.New(mockAuthenticator{}, store)
+			s := handlers.New(mockAuthenticator{}, store, nilGarbageCollector)
 
 			req, err := http.NewRequest("PUT", "/api/entry/"+tt.targetID, strings.NewReader(tt.payload))
 			if err != nil {
@@ -380,7 +380,7 @@ func TestGuestUpload(t *testing.T) {
 				}
 			}
 
-			s := handlers.New(authenticator, store)
+			s := handlers.New(authenticator, store, nilGarbageCollector)
 
 			filename := "dummyimage.png"
 			contents := "dummy bytes"
