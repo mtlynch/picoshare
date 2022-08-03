@@ -48,7 +48,7 @@ if [[ "${IS_LITESTREAM_ENABLED}" == 'true' ]]; then
   echo "LITESTREAM_ENDPOINT=${LITESTREAM_ENDPOINT}"
 
   if [[ -f "$DB_PATH" ]]; then
-    echo "Existing database is $(stat -c %s ${DB_PATH}) bytes"
+    echo "Existing database is $(stat -c %s "${DB_PATH}") bytes"
   else
     echo "No existing database found"
     # Restore database from remote storage.
