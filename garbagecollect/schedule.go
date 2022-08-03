@@ -20,9 +20,9 @@ func NewScheduler(collector *Collector, interval time.Duration) Scheduler {
 func (s *Scheduler) StartAsync() {
 	go func() {
 		for range s.ticker.C {
-			log.Printf("cleaning up expired entries")
+			log.Printf("performing database maintenance")
 			if err := s.collector.Collect(); err != nil {
-				log.Printf("garbage collection failed: %v", err)
+				log.Printf("database maintenance failed: %v", err)
 			}
 		}
 	}()
