@@ -6,6 +6,20 @@ set -e
 # Exit on unset variable.
 set -u
 
+PS_ARGS="$*"
+readonly PS_ARGS
+
+# Parse the -db flag to PicoShare since we need to know it before passing it
+# along.
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    -db) DB_PATH="$2"; shift 2;;
+    -db=*) DB_PATH="${1#*=}"; shift 1;;
+    *) shift 1;;
+  esac
+done
+readonly DB_PATH
+
 is_litestream_enabled() {
   set +ux
 
@@ -26,8 +40,7 @@ readonly IS_LITESTREAM_ENABLED
 # Echo commands to stdout.
 set -x
 
-export readonly DB_PATH="/data/store.db"
-PS_LAUNCH_CMD="/app/picoshare -db ${DB_PATH}"
+PS_LAUNCH_CMD="/app/picoshare ${PS_ARGS}"
 
 if [[ "${IS_LITESTREAM_ENABLED}" == 'true' ]]; then
   /app/litestream version
@@ -35,7 +48,7 @@ if [[ "${IS_LITESTREAM_ENABLED}" == 'true' ]]; then
   echo "LITESTREAM_ENDPOINT=${LITESTREAM_ENDPOINT}"
 
   if [[ -f "$DB_PATH" ]]; then
-    echo "Existing database is $(stat -c %s ${DB_PATH}) bytes"
+    echo "Existing database is $(stat -c %s "${DB_PATH}") bytes"
   else
     echo "No existing database found"
     # Restore database from remote storage.
