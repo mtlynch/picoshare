@@ -240,6 +240,7 @@ func (d db) InsertEntry(reader io.Reader, metadata types.UploadMetadata) error {
 	// Note: We deliberately don't use a transaction here, as it bloats memory, so
 	// we can end up in a state with orphaned entries data. We clean it up in
 	// Purge().
+	// See: https://github.com/mtlynch/picoshare/issues/284
 
 	w := file.NewWriter(d.ctx, metadata.ID, d.chunkSize)
 	if _, err := io.Copy(w, reader); err != nil {
