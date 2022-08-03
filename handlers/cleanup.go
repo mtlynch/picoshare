@@ -6,6 +6,8 @@ import (
 	"net/http"
 )
 
+// cleanupPost is mainly for debugging/testing, as the garbagecollect package
+// performs this action on a regular schedule.
 func (s *Server) cleanupPost() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if err := s.collector.Collect(); err != nil {
