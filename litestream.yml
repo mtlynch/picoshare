@@ -10,3 +10,4 @@ dbs:
         force-path-style: true
         retention: 72h
         snapshot-interval: 24h
+        max-checkpoint-page-count: 500
