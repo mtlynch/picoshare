@@ -34,8 +34,6 @@ func main() {
 
 	store := sqlite.New(*dbPath)
 
-	log.Printf("vacuumDB=%v", *vacuumDb)
-
 	collector := garbagecollect.NewCollector(store, *vacuumDb)
 	gc := garbagecollect.NewScheduler(&collector, 7*time.Hour)
 	gc.StartAsync()
