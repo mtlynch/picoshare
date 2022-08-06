@@ -13,6 +13,7 @@ processes = []
 [experimental]
   allowed_public_ports = []
   auto_rollback = true
+  cmd = ["-db", "/data/store.db", "-vacuum=false"]
 
 [mounts]
 source="pico_data"
