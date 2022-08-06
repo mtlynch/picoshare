@@ -15,10 +15,7 @@ function uploadFormData(url, formData, progressFn) {
       if (xhr.status >= 200 && xhr.status < 300) {
         resolve(xhr.response);
       } else {
-        reject({
-          status: xhr.status,
-          statusText: xhr.statusText,
-        });
+        reject(xhr.statusText);
       }
     });
     xhr.addEventListener("error", () => {
