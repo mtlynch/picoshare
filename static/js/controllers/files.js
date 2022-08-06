@@ -44,12 +44,7 @@ export async function uploadFile(file, expirationTime, note, progressFn) {
     `/api/entry?expiration=${encodeURIComponent(expirationTime)}`,
     formData,
     progressFn
-  ).catch((error) => {
-    if (error.statusText) {
-      return Promise.reject();
-    }
-    return Promise.reject(error);
-  });
+  );
 }
 
 export async function guestUploadFile(file, guestLinkID, progressFn) {
