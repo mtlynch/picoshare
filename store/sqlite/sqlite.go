@@ -62,6 +62,9 @@ PRAGMA busy_timeout = 5000;
 PRAGMA synchronous = NORMAL;
 PRAGMA journal_mode = WAL;
 PRAGMA wal_autocheckpoint = 0;
+
+-- Limit journal size to 32 MiB to avoid creating WAL too big for RAM.
+PRAGMA journal_size_limit = 33554432;
 		`); err != nil {
 		log.Fatalf("failed to set pragmas: %v", err)
 	}

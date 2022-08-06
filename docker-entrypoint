@@ -21,6 +21,8 @@ done
 # We need to export DB_PATH because litestream.yml references it.
 export readonly DB_PATH
 
+du -h /data/*
+
 is_litestream_enabled() {
   set +ux
 
