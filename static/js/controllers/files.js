@@ -1,69 +1,58 @@
 "use strict";
 
-export async function uploadFile(file, expirationTime, note) {
+function uploadFormData(url, formData, progressFn) {
+  return new Promise((resolve, reject) => {
+    // We have to use XHR instead of fetch because fetch currently doesn't
+    // support a mechanism for reporting upload progress.
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", url, true);
+    xhr.upload.addEventListener("progress", (event) => {
+      if (event.lengthComputable) {
+        if (progressFn) {
+          progressFn(event.loaded, event.total);
+        }
+      }
+    });
+    xhr.addEventListener("loadend", () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        resolve(xhr.response);
+      } else {
+        reject(xhr.statusText);
+      }
+    });
+    xhr.addEventListener("error", () => {
+      reject("Failed to communicate with server: " + xhr.statusText);
+    });
+    xhr.send(formData);
+  })
+    .then((raw) => {
+      return Promise.resolve(JSON.parse(raw));
+    })
+    .then((data) => {
+      if (!Object.prototype.hasOwnProperty.call(data, "id")) {
+        throw new Error("Missing expected id field");
+      }
+      return Promise.resolve(data);
+    });
+}
+
+export async function uploadFile(file, expirationTime, note, progressFn) {
   const formData = new FormData();
   formData.append("file", file);
   if (note) {
     formData.append("note", note);
   }
-  return fetch(`/api/entry?expiration=${encodeURIComponent(expirationTime)}`, {
-    method: "POST",
-    credentials: "include",
-    body: formData,
-  })
-    .then((response) => {
-      if (!response.ok) {
-        return response.text().then((error) => {
-          return Promise.reject(error);
-        });
-      }
-      return response.json();
-    })
-    .then((data) => {
-      if (!Object.prototype.hasOwnProperty.call(data, "id")) {
-        throw new Error("Missing expected id field");
-      }
-      return Promise.resolve(data);
-    })
-    .catch((error) => {
-      if (error.message) {
-        return Promise.reject(
-          "Failed to communicate with server: " + error.message
-        );
-      }
-      return Promise.reject(error);
-    });
+  return uploadFormData(
+    `/api/entry?expiration=${encodeURIComponent(expirationTime)}`,
+    formData,
+    progressFn
+  );
 }
 
-export async function guestUploadFile(file, guestLinkID) {
+export async function guestUploadFile(file, guestLinkID, progressFn) {
   const formData = new FormData();
   formData.append("file", file);
-  return fetch(`/api/guest/${guestLinkID}`, {
-    method: "POST",
-    body: formData,
-  })
-    .then((response) => {
-      if (!response.ok) {
-        return response.text().then((error) => {
-          return Promise.reject(error);
-        });
-      }
-      return response.json();
-    })
-    .then((data) => {
-      if (!Object.prototype.hasOwnProperty.call(data, "id")) {
-        throw new Error("Missing expected id field");
-      }
-      return Promise.resolve(data);
-    })
-    .catch((error) => {
-      if (error.message) {
-        return Promise.reject(
-          "Failed to communicate with server: " + error.message
-        );
-      }
-      return Promise.reject(error);
-    });
+  return uploadFormData(`/api/guest/${guestLinkID}`, formData, progressFn);
 }
 
 export async function editFile(id, filename, expiration, note) {

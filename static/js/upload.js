@@ -5,6 +5,7 @@ const uploadEl = document.querySelector(".file");
 const resultEl = document.getElementById("upload-result");
 const pasteEl = document.getElementById("pastebox");
 const errorContainer = document.getElementById("error");
+const progressBar = document.getElementById("upload-progress");
 const progressSpinner = document.getElementById("progress-spinner");
 const uploadForm = document.getElementById("upload-form");
 const expirationContainer = document.querySelector(".expiration-container");
@@ -59,6 +60,14 @@ function sortClipboardItems(items) {
   });
 }
 
+function updateProgress(bytesUploaded, bytesTotal) {
+  progressBar.value = bytesUploaded;
+  progressBar.max = bytesTotal;
+  if (bytesUploaded === bytesTotal) {
+    showElement(progressSpinner);
+  }
+}
+
 function doUpload(file) {
   const guestLinkMetadata = getGuestLinkMetdata();
 
@@ -76,14 +85,14 @@ function doUpload(file) {
   }
   hideElement(errorContainer);
   hideElement(uploadForm);
-  showElement(progressSpinner);
+  showElement(progressBar);
 
   let uploader = () => {
-    return uploadFile(file, readExpiration(), readNote());
+    return uploadFile(file, readExpiration(), readNote(), updateProgress);
   };
   if (guestLinkMetadata) {
     uploader = () => {
-      return guestUploadFile(file, guestLinkMetadata.id);
+      return guestUploadFile(file, guestLinkMetadata.id, updateProgress);
     };
   }
   uploader()
@@ -115,6 +124,7 @@ function doUpload(file) {
       showElement(uploadForm);
     })
     .finally(() => {
+      hideElement(progressBar);
       hideElement(progressSpinner);
     });
 }

@@ -80,8 +80,23 @@
     {{ end }}
   </div>
 
-  <div class="fa-3x is-hidden" id="progress-spinner">
-    <i class="fas fa-spinner fa-spin"></i>
+  <progress
+    id="upload-progress"
+    class="progress is-primary is-hidden"
+    max="100"
+    value="0"
+  >
+    0%
+  </progress>
+
+  <div id="progress-spinner" class="is-hidden">
+    <article class="message is-primary">
+      <div class="message-body">File uploaded! Processing...</div>
+    </article>
+
+    <div class="fa-3x">
+      <i class="fas fa-spinner fa-spin"></i>
+    </div>
   </div>
 
   <div id="upload-result" class="is-hidden">
