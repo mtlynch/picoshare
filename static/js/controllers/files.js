@@ -2,6 +2,8 @@
 
 function uploadFormData(url, formData, progressFn) {
   return new Promise((resolve, reject) => {
+    // We have to use XHR instead of fetch because fetch currently doesn't
+    // support a mechanism for reporting upload progress.
     const xhr = new XMLHttpRequest();
     xhr.open("POST", url, true);
     xhr.upload.addEventListener("progress", (event) => {
