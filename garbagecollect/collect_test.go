@@ -14,7 +14,7 @@ import (
 
 func TestCollectDoesNothingWhenStoreIsEmpty(t *testing.T) {
 	dataStore := test_sqlite.New()
-	c := garbagecollect.NewCollector(dataStore)
+	c := garbagecollect.NewCollector(dataStore, false)
 	err := c.Collect()
 	if err != nil {
 		t.Fatalf("garbage collection failed: %v", err)
@@ -50,7 +50,7 @@ func TestCollectExpiredFile(t *testing.T) {
 			Expires: types.NeverExpire,
 		})
 
-	c := garbagecollect.NewCollector(dataStore)
+	c := garbagecollect.NewCollector(dataStore, false)
 	err := c.Collect()
 	if err != nil {
 		t.Fatalf("garbage collection failed: %v", err)
@@ -97,7 +97,7 @@ func TestCollectDoesNothingWhenNoFilesAreExpired(t *testing.T) {
 			Expires: types.NeverExpire,
 		})
 
-	c := garbagecollect.NewCollector(dataStore)
+	c := garbagecollect.NewCollector(dataStore, false)
 	err := c.Collect()
 	if err != nil {
 		t.Fatalf("garbage collection failed: %v", err)

@@ -81,9 +81,10 @@ Notes:
 
 ### Command-line flags
 
-| Flag  | Meaning                 | Default Value     |
-| ----- | ----------------------- | ----------------- |
-| `-db` | Path to SQLite database | `"data/store.db"` |
+| Flag      | Meaning                                            | Default Value     |
+| --------- | -------------------------------------------------- | ----------------- |
+| `-db`     | Path to SQLite database                            | `"data/store.db"` |
+| `-vacuum` | vacuum database periodically to reclaim disk space | `true`            |
 
 ### Docker environment variables
 
