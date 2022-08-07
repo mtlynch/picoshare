@@ -63,7 +63,10 @@ function sortClipboardItems(items) {
 function updateProgress(bytesUploaded, bytesTotal) {
   progressBar.value = bytesUploaded;
   progressBar.max = bytesTotal;
+  const percentage = ((bytesUploaded / bytesTotal) * 100.0).toFixed(0) + "%";
+  document.title = "PicoShare ↑ " + percentage;
   if (bytesUploaded === bytesTotal) {
+    document.title = "PicoShare - Complete";
     showElement(progressSpinner);
   }
 }
