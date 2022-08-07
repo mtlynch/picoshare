@@ -3,7 +3,6 @@ package sqlite
 import (
 	"context"
 	"database/sql"
-	"embed"
 	"fmt"
 	"io"
 	"log"
@@ -22,18 +21,10 @@ const (
 	defaultChunkSize = 32768 * 10
 )
 
-//go:embed migrations/*.sql
-var migrationsFs embed.FS
-
 type (
 	db struct {
 		ctx       *sql.DB
 		chunkSize int
-	}
-
-	dbMigration struct {
-		version int
-		query   string
 	}
 
 	rowScanner interface {
