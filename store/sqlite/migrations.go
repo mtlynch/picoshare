@@ -1,11 +1,20 @@
 package sqlite
 
 import (
+	"embed"
 	"log"
 	"path"
 	"sort"
 	"strconv"
 )
+
+type dbMigration struct {
+	version int
+	query   string
+}
+
+//go:embed migrations/*.sql
+var migrationsFs embed.FS
 
 func loadMigrations() ([]dbMigration, error) {
 	migrations := []dbMigration{}
