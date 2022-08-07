@@ -9,13 +9,15 @@ import (
 )
 
 type Collector struct {
-	store store.Store
-	mu    sync.Mutex
+	store    store.Store
+	vacuumDB bool
+	mu       sync.Mutex
 }
 
-func NewCollector(store store.Store) Collector {
+func NewCollector(store store.Store, vacuumDB bool) Collector {
 	return Collector{
-		store: store,
+		store:    store,
+		vacuumDB: vacuumDB,
 	}
 }
 
@@ -33,8 +35,10 @@ func (c *Collector) Collect() error {
 		return err
 	}
 
-	if err := c.store.Compact(); err != nil {
-		return err
+	if c.vacuumDB {
+		if err := c.store.Compact(); err != nil {
+			return err
+		}
 	}
 
 	return nil
