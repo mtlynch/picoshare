@@ -87,7 +87,7 @@ func (fr *fileReader) populateBuffer() error {
 		return io.EOF
 	}
 
-	startChunk := fr.offset / int64(fr.chunkSize)
+	chunkIndex := fr.offset / int64(fr.chunkSize)
 	var chunk []byte
 	if err := fr.db.QueryRow(`
 			SELECT
@@ -99,7 +99,7 @@ func (fr *fileReader) populateBuffer() error {
 				chunk_index=?
 			ORDER BY
 				chunk_index ASC
-			`, fr.entryID, startChunk).Scan(&chunk); err != nil {
+			`, fr.entryID, chunkIndex).Scan(&chunk); err != nil {
 		log.Printf("reading chunk failed: %v", err)
 		return err
 	}
