@@ -84,7 +84,7 @@ Notes:
 | Flag      | Meaning                                            | Default Value     |
 | --------- | -------------------------------------------------- | ----------------- |
 | `-db`     | Path to SQLite database                            | `"data/store.db"` |
-| `-vacuum` | vacuum database periodically to reclaim disk space | `true`            |
+| `-vacuum` | vacuum database periodically to reclaim disk space | `false`           |
 
 ### Docker environment variables
 
