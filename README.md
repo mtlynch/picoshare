@@ -77,6 +77,25 @@ Notes:
 - Only run one Docker container for each Litestream location.
   - PicoShare can't sync writes across multiple instances.
 
+### Using Docker Compose
+
+To run PicoShare under docker-compose, copy the following to a file called `docker-compose.yml` and then run `docker-compose up`.
+
+```yaml
+version: "3.2"
+services:
+  picoshare:
+    image: mtlynch/picoshare
+    environment:
+      - PORT=3001
+      - PS_SHARED_SECRET=dummypass # Change to any password
+    ports:
+      - 3001:3001
+    command: -db /data/store.db
+    volumes:
+      - ./data:/data
+```
+
 ## Parameters
 
 ### Command-line flags
