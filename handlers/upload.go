@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -152,11 +153,18 @@ func (s Server) guestEntryPost() http.HandlerFunc {
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		if err := json.NewEncoder(w).Encode(EntryPostResponse{
-			ID: string(id),
-		}); err != nil {
-			panic(err)
+		if clientAcceptsJson(r) {
+			w.Header().Set("Content-Type", "application/json")
+			if err := json.NewEncoder(w).Encode(EntryPostResponse{
+				ID: string(id),
+			}); err != nil {
+				panic(err)
+			}
+		} else {
+			w.Header().Set("Content-Type", "text/plain")
+			if _, err := fmt.Fprintf(w, "%s/!%s\r\n", baseURLFromRequest(r), string(id)); err != nil {
+				log.Fatalf("failed to write HTTP response: %v", err)
+			}
 		}
 	}
 }
@@ -301,4 +309,20 @@ func parseExpirationFromRequest(r *http.Request) (types.ExpirationTime, error) {
 // mibToBytes converts an amount in MiB to an amount in bytes.
 func mibToBytes(i int64) int64 {
 	return i << 20
+}
+
+func clientAcceptsJson(r *http.Request) bool {
+	accepts := r.Header.Get("Accepts")
+	return accepts == "*/*" || accepts == "application/json"
+}
+
+func baseURLFromRequest(r *http.Request) string {
+	var scheme string
+	// If we're running behind a proxy, assume that it's a TLS proxy.
+	if r.TLS != nil || os.Getenv("PS_BEHIND_PROXY") != "" {
+		scheme = "https"
+	} else {
+		scheme = "http"
+	}
+	return fmt.Sprintf("%s://%s", scheme, r.Host)
 }
