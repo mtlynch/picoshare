@@ -312,7 +312,7 @@ func mibToBytes(i int64) int64 {
 }
 
 func clientAcceptsJson(r *http.Request) bool {
-	accepts := r.Header.Get("Accepts")
+	accepts := r.Header.Get("Accept")
 	return accepts == "*/*" || accepts == "application/json"
 }
 
