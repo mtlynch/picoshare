@@ -391,6 +391,7 @@ func TestGuestUpload(t *testing.T) {
 				t.Fatal(err)
 			}
 			req.Header.Add("Content-Type", contentType)
+			req.Header.Add("Accept", "application/json")
 
 			w := httptest.NewRecorder()
 			s.Router().ServeHTTP(w, req)
