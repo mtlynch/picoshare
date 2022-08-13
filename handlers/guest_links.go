@@ -43,12 +43,7 @@ func (s Server) guestLinksPost() http.HandlerFunc {
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		if err := json.NewEncoder(w).Encode(GuestLinkPostResponse{
-			ID: string(gl.ID),
-		}); err != nil {
-			panic(err)
-		}
+		respondJSON(w, GuestLinkPostResponse{ID: string(gl.ID)})
 	}
 }
 

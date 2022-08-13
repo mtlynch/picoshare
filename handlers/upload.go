@@ -67,12 +67,7 @@ func (s Server) entryPost() http.HandlerFunc {
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		if err := json.NewEncoder(w).Encode(EntryPostResponse{
-			ID: string(id),
-		}); err != nil {
-			panic(err)
-		}
+		respondJSON(w, EntryPostResponse{ID: string(id)})
 	}
 }
 
@@ -154,12 +149,7 @@ func (s Server) guestEntryPost() http.HandlerFunc {
 		}
 
 		if clientAcceptsJson(r) {
-			w.Header().Set("Content-Type", "application/json")
-			if err := json.NewEncoder(w).Encode(EntryPostResponse{
-				ID: string(id),
-			}); err != nil {
-				panic(err)
-			}
+			respondJSON(w, EntryPostResponse{ID: string(id)})
 		} else {
 			w.Header().Set("Content-Type", "text/plain")
 			if _, err := fmt.Fprintf(w, "%s/!%s\r\n", baseURLFromRequest(r), string(id)); err != nil {
