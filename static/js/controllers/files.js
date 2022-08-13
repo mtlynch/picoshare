@@ -6,6 +6,7 @@ function uploadFormData(url, formData, progressFn) {
     // support a mechanism for reporting upload progress.
     const xhr = new XMLHttpRequest();
     xhr.open("POST", url, true);
+    xhr.setRequestHeader("Accept", "application/json");
     xhr.upload.addEventListener("progress", (event) => {
       if (event.lengthComputable) {
         if (progressFn) {
