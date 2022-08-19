@@ -22,3 +22,5 @@ readonly BASH_SCRIPTS
 set -x
 
 shellcheck "${BASH_SCRIPTS[@]}"
+
+exit 1 # DEBUG
