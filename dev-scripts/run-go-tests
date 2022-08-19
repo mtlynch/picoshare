@@ -32,6 +32,13 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 readonly SCRIPT_DIR
 cd "${SCRIPT_DIR}/.."
 
+go test "${go_test_flags[@]}" ./...
+if [[ -n "$full_test" ]]; then
+  go tool cover -html "${COVERAGE_FILE_RAW}" -o "${COVERAGE_FILE_HTML}"
+fi
+
+go vet ./...
+
 # Install staticcheck if it's not present.
 STATICCHECK_PATH="$(go env GOPATH)/bin/staticcheck"
 readonly STATICCHECK_PATH
@@ -39,6 +46,7 @@ readonly STATICCHECK_VERSION="2022.1.2"
 if [[ ! -f "${STATICCHECK_PATH}" ]]; then
     go install "honnef.co/go/tools/cmd/staticcheck@${STATICCHECK_VERSION}"
 fi
+"${STATICCHECK_PATH}" ./...
 
 # Install errcheck if it's not present.
 ERRCHECK_PATH="$(go env GOPATH)/bin/errcheck"
@@ -47,12 +55,4 @@ readonly ERRCHECK_VERSION="v1.6.1"
 if [[ ! -f "${ERRCHECK_PATH}" ]]; then
     go install "github.com/kisielk/errcheck@${ERRCHECK_VERSION}"
 fi
-
-go test "${go_test_flags[@]}" ./...
-go vet ./...
-"${STATICCHECK_PATH}" ./...
 "${ERRCHECK_PATH}" -ignoretests ./...
-
-if [[ -n "$full_test" ]]; then
-  go tool cover -html "${COVERAGE_FILE_RAW}" -o "${COVERAGE_FILE_HTML}"
-fi
