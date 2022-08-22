@@ -405,12 +405,24 @@ func (d db) DeleteGuestLink(id types.GuestLinkID) error {
 	return tx.Commit()
 }
 
-// Purge clears orphaned rows from the database.
+// Purge deletes expired entries and clears orphaned rows from the database.
 func (d db) Purge() error {
+	log.Printf("deleting expired entries from database")
+
+	_, err := d.ctx.Exec(`
+	DELETE FROM
+		entries
+	WHERE
+		entries.expiration_time IS NOT NULL AND entries.expiration_time < CURRENT_TIMESTAMP;`)
+	if err != nil {
+		return err
+	}
+
 	log.Printf("purging orphaned rows from database")
 
 	// Delete rows from entries_data if they don't reference valid rows in
-	// entries. This can happen if the entry insertion fails partway through.
+	// entries. This can happen if the entry insertion fails partway through
+	// or after expired entries are deleted.
 	if _, err := d.ctx.Exec(`
 		DELETE FROM
 			entries_data
