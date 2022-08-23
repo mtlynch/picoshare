@@ -407,8 +407,6 @@ func (d db) DeleteGuestLink(id types.GuestLinkID) error {
 
 // Purge deletes expired entries and clears orphaned rows from the database.
 func (d db) Purge() error {
-	log.Printf("deleting expired entries from database")
-
 	err := d.deleteExpiredEntries()
 	if err != nil {
 		return err
