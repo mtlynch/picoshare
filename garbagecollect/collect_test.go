@@ -49,6 +49,11 @@ func TestCollectExpiredFile(t *testing.T) {
 			ID:      types.EntryID("CCCCCCCCCCCC"),
 			Expires: types.NeverExpire,
 		})
+	dataStore.InsertEntry(strings.NewReader(d),
+		types.UploadMetadata{
+			ID:      types.EntryID("DDDDDDDDDDDD"),
+			Expires: types.ExpirationTime(time.Now().Add(-time.Second)),
+		})
 
 	c := garbagecollect.NewCollector(dataStore, false)
 	err := c.Collect()

@@ -409,11 +409,7 @@ func (d db) DeleteGuestLink(id types.GuestLinkID) error {
 func (d db) Purge() error {
 	log.Printf("deleting expired entries from database")
 
-	_, err := d.ctx.Exec(`
-	DELETE FROM
-		entries
-	WHERE
-		entries.expiration_time IS NOT NULL AND entries.expiration_time < CURRENT_TIMESTAMP;`)
+	err := d.deleteExpiredEntries()
 	if err != nil {
 		return err
 	}
@@ -421,8 +417,7 @@ func (d db) Purge() error {
 	log.Printf("purging orphaned rows from database")
 
 	// Delete rows from entries_data if they don't reference valid rows in
-	// entries. This can happen if the entry insertion fails partway through
-	// or after expired entries are deleted.
+	// entries. This can happen if the entry insertion fails partway through.
 	if _, err := d.ctx.Exec(`
 		DELETE FROM
 			entries_data
@@ -456,6 +451,47 @@ func (d db) Compact() error {
 	log.Printf("vacuuming complete")
 
 	return nil
+}
+
+func (d db) deleteExpiredEntries() error {
+	log.Printf("deleting expired entries from database")
+
+	tx, err := d.ctx.BeginTx(context.Background(), nil)
+	if err != nil {
+		return err
+	}
+
+	currentTime := formatTime(time.Now())
+
+	_, err = tx.Exec(`
+	DELETE FROM
+		entries_data
+	WHERE
+		id IN (
+			SELECT 
+				id 
+			FROM
+				entries
+			WHERE
+				entries.expiration_time IS NOT NULL AND
+				entries.expiration_time < ?
+		);`, currentTime)
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.Exec(`
+	DELETE FROM
+		entries
+	WHERE
+		entries.expiration_time IS NOT NULL AND
+		entries.expiration_time < ?;
+	`, currentTime)
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit()
 }
 
 func guestLinkFromRow(row rowScanner) (types.GuestLink, error) {
