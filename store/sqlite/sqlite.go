@@ -466,8 +466,8 @@ func (d db) deleteExpiredEntries() error {
 		entries_data
 	WHERE
 		id IN (
-			SELECT 
-				id 
+			SELECT
+				id
 			FROM
 				entries
 			WHERE
