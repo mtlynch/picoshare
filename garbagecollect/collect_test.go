@@ -34,6 +34,7 @@ func TestCollectDoesNothingWhenStoreIsEmpty(t *testing.T) {
 func TestCollectExpiredFile(t *testing.T) {
 	dataStore := test_sqlite.New()
 	d := "dummy data"
+	expireInFiveMins := makeRelativeExpirationTime(5 * time.Minute)
 	dataStore.InsertEntry(strings.NewReader(d),
 		types.UploadMetadata{
 			ID:      types.EntryID("AAAAAAAAAAAA"),
@@ -48,6 +49,16 @@ func TestCollectExpiredFile(t *testing.T) {
 		types.UploadMetadata{
 			ID:      types.EntryID("CCCCCCCCCCCC"),
 			Expires: types.NeverExpire,
+		})
+	dataStore.InsertEntry(strings.NewReader(d),
+		types.UploadMetadata{
+			ID:      types.EntryID("DDDDDDDDDDDD"),
+			Expires: makeRelativeExpirationTime(-1 * time.Second),
+		})
+	dataStore.InsertEntry(strings.NewReader(d),
+		types.UploadMetadata{
+			ID:      types.EntryID("EEEEEEEEEEEE"),
+			Expires: expireInFiveMins,
 		})
 
 	c := garbagecollect.NewCollector(dataStore, false)
@@ -70,6 +81,11 @@ func TestCollectExpiredFile(t *testing.T) {
 		{
 			ID:      types.EntryID("CCCCCCCCCCCC"),
 			Expires: types.NeverExpire,
+			Size:    int64(len(d)),
+		},
+		{
+			ID:      types.EntryID("EEEEEEEEEEEE"),
+			Expires: expireInFiveMins,
 			Size:    int64(len(d)),
 		},
 	}
@@ -141,4 +157,8 @@ func mustParseExpirationTime(s string) types.ExpirationTime {
 		panic(err)
 	}
 	return types.ExpirationTime(et)
+}
+
+func makeRelativeExpirationTime(delta time.Duration) types.ExpirationTime {
+	return types.ExpirationTime(time.Now().UTC().Add(delta).Truncate(time.Second))
 }
