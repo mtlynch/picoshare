@@ -407,33 +407,13 @@ func (d db) DeleteGuestLink(id types.GuestLinkID) error {
 
 // Purge deletes expired entries and clears orphaned rows from the database.
 func (d db) Purge() error {
-	err := d.deleteExpiredEntries()
-	if err != nil {
+	if err := d.deleteExpiredEntries(); err != nil {
 		return err
 	}
 
-	log.Printf("purging orphaned rows from database")
-
-	// Delete rows from entries_data if they don't reference valid rows in
-	// entries. This can happen if the entry insertion fails partway through.
-	if _, err := d.ctx.Exec(`
-		DELETE FROM
-			entries_data
-		WHERE
-		id IN (
-			SELECT
-				DISTINCT entries_data.id AS entry_id
-			FROM
-				entries_data
-			LEFT JOIN
-				entries ON entries_data.id = entries.id
-			WHERE
-				entries.id IS NULL
-			)`); err != nil {
+	if err := d.deleteOrphanedRows(); err != nil {
 		return err
 	}
-
-	log.Printf("purge completed successfully")
 
 	return nil
 }
@@ -490,6 +470,33 @@ func (d db) deleteExpiredEntries() error {
 	}
 
 	return tx.Commit()
+}
+
+func (d db) deleteOrphanedRows() error {
+	log.Printf("purging orphaned rows from database")
+
+	// Delete rows from entries_data if they don't reference valid rows in
+	// entries. This can happen if the entry insertion fails partway through.
+	if _, err := d.ctx.Exec(`
+		DELETE FROM
+			entries_data
+		WHERE
+		id IN (
+			SELECT
+				DISTINCT entries_data.id AS entry_id
+			FROM
+				entries_data
+			LEFT JOIN
+				entries ON entries_data.id = entries.id
+			WHERE
+				entries.id IS NULL
+			)`); err != nil {
+		return err
+	}
+
+	log.Printf("purge completed successfully")
+
+	return nil
 }
 
 func guestLinkFromRow(row rowScanner) (types.GuestLink, error) {
