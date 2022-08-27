@@ -39,6 +39,13 @@ func enforceContentSecurityPolicy(next http.Handler) http.Handler {
 				},
 			},
 			{
+				name: "script-src-elem",
+				values: []string{
+					"self",
+					"nonce-" + nonce,
+				},
+			},
+			{
 				name: "style-src",
 				values: []string{
 					"self",
@@ -46,6 +53,13 @@ func enforceContentSecurityPolicy(next http.Handler) http.Handler {
 					// element, even if we specify a nonce:
 					// https://github.com/mtlynch/picoshare/issues/249
 					"unsafe-inline",
+				},
+			},
+			{
+				name: "style-src-elem",
+				values: []string{
+					"self",
+					"nonce-" + nonce,
 				},
 			},
 		}
