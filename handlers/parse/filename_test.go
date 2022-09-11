@@ -23,6 +23,18 @@ func TestFilename(t *testing.T) {
 			err:         nil,
 		},
 		{
+			description: "filename that's the maximum length",
+			input:       strings.Repeat("A", parse.MaxFilenameLen),
+			output:      types.Filename(strings.Repeat("A", parse.MaxFilenameLen)),
+			err:         nil,
+		},
+		{
+			description: "filename that's the maximum length with multibyte Unicode characters",
+			input:       strings.Repeat("Ö", parse.MaxFilenameLen),
+			output:      types.Filename(strings.Repeat("Ö", parse.MaxFilenameLen)),
+			err:         nil,
+		},
+		{
 			description: "empty filename",
 			input:       "",
 			err:         parse.ErrFilenameEmpty,
