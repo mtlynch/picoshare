@@ -39,6 +39,11 @@ func TestFilename(t *testing.T) {
 			err:         parse.ErrFilenameIllegalCharacters,
 		},
 		{
+			description: "filename with forward slashes",
+			input:       `filename/with/forward/slashes.png`,
+			err:         parse.ErrFilenameIllegalCharacters,
+		},
+		{
 			description: "filename that's just a dot",
 			input:       ".",
 			err:         parse.ErrFilenameHasDotPrefix,
