@@ -241,10 +241,12 @@ func (s Server) insertFileFromRequest(r *http.Request, expiration types.Expirati
 		return types.EntryID(""), errors.New("file is empty")
 	}
 
+	log.Printf("metadata filename=%v", metadata.Filename)
 	filename, err := parse.Filename(metadata.Filename)
 	if err != nil {
 		return types.EntryID(""), err
 	}
+	log.Printf("parsed filename=%v", string(filename))
 
 	contentType, err := parseContentType(metadata.Header.Get("Content-Type"))
 	if err != nil {

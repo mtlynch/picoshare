@@ -432,6 +432,80 @@ func TestGuestUpload(t *testing.T) {
 	}
 }
 
+func FuzzGuestUpload(f *testing.F) {
+	authenticator, err := shared_secret.New("dummypass")
+	if err != nil {
+		f.Fatalf("failed to create shared secret: %v", err)
+	}
+
+	store := test_sqlite.New()
+	mockGuestLink := types.GuestLink{
+		ID:      types.GuestLinkID("abcdefgh23456789"),
+		Created: mustParseTime("2022-01-01T00:00:00Z"),
+		Expires: mustParseExpirationTime("2030-01-02T03:04:25Z"),
+	}
+
+	if err := store.InsertGuestLink(mockGuestLink); err != nil {
+		f.Fatalf("failed to insert dummy guest link: %v", err)
+	}
+
+	f.Fuzz(func(t *testing.T, filename string, contents []byte) {
+		s := handlers.New(authenticator, store, nilGarbageCollector)
+
+		// Hack
+		filename = strings.ReplaceAll(filename, "/", "")
+		filename = strings.TrimSpace(filename)
+
+		// Notes are not allowed in guest uploads.
+		note := ""
+
+		formData, contentType := createMultipartFormBody(filename, note, bytes.NewReader(contents))
+
+		req, err := http.NewRequest("POST", "/api/guest/"+string(mockGuestLink.ID), formData)
+		if err != nil {
+			t.Fatal(err)
+		}
+		req.Header.Add("Content-Type", contentType)
+		req.Header.Add("Accept", "application/json")
+
+		w := httptest.NewRecorder()
+		s.Router().ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK && w.Code != http.StatusBadRequest {
+			t.Fatalf("got a HTTP %v response on filename=%v, body=%v", w.Code, filename, contents)
+		}
+
+		// Only check the response if the request succeeded.
+		if w.Code != http.StatusOK {
+			return
+		}
+
+		var response handlers.EntryPostResponse
+		err = json.Unmarshal(w.Body.Bytes(), &response)
+		if err != nil {
+			t.Fatalf("response is not valid JSON: %v", w.Body.String())
+		}
+
+		entry, err := store.GetEntry(types.EntryID(response.ID))
+		if err != nil {
+			t.Fatalf("failed to get expected entry %v from data store: %v", response.ID, err)
+		}
+
+		if got, want := mustReadAll(entry.Reader), []byte(contents); !reflect.DeepEqual(got, want) {
+			t.Errorf("stored contents= %v, want=%v", got, want)
+		}
+
+		if got, want := entry.Filename, types.Filename(filename); got != want {
+			t.Errorf("filename=%v, want=%v", got, want)
+		}
+
+		// Guest uploads never expire.
+		if got, want := entry.Expires, types.NeverExpire; got != want {
+			t.Errorf("expiration=%v, want=%v", got, want)
+		}
+	})
+}
+
 func createMultipartFormBody(filename, note string, r io.Reader) (io.Reader, string) {
 	var b bytes.Buffer
 	bw := bufio.NewWriter(&b)
