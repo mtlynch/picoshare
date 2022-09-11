@@ -17,54 +17,54 @@ func TestFilename(t *testing.T) {
 		err         error
 	}{
 		{
-			description: "valid filename",
+			description: "accept valid filename",
 			input:       "dummy.png",
 			output:      types.Filename("dummy.png"),
 			err:         nil,
 		},
 		{
-			description: "filename that's the maximum length",
+			description: "accept filename that's the maximum length",
 			input:       strings.Repeat("A", parse.MaxFilenameBytes),
 			output:      types.Filename(strings.Repeat("A", parse.MaxFilenameBytes)),
 			err:         nil,
 		},
 		{
-			description: "empty filename",
+			description: "reject empty filename",
 			input:       "",
 			err:         parse.ErrFilenameEmpty,
 		},
 		{
-			description: "filename with backslashes",
+			description: "reject filename with backslashes",
 			input:       `filename\with\backslashes.png`,
 			err:         parse.ErrFilenameIllegalCharacters,
 		},
 		{
-			description: "filename with forward slashes",
+			description: "reject filename with forward slashes",
 			input:       `filename/with/forward/slashes.png`,
 			err:         parse.ErrFilenameIllegalCharacters,
 		},
 		{
-			description: "filename that's just a dot",
+			description: "reject filename that's just a dot",
 			input:       ".",
 			err:         parse.ErrFilenameHasDotPrefix,
 		},
 		{
-			description: "filename that's two dots",
+			description: "reject filename that's two dots",
 			input:       "..",
 			err:         parse.ErrFilenameHasDotPrefix,
 		},
 		{
-			description: "filename that's five dots",
+			description: "reject filename that's five dots",
 			input:       ".....",
 			err:         parse.ErrFilenameHasDotPrefix,
 		},
 		{
-			description: "filename that's too long",
+			description: "reject filename that's too long",
 			input:       strings.Repeat("A", parse.MaxFilenameBytes+1),
 			err:         parse.ErrFilenameTooLong,
 		},
 		{
-			description: "filename that's the maximum length with multibyte Unicode characters",
+			description: "reject filename that's the maximum length with multibyte Unicode characters",
 			input:       strings.Repeat("Ö", parse.MaxFilenameBytes),
 			err:         parse.ErrFilenameTooLong,
 		},
