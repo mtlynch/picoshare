@@ -454,6 +454,15 @@ func FuzzGuestUpload(f *testing.F) {
 
 		// Hack
 		filename = strings.ReplaceAll(filename, "/", "")
+		filename = strings.ReplaceAll(filename, "\\", "")
+		filename = strings.ReplaceAll(filename, "\a", "")
+		filename = strings.ReplaceAll(filename, "\b", "")
+		filename = strings.ReplaceAll(filename, "\t", "")
+		filename = strings.ReplaceAll(filename, "\n", "")
+		filename = strings.ReplaceAll(filename, "\v", "")
+		filename = strings.ReplaceAll(filename, "\f", "")
+		filename = strings.ReplaceAll(filename, "\r", "")
+		filename = strings.ReplaceAll(filename, "\n", "")
 		filename = strings.TrimSpace(filename)
 
 		// Notes are not allowed in guest uploads.

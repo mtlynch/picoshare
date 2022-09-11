@@ -9,7 +9,7 @@ set -x
 # Exit on unset variable.
 set -u
 
-FUZZ_TIME="15s"
+FUZZ_TIME="150s"
 
 go test \
   -fuzztime "${FUZZ_TIME}" \
