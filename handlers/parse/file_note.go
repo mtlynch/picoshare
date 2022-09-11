@@ -3,7 +3,6 @@ package parse
 import (
 	"errors"
 	"regexp"
-	"unicode/utf8"
 
 	"github.com/mtlynch/picoshare/v2/types"
 )
@@ -21,7 +20,7 @@ func FileNote(s string) (types.FileNote, error) {
 	if s == "" {
 		return types.FileNote{}, nil
 	}
-	if utf8.RuneCountInString(s) > MaxFileNoteLen {
+	if len(s) > MaxFileNoteLen {
 		return types.FileNote{}, errors.New("note is too long")
 	}
 	if err := checkJavaScriptNullOrUndefined(s); err != nil {

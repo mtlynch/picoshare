@@ -3,7 +3,6 @@ package parse
 import (
 	"errors"
 	"strings"
-	"unicode/utf8"
 
 	"github.com/mtlynch/picoshare/v2/types"
 )
@@ -23,7 +22,7 @@ func Filename(s string) (types.Filename, error) {
 	if s == "" {
 		return types.Filename(""), ErrFilenameEmpty
 	}
-	if utf8.RuneCountInString(s) > MaxFilenameLen {
+	if len(s) > MaxFilenameLen {
 		return types.Filename(""), ErrFilenameTooLong
 	}
 	if s == "." || strings.HasPrefix(s, "..") {
