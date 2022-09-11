@@ -7,11 +7,11 @@ import (
 	"github.com/mtlynch/picoshare/v2/types"
 )
 
-// MaxFilenameLen is the maximum number of characters allowed for uploaded files
+// MaxFilenameBytes is the maximum number of bytes allowed for uploaded files
 // There's no technical reason on PicoShare's side for this limitation, but it's
 // useful to have some upper bound to limit malicious inputs, and 255 is a
-// common filename limit across most filesystems.
-const MaxFilenameLen = 255
+// common filename limit (in single-byte characters) across most filesystems.
+const MaxFilenameBytes = 255
 
 var ErrFilenameEmpty = errors.New("filename must be non-empty")
 var ErrFilenameTooLong = errors.New("filename too long")
@@ -22,7 +22,7 @@ func Filename(s string) (types.Filename, error) {
 	if s == "" {
 		return types.Filename(""), ErrFilenameEmpty
 	}
-	if len(s) > MaxFilenameLen {
+	if len(s) > MaxFilenameBytes {
 		return types.Filename(""), ErrFilenameTooLong
 	}
 	if s == "." || strings.HasPrefix(s, "..") {

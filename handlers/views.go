@@ -287,7 +287,7 @@ func (s Server) uploadGet() http.HandlerFunc {
 			GuestLinkMetadata types.GuestLink
 		}{
 			commonProps:   makeCommonProps("PicoShare - Upload", r.Context()),
-			MaxNoteLength: parse.MaxFileNoteLen,
+			MaxNoteLength: parse.MaxFileNoteBytes,
 			ExpirationOptions: []expirationOption{
 				{"Custom", time.Time{}, false},
 				{"1 day", time.Now().AddDate(0, 0, 1), false},
