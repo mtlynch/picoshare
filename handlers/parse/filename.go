@@ -28,7 +28,7 @@ func Filename(s string) (types.Filename, error) {
 	if s == "." || strings.HasPrefix(s, "..") {
 		return types.Filename(""), ErrFilenameHasDotPrefix
 	}
-	if strings.ContainsAny(s, "\\") {
+	if strings.ContainsAny(s, "\\/") {
 		return types.Filename(""), ErrFilenameIllegalCharacters
 	}
 	return types.Filename(s), nil
