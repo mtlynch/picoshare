@@ -7,8 +7,8 @@ import (
 	"github.com/mtlynch/picoshare/v2/types"
 )
 
-// MaxFilenNoteLen is the maximum number of characters allowed in a file note.
-const MaxFileNoteLen = 500
+// MaxFileNoteBytes is the maximum number of bytes allowed in a file note.
+const MaxFileNoteBytes = 500
 
 // illegalNoteTagPattern matches tags we don't allow in file notes. We have
 // other protections in place to prevent XSS and escaping HTML encoding, but
@@ -20,7 +20,7 @@ func FileNote(s string) (types.FileNote, error) {
 	if s == "" {
 		return types.FileNote{}, nil
 	}
-	if len(s) > MaxFileNoteLen {
+	if len(s) > MaxFileNoteBytes {
 		return types.FileNote{}, errors.New("note is too long")
 	}
 	if err := checkJavaScriptNullOrUndefined(s); err != nil {

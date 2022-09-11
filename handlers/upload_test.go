@@ -59,7 +59,7 @@ func TestEntryPost(t *testing.T) {
 			description: "valid file with a too-long note",
 			filename:    "dummyimage.png",
 			contents:    "dummy bytes",
-			note:        strings.Repeat("A", parse.MaxFileNoteLen+1),
+			note:        strings.Repeat("A", parse.MaxFileNoteBytes+1),
 			expiration:  "2040-01-01T00:00:00Z",
 			status:      http.StatusBadRequest,
 		},

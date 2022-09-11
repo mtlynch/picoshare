@@ -22,6 +22,18 @@ func TestFileNote(t *testing.T) {
 			output:      makeFileNote("Shared with my college group chat"),
 		},
 		{
+			description: "message of maximum bytes",
+			input:       strings.Repeat("A", parse.MaxFileNoteBytes),
+			valid:       true,
+			output:      makeFileNote(strings.Repeat("A", parse.MaxFileNoteBytes)),
+		},
+		{
+			description: "message of maximum length with multibyte Unicode characters",
+			input:       strings.Repeat("Ö", parse.MaxFileNoteBytes),
+			valid:       false,
+			output:      types.FileNote{},
+		},
+		{
 			description: "empty note",
 			input:       "",
 			valid:       true,
@@ -29,7 +41,7 @@ func TestFileNote(t *testing.T) {
 		},
 		{
 			description: "note that's too long",
-			input:       strings.Repeat("A", parse.MaxFileNoteLen+1),
+			input:       strings.Repeat("A", parse.MaxFileNoteBytes+1),
 			valid:       false,
 		},
 		{
