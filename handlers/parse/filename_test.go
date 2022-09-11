@@ -59,6 +59,41 @@ func TestFilename(t *testing.T) {
 			err:         parse.ErrFilenameHasDotPrefix,
 		},
 		{
+			description: "reject filename containing a bell control character",
+			input:       "hello\aworld.png",
+			err:         parse.ErrFilenameIllegalCharacters,
+		},
+		{
+			description: "reject filename containing a backspace control character",
+			input:       "hello\bworld.png",
+			err:         parse.ErrFilenameIllegalCharacters,
+		},
+		{
+			description: "reject filename containing a form feed character",
+			input:       "hello\fworld.png",
+			err:         parse.ErrFilenameIllegalCharacters,
+		},
+		{
+			description: "reject filename containing a newline",
+			input:       "hello\nworld.png",
+			err:         parse.ErrFilenameIllegalCharacters,
+		},
+		{
+			description: "reject filename containing a carriage return",
+			input:       "hello\rworld.png",
+			err:         parse.ErrFilenameIllegalCharacters,
+		},
+		{
+			description: "reject filename containing a tab",
+			input:       "hello\tworld.png",
+			err:         parse.ErrFilenameIllegalCharacters,
+		},
+		{
+			description: "reject filename containing a vertical tab",
+			input:       "hello\vworld.png",
+			err:         parse.ErrFilenameIllegalCharacters,
+		},
+		{
 			description: "reject filename that's too long",
 			input:       strings.Repeat("A", parse.MaxFilenameBytes+1),
 			err:         parse.ErrFilenameTooLong,
