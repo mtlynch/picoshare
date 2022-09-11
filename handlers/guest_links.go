@@ -7,7 +7,6 @@ import (
 	"log"
 	"net/http"
 	"time"
-	"unicode/utf8"
 
 	"github.com/gorilla/mux"
 	"github.com/mtlynch/picoshare/v2/handlers/parse"
@@ -109,7 +108,7 @@ func guestLinkFromRequest(r *http.Request) (types.GuestLink, error) {
 func parseLabel(label string) (types.GuestLinkLabel, error) {
 	// Arbitrary limit to prevent too-long labels
 	limit := 200
-	if utf8.RuneCountInString(label) > limit {
+	if len(label) > limit {
 		return types.GuestLinkLabel(""), fmt.Errorf("label too long - limit %d characters", limit)
 	}
 
