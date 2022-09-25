@@ -1,8 +1,10 @@
 <template id="expiration-picker-template">
-  <style nonce="{{ .CspNonce }}">
-    @import "/third-party/bulma@0.9.3/bulma.min.css";
-    @import "/third-party/js-datepicker@5.18.0/datepicker.min.css";
-  </style>
+  <link
+    href="/third-party/js-datepicker@5.18.0/datepicker.min.css"
+    rel="stylesheet"
+  />
+  <link href="/third-party/bulma@0.9.3/bulma.min.css" rel="stylesheet" />
+  <style nonce="{{ .CspNonce }}"></style>
   <div class="control">
     <input id="expiration" class="input is-normal" type="text" />
     <p class="help">Expiration date</p>
