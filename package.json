@@ -18,6 +18,7 @@
   },
   "homepage": "https://pico.rocks",
   "devDependencies": {
+    "@playwright/test": "^1.26.1",
     "eslint": "^8.11.0",
     "eslint-plugin-cypress": "^2.12.1",
     "prettier": "^2.6.0",
