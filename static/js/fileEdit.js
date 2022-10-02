@@ -5,7 +5,7 @@ const editForm = document.getElementById("edit-form");
 const errorContainer = document.getElementById("error");
 const progressSpinner = document.getElementById("progress-spinner");
 const expireCheckbox = document.getElementById("expire-checkbox");
-const expirationPicker = document.getElementById("expiration");
+const expirationPicker = document.getElementById("expiration-picker");
 
 function readFilename() {
   return document.getElementById("filename").value || null;
