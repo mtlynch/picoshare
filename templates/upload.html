@@ -49,7 +49,7 @@
                   value="{{ formatExpiration .Expiration }}"
                   {{ if .IsDefault }}selected{{ end }}
                 >
-                  {{ .FriendlyName }}
+                  {{- .FriendlyName -}}
                 </option>
               {{ end }}
             </select>
