@@ -31,6 +31,7 @@ test("creates a guest link and uploads a file as a guest", async ({ page }) => {
   await page.locator(".navbar-end .navbar-item.is-hoverable").hover();
   await page.locator("#navbar-log-out").click();
 
+  await expect(page).toHaveURL("/");
   await page.goto(guestLinkRoute);
   await page.locator(".file-input").setInputFiles([
     {
