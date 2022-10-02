@@ -105,7 +105,7 @@ jobs:
       - store_artifacts:
           path: playwright-report
       - store_artifacts:
-          path: test-results
+          path: e2e-results
   build_docker_images:
     docker:
       - image: cimg/base:stable

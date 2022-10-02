@@ -50,9 +50,8 @@ test("uploads a file with a custom expiration time", async ({ page }) => {
   await page.locator("#expiration-select").selectOption({ label: "Custom" });
 
   await page.locator("#expiration-picker #expiration").fill("2029-09-03");
-
   // Move focus to note field just to so the expiration date saves.
-  page.locator("#note").fill("");
+  await page.locator("#note").click();
 
   await page.locator(".file-input").setInputFiles([
     {
@@ -247,7 +246,7 @@ test("uploads a file and changes its expiration time", async ({ page }) => {
   await expect(page).toHaveURL("/files");
   await expect(
     page.locator(
-      ".table tr[test-data-filename='file-with-new-expiration.txt'] [test-data-id='expiration']"
+      ".table tr[test-data-filename='upload-with-temporary-note.txt'] [test-data-id='expiration']"
     )
   ).toHaveText(/^2029-09-04/);
 });

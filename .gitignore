@@ -18,4 +18,4 @@ node_modules/
 # Playwright output
 /playwright-report/
 /playwright/.cache/
-/test-results/
+/e2e-results/

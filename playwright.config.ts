@@ -11,7 +11,7 @@ import { devices } from "@playwright/test";
  * See https://playwright.dev/docs/test-configuration.
  */
 const config: PlaywrightTestConfig = {
-  testDir: "./tests",
+  testDir: "./e2e",
   timeout: 5 * 1000,
   expect: {
     timeout: 5 * 1000,
@@ -38,7 +38,7 @@ const config: PlaywrightTestConfig = {
     },
   ],
 
-  outputDir: "test-results/",
+  outputDir: "e2e-results/",
 
   webServer: {
     command: "PS_SHARED_SECRET=dummypass PORT=6001 ./bin/picoshare",
