@@ -84,9 +84,9 @@ jobs:
           name: Compile backend
           command: dev-scripts/build-backend
       - persist_to_workspace:
-          root: ./bin
+          root: ./
           paths:
-            - picoshare
+            - ./bin/picoshare
   playwright:
     docker:
       - image: mcr.microsoft.com/playwright:v1.26.0-focal
