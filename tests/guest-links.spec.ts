@@ -1,30 +1,3 @@
-/*
-
-
-
-  cy.get("#upload-result upload-links")
-    .should("have.attr", "filename")
-    .and("equal", "kittyface.jpg");
-  cy.get("#upload-result upload-links")
-    .shadow()
-    .find("#verbose-link-box")
-    .shadow()
-    .find("#link")
-    .should("be.visible");
-  cy.get("#upload-result upload-links")
-    .shadow()
-    .find("#short-link-box")
-    .shadow()
-    .find("#link")
-    .should("be.visible");
-
-  cy.get("#upload-another-btn").click();
-
-  cy.get("h1").should("contain", "Guest Link Inactive");
-  cy.get(".file-input").should("not.exist");
-});
-*/
-
 import { test, expect } from "@playwright/test";
 
 test("creates a guest link and uploads a file as a guest", async ({ page }) => {
@@ -48,23 +21,45 @@ test("creates a guest link and uploads a file as a guest", async ({ page }) => {
   await page.locator("#create-guest-link-form input[type='submit']").click();
 
   await expect(page).toHaveURL("/guest-links");
-  await page
-    .locator('.table td[test-data-id="guest-link-label"] a', {
+  const guestLinkElement = page.locator(
+    '.table td[test-data-id="guest-link-label"] a',
+    {
       hasText: "For e2e testing",
-    })
-    .click();
+    }
+  );
+  expect(guestLinkElement).toBeVisible();
+
+  // Save the route to the guest link URL so that we can return to it later.
+  const guestLinkRouteValue = await guestLinkElement.getAttribute("href");
+  expect(guestLinkRouteValue).not.toBeNull();
+  const guestLinkRoute = String(guestLinkRouteValue);
 
   await page.locator(".navbar-end .navbar-item.is-hoverable").hover();
   await page.locator("#navbar-log-out").click();
 
-  // Hack to get back to the guest upload page without extracting the path
-  // within Cypress JS code.
-  page.goBack();
-  await expect(page).toHaveURL(/\/g\/.+/);
+  await page.goto(guestLinkRoute);
   await page
     .locator(".file-input")
     .setInputFiles(["./tests/testdata/kittyface.jpg"]);
   await expect(page.locator("#upload-result .message-body")).toHaveText(
     "Upload complete!"
   );
+
+  await expect(page.locator("#upload-result upload-links")).toHaveAttribute(
+    "filename",
+    "kittyface.jpg"
+  );
+
+  await expect(
+    page.locator("#upload-result upload-links #verbose-link-box #link")
+  ).toBeVisible();
+
+  await expect(
+    page.locator("#upload-result upload-links #short-link-box #link")
+  ).toBeVisible();
+
+  await page.locator("#upload-another-btn").click();
+
+  await expect(page.locator("h1")).toContainText("Guest Link Inactive");
+  await expect(page.locator(".file-input")).toHaveCount(0);
 });
