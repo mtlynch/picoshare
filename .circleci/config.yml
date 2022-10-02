@@ -95,7 +95,10 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Run playwright tests.
+          name: Install dependencies
+          command: npm install
+      - run:
+          name: Run playwright tests
           command: npx playwright test
       - store_artifacts:
           path: playwright-report
