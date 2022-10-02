@@ -1,54 +1,5 @@
 /*
 
-it("uploads a file and deletes it", () => {
-  cy.visit("/");
-  cy.login();
-
-  cy.get(".file-input").attachFile("kittyface.jpg");
-
-  cy.get("#upload-result .message-body").should("contain", "Upload complete!");
-
-  cy.get("#upload-result upload-links")
-    .should("have.attr", "filename")
-    .and("equal", "kittyface.jpg");
-  cy.get("#upload-result upload-links")
-    .shadow()
-    .find("#verbose-link-box")
-    .shadow()
-    .find("#link")
-    .should("be.visible");
-  cy.get("#upload-result upload-links")
-    .shadow()
-    .find("#short-link-box")
-    .shadow()
-    .find("#link")
-    .should("be.visible");
-
-  cy.get('.navbar a[href="/files"]').click();
-  cy.get('.table tbody tr:first-child [test-data-id="filename"]').should(
-    "contain",
-    "kittyface.jpg"
-  );
-
-  // Verify that cleanup doesn't incorrectly remove the file.
-  cy.request("POST", "/api/cleanup");
-
-  cy.get('.table tbody tr:first-child [pico-purpose="edit"]').click();
-
-  cy.location("pathname").should("match", new RegExp("/files/.+/edit"));
-
-  cy.get('[pico-purpose="delete"]').click();
-
-  cy.location("pathname").should(
-    "match",
-    new RegExp("/files/.+/confirm-delete")
-  );
-
-  cy.get("#delete-btn").click();
-
-  cy.location("pathname").should("eq", "/files");
-});
-
 it("uploads a file and deletes its note", () => {
   cy.visit("/");
   cy.login();
@@ -299,7 +250,9 @@ test("uploads a file with a custom expiration time", async ({
   ).toHaveCount(0);
 
   await expect(
-    page.locator(".table tbody tr:first-child [test-data-id='expiration']")
+    page.locator(
+      ".table tr[test-data-filename='custom-expiration-upload.txt'] [test-data-id='expiration']"
+    )
   ).toHaveText(/^2029-09-03/);
 });
 
@@ -343,4 +296,98 @@ test("uploads a file with a note", async ({ page, request }) => {
       ".table tr[test-data-filename='upload-with-note.txt'] [test-data-id='note']"
     )
   ).toHaveText("For Pico, with Love and Squalor");
+});
+
+test("uploads a file and deletes it", async ({ page, request }) => {
+  await login(page);
+
+  await page.locator(".file-input").setInputFiles([
+    {
+      name: "upload-for-deletion.txt",
+      mimeType: "text/plain",
+      buffer: Buffer.from("I'm an upload that will soon be deleted"),
+    },
+  ]);
+  await expect(page.locator("#upload-result .message-body")).toHaveText(
+    "Upload complete!"
+  );
+  await expect(page.locator("#upload-result upload-links")).toHaveAttribute(
+    "filename",
+    "upload-for-deletion.txt"
+  );
+  await expect(
+    page.locator("#upload-result upload-links #verbose-link-box #link")
+  ).toBeVisible();
+  await expect(
+    page.locator("#upload-result upload-links #short-link-box #link")
+  ).toBeVisible();
+
+  // Verify that cleanup doesn't incorrectly remove the file.
+  await request.post("/api/cleanup");
+
+  await page.locator(".navbar a[href='/files']").click();
+  await page
+    .locator(
+      ".table tr[test-data-filename='upload-for-deletion.txt'] [pico-purpose='edit']"
+    )
+    .click();
+
+  await expect(page).toHaveURL(/\/files\/.+\/edit$/);
+  await page.locator("[pico-purpose='delete']").click();
+
+  await expect(page).toHaveURL(/\/files\/.+\/confirm-delete$/);
+  await page.locator("#delete-btn").click();
+
+  await expect(page).toHaveURL("/files");
+  await expect(
+    page.locator(".table tr[test-data-filename='upload-for-deletion.txt']")
+  ).toHaveCount(0);
+});
+
+test("uploads a file and deletes its note", async ({ page, request }) => {
+  await login(page);
+
+  await page.locator("#note").fill("For Pico, with Love and Squalor");
+
+  await page.locator(".file-input").setInputFiles([
+    {
+      name: "upload-with-temporary-note.txt",
+      mimeType: "text/plain",
+      buffer: Buffer.from("I'm an upload with a temporary note"),
+    },
+  ]);
+  await expect(page.locator("#upload-result .message-body")).toHaveText(
+    "Upload complete!"
+  );
+  await expect(page.locator("#upload-result upload-links")).toHaveAttribute(
+    "filename",
+    "upload-with-temporary-note.txt"
+  );
+  await expect(
+    page.locator("#upload-result upload-links #verbose-link-box #link")
+  ).toBeVisible();
+  await expect(
+    page.locator("#upload-result upload-links #short-link-box #link")
+  ).toBeVisible();
+
+  // Verify that cleanup doesn't incorrectly remove the file.
+  await request.post("/api/cleanup");
+
+  await page.locator(".navbar a[href='/files']").click();
+  await page
+    .locator(
+      ".table tr[test-data-filename='upload-with-temporary-note.txt'] [pico-purpose='edit']"
+    )
+    .click();
+
+  await expect(page).toHaveURL(/\/files\/.+\/edit$/);
+  await page.locator("#note").fill("");
+  await page.locator("form .button.is-primary").click();
+
+  await expect(page).toHaveURL("/files");
+  await expect(
+    page.locator(
+      ".table tr[test-data-filename='upload-with-temporary-note.txt'] [test-data-id='note']"
+    )
+  ).toHaveCount(0);
 });
