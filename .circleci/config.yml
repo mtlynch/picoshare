@@ -93,6 +93,8 @@ jobs:
     environment:
       NODE_ENV: development
     steps:
+      - attach_workspace:
+          at: ./
       - checkout
       - run:
           name: Install dependencies
