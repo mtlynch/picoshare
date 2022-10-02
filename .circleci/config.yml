@@ -87,7 +87,7 @@ jobs:
           root: ./
           paths:
             - ./bin/picoshare
-  playwright:
+  e2e:
     docker:
       - image: mcr.microsoft.com/playwright:v1.26.0-focal
     environment:
@@ -203,7 +203,7 @@ workflows:
           filters:
             tags:
               only: /.*/
-      - playwright:
+      - e2e:
           filters:
             tags:
               only: /.*/
@@ -228,6 +228,7 @@ workflows:
             - check_frontend
             - test_go
             - build_backend
+            - e2e
           filters:
             branches:
               only: master
