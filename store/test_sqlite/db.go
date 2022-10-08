@@ -8,12 +8,14 @@ import (
 	"github.com/mtlynch/picoshare/v2/store/sqlite"
 )
 
+const optimizeForLitestream = false
+
 func New() store.Store {
-	return sqlite.New(ephemeralDbURI())
+	return sqlite.New(ephemeralDbURI(), optimizeForLitestream)
 }
 
 func NewWithChunkSize(chunkSize int) store.Store {
-	return sqlite.NewWithChunkSize(ephemeralDbURI(), chunkSize)
+	return sqlite.NewWithChunkSize(ephemeralDbURI(), chunkSize, optimizeForLitestream)
 }
 
 func ephemeralDbURI() string {

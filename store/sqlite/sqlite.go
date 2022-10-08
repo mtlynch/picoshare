@@ -31,29 +31,33 @@ type (
 	}
 )
 
-func New(path string) store.Store {
-	return NewWithChunkSize(path, defaultChunkSize)
+func New(path string, optimizeForLitestream bool) store.Store {
+	return NewWithChunkSize(path, defaultChunkSize, optimizeForLitestream)
 }
 
 // NewWithChunkSize creates a SQLite-based datastore with the user-specified
 // chunk size for writing files. Most callers should just use New().
-func NewWithChunkSize(path string, chunkSize int) store.Store {
+func NewWithChunkSize(path string, chunkSize int, optimizeForLitestream bool) store.Store {
 	log.Printf("reading DB from %s", path)
 	ctx, err := sql.Open("sqlite3", path)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	if _, err := ctx.Exec(`
-PRAGMA temp_store = FILE;
-
--- Apply Litestream recommendations: https://litestream.io/tips/
-PRAGMA busy_timeout = 5000;
-PRAGMA synchronous = NORMAL;
-PRAGMA journal_mode = WAL;
-PRAGMA wal_autocheckpoint = 0;
-		`); err != nil {
+	if _, err := ctx.Exec("PRAGMA temp_store = FILE"); err != nil {
 		log.Fatalf("failed to set pragmas: %v", err)
+	}
+
+	if optimizeForLitestream {
+		if _, err := ctx.Exec(`
+			-- Apply Litestream recommendations: https://litestream.io/tips/
+			PRAGMA busy_timeout = 5000;
+			PRAGMA synchronous = NORMAL;
+			PRAGMA journal_mode = WAL;
+			PRAGMA wal_autocheckpoint = 0;
+				`); err != nil {
+			log.Fatalf("failed to set Litestream compatibility pragmas: %v", err)
+		}
 	}
 
 	applyMigrations(ctx)
