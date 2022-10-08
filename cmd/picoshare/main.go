@@ -35,7 +35,7 @@ func main() {
 	store := sqlite.New(*dbPath, isLitestreamEnabled())
 
 	collector := garbagecollect.NewCollector(store, *vacuumDb)
-	gc := garbagecollect.NewScheduler(&collector, 7*time.Hour)
+	gc := garbagecollect.NewScheduler(&collector, 1*time.Minute) // DEBUG
 	gc.StartAsync()
 
 	h := gorilla.LoggingHandler(os.Stdout, handlers.New(authenticator, store, &collector).Router())
