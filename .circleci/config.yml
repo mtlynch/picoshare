@@ -83,24 +83,29 @@ jobs:
       - run:
           name: Compile backend
           command: dev-scripts/build-backend
+      - persist_to_workspace:
+          root: ./
+          paths:
+            - ./bin/picoshare
   e2e:
-    # We're choosing large even though xlarge is faster because CircleCI takes
-    # too long to provision xlarge instances.
-    resource_class: large
-    machine:
-      # Choose an explicit machine image so that we get the latest version of
-      # docker-compose.
-      image: ubuntu-2004:202010-01
-      docker_layer_caching: true
+    docker:
+      - image: mcr.microsoft.com/playwright:v1.26.0-focal
+    environment:
+      NODE_ENV: development
     steps:
       - checkout
+      - attach_workspace:
+          at: ./
       - run:
-          name: Perform e2e tests.
-          command: dev-scripts/run-e2e-tests
+          name: Install dependencies
+          command: npm install
+      - run:
+          name: Run playwright tests
+          command: npx playwright test
       - store_artifacts:
-          path: e2e/cypress/videos
+          path: playwright-report
       - store_artifacts:
-          path: e2e/cypress/screenshots
+          path: e2e-results
   build_docker_images:
     docker:
       - image: cimg/base:stable
@@ -202,6 +207,8 @@ workflows:
           filters:
             tags:
               only: /.*/
+          requires:
+            - build_backend
       - build_docker_images:
           requires:
             - check_whitespace
@@ -209,7 +216,6 @@ workflows:
             - check_frontend
             - test_go
             - build_backend
-            - e2e
           filters:
             tags:
               only: /[0-9]+(\.[0-9]+){2}/

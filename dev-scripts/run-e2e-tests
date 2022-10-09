@@ -6,18 +6,14 @@ set -e
 # Echo commands to stdout.
 set -x
 
-if [[ "$1" = "--skip-build" ]]; then
-  flags=""
-else
-  flags="--build"
-fi
+# Exit on unset variable.
+set -u
 
 # Change directory to repository root.
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 readonly SCRIPT_DIR
 cd "${SCRIPT_DIR}/.."
 
-cd e2e
-npm install
-COMPOSE_DOCKER_CLI_BUILD=1 DOCKER_BUILDKIT=1 \
-  docker-compose up --exit-code-from cypress --abort-on-container-exit $flags
+./dev-scripts/reset-db
+
+npx playwright test

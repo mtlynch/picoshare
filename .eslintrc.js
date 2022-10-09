@@ -4,7 +4,11 @@ module.exports = {
     browser: true,
     es2022: true,
   },
-  extends: ["plugin:cypress/recommended", "eslint:recommended"],
+  parserOptions: {
+    ecmaVersion: 11,
+    sourceType: "module",
+  },
+  extends: ["plugin:playwright/playwright-test", "eslint:recommended"],
   rules: {
     // This will produce an error for console.log or console.warn in production
     // and a warning in development console.error will not produce an error or
@@ -14,5 +18,5 @@ module.exports = {
       { allow: ["error"] },
     ],
   },
-  ignorePatterns: ["static/third-party/**/*.js"],
+  ignorePatterns: ["playwright-report/*", "static/third-party/**/*.js"],
 };

@@ -26,7 +26,7 @@
       </thead>
       <tbody>
         {{ range .Files }}
-          <tr>
+          <tr test-data-filename="{{ .Filename }}">
             <td class="is-vcentered" test-data-id="filename">
               <a href="/!{{ .ID }}">{{ .Filename }}</a>
             </td>
@@ -43,7 +43,7 @@
             <td class="is-vcentered">{{ formatFileSize .Size }}</td>
             <td class="is-vcentered">{{ formatDate .Uploaded }}</td>
             <td class="is-vcentered" test-data-id="expiration">
-              {{ formatExpiration .Expires }}
+              {{- formatExpiration .Expires -}}
             </td>
             <td class="is-vcentered">
               <div class="field is-grouped is-justify-content-flex-end">

@@ -39,7 +39,7 @@
           Delete after expiration
         </label>
         <expiration-picker
-          id="expiration"
+          id="expiration-picker"
           {{ if not (isNeverExpire .Expires) }}
             value="{{ formatExpiration .Expires }}"
           {{ else }}

@@ -14,3 +14,8 @@ node_modules/
 
 # System files
 .DS_Store
+
+# Playwright output
+/playwright-report/
+/playwright/.cache/
+/e2e-results/
