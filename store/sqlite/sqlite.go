@@ -44,7 +44,10 @@ func NewWithChunkSize(path string, chunkSize int, optimizeForLitestream bool) st
 		log.Fatalln(err)
 	}
 
-	if _, err := ctx.Exec("PRAGMA temp_store = FILE"); err != nil {
+	if _, err := ctx.Exec(`
+		PRAGMA temp_store = FILE;
+		PRAGMA journal_mode = WAL;
+		`); err != nil {
 		log.Fatalf("failed to set pragmas: %v", err)
 	}
 
@@ -53,7 +56,6 @@ func NewWithChunkSize(path string, chunkSize int, optimizeForLitestream bool) st
 			-- Apply Litestream recommendations: https://litestream.io/tips/
 			PRAGMA busy_timeout = 5000;
 			PRAGMA synchronous = NORMAL;
-			PRAGMA journal_mode = WAL;
 			PRAGMA wal_autocheckpoint = 0;
 				`); err != nil {
 			log.Fatalf("failed to set Litestream compatibility pragmas: %v", err)
