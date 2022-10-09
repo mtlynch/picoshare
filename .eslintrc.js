@@ -4,7 +4,7 @@ module.exports = {
     browser: true,
     es2022: true,
   },
-  extends: ["plugin:cypress/recommended", "eslint:recommended"],
+  extends: ["eslint:recommended"],
   rules: {
     // This will produce an error for console.log or console.warn in production
     // and a warning in development console.error will not produce an error or
