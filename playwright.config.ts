@@ -1,15 +1,6 @@
 import type { PlaywrightTestConfig } from "@playwright/test";
 import { devices } from "@playwright/test";
 
-/**
- * Read environment variables from file.
- * https://github.com/motdotla/dotenv
- */
-// require('dotenv').config();
-
-/**
- * See https://playwright.dev/docs/test-configuration.
- */
 const config: PlaywrightTestConfig = {
   testDir: "./e2e",
   timeout: 5 * 1000,
@@ -28,7 +19,6 @@ const config: PlaywrightTestConfig = {
     video: "on",
   },
 
-  /* Configure projects for major browsers */
   projects: [
     {
       name: "chromium",
