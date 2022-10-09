@@ -32,7 +32,7 @@ func main() {
 
 	ensureDirExists(filepath.Dir(*dbPath))
 
-	store := sqlite.New(*dbPath)
+	store := sqlite.New(*dbPath, isLitestreamEnabled())
 
 	collector := garbagecollect.NewCollector(store, *vacuumDb)
 	gc := garbagecollect.NewScheduler(&collector, 7*time.Hour)
@@ -67,4 +67,8 @@ func ensureDirExists(dir string) {
 			panic(err)
 		}
 	}
+}
+
+func isLitestreamEnabled() bool {
+	return os.Getenv("LITESTREAM_BUCKET") != ""
 }
