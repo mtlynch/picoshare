@@ -40,8 +40,8 @@ fly volumes create "${VOLUME_NAME}" \
   {
   cat << EOF
 [mounts]
-source="${VOLUME_NAME}"
-destination="/data"
+  source="${VOLUME_NAME}"
+  destination="/data"
 EOF
   } >> fly.toml
 ```
