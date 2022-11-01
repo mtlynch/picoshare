@@ -2,9 +2,9 @@ package handlers
 
 import (
 	"context"
+	"embed"
 	"fmt"
 	"html/template"
-	"io/ioutil"
 	"log"
 	"math"
 	"net/http"
@@ -365,32 +365,19 @@ func makeCommonProps(title string, ctx context.Context) commonProps {
 	}
 }
 
+//go:embed templates
+var templatesFS embed.FS
+
 func renderTemplate(w http.ResponseWriter, templateFilename string, templateVars interface{}, funcMap template.FuncMap) error {
-	const templatesRootDir = "./templates"
-	const baseTemplate = "base"
-	const baseTemplateFilename = "base.html"
-	const navbarTemplateFilename = "navbar.html"
-
-	customElementsDir := path.Join(templatesRootDir, "custom-elements")
-	customElementFiles, err := ioutil.ReadDir(customElementsDir)
-	if err != nil {
-		return err
-	}
-
-	customElements := []string{}
-	for _, ce := range customElementFiles {
-		customElements = append(customElements, path.Join(customElementsDir, ce.Name()))
-	}
-
-	templateFiles := []string{}
-	templateFiles = append(templateFiles, path.Join(templatesRootDir, templateFilename))
-	templateFiles = append(templateFiles, path.Join(templatesRootDir, baseTemplateFilename))
-	templateFiles = append(templateFiles, path.Join(templatesRootDir, navbarTemplateFilename))
-	templateFiles = append(templateFiles, customElements...)
-
-	t := template.Must(template.New(templateFilename).Funcs(funcMap).
-		ParseFiles(templateFiles...))
-	if err := t.ExecuteTemplate(w, baseTemplate, templateVars); err != nil {
+	t := template.New(templateFilename).Funcs(funcMap)
+	t = template.Must(
+		t.ParseFS(
+			templatesFS,
+			"templates/layouts/*.html",
+			"templates/partials/*.html",
+			"templates/custom-elements/*.html",
+			path.Join("templates/pages", templateFilename)))
+	if err := t.ExecuteTemplate(w, "base", templateVars); err != nil {
 		return err
 	}
 	return nil

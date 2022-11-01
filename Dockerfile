@@ -6,9 +6,7 @@ COPY ./cmd /app/cmd
 COPY ./garbagecollect /app/garbagecollect
 COPY ./handlers /app/handlers
 COPY ./random /app/random
-COPY ./static /app/static
 COPY ./store /app/store
-COPY ./templates /app/templates
 COPY ./types /app/types
 COPY ./go.* /app/
 
@@ -66,7 +64,6 @@ COPY --from=litestream_downloader /litestream/litestream /app/litestream
 COPY ./docker-entrypoint /app/docker-entrypoint
 COPY ./litestream.yml /etc/litestream.yml
 COPY ./static /app/static
-COPY ./templates /app/templates
 COPY ./LICENSE /app/LICENSE
 
 WORKDIR /app
