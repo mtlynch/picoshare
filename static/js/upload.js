@@ -53,10 +53,13 @@ function populateEditButton(entryId) {
 function sortClipboardItems(items) {
   return items.sort((a, b) => {
     // Prioritize images ahead of other formats.
-    if (a.type.startsWith("image") && !b.type.startsWith("image")) {
+    const isImage = (x) => {
+      x.type.startsWith("image");
+    };
+    if (isImage(a) && !isImage(b)) {
       return -1;
     }
-    if (b.type.startsWith("image") && !a.type.startsWith("image")) {
+    if (isImage(b) && !isImage(a)) {
       return 1;
     }
 
