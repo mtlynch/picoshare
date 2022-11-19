@@ -52,6 +52,14 @@ function populateEditButton(entryId) {
 // user wants to upload.
 function sortClipboardItems(items) {
   return items.sort((a, b) => {
+    // Prioritize images ahead of other formats.
+    if (a.type.startsWith("image") && !b.type.startsWith("image")) {
+      return -1;
+    }
+    if (b.type.startsWith("image") && !a.type.startsWith("image")) {
+      return 1;
+    }
+
     if (a.kind === "string" && b.kind === "string") {
       // Prefer text/plain strings ahead of other string types.
       return a.type === "text/plain" ? -1 : 1;
