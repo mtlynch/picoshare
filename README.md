@@ -28,7 +28,7 @@ There are a million services for sharing files, but none of them are quite like 
 ### From source
 
 ```bash
-PS_SHARED_SECRET=somesecretpass PORT=3001 \
+PS_SHARED_SECRET=somesecretpass PORT=4001 \
   go run cmd/picoshare/main.go
 ```
 
@@ -38,9 +38,9 @@ To run PicoShare within a Docker container, mount a volume from your local syste
 
 ```bash
 docker run \
-  --env "PORT=3001" \
+  --env "PORT=4001" \
   --env "PS_SHARED_SECRET=somesecretpass" \
-  --publish 3001:3001/tcp \
+  --publish 4001:4001/tcp \
   --volume "${PWD}/data:/data" \
   --name picoshare \
   mtlynch/picoshare
@@ -53,7 +53,7 @@ If you specify settings for a [Litestream](https://litestream.io/)-compatible cl
 You can kill the container and start it later, and PicoShare will restore your data from the cloud storage location and continue as if there was no interruption.
 
 ```bash
-PORT=3001
+PORT=4001
 PS_SHARED_SECRET="somesecretpass"
 LITESTREAM_BUCKET=YOUR-LITESTREAM-BUCKET
 LITESTREAM_ENDPOINT=YOUR-LITESTREAM-ENDPOINT
@@ -87,10 +87,10 @@ services:
   picoshare:
     image: mtlynch/picoshare
     environment:
-      - PORT=3001
+      - PORT=4001
       - PS_SHARED_SECRET=dummypass # Change to any password
     ports:
-      - 3001:3001
+      - 4001:4001
     command: -db /data/store.db
     volumes:
       - ./data:/data
@@ -111,7 +111,7 @@ You can adjust behavior of the Docker container by passing these parameters with
 
 | Environment Variable           | Meaning                                                                                               |
 | ------------------------------ | ----------------------------------------------------------------------------------------------------- |
-| `PORT`                         | TCP port on which to listen for HTTP connections (defaults to 3001).                                  |
+| `PORT`                         | TCP port on which to listen for HTTP connections (defaults to 4001).                                  |
 | `LITESTREAM_BUCKET`            | Litestream-compatible cloud storage bucket where Litestream should replicate data.                    |
 | `LITESTREAM_ENDPOINT`          | Litestream-compatible cloud storage endpoint where Litestream should replicate data.                  |
 | `LITESTREAM_ACCESS_KEY_ID`     | Litestream-compatible cloud storage access key ID to the bucket where you want to replicate data.     |
