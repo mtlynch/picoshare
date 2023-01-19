@@ -19,7 +19,7 @@ import (
 
 func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
-	log.Print("Starting picoshare server")
+	log.Print("starting picoshare server")
 
 	dbPath := flag.String("db", "data/store.db", "path to database")
 	vacuumDb := flag.Bool("vacuum", false, "vacuum database periodically to reclaim disk space")
@@ -48,7 +48,7 @@ func main() {
 	if port == "" {
 		port = "4001"
 	}
-	log.Printf("Listening on %s", port)
+	log.Printf("listening on %s", port)
 
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", port), nil))
 }
