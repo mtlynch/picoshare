@@ -152,7 +152,7 @@ func (s Server) guestEntryPost() http.HandlerFunc {
 			respondJSON(w, EntryPostResponse{ID: string(id)})
 		} else {
 			w.Header().Set("Content-Type", "text/plain")
-			if _, err := fmt.Fprintf(w, "%s/!%s\r\n", baseURLFromRequest(r), string(id)); err != nil {
+			if _, err := fmt.Fprintf(w, "%s/-%s\r\n", baseURLFromRequest(r), string(id)); err != nil {
 				log.Fatalf("failed to write HTTP response: %v", err)
 			}
 		}
