@@ -53,6 +53,10 @@ func (s *Server) routes() {
 	views.Use(upgradeToHttps)
 	views.Use(enforceContentSecurityPolicy)
 	views.HandleFunc("/login", s.authGet()).Methods(http.MethodGet)
+	views.PathPrefix("/-{id}").HandlerFunc(s.entryGet()).Methods(http.MethodGet)
+	views.PathPrefix("/-{id}/{filename}").HandlerFunc(s.entryGet()).Methods(http.MethodGet)
+	// Legacy routes for entries. We stopped using them because the ! has
+	// unintended side effects within the bash shell.
 	views.PathPrefix("/!{id}").HandlerFunc(s.entryGet()).Methods(http.MethodGet)
 	views.PathPrefix("/!{id}/{filename}").HandlerFunc(s.entryGet()).Methods(http.MethodGet)
 	views.PathPrefix("/g/{guestLinkID}").HandlerFunc(s.guestUploadGet()).Methods(http.MethodGet)
