@@ -17,8 +17,8 @@ import (
 	"github.com/mtlynch/picoshare/v2/handlers"
 	"github.com/mtlynch/picoshare/v2/handlers/auth/shared_secret"
 	"github.com/mtlynch/picoshare/v2/handlers/parse"
+	"github.com/mtlynch/picoshare/v2/picoshare"
 	"github.com/mtlynch/picoshare/v2/store/test_sqlite"
-	"github.com/mtlynch/picoshare/v2/types"
 )
 
 type mockAuthenticator struct{}
@@ -122,7 +122,7 @@ func TestEntryPost(t *testing.T) {
 				t.Fatalf("response is not valid JSON: %v", w.Body.String())
 			}
 
-			entry, err := store.GetEntry(types.EntryID(response.ID))
+			entry, err := store.GetEntry(picoshare.EntryID(response.ID))
 			if err != nil {
 				t.Fatalf("failed to get expected entry %v from data store: %v", response.ID, err)
 			}
@@ -131,7 +131,7 @@ func TestEntryPost(t *testing.T) {
 				t.Errorf("stored contents= %v, want=%v", got, want)
 			}
 
-			if got, want := entry.Filename, types.Filename(tt.filename); got != want {
+			if got, want := entry.Filename, picoshare.Filename(tt.filename); got != want {
 				t.Errorf("filename=%v, want=%v", got, want)
 			}
 
@@ -143,19 +143,19 @@ func TestEntryPost(t *testing.T) {
 }
 
 func TestEntryPut(t *testing.T) {
-	originalEntry := types.UploadMetadata{
-		ID:       types.EntryID("AAAAAAAAAA"),
-		Filename: types.Filename("original-filename.mp3"),
+	originalEntry := picoshare.UploadMetadata{
+		ID:       picoshare.EntryID("AAAAAAAAAA"),
+		Filename: picoshare.Filename("original-filename.mp3"),
 		Expires:  mustParseExpirationTime("2024-12-15T21:52:33Z"),
-		Note:     types.FileNote{},
+		Note:     picoshare.FileNote{},
 	}
 	for _, tt := range []struct {
 		description      string
 		targetID         string
 		payload          string
 		filenameExpected string
-		expiresExpected  types.ExpirationTime
-		noteExpected     types.FileNote
+		expiresExpected  picoshare.ExpirationTime
+		noteExpected     picoshare.FileNote
 		status           int
 	}{
 		{
@@ -180,7 +180,7 @@ func TestEntryPut(t *testing.T) {
 			}`,
 			filenameExpected: "cool-song.mp3",
 			noteExpected:     makeNote("My latest track"),
-			expiresExpected:  types.NeverExpire,
+			expiresExpected:  picoshare.NeverExpire,
 			status:           http.StatusOK,
 		},
 		{
@@ -192,7 +192,7 @@ func TestEntryPut(t *testing.T) {
 				"note":"My latest track"
 			}`,
 			filenameExpected: "original-filename.mp3",
-			noteExpected:     types.FileNote{},
+			noteExpected:     picoshare.FileNote{},
 			expiresExpected:  mustParseExpirationTime("2024-12-15T21:52:33Z"),
 			status:           http.StatusBadRequest,
 		},
@@ -206,7 +206,7 @@ func TestEntryPut(t *testing.T) {
 			}`,
 			filenameExpected: "original-filename.mp3",
 			expiresExpected:  mustParseExpirationTime("2024-12-15T21:52:33Z"),
-			noteExpected:     types.FileNote{},
+			noteExpected:     picoshare.FileNote{},
 			status:           http.StatusBadRequest,
 		},
 		{
@@ -219,7 +219,7 @@ func TestEntryPut(t *testing.T) {
 			}`,
 			filenameExpected: "original-filename.mp3",
 			expiresExpected:  mustParseExpirationTime("2024-12-15T21:52:33Z"),
-			noteExpected:     types.FileNote{},
+			noteExpected:     picoshare.FileNote{},
 			status:           http.StatusNotFound,
 		},
 	} {
@@ -241,12 +241,12 @@ func TestEntryPut(t *testing.T) {
 				t.Fatalf("status=%d, want=%d", got, want)
 			}
 
-			entry, err := store.GetEntry(types.EntryID(originalEntry.ID))
+			entry, err := store.GetEntry(picoshare.EntryID(originalEntry.ID))
 			if err != nil {
 				t.Fatalf("failed to get expected entry %v from data store: %v", originalEntry.ID, err)
 			}
 
-			if got, want := entry.Filename, types.Filename(tt.filenameExpected); got != want {
+			if got, want := entry.Filename, picoshare.Filename(tt.filenameExpected); got != want {
 				t.Errorf("filename=%v, want=%v", got, want)
 			}
 
@@ -265,16 +265,16 @@ func TestGuestUpload(t *testing.T) {
 
 	for _, tt := range []struct {
 		description      string
-		guestLinkInStore types.GuestLink
-		entriesInStore   []types.UploadEntry
+		guestLinkInStore picoshare.GuestLink
+		entriesInStore   []picoshare.UploadEntry
 		guestLinkID      string
 		note             string
 		status           int
 	}{
 		{
 			description: "valid upload to guest link",
-			guestLinkInStore: types.GuestLink{
-				ID:      types.GuestLinkID("abcdefgh23456789"),
+			guestLinkInStore: picoshare.GuestLink{
+				ID:      picoshare.GuestLinkID("abcdefgh23456789"),
 				Created: mustParseTime("2022-01-01T00:00:00Z"),
 				Expires: mustParseExpirationTime("2030-01-02T03:04:25Z"),
 			},
@@ -283,8 +283,8 @@ func TestGuestUpload(t *testing.T) {
 		},
 		{
 			description: "expired guest link",
-			guestLinkInStore: types.GuestLink{
-				ID:      types.GuestLinkID("abcdefgh23456789"),
+			guestLinkInStore: picoshare.GuestLink{
+				ID:      picoshare.GuestLinkID("abcdefgh23456789"),
 				Created: mustParseTime("2000-01-01T00:00:00Z"),
 				Expires: mustParseExpirationTime("2000-01-02T03:04:25Z"),
 			},
@@ -293,8 +293,8 @@ func TestGuestUpload(t *testing.T) {
 		},
 		{
 			description: "invalid guest link",
-			guestLinkInStore: types.GuestLink{
-				ID:      types.GuestLinkID("abcdefgh23456789"),
+			guestLinkInStore: picoshare.GuestLink{
+				ID:      picoshare.GuestLinkID("abcdefgh23456789"),
 				Created: mustParseTime("2000-01-01T00:00:00Z"),
 				Expires: mustParseExpirationTime("2030-01-02T03:04:25Z"),
 			},
@@ -303,8 +303,8 @@ func TestGuestUpload(t *testing.T) {
 		},
 		{
 			description: "invalid guest link",
-			guestLinkInStore: types.GuestLink{
-				ID:      types.GuestLinkID("abcdefgh23456789"),
+			guestLinkInStore: picoshare.GuestLink{
+				ID:      picoshare.GuestLinkID("abcdefgh23456789"),
 				Created: mustParseTime("2000-01-01T00:00:00Z"),
 				Expires: mustParseExpirationTime("2030-01-02T03:04:25Z"),
 			},
@@ -313,8 +313,8 @@ func TestGuestUpload(t *testing.T) {
 		},
 		{
 			description: "non-existent guest link",
-			guestLinkInStore: types.GuestLink{
-				ID:      types.GuestLinkID("abcdefgh23456789"),
+			guestLinkInStore: picoshare.GuestLink{
+				ID:      picoshare.GuestLinkID("abcdefgh23456789"),
 				Created: mustParseTime("2000-01-01T00:00:00Z"),
 				Expires: mustParseExpirationTime("2000-01-02T03:04:25Z"),
 			},
@@ -323,8 +323,8 @@ func TestGuestUpload(t *testing.T) {
 		},
 		{
 			description: "reject upload that includes a note",
-			guestLinkInStore: types.GuestLink{
-				ID:      types.GuestLinkID("abcdefgh23456789"),
+			guestLinkInStore: picoshare.GuestLink{
+				ID:      picoshare.GuestLinkID("abcdefgh23456789"),
 				Created: mustParseTime("2022-01-01T00:00:00Z"),
 				Expires: mustParseExpirationTime("2030-01-02T03:04:25Z"),
 			},
@@ -334,23 +334,23 @@ func TestGuestUpload(t *testing.T) {
 		},
 		{
 			description: "exhausted upload count",
-			guestLinkInStore: types.GuestLink{
-				ID:             types.GuestLinkID("abcdefgh23456789"),
+			guestLinkInStore: picoshare.GuestLink{
+				ID:             picoshare.GuestLinkID("abcdefgh23456789"),
 				Created:        mustParseTime("2000-01-01T00:00:00Z"),
 				Expires:        mustParseExpirationTime("2030-01-02T03:04:25Z"),
 				MaxFileUploads: makeGuestUploadCountLimit(2),
 			},
-			entriesInStore: []types.UploadEntry{
+			entriesInStore: []picoshare.UploadEntry{
 				{
-					UploadMetadata: types.UploadMetadata{
-						ID:          types.EntryID("dummy-entry1"),
-						GuestLinkID: types.GuestLinkID("abcdefgh23456789"),
+					UploadMetadata: picoshare.UploadMetadata{
+						ID:          picoshare.EntryID("dummy-entry1"),
+						GuestLinkID: picoshare.GuestLinkID("abcdefgh23456789"),
 					},
 				},
 				{
-					UploadMetadata: types.UploadMetadata{
-						ID:          types.EntryID("dummy-entry2"),
-						GuestLinkID: types.GuestLinkID("abcdefgh23456789"),
+					UploadMetadata: picoshare.UploadMetadata{
+						ID:          picoshare.EntryID("dummy-entry2"),
+						GuestLinkID: picoshare.GuestLinkID("abcdefgh23456789"),
 					},
 				},
 			},
@@ -359,8 +359,8 @@ func TestGuestUpload(t *testing.T) {
 		},
 		{
 			description: "exhausted upload bytes",
-			guestLinkInStore: types.GuestLink{
-				ID:           types.GuestLinkID("abcdefgh23456789"),
+			guestLinkInStore: picoshare.GuestLink{
+				ID:           picoshare.GuestLinkID("abcdefgh23456789"),
 				Created:      mustParseTime("2000-01-01T00:00:00Z"),
 				Expires:      mustParseExpirationTime("2030-01-02T03:04:25Z"),
 				MaxFileBytes: makeGuestUploadMaxFileBytes(1),
@@ -411,7 +411,7 @@ func TestGuestUpload(t *testing.T) {
 				t.Fatalf("response is not valid JSON: %v", w.Body.String())
 			}
 
-			entry, err := store.GetEntry(types.EntryID(response.ID))
+			entry, err := store.GetEntry(picoshare.EntryID(response.ID))
 			if err != nil {
 				t.Fatalf("failed to get expected entry %v from data store: %v", response.ID, err)
 			}
@@ -420,12 +420,12 @@ func TestGuestUpload(t *testing.T) {
 				t.Errorf("stored contents= %v, want=%v", got, want)
 			}
 
-			if got, want := entry.Filename, types.Filename(filename); got != want {
+			if got, want := entry.Filename, picoshare.Filename(filename); got != want {
 				t.Errorf("filename=%v, want=%v", got, want)
 			}
 
 			// Guest uploads never expire.
-			if got, want := entry.Expires, types.NeverExpire; got != want {
+			if got, want := entry.Expires, picoshare.NeverExpire; got != want {
 				t.Errorf("expiration=%v, want=%v", got, want)
 			}
 		})
@@ -463,8 +463,8 @@ func mustParseTime(s string) time.Time {
 	return t
 }
 
-func mustParseExpirationTime(s string) types.ExpirationTime {
-	return types.ExpirationTime(mustParseTime(s))
+func mustParseExpirationTime(s string) picoshare.ExpirationTime {
+	return picoshare.ExpirationTime(mustParseTime(s))
 }
 
 func mustReadAll(r io.Reader) []byte {
@@ -475,6 +475,6 @@ func mustReadAll(r io.Reader) []byte {
 	return d
 }
 
-func makeNote(s string) types.FileNote {
-	return types.FileNote{Value: &s}
+func makeNote(s string) picoshare.FileNote {
+	return picoshare.FileNote{Value: &s}
 }

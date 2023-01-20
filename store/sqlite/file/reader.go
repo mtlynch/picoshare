@@ -6,13 +6,13 @@ import (
 	"io"
 	"log"
 
-	"github.com/mtlynch/picoshare/v2/types"
+	"github.com/mtlynch/picoshare/v2/picoshare"
 )
 
 type (
 	fileReader struct {
 		db         *sql.DB
-		entryID    types.EntryID
+		entryID    picoshare.EntryID
 		fileLength int64
 		offset     int64
 		chunkSize  int64
@@ -20,7 +20,7 @@ type (
 	}
 )
 
-func NewReader(db *sql.DB, id types.EntryID) (io.ReadSeeker, error) {
+func NewReader(db *sql.DB, id picoshare.EntryID) (io.ReadSeeker, error) {
 	chunkSize, err := getChunkSize(db, id)
 	if err != nil {
 		return nil, err
@@ -113,7 +113,7 @@ func (fr *fileReader) populateBuffer() error {
 	return nil
 }
 
-func getFileLength(db *sql.DB, id types.EntryID, chunkSize int64) (int64, error) {
+func getFileLength(db *sql.DB, id picoshare.EntryID, chunkSize int64) (int64, error) {
 	var chunkIndex int64
 	var chunkLen int64
 	if err := db.QueryRow(`
@@ -134,7 +134,7 @@ func getFileLength(db *sql.DB, id types.EntryID, chunkSize int64) (int64, error)
 	return (chunkSize * chunkIndex) + chunkLen, nil
 }
 
-func getChunkSize(db *sql.DB, id types.EntryID) (int64, error) {
+func getChunkSize(db *sql.DB, id picoshare.EntryID) (int64, error) {
 	var chunkSize int64
 	if err := db.QueryRow(`
 	SELECT

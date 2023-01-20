@@ -4,27 +4,27 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/mtlynch/picoshare/v2/types"
+	"github.com/mtlynch/picoshare/v2/picoshare"
 )
 
 type Store interface {
-	GetEntriesMetadata() ([]types.UploadMetadata, error)
-	GetEntry(id types.EntryID) (types.UploadEntry, error)
-	GetEntryMetadata(id types.EntryID) (types.UploadMetadata, error)
-	InsertEntry(reader io.Reader, metadata types.UploadMetadata) error
-	UpdateEntryMetadata(id types.EntryID, metadata types.UploadMetadata) error
-	DeleteEntry(id types.EntryID) error
-	GetGuestLink(types.GuestLinkID) (types.GuestLink, error)
-	GetGuestLinks() ([]types.GuestLink, error)
-	InsertGuestLink(types.GuestLink) error
-	DeleteGuestLink(types.GuestLinkID) error
+	GetEntriesMetadata() ([]picoshare.UploadMetadata, error)
+	GetEntry(id picoshare.EntryID) (picoshare.UploadEntry, error)
+	GetEntryMetadata(id picoshare.EntryID) (picoshare.UploadMetadata, error)
+	InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) error
+	UpdateEntryMetadata(id picoshare.EntryID, metadata picoshare.UploadMetadata) error
+	DeleteEntry(id picoshare.EntryID) error
+	GetGuestLink(picoshare.GuestLinkID) (picoshare.GuestLink, error)
+	GetGuestLinks() ([]picoshare.GuestLink, error)
+	InsertGuestLink(picoshare.GuestLink) error
+	DeleteGuestLink(picoshare.GuestLinkID) error
 	Purge() error
 	Compact() error
 }
 
 // EntryNotFoundError occurs when no entry exists with the given ID.
 type EntryNotFoundError struct {
-	ID types.EntryID
+	ID picoshare.EntryID
 }
 
 func (f EntryNotFoundError) Error() string {
@@ -33,7 +33,7 @@ func (f EntryNotFoundError) Error() string {
 
 // GuestLinkNotFoundError occurs when no guest link exists with the given ID.
 type GuestLinkNotFoundError struct {
-	ID types.GuestLinkID
+	ID picoshare.GuestLinkID
 }
 
 func (f GuestLinkNotFoundError) Error() string {

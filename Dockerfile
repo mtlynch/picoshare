@@ -5,9 +5,9 @@ ARG TARGETPLATFORM
 COPY ./cmd /app/cmd
 COPY ./garbagecollect /app/garbagecollect
 COPY ./handlers /app/handlers
+COPY ./picoshare /app/picoshare
 COPY ./random /app/random
 COPY ./store /app/store
-COPY ./types /app/types
 COPY ./go.* /app/
 
 WORKDIR /app

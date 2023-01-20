@@ -6,26 +6,26 @@ import (
 	"testing"
 
 	"github.com/mtlynch/picoshare/v2/handlers/parse"
-	"github.com/mtlynch/picoshare/v2/types"
+	"github.com/mtlynch/picoshare/v2/picoshare"
 )
 
 func TestFilename(t *testing.T) {
 	for _, tt := range []struct {
 		description string
 		input       string
-		output      types.Filename
+		output      picoshare.Filename
 		err         error
 	}{
 		{
 			description: "accept valid filename",
 			input:       "dummy.png",
-			output:      types.Filename("dummy.png"),
+			output:      picoshare.Filename("dummy.png"),
 			err:         nil,
 		},
 		{
 			description: "accept filename that's the maximum length",
 			input:       strings.Repeat("A", parse.MaxFilenameBytes),
-			output:      types.Filename(strings.Repeat("A", parse.MaxFilenameBytes)),
+			output:      picoshare.Filename(strings.Repeat("A", parse.MaxFilenameBytes)),
 			err:         nil,
 		},
 		{

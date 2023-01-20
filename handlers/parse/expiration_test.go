@@ -6,14 +6,14 @@ import (
 	"time"
 
 	"github.com/mtlynch/picoshare/v2/handlers/parse"
-	"github.com/mtlynch/picoshare/v2/types"
+	"github.com/mtlynch/picoshare/v2/picoshare"
 )
 
 func TestExpiration(t *testing.T) {
 	for _, tt := range []struct {
 		description string
 		input       string
-		output      types.ExpirationTime
+		output      picoshare.ExpirationTime
 		err         error
 	}{
 		{
@@ -25,19 +25,19 @@ func TestExpiration(t *testing.T) {
 		{
 			description: "reject expiration time in the past",
 			input:       "2000-01-01T00:00:00Z",
-			output:      types.ExpirationTime{},
+			output:      picoshare.ExpirationTime{},
 			err:         parse.ErrExpirationTooSoon,
 		},
 		{
 			description: "empty string is invalid",
 			input:       "",
-			output:      types.ExpirationTime{},
+			output:      picoshare.ExpirationTime{},
 			err:         parse.ErrExpirationUnrecognizedFormat,
 		},
 		{
 			description: "string with letters causes error",
 			input:       "banana",
-			output:      types.ExpirationTime{},
+			output:      picoshare.ExpirationTime{},
 			err:         parse.ErrExpirationUnrecognizedFormat,
 		},
 	} {
@@ -53,10 +53,10 @@ func TestExpiration(t *testing.T) {
 	}
 }
 
-func mustParseExpiration(s string) types.ExpirationTime {
+func mustParseExpiration(s string) picoshare.ExpirationTime {
 	et, err := time.Parse(time.RFC3339, s)
 	if err != nil {
 		panic(err)
 	}
-	return types.ExpirationTime(et)
+	return picoshare.ExpirationTime(et)
 }
