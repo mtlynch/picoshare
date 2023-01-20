@@ -38,7 +38,12 @@ func main() {
 	gc := garbagecollect.NewScheduler(&collector, 7*time.Hour)
 	gc.StartAsync()
 
-	h := gorilla.LoggingHandler(os.Stdout, handlers.New(authenticator, store, &collector).Router())
+	server, err := handlers.New(authenticator, store, &collector)
+	if err != nil {
+		panic(err)
+	}
+
+	h := gorilla.LoggingHandler(os.Stdout, server.Router())
 	if os.Getenv("PS_BEHIND_PROXY") != "" {
 		h = gorilla.ProxyIPHeadersHandler(h)
 	}

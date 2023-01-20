@@ -280,22 +280,23 @@ func (s Server) uploadGet() http.HandlerFunc {
 			Expiration   time.Time
 			IsDefault    bool
 		}
+		expirationOptions := []expirationOption{
+			{"Custom", time.Time{}, false},
+			{"1 day", time.Now().AddDate(0, 0, 1), false},
+			{"7 days", time.Now().AddDate(0, 0, 7), false},
+			{"30 days", time.Now().AddDate(0, 0, 30), true},
+			{"1 year", time.Now().AddDate(1, 0, 0), false},
+			{"Never", time.Time(picoshare.NeverExpire), false},
+		}
 		if err := renderTemplate(w, "upload.html", struct {
 			commonProps
 			ExpirationOptions []expirationOption
 			MaxNoteLength     int
 			GuestLinkMetadata picoshare.GuestLink
 		}{
-			commonProps:   makeCommonProps("PicoShare - Upload", r.Context()),
-			MaxNoteLength: parse.MaxFileNoteBytes,
-			ExpirationOptions: []expirationOption{
-				{"Custom", time.Time{}, false},
-				{"1 day", time.Now().AddDate(0, 0, 1), false},
-				{"7 days", time.Now().AddDate(0, 0, 7), false},
-				{"30 days", time.Now().AddDate(0, 0, 30), true},
-				{"1 year", time.Now().AddDate(1, 0, 0), false},
-				{"Never", time.Time(picoshare.NeverExpire), false},
-			},
+			commonProps:       makeCommonProps("PicoShare - Upload", r.Context()),
+			MaxNoteLength:     parse.MaxFileNoteBytes,
+			ExpirationOptions: expirationOptions,
 		}, template.FuncMap{
 			"formatExpiration": func(t time.Time) string {
 				if t.IsZero() {

@@ -18,6 +18,8 @@ type Store interface {
 	GetGuestLinks() ([]picoshare.GuestLink, error)
 	InsertGuestLink(picoshare.GuestLink) error
 	DeleteGuestLink(picoshare.GuestLinkID) error
+	ReadSettings() (picoshare.Settings, error)
+	UpdateSettings(picoshare.Settings) error
 	Purge() error
 	Compact() error
 }
