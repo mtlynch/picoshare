@@ -4,7 +4,7 @@ import (
 	"errors"
 	"regexp"
 
-	"github.com/mtlynch/picoshare/v2/types"
+	"github.com/mtlynch/picoshare/v2/picoshare"
 )
 
 // MaxFileNoteBytes is the maximum number of bytes allowed in a file note.
@@ -16,20 +16,20 @@ const MaxFileNoteBytes = 500
 // don't want to risk mishandling later.
 var illegalNoteTagPattern = regexp.MustCompile(`<\s*/?((script)|(iframe))\s*>`)
 
-func FileNote(s string) (types.FileNote, error) {
+func FileNote(s string) (picoshare.FileNote, error) {
 	if s == "" {
-		return types.FileNote{}, nil
+		return picoshare.FileNote{}, nil
 	}
 	if len(s) > MaxFileNoteBytes {
-		return types.FileNote{}, errors.New("note is too long")
+		return picoshare.FileNote{}, errors.New("note is too long")
 	}
 	if err := checkJavaScriptNullOrUndefined(s); err != nil {
-		return types.FileNote{}, err
+		return picoshare.FileNote{}, err
 	}
 	if illegalNoteTagPattern.MatchString(s) {
-		return types.FileNote{}, errors.New("note must not contain HTML tags")
+		return picoshare.FileNote{}, errors.New("note must not contain HTML tags")
 	}
-	return types.FileNote{Value: &s}, nil
+	return picoshare.FileNote{Value: &s}, nil
 }
 
 // If the client sent a value of 'null' or 'undefined', it's likely a JS error

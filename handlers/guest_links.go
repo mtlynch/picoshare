@@ -10,8 +10,8 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/mtlynch/picoshare/v2/handlers/parse"
+	"github.com/mtlynch/picoshare/v2/picoshare"
 	"github.com/mtlynch/picoshare/v2/random"
-	"github.com/mtlynch/picoshare/v2/types"
 )
 
 const (
@@ -64,7 +64,7 @@ func (s Server) guestLinksDelete() http.HandlerFunc {
 	}
 }
 
-func guestLinkFromRequest(r *http.Request) (types.GuestLink, error) {
+func guestLinkFromRequest(r *http.Request) (picoshare.GuestLink, error) {
 	var payload struct {
 		Label          string  `json:"label"`
 		Expiration     string  `json:"expirationTime"`
@@ -74,30 +74,30 @@ func guestLinkFromRequest(r *http.Request) (types.GuestLink, error) {
 	err := json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil {
 		log.Printf("failed to decode JSON request: %v", err)
-		return types.GuestLink{}, err
+		return picoshare.GuestLink{}, err
 	}
 
 	label, err := parseLabel(payload.Label)
 	if err != nil {
-		return types.GuestLink{}, err
+		return picoshare.GuestLink{}, err
 	}
 
 	expiration, err := parse.Expiration(payload.Expiration)
 	if err != nil {
-		return types.GuestLink{}, err
+		return picoshare.GuestLink{}, err
 	}
 
 	maxFileBytes, err := parseMaxFileBytes(payload.MaxFileBytes)
 	if err != nil {
-		return types.GuestLink{}, err
+		return picoshare.GuestLink{}, err
 	}
 
 	maxFileUploads, err := parseUploadCountLimit(payload.MaxFileUploads)
 	if err != nil {
-		return types.GuestLink{}, err
+		return picoshare.GuestLink{}, err
 	}
 
-	return types.GuestLink{
+	return picoshare.GuestLink{
 		Label:          label,
 		Expires:        expiration,
 		MaxFileBytes:   maxFileBytes,
@@ -105,45 +105,45 @@ func guestLinkFromRequest(r *http.Request) (types.GuestLink, error) {
 	}, nil
 }
 
-func parseLabel(label string) (types.GuestLinkLabel, error) {
+func parseLabel(label string) (picoshare.GuestLinkLabel, error) {
 	// Arbitrary limit to prevent too-long labels
 	limit := 200
 	if len(label) > limit {
-		return types.GuestLinkLabel(""), fmt.Errorf("label too long - limit %d characters", limit)
+		return picoshare.GuestLinkLabel(""), fmt.Errorf("label too long - limit %d characters", limit)
 	}
 
-	return types.GuestLinkLabel(label), nil
+	return picoshare.GuestLinkLabel(label), nil
 }
 
-func parseMaxFileBytes(limitRaw *uint64) (types.GuestUploadMaxFileBytes, error) {
+func parseMaxFileBytes(limitRaw *uint64) (picoshare.GuestUploadMaxFileBytes, error) {
 	if limitRaw == nil {
-		return types.GuestUploadUnlimitedFileSize, nil
+		return picoshare.GuestUploadUnlimitedFileSize, nil
 	}
 	if *limitRaw < GuestLinkByteLimitMinimum {
 		return nil, fmt.Errorf("guest upload size limit must be at at least %d bytes", GuestLinkByteLimitMinimum)
 	}
 
-	return types.GuestUploadMaxFileBytes(limitRaw), nil
+	return picoshare.GuestUploadMaxFileBytes(limitRaw), nil
 }
 
-func parseUploadCountLimit(limitRaw *int) (types.GuestUploadCountLimit, error) {
+func parseUploadCountLimit(limitRaw *int) (picoshare.GuestUploadCountLimit, error) {
 	if limitRaw == nil {
-		return types.GuestUploadUnlimitedFileUploads, nil
+		return picoshare.GuestUploadUnlimitedFileUploads, nil
 	}
 	if *limitRaw <= 0 {
 		return nil, errors.New("guest upload count limit must be a positive number")
 	}
 
-	return types.GuestUploadCountLimit(limitRaw), nil
+	return picoshare.GuestUploadCountLimit(limitRaw), nil
 }
 
-func generateGuestLinkID() types.GuestLinkID {
-	return types.GuestLinkID(random.String(GuestLinkIDLength, guestLinkIDCharacters))
+func generateGuestLinkID() picoshare.GuestLinkID {
+	return picoshare.GuestLinkID(random.String(GuestLinkIDLength, guestLinkIDCharacters))
 }
 
-func parseGuestLinkID(s string) (types.GuestLinkID, error) {
+func parseGuestLinkID(s string) (picoshare.GuestLinkID, error) {
 	if len(s) != GuestLinkIDLength {
-		return types.GuestLinkID(""), fmt.Errorf("guest link ID (%v) has invalid length: got %d, want %d", s, len(s), GuestLinkIDLength)
+		return picoshare.GuestLinkID(""), fmt.Errorf("guest link ID (%v) has invalid length: got %d, want %d", s, len(s), GuestLinkIDLength)
 	}
 
 	// We could do this outside the function and store the result.
@@ -154,8 +154,8 @@ func parseGuestLinkID(s string) (types.GuestLinkID, error) {
 
 	for _, c := range s {
 		if _, ok := idCharsHash[c]; !ok {
-			return types.GuestLinkID(""), fmt.Errorf("entry ID (%s) contains invalid character: %s", s, string(c))
+			return picoshare.GuestLinkID(""), fmt.Errorf("entry ID (%s) contains invalid character: %s", s, string(c))
 		}
 	}
-	return types.GuestLinkID(s), nil
+	return picoshare.GuestLinkID(s), nil
 }

@@ -4,7 +4,7 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/mtlynch/picoshare/v2/types"
+	"github.com/mtlynch/picoshare/v2/picoshare"
 )
 
 // MaxFilenameBytes is the maximum number of bytes allowed for uploaded files
@@ -18,18 +18,18 @@ var ErrFilenameTooLong = errors.New("filename too long")
 var ErrFilenameHasDotPrefix = errors.New("filename cannot begin with dots")
 var ErrFilenameIllegalCharacters = errors.New("illegal characters in filename")
 
-func Filename(s string) (types.Filename, error) {
+func Filename(s string) (picoshare.Filename, error) {
 	if s == "" {
-		return types.Filename(""), ErrFilenameEmpty
+		return picoshare.Filename(""), ErrFilenameEmpty
 	}
 	if len(s) > MaxFilenameBytes {
-		return types.Filename(""), ErrFilenameTooLong
+		return picoshare.Filename(""), ErrFilenameTooLong
 	}
 	if s == "." || strings.HasPrefix(s, "..") {
-		return types.Filename(""), ErrFilenameHasDotPrefix
+		return picoshare.Filename(""), ErrFilenameHasDotPrefix
 	}
 	if strings.ContainsAny(s, "\\/\a\b\t\n\v\f\r\n") {
-		return types.Filename(""), ErrFilenameIllegalCharacters
+		return picoshare.Filename(""), ErrFilenameIllegalCharacters
 	}
-	return types.Filename(s), nil
+	return picoshare.Filename(s), nil
 }

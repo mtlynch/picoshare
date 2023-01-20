@@ -8,23 +8,23 @@ import (
 	"testing"
 	"time"
 
+	"github.com/mtlynch/picoshare/v2/picoshare"
 	"github.com/mtlynch/picoshare/v2/store/test_sqlite"
-	"github.com/mtlynch/picoshare/v2/types"
 )
 
 func TestInsertDeleteSingleEntry(t *testing.T) {
 	chunkSize := 5
 	db := test_sqlite.NewWithChunkSize(chunkSize)
 
-	if err := db.InsertEntry(bytes.NewBufferString("hello, world!"), types.UploadMetadata{
-		ID:       types.EntryID("dummy-id"),
+	if err := db.InsertEntry(bytes.NewBufferString("hello, world!"), picoshare.UploadMetadata{
+		ID:       picoshare.EntryID("dummy-id"),
 		Filename: "dummy-file.txt",
 		Expires:  mustParseExpirationTime("2040-01-01T00:00:00Z"),
 	}); err != nil {
 		t.Fatalf("failed to insert file into sqlite: %v", err)
 	}
 
-	entry, err := db.GetEntry(types.EntryID("dummy-id"))
+	entry, err := db.GetEntry(picoshare.EntryID("dummy-id"))
 	if err != nil {
 		t.Fatalf("failed to get entry from DB: %v", err)
 	}
@@ -52,12 +52,12 @@ func TestInsertDeleteSingleEntry(t *testing.T) {
 		t.Fatalf("unexpected file size in entry metadata: got %v, want %v", meta[0].Size, len(expected))
 	}
 
-	expectedFilename := types.Filename("dummy-file.txt")
+	expectedFilename := picoshare.Filename("dummy-file.txt")
 	if meta[0].Filename != expectedFilename {
 		t.Fatalf("unexpected filename: got %v, want %v", meta[0].Filename, expectedFilename)
 	}
 
-	err = db.DeleteEntry(types.EntryID("dummy-id"))
+	err = db.DeleteEntry(picoshare.EntryID("dummy-id"))
 	if err != nil {
 		t.Fatalf("failed to delete entry: %v", err)
 	}
@@ -76,15 +76,15 @@ func TestReadLastByteOfEntry(t *testing.T) {
 	chunkSize := 5
 	db := test_sqlite.NewWithChunkSize(chunkSize)
 
-	if err := db.InsertEntry(bytes.NewBufferString("hello, world!"), types.UploadMetadata{
-		ID:       types.EntryID("dummy-id"),
+	if err := db.InsertEntry(bytes.NewBufferString("hello, world!"), picoshare.UploadMetadata{
+		ID:       picoshare.EntryID("dummy-id"),
 		Filename: "dummy-file.txt",
 		Expires:  mustParseExpirationTime("2040-01-01T00:00:00Z"),
 	}); err != nil {
 		t.Fatalf("failed to insert file into sqlite: %v", err)
 	}
 
-	entry, err := db.GetEntry(types.EntryID("dummy-id"))
+	entry, err := db.GetEntry(picoshare.EntryID("dummy-id"))
 	if err != nil {
 		t.Fatalf("failed to get entry from DB: %v", err)
 	}
@@ -110,10 +110,10 @@ func TestReadLastByteOfEntry(t *testing.T) {
 	}
 }
 
-func mustParseExpirationTime(s string) types.ExpirationTime {
+func mustParseExpirationTime(s string) picoshare.ExpirationTime {
 	et, err := time.Parse(time.RFC3339, s)
 	if err != nil {
 		panic(err)
 	}
-	return types.ExpirationTime(et)
+	return picoshare.ExpirationTime(et)
 }

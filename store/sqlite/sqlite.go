@@ -9,9 +9,9 @@ import (
 
 	_ "github.com/mattn/go-sqlite3"
 
+	"github.com/mtlynch/picoshare/v2/picoshare"
 	"github.com/mtlynch/picoshare/v2/store"
 	"github.com/mtlynch/picoshare/v2/store/sqlite/file"
-	"github.com/mtlynch/picoshare/v2/types"
 )
 
 const (
@@ -70,7 +70,7 @@ func NewWithChunkSize(path string, chunkSize int, optimizeForLitestream bool) st
 	}
 }
 
-func (d db) GetEntriesMetadata() ([]types.UploadMetadata, error) {
+func (d db) GetEntriesMetadata() ([]picoshare.UploadMetadata, error) {
 	rows, err := d.ctx.Query(`
 	SELECT
 		entries.id AS id,
@@ -93,10 +93,10 @@ func (d db) GetEntriesMetadata() ([]types.UploadMetadata, error) {
 				id
 		) sizes ON entries.id = sizes.id`)
 	if err != nil {
-		return []types.UploadMetadata{}, err
+		return []picoshare.UploadMetadata{}, err
 	}
 
-	ee := []types.UploadMetadata{}
+	ee := []picoshare.UploadMetadata{}
 	for rows.Next() {
 		var id string
 		var filename string
@@ -107,26 +107,26 @@ func (d db) GetEntriesMetadata() ([]types.UploadMetadata, error) {
 		var fileSize int64
 		err = rows.Scan(&id, &filename, &note, &contentType, &uploadTimeRaw, &expirationTimeRaw, &fileSize)
 		if err != nil {
-			return []types.UploadMetadata{}, err
+			return []picoshare.UploadMetadata{}, err
 		}
 
 		ut, err := parseDatetime(uploadTimeRaw)
 		if err != nil {
-			return []types.UploadMetadata{}, err
+			return []picoshare.UploadMetadata{}, err
 		}
 
 		et, err := parseDatetime(expirationTimeRaw)
 		if err != nil {
-			return []types.UploadMetadata{}, err
+			return []picoshare.UploadMetadata{}, err
 		}
 
-		ee = append(ee, types.UploadMetadata{
-			ID:          types.EntryID(id),
-			Filename:    types.Filename(filename),
-			Note:        types.FileNote{Value: note},
-			ContentType: types.ContentType(contentType),
+		ee = append(ee, picoshare.UploadMetadata{
+			ID:          picoshare.EntryID(id),
+			Filename:    picoshare.Filename(filename),
+			Note:        picoshare.FileNote{Value: note},
+			ContentType: picoshare.ContentType(contentType),
 			Uploaded:    ut,
-			Expires:     types.ExpirationTime(et),
+			Expires:     picoshare.ExpirationTime(et),
 			Size:        fileSize,
 		})
 	}
@@ -134,24 +134,24 @@ func (d db) GetEntriesMetadata() ([]types.UploadMetadata, error) {
 	return ee, nil
 }
 
-func (d db) GetEntry(id types.EntryID) (types.UploadEntry, error) {
+func (d db) GetEntry(id picoshare.EntryID) (picoshare.UploadEntry, error) {
 	metadata, err := d.GetEntryMetadata(id)
 	if err != nil {
-		return types.UploadEntry{}, err
+		return picoshare.UploadEntry{}, err
 	}
 
 	r, err := file.NewReader(d.ctx, id)
 	if err != nil {
-		return types.UploadEntry{}, err
+		return picoshare.UploadEntry{}, err
 	}
 
-	return types.UploadEntry{
+	return picoshare.UploadEntry{
 		UploadMetadata: metadata,
 		Reader:         r,
 	}, nil
 }
 
-func (d db) GetEntryMetadata(id types.EntryID) (types.UploadMetadata, error) {
+func (d db) GetEntryMetadata(id picoshare.EntryID) (picoshare.UploadMetadata, error) {
 	var filename string
 	var note *string
 	var contentType string
@@ -169,32 +169,32 @@ func (d db) GetEntryMetadata(id types.EntryID) (types.UploadMetadata, error) {
 	WHERE
 		id=?`, id).Scan(&filename, &note, &contentType, &uploadTimeRaw, &expirationTimeRaw)
 	if err == sql.ErrNoRows {
-		return types.UploadMetadata{}, store.EntryNotFoundError{ID: id}
+		return picoshare.UploadMetadata{}, store.EntryNotFoundError{ID: id}
 	} else if err != nil {
-		return types.UploadMetadata{}, err
+		return picoshare.UploadMetadata{}, err
 	}
 
 	ut, err := parseDatetime(uploadTimeRaw)
 	if err != nil {
-		return types.UploadMetadata{}, err
+		return picoshare.UploadMetadata{}, err
 	}
 
 	et, err := parseDatetime(expirationTimeRaw)
 	if err != nil {
-		return types.UploadMetadata{}, err
+		return picoshare.UploadMetadata{}, err
 	}
 
-	return types.UploadMetadata{
+	return picoshare.UploadMetadata{
 		ID:          id,
-		Filename:    types.Filename(filename),
-		Note:        types.FileNote{Value: note},
-		ContentType: types.ContentType(contentType),
+		Filename:    picoshare.Filename(filename),
+		Note:        picoshare.FileNote{Value: note},
+		ContentType: picoshare.ContentType(contentType),
 		Uploaded:    ut,
-		Expires:     types.ExpirationTime(et),
+		Expires:     picoshare.ExpirationTime(et),
 	}, nil
 }
 
-func (d db) InsertEntry(reader io.Reader, metadata types.UploadMetadata) error {
+func (d db) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) error {
 	log.Printf("saving new entry %s", metadata.ID)
 
 	// Note: We deliberately don't use a transaction here, as it bloats memory, so
@@ -241,7 +241,7 @@ func (d db) InsertEntry(reader io.Reader, metadata types.UploadMetadata) error {
 	return nil
 }
 
-func (d db) UpdateEntryMetadata(id types.EntryID, metadata types.UploadMetadata) error {
+func (d db) UpdateEntryMetadata(id picoshare.EntryID, metadata picoshare.UploadMetadata) error {
 	log.Printf("updating metadata for entry %s", id)
 
 	res, err := d.ctx.Exec(`
@@ -271,7 +271,7 @@ func (d db) UpdateEntryMetadata(id types.EntryID, metadata types.UploadMetadata)
 	return nil
 }
 
-func (d db) DeleteEntry(id types.EntryID) error {
+func (d db) DeleteEntry(id picoshare.EntryID) error {
 	log.Printf("deleting entry %v", id)
 
 	tx, err := d.ctx.BeginTx(context.Background(), nil)
@@ -302,7 +302,7 @@ func (d db) DeleteEntry(id types.EntryID) error {
 	return tx.Commit()
 }
 
-func (d db) GetGuestLink(id types.GuestLinkID) (types.GuestLink, error) {
+func (d db) GetGuestLink(id picoshare.GuestLinkID) (picoshare.GuestLink, error) {
 	row := d.ctx.QueryRow(`
 		SELECT
 			guest_links.id AS id,
@@ -324,7 +324,7 @@ func (d db) GetGuestLink(id types.GuestLinkID) (types.GuestLink, error) {
 	return guestLinkFromRow(row)
 }
 
-func (d db) GetGuestLinks() ([]types.GuestLink, error) {
+func (d db) GetGuestLinks() ([]picoshare.GuestLink, error) {
 	rows, err := d.ctx.Query(`
 		SELECT
 			guest_links.id AS id,
@@ -341,14 +341,14 @@ func (d db) GetGuestLinks() ([]types.GuestLink, error) {
 		GROUP BY
 			guest_links.id`)
 	if err != nil {
-		return []types.GuestLink{}, err
+		return []picoshare.GuestLink{}, err
 	}
 
-	gls := []types.GuestLink{}
+	gls := []picoshare.GuestLink{}
 	for rows.Next() {
 		gl, err := guestLinkFromRow(rows)
 		if err != nil {
-			return []types.GuestLink{}, err
+			return []picoshare.GuestLink{}, err
 		}
 
 		gls = append(gls, gl)
@@ -357,7 +357,7 @@ func (d db) GetGuestLinks() ([]types.GuestLink, error) {
 	return gls, nil
 }
 
-func (d *db) InsertGuestLink(guestLink types.GuestLink) error {
+func (d *db) InsertGuestLink(guestLink picoshare.GuestLink) error {
 	log.Printf("saving new guest link %s", guestLink.ID)
 
 	if _, err := d.ctx.Exec(`
@@ -378,7 +378,7 @@ func (d *db) InsertGuestLink(guestLink types.GuestLink) error {
 	return nil
 }
 
-func (d db) DeleteGuestLink(id types.GuestLinkID) error {
+func (d db) DeleteGuestLink(id picoshare.GuestLinkID) error {
 	log.Printf("deleting guest link %s", id)
 
 	tx, err := d.ctx.BeginTx(context.Background(), nil)
@@ -505,44 +505,44 @@ func (d db) deleteOrphanedRows() error {
 	return nil
 }
 
-func guestLinkFromRow(row rowScanner) (types.GuestLink, error) {
-	var id types.GuestLinkID
-	var label types.GuestLinkLabel
-	var maxFileBytes types.GuestUploadMaxFileBytes
-	var maxFileUploads types.GuestUploadCountLimit
+func guestLinkFromRow(row rowScanner) (picoshare.GuestLink, error) {
+	var id picoshare.GuestLinkID
+	var label picoshare.GuestLinkLabel
+	var maxFileBytes picoshare.GuestUploadMaxFileBytes
+	var maxFileUploads picoshare.GuestUploadCountLimit
 	var creationTimeRaw string
 	var expirationTimeRaw string
 	var filesUploaded int
 
 	err := row.Scan(&id, &label, &maxFileBytes, &maxFileUploads, &creationTimeRaw, &expirationTimeRaw, &filesUploaded)
 	if err == sql.ErrNoRows {
-		return types.GuestLink{}, store.GuestLinkNotFoundError{ID: id}
+		return picoshare.GuestLink{}, store.GuestLinkNotFoundError{ID: id}
 	} else if err != nil {
-		return types.GuestLink{}, err
+		return picoshare.GuestLink{}, err
 	}
 
 	ct, err := parseDatetime(creationTimeRaw)
 	if err != nil {
-		return types.GuestLink{}, err
+		return picoshare.GuestLink{}, err
 	}
 
 	et, err := parseDatetime(expirationTimeRaw)
 	if err != nil {
-		return types.GuestLink{}, err
+		return picoshare.GuestLink{}, err
 	}
 
-	return types.GuestLink{
+	return picoshare.GuestLink{
 		ID:             id,
 		Label:          label,
 		MaxFileBytes:   maxFileBytes,
 		MaxFileUploads: maxFileUploads,
 		FilesUploaded:  filesUploaded,
 		Created:        ct,
-		Expires:        types.ExpirationTime(et),
+		Expires:        picoshare.ExpirationTime(et),
 	}, nil
 }
 
-func formatExpirationTime(et types.ExpirationTime) string {
+func formatExpirationTime(et picoshare.ExpirationTime) string {
 	return formatTime(time.Time(et))
 }
 

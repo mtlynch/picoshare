@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/mtlynch/picoshare/v2/handlers/parse"
-	"github.com/mtlynch/picoshare/v2/types"
+	"github.com/mtlynch/picoshare/v2/picoshare"
 )
 
 func TestFileNote(t *testing.T) {
@@ -13,7 +13,7 @@ func TestFileNote(t *testing.T) {
 		description string
 		input       string
 		valid       bool
-		output      types.FileNote
+		output      picoshare.FileNote
 	}{
 		{
 			description: "valid message",
@@ -31,13 +31,13 @@ func TestFileNote(t *testing.T) {
 			description: "message of maximum length with multibyte Unicode characters",
 			input:       strings.Repeat("Ö", parse.MaxFileNoteBytes),
 			valid:       false,
-			output:      types.FileNote{},
+			output:      picoshare.FileNote{},
 		},
 		{
 			description: "empty note",
 			input:       "",
 			valid:       true,
-			output:      types.FileNote{},
+			output:      picoshare.FileNote{},
 		},
 		{
 			description: "note that's too long",
@@ -85,6 +85,6 @@ func TestFileNote(t *testing.T) {
 	}
 }
 
-func makeFileNote(s string) types.FileNote {
-	return types.FileNote{Value: &s}
+func makeFileNote(s string) picoshare.FileNote {
+	return picoshare.FileNote{Value: &s}
 }

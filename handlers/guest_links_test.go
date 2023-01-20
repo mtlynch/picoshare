@@ -11,16 +11,16 @@ import (
 	"time"
 
 	"github.com/mtlynch/picoshare/v2/handlers"
+	"github.com/mtlynch/picoshare/v2/picoshare"
 	"github.com/mtlynch/picoshare/v2/store"
 	"github.com/mtlynch/picoshare/v2/store/test_sqlite"
-	"github.com/mtlynch/picoshare/v2/types"
 )
 
 func TestGuestLinksPostAcceptsValidRequest(t *testing.T) {
 	for _, tt := range []struct {
 		description string
 		payload     string
-		expected    types.GuestLink
+		expected    picoshare.GuestLink
 	}{
 		{
 			description: "minimally populated request",
@@ -30,11 +30,11 @@ func TestGuestLinksPostAcceptsValidRequest(t *testing.T) {
 					"maxFileBytes": null,
 					"maxFileUploads": null
 				}`,
-			expected: types.GuestLink{
-				Label:          types.GuestLinkLabel(""),
+			expected: picoshare.GuestLink{
+				Label:          picoshare.GuestLinkLabel(""),
 				Expires:        mustParseExpirationTime("2030-01-02T03:04:25Z"),
-				MaxFileBytes:   types.GuestUploadUnlimitedFileSize,
-				MaxFileUploads: types.GuestUploadUnlimitedFileUploads,
+				MaxFileBytes:   picoshare.GuestUploadUnlimitedFileSize,
+				MaxFileUploads: picoshare.GuestUploadUnlimitedFileUploads,
 			},
 		},
 		{
@@ -45,8 +45,8 @@ func TestGuestLinksPostAcceptsValidRequest(t *testing.T) {
 					"maxFileBytes": 1048576,
 					"maxFileUploads": 1
 				}`,
-			expected: types.GuestLink{
-				Label:          types.GuestLinkLabel("For my good pal, Maurice"),
+			expected: picoshare.GuestLink{
+				Label:          picoshare.GuestLinkLabel("For my good pal, Maurice"),
 				Expires:        mustParseExpirationTime("2030-01-02T03:04:25Z"),
 				MaxFileBytes:   makeGuestUploadMaxFileBytes(1048576),
 				MaxFileUploads: makeGuestUploadCountLimit(1),
@@ -78,13 +78,13 @@ func TestGuestLinksPostAcceptsValidRequest(t *testing.T) {
 				t.Fatalf("response is not valid JSON: %v", w.Body.String())
 			}
 
-			gl, err := dataStore.GetGuestLink(types.GuestLinkID(response.ID))
+			gl, err := dataStore.GetGuestLink(picoshare.GuestLinkID(response.ID))
 			if err != nil {
 				t.Fatalf("%s: failed to retrieve guest link from datastore: %v", tt.description, err)
 			}
 
 			// Copy the values that we can't predict in advance.
-			tt.expected.ID = types.GuestLinkID(response.ID)
+			tt.expected.ID = picoshare.GuestLinkID(response.ID)
 			tt.expected.Created = gl.Created
 
 			if !reflect.DeepEqual(gl, tt.expected) {
@@ -228,18 +228,18 @@ func TestGuestLinksPostRejectsInvalidRequest(t *testing.T) {
 	}
 }
 
-func makeGuestUploadMaxFileBytes(i uint64) types.GuestUploadMaxFileBytes {
-	return types.GuestUploadMaxFileBytes(&i)
+func makeGuestUploadMaxFileBytes(i uint64) picoshare.GuestUploadMaxFileBytes {
+	return picoshare.GuestUploadMaxFileBytes(&i)
 }
 
-func makeGuestUploadCountLimit(i int) types.GuestUploadCountLimit {
-	return types.GuestUploadCountLimit(&i)
+func makeGuestUploadCountLimit(i int) picoshare.GuestUploadCountLimit {
+	return picoshare.GuestUploadCountLimit(&i)
 }
 
 func TestDeleteExistingGuestLink(t *testing.T) {
 	dataStore := test_sqlite.New()
-	dataStore.InsertGuestLink(types.GuestLink{
-		ID:      types.GuestLinkID("abcdefgh23456789"),
+	dataStore.InsertGuestLink(picoshare.GuestLink{
+		ID:      picoshare.GuestLinkID("abcdefgh23456789"),
 		Created: time.Now(),
 		Expires: mustParseExpirationTime("2030-01-02T03:04:25Z"),
 	})
@@ -258,9 +258,9 @@ func TestDeleteExistingGuestLink(t *testing.T) {
 		t.Fatalf("DELETE returned wrong status code: got %v want %v", status, http.StatusOK)
 	}
 
-	_, err = dataStore.GetGuestLink(types.GuestLinkID("dummy-guest-link-id"))
+	_, err = dataStore.GetGuestLink(picoshare.GuestLinkID("dummy-guest-link-id"))
 	if _, ok := err.(store.GuestLinkNotFoundError); !ok {
-		t.Fatalf("expected entry %v to be deleted, got: %v", types.EntryID("abcdefgh23456789"), err)
+		t.Fatalf("expected entry %v to be deleted, got: %v", picoshare.EntryID("abcdefgh23456789"), err)
 	}
 }
 

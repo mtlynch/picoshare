@@ -14,8 +14,8 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/mtlynch/picoshare/v2/handlers/parse"
+	"github.com/mtlynch/picoshare/v2/picoshare"
 	"github.com/mtlynch/picoshare/v2/store"
-	"github.com/mtlynch/picoshare/v2/types"
 )
 
 type commonProps struct {
@@ -56,7 +56,7 @@ func (s Server) guestLinkIndexGet() http.HandlerFunc {
 
 		if err := renderTemplate(w, "guest-link-index.html", struct {
 			commonProps
-			GuestLinks []types.GuestLink
+			GuestLinks []picoshare.GuestLink
 		}{
 			commonProps: makeCommonProps("PicoShare - Guest Links", r.Context()),
 			GuestLinks:  links,
@@ -64,8 +64,8 @@ func (s Server) guestLinkIndexGet() http.HandlerFunc {
 			"formatDate": func(t time.Time) string {
 				return t.Format("2006-01-02")
 			},
-			"formatSizeLimit": func(limit types.GuestUploadMaxFileBytes) string {
-				if limit == types.GuestUploadUnlimitedFileSize {
+			"formatSizeLimit": func(limit picoshare.GuestUploadMaxFileBytes) string {
+				if limit == picoshare.GuestUploadUnlimitedFileSize {
 					return "Unlimited"
 				}
 				b := uint64(*limit)
@@ -81,14 +81,14 @@ func (s Server) guestLinkIndexGet() http.HandlerFunc {
 				}
 				return fmt.Sprintf("%.2f %cB", float64(b)/float64(div), "kMGTPE"[exp])
 			},
-			"formatCountLimit": func(limit types.GuestUploadCountLimit) string {
-				if limit == types.GuestUploadUnlimitedFileUploads {
+			"formatCountLimit": func(limit picoshare.GuestUploadCountLimit) string {
+				if limit == picoshare.GuestUploadUnlimitedFileUploads {
 					return "Unlimited"
 				}
 				return fmt.Sprintf("%d", int(*limit))
 			},
-			"formatExpiration": func(et types.ExpirationTime) string {
-				if et == types.NeverExpire {
+			"formatExpiration": func(et picoshare.ExpirationTime) string {
+				if et == picoshare.NeverExpire {
 					return "Never"
 				}
 				t := time.Time(et)
@@ -99,7 +99,7 @@ func (s Server) guestLinkIndexGet() http.HandlerFunc {
 				}
 				return fmt.Sprintf("%s (%.0f days%s)", t.Format("2006-01-02"), math.Abs(delta.Hours())/24, suffix)
 			},
-			"isActive": func(gl types.GuestLink) bool {
+			"isActive": func(gl picoshare.GuestLink) bool {
 				return gl.IsActive()
 			},
 		}); err != nil {
@@ -126,7 +126,7 @@ func (s Server) guestLinksNewGet() http.HandlerFunc {
 				{"7 days", time.Now().AddDate(0, 0, 7), false},
 				{"30 days", time.Now().AddDate(0, 0, 30), false},
 				{"1 year", time.Now().AddDate(1, 0, 0), false},
-				{"Never", time.Time(types.NeverExpire), true},
+				{"Never", time.Time(picoshare.NeverExpire), true},
 			},
 		}, template.FuncMap{
 			"formatExpiration": func(t time.Time) string {
@@ -151,7 +151,7 @@ func (s Server) fileIndexGet() http.HandlerFunc {
 		})
 		if err := renderTemplate(w, "file-index.html", struct {
 			commonProps
-			Files []types.UploadMetadata
+			Files []picoshare.UploadMetadata
 		}{
 			commonProps: makeCommonProps("PicoShare - Files", r.Context()),
 			Files:       em,
@@ -159,8 +159,8 @@ func (s Server) fileIndexGet() http.HandlerFunc {
 			"formatDate": func(t time.Time) string {
 				return t.Format("2006-01-02")
 			},
-			"formatExpiration": func(et types.ExpirationTime) string {
-				if et == types.NeverExpire {
+			"formatExpiration": func(et picoshare.ExpirationTime) string {
+				if et == picoshare.NeverExpire {
 					return "Never"
 				}
 				t := time.Time(et)
@@ -208,16 +208,16 @@ func (s Server) fileEditGet() http.HandlerFunc {
 
 		if err := renderTemplate(w, "file-edit.html", struct {
 			commonProps
-			Metadata types.UploadMetadata
+			Metadata picoshare.UploadMetadata
 		}{
 			commonProps: makeCommonProps("PicoShare - Edit", r.Context()),
 			Metadata:    metadata,
 		}, template.FuncMap{
-			"isNeverExpire": func(et types.ExpirationTime) bool {
-				return et == types.NeverExpire
+			"isNeverExpire": func(et picoshare.ExpirationTime) bool {
+				return et == picoshare.NeverExpire
 			},
-			"formatExpiration": func(et types.ExpirationTime) string {
-				if et == types.NeverExpire {
+			"formatExpiration": func(et picoshare.ExpirationTime) string {
+				if et == picoshare.NeverExpire {
 					return "Never"
 				}
 				return time.Time(et).Format(time.RFC3339)
@@ -249,7 +249,7 @@ func (s Server) fileConfirmDeleteGet() http.HandlerFunc {
 		}
 		if err := renderTemplate(w, "file-delete.html", struct {
 			commonProps
-			Metadata types.UploadMetadata
+			Metadata picoshare.UploadMetadata
 		}{
 			commonProps: makeCommonProps("PicoShare - Delete", r.Context()),
 			Metadata:    metadata,
@@ -284,7 +284,7 @@ func (s Server) uploadGet() http.HandlerFunc {
 			commonProps
 			ExpirationOptions []expirationOption
 			MaxNoteLength     int
-			GuestLinkMetadata types.GuestLink
+			GuestLinkMetadata picoshare.GuestLink
 		}{
 			commonProps:   makeCommonProps("PicoShare - Upload", r.Context()),
 			MaxNoteLength: parse.MaxFileNoteBytes,
@@ -294,7 +294,7 @@ func (s Server) uploadGet() http.HandlerFunc {
 				{"7 days", time.Now().AddDate(0, 0, 7), false},
 				{"30 days", time.Now().AddDate(0, 0, 30), true},
 				{"1 year", time.Now().AddDate(1, 0, 0), false},
-				{"Never", time.Time(types.NeverExpire), false},
+				{"Never", time.Time(picoshare.NeverExpire), false},
 			},
 		}, template.FuncMap{
 			"formatExpiration": func(t time.Time) string {
@@ -343,7 +343,7 @@ func (s Server) guestUploadGet() http.HandlerFunc {
 		if err := renderTemplate(w, "upload.html", struct {
 			commonProps
 			ExpirationOptions []interface{}
-			GuestLinkMetadata types.GuestLink
+			GuestLinkMetadata picoshare.GuestLink
 		}{
 			commonProps:       makeCommonProps("PicoShare - Upload", r.Context()),
 			GuestLinkMetadata: gl,

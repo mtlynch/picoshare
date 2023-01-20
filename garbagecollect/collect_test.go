@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/mtlynch/picoshare/v2/garbagecollect"
+	"github.com/mtlynch/picoshare/v2/picoshare"
 	"github.com/mtlynch/picoshare/v2/store/test_sqlite"
-	"github.com/mtlynch/picoshare/v2/types"
 )
 
 func TestCollectDoesNothingWhenStoreIsEmpty(t *testing.T) {
@@ -25,7 +25,7 @@ func TestCollectDoesNothingWhenStoreIsEmpty(t *testing.T) {
 		t.Fatalf("retrieving datastore metadata failed: %v", err)
 	}
 
-	expected := []types.UploadMetadata{}
+	expected := []picoshare.UploadMetadata{}
 	if !reflect.DeepEqual(expected, remaining) {
 		t.Fatalf("unexpected results in datastore: got %v, want %v", remaining, expected)
 	}
@@ -36,28 +36,28 @@ func TestCollectExpiredFile(t *testing.T) {
 	d := "dummy data"
 	expireInFiveMins := makeRelativeExpirationTime(5 * time.Minute)
 	dataStore.InsertEntry(strings.NewReader(d),
-		types.UploadMetadata{
-			ID:      types.EntryID("AAAAAAAAAAAA"),
+		picoshare.UploadMetadata{
+			ID:      picoshare.EntryID("AAAAAAAAAAAA"),
 			Expires: mustParseExpirationTime("2000-01-01T00:00:00Z"),
 		})
 	dataStore.InsertEntry(strings.NewReader(d),
-		types.UploadMetadata{
-			ID:      types.EntryID("BBBBBBBBBBBB"),
+		picoshare.UploadMetadata{
+			ID:      picoshare.EntryID("BBBBBBBBBBBB"),
 			Expires: mustParseExpirationTime("3000-01-01T00:00:00Z"),
 		})
 	dataStore.InsertEntry(strings.NewReader(d),
-		types.UploadMetadata{
-			ID:      types.EntryID("CCCCCCCCCCCC"),
-			Expires: types.NeverExpire,
+		picoshare.UploadMetadata{
+			ID:      picoshare.EntryID("CCCCCCCCCCCC"),
+			Expires: picoshare.NeverExpire,
 		})
 	dataStore.InsertEntry(strings.NewReader(d),
-		types.UploadMetadata{
-			ID:      types.EntryID("DDDDDDDDDDDD"),
+		picoshare.UploadMetadata{
+			ID:      picoshare.EntryID("DDDDDDDDDDDD"),
 			Expires: makeRelativeExpirationTime(-1 * time.Second),
 		})
 	dataStore.InsertEntry(strings.NewReader(d),
-		types.UploadMetadata{
-			ID:      types.EntryID("EEEEEEEEEEEE"),
+		picoshare.UploadMetadata{
+			ID:      picoshare.EntryID("EEEEEEEEEEEE"),
 			Expires: expireInFiveMins,
 		})
 
@@ -72,19 +72,19 @@ func TestCollectExpiredFile(t *testing.T) {
 		t.Fatalf("retrieving datastore metadata failed: %v", err)
 	}
 
-	expected := []types.UploadMetadata{
+	expected := []picoshare.UploadMetadata{
 		{
-			ID:      types.EntryID("BBBBBBBBBBBB"),
+			ID:      picoshare.EntryID("BBBBBBBBBBBB"),
 			Expires: mustParseExpirationTime("3000-01-01T00:00:00Z"),
 			Size:    int64(len(d)),
 		},
 		{
-			ID:      types.EntryID("CCCCCCCCCCCC"),
-			Expires: types.NeverExpire,
+			ID:      picoshare.EntryID("CCCCCCCCCCCC"),
+			Expires: picoshare.NeverExpire,
 			Size:    int64(len(d)),
 		},
 		{
-			ID:      types.EntryID("EEEEEEEEEEEE"),
+			ID:      picoshare.EntryID("EEEEEEEEEEEE"),
 			Expires: expireInFiveMins,
 			Size:    int64(len(d)),
 		},
@@ -98,19 +98,19 @@ func TestCollectDoesNothingWhenNoFilesAreExpired(t *testing.T) {
 	dataStore := test_sqlite.New()
 	d := "dummy data"
 	dataStore.InsertEntry(strings.NewReader(d),
-		types.UploadMetadata{
-			ID:      types.EntryID("AAAAAAAAAAAA"),
+		picoshare.UploadMetadata{
+			ID:      picoshare.EntryID("AAAAAAAAAAAA"),
 			Expires: mustParseExpirationTime("4000-01-01T00:00:00Z"),
 		})
 	dataStore.InsertEntry(strings.NewReader(d),
-		types.UploadMetadata{
-			ID:      types.EntryID("BBBBBBBBBBBB"),
+		picoshare.UploadMetadata{
+			ID:      picoshare.EntryID("BBBBBBBBBBBB"),
 			Expires: mustParseExpirationTime("3000-01-01T00:00:00Z"),
 		})
 	dataStore.InsertEntry(strings.NewReader(d),
-		types.UploadMetadata{
-			ID:      types.EntryID("CCCCCCCCCCCC"),
-			Expires: types.NeverExpire,
+		picoshare.UploadMetadata{
+			ID:      picoshare.EntryID("CCCCCCCCCCCC"),
+			Expires: picoshare.NeverExpire,
 		})
 
 	c := garbagecollect.NewCollector(dataStore, false)
@@ -129,20 +129,20 @@ func TestCollectDoesNothingWhenNoFilesAreExpired(t *testing.T) {
 		return (time.Time(remaining[i].Expires)).After(time.Time(remaining[j].Expires))
 	})
 
-	expected := []types.UploadMetadata{
+	expected := []picoshare.UploadMetadata{
 		{
-			ID:      types.EntryID("AAAAAAAAAAAA"),
+			ID:      picoshare.EntryID("AAAAAAAAAAAA"),
 			Expires: mustParseExpirationTime("4000-01-01T00:00:00Z"),
 			Size:    int64(len(d)),
 		},
 		{
-			ID:      types.EntryID("BBBBBBBBBBBB"),
+			ID:      picoshare.EntryID("BBBBBBBBBBBB"),
 			Expires: mustParseExpirationTime("3000-01-01T00:00:00Z"),
 			Size:    int64(len(d)),
 		},
 		{
-			ID:      types.EntryID("CCCCCCCCCCCC"),
-			Expires: types.NeverExpire,
+			ID:      picoshare.EntryID("CCCCCCCCCCCC"),
+			Expires: picoshare.NeverExpire,
 			Size:    int64(len(d)),
 		},
 	}
@@ -151,14 +151,14 @@ func TestCollectDoesNothingWhenNoFilesAreExpired(t *testing.T) {
 	}
 }
 
-func mustParseExpirationTime(s string) types.ExpirationTime {
+func mustParseExpirationTime(s string) picoshare.ExpirationTime {
 	et, err := time.Parse(time.RFC3339, s)
 	if err != nil {
 		panic(err)
 	}
-	return types.ExpirationTime(et)
+	return picoshare.ExpirationTime(et)
 }
 
-func makeRelativeExpirationTime(delta time.Duration) types.ExpirationTime {
-	return types.ExpirationTime(time.Now().UTC().Add(delta).Truncate(time.Second))
+func makeRelativeExpirationTime(delta time.Duration) picoshare.ExpirationTime {
+	return picoshare.ExpirationTime(time.Now().UTC().Add(delta).Truncate(time.Second))
 }
