@@ -275,6 +275,7 @@ func (s Server) authGet() http.HandlerFunc {
 
 func (s Server) uploadGet() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		settings, err := s.store.ReadSettings()
 		type expirationOption struct {
 			FriendlyName string
 			Expiration   time.Time
@@ -288,6 +289,7 @@ func (s Server) uploadGet() http.HandlerFunc {
 			{"1 year", time.Now().AddDate(1, 0, 0), false},
 			{"Never", time.Time(picoshare.NeverExpire), false},
 		}
+		// TODO: Check settings
 		if err := renderTemplate(w, "upload.html", struct {
 			commonProps
 			ExpirationOptions []expirationOption
