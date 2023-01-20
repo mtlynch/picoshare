@@ -13,7 +13,7 @@ import (
 
 	"github.com/mtlynch/picoshare/v2/garbagecollect"
 	"github.com/mtlynch/picoshare/v2/handlers"
-	"github.com/mtlynch/picoshare/v2/handlers/auth/shared_secret"
+	"github.com/mtlynch/picoshare/v2/handlers/auth/unsecured"
 	"github.com/mtlynch/picoshare/v2/store/sqlite"
 )
 
@@ -25,10 +25,7 @@ func main() {
 	vacuumDb := flag.Bool("vacuum", false, "vacuum database periodically to reclaim disk space")
 	flag.Parse()
 
-	authenticator, err := shared_secret.New(requireEnv("PS_SHARED_SECRET"))
-	if err != nil {
-		log.Fatalf("invalid shared secret: %v", err)
-	}
+	authenticator := unsecured.New()
 
 	ensureDirExists(filepath.Dir(*dbPath))
 
@@ -51,14 +48,6 @@ func main() {
 	log.Printf("listening on %s", port)
 
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", port), nil))
-}
-
-func requireEnv(key string) string {
-	val := os.Getenv(key)
-	if val == "" {
-		panic(fmt.Sprintf("missing required environment variable: %s", key))
-	}
-	return val
 }
 
 func ensureDirExists(dir string) {
