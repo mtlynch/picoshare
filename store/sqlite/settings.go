@@ -2,11 +2,13 @@ package sqlite
 
 import (
 	"database/sql"
-	"errors"
 	"time"
 
 	"github.com/mtlynch/picoshare/v2/picoshare"
 )
+
+// We only store one set of settings at a time, so we used a fixed row ID.
+const settingsRowID = 1
 
 func (d db) ReadSettings() (picoshare.Settings, error) {
 	var expirationInDays time.Duration
@@ -14,7 +16,9 @@ func (d db) ReadSettings() (picoshare.Settings, error) {
 	SELECT
 		default_expiration_in_days
 	FROM
-		settings`).Scan(&expirationInDays); err != nil {
+		settings
+	WHERE
+		id = ?`, settingsRowID).Scan(&expirationInDays); err != nil {
 		if err == sql.ErrNoRows {
 			return picoshare.Settings{}, nil
 		}
@@ -26,6 +30,17 @@ func (d db) ReadSettings() (picoshare.Settings, error) {
 	}, nil
 }
 
-func (d db) UpdateSettings(picoshare.Settings) error {
-	return errors.New("not implemented")
+func (d db) UpdateSettings(s picoshare.Settings) error {
+	_, err := d.ctx.Exec(`
+	UPDATE
+		settings
+	SET
+		default_expiration_in_days = ?
+	WHERE
+		id = ?`, s.DefaultEntryLifetime, settingsRowID)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

@@ -275,7 +275,7 @@ func (s Server) authGet() http.HandlerFunc {
 
 func (s Server) uploadGet() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		settings, err := s.store.ReadSettings()
+		//settings, err := s.store.ReadSettings()
 		type expirationOption struct {
 			FriendlyName string
 			Expiration   time.Time
@@ -354,6 +354,19 @@ func (s Server) guestUploadGet() http.HandlerFunc {
 			"formatExpiration": func(t time.Time) string {
 				return t.Format(time.RFC3339)
 			}}); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+}
+
+func (s Server) settingsGet() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if err := renderTemplate(w, "settings.html", struct {
+			commonProps
+		}{
+			commonProps: makeCommonProps("PicoShare - Settings", r.Context()),
+		}, template.FuncMap{}); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}

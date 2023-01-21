@@ -48,6 +48,7 @@ func (s *Server) routes() {
 	authenticatedViews.HandleFunc("/files/{id}/confirm-delete", s.fileConfirmDeleteGet()).Methods(http.MethodGet)
 	authenticatedViews.HandleFunc("/guest-links", s.guestLinkIndexGet()).Methods(http.MethodGet)
 	authenticatedViews.HandleFunc("/guest-links/new", s.guestLinksNewGet()).Methods(http.MethodGet)
+	authenticatedViews.HandleFunc("/settings", s.settingsGet()).Methods(http.MethodGet)
 
 	views := s.router.PathPrefix("/").Subrouter()
 	views.Use(upgradeToHttps)
