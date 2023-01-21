@@ -35,3 +35,13 @@ form {
 .navbar .nav-item {
   font-size: 1.3em;
 }
+
+.content {
+  padding: 3rem 1rem;
+}
+
+@media screen and (min-width: 1024px) {
+  .content {
+    padding: 3rem 0rem;
+  }
+}
