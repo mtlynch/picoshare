@@ -59,7 +59,7 @@ FROM alpine:3.15
 
 RUN apk add --no-cache bash
 
-COPY --from=builder /app/bin/picoshare /app/bin/picoshare
+COPY --from=builder /app/bin/picoshare /app/picoshare
 COPY --from=litestream_downloader /litestream/litestream /app/litestream
 COPY ./docker-entrypoint /app/docker-entrypoint
 COPY ./litestream.yml /etc/litestream.yml
