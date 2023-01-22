@@ -4,9 +4,9 @@ CREATE TABLE settings (
 );
 
 INSERT INTO settings (
-  id,
-  default_expiration_in_days
+    id,
+    default_expiration_in_days
 ) VALUES (
-  1,
-  30
+    1,
+    30
 );
