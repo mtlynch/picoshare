@@ -275,24 +275,39 @@ func (s Server) authGet() http.HandlerFunc {
 
 func (s Server) uploadGet() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		type lifetimeOption struct {
+			Lifetime  picoshare.FileLifetime
+			IsDefault bool
+		}
+		lifetimeOptions := []lifetimeOption{
+			{picoshare.NewFileLifetime(1 * 24 * time.Hour), false},
+			{picoshare.NewFileLifetime(7 * 24 * time.Hour), false},
+			{picoshare.NewFileLifetime(30 * 24 * time.Hour), false},
+			{picoshare.NewFileLifetime(365 * 24 * time.Hour), false},
+		}
 		type expirationOption struct {
 			FriendlyName string
 			Expiration   time.Time
 			IsDefault    bool
 		}
-		expirationOptions := []expirationOption{
-			{"1 day", time.Now().AddDate(0, 0, 1), false},
-			{"7 days", time.Now().AddDate(0, 0, 7), false},
-			{"30 days", time.Now().AddDate(0, 0, 30), false},
-			{"1 year", time.Now().AddDate(1, 0, 0), false},
+		expirationOptions := []expirationOption{}
+		for _, lto := range lifetimeOptions {
+			if lto.Lifetime.Equal(s.settings.DefaultFileLifetime) {
+				continue
+			}
+			expirationOptions = append(expirationOptions, expirationOption{
+				FriendlyName: lto.Lifetime.FriendlyName(),
+				Expiration:   time.Now().Add(lto.Lifetime.Duration()),
+			})
 		}
 
-		// TODO: Merge more gracefully
 		expirationOptions = append(expirationOptions, expirationOption{
-			FriendlyName: fmt.Sprintf("%d days", int(s.settings.DefaultEntryLifetime.Hours()/24)),
-			Expiration:   time.Now().Add(s.settings.DefaultEntryLifetime),
+			FriendlyName: s.settings.DefaultFileLifetime.FriendlyName(),
+			Expiration:   time.Now().Add(s.settings.DefaultFileLifetime.Duration()),
 			IsDefault:    true,
 		})
+
+		// TODO: Sort
 
 		expirationOptions = append(expirationOptions, expirationOption{"Never", time.Time(picoshare.NeverExpire), false})
 		expirationOptions = append(expirationOptions, expirationOption{"Custom", time.Time{}, false})
@@ -369,11 +384,10 @@ func (s Server) guestUploadGet() http.HandlerFunc {
 
 func (s Server) settingsGet() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		expirationInDays := int(s.settings.DefaultEntryLifetime.Hours() / 24)
-		expirationValue := expirationInDays
+		expirationValue := s.settings.DefaultFileLifetime.Days()
 		expirationTimeUnit := "days"
-		if expirationInDays%365 == 0 {
-			expirationValue /= 365
+		if s.settings.DefaultFileLifetime.IsYearBoundary() {
+			expirationValue /= s.settings.DefaultFileLifetime.Years()
 			expirationTimeUnit = "years"
 		}
 		if err := renderTemplate(w, "settings.html", struct {

@@ -2,6 +2,7 @@ package sqlite
 
 import (
 	"database/sql"
+	"log"
 	"time"
 
 	"github.com/mtlynch/picoshare/v2/picoshare"
@@ -26,12 +27,13 @@ func (d db) ReadSettings() (picoshare.Settings, error) {
 	}
 
 	return picoshare.Settings{
-		DefaultEntryLifetime: time.Hour * 24 * time.Duration(expirationInDays),
+		DefaultFileLifetime: picoshare.NewFileLifetime(time.Hour * 24 * time.Duration(expirationInDays)),
 	}, nil
 }
 
 func (d db) UpdateSettings(s picoshare.Settings) error {
-	expirationInDays := s.DefaultEntryLifetime.Hours() / 24
+	log.Printf("saving new settings: {lifetime=%s}", s.DefaultFileLifetime.FriendlyName())
+	expirationInDays := s.DefaultFileLifetime.Days()
 	_, err := d.ctx.Exec(`
 	UPDATE
 		settings

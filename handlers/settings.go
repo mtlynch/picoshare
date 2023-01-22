@@ -45,6 +45,6 @@ func settingsFromRequest(r *http.Request) (picoshare.Settings, error) {
 	defaultExpirationDays := payload.DefaultExpirationDays
 
 	return picoshare.Settings{
-		DefaultEntryLifetime: time.Hour * 24 * time.Duration(defaultExpirationDays),
+		DefaultFileLifetime: picoshare.NewFileLifetime(time.Hour * 24 * time.Duration(defaultExpirationDays)),
 	}, nil
 }

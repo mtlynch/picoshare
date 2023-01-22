@@ -20,7 +20,6 @@ function readDefaultFileExpiration() {
 
 timeUnit.addEventListener("change", (evt) => {
   const maxExpirationInYears = 10;
-  console.log(evt.target.value);
   if (evt.target.value === "years") {
     defaultExpiration.setAttribute("max", maxExpirationInYears);
   } else {
