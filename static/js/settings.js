@@ -36,7 +36,6 @@ document.getElementById("settings-form").addEventListener("submit", (evt) => {
   settingsPut(readDefaultFileExpiration())
     .then(() => {
       // TODO
-      console.log("success");
     })
     .catch((error) => {
       document.getElementById("error-message").innerText = error;
