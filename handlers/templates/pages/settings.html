@@ -10,6 +10,22 @@
 {{ define "content" }}
   <h1 class="title">Settings</h1>
 
+  <form id="settings-form">
+    <div class="field my-5">
+      <label class="label">Expiration</label>
+      <div class="control">
+        <input id="note" class="input is-normal" type="number" />
+      </div>
+    </div>
+
+    <div class="control">
+      <button class="button is-primary" id="save-btn">
+        <i class="fa fa-save mr-2"></i>
+        Save
+      </button>
+    </div>
+  </form>
+
   <div id="error" class="is-hidden my-3">
     <article class="message is-danger">
       <div class="message-header">
