@@ -11,7 +11,7 @@ import (
 const settingsRowID = 1
 
 func (d db) ReadSettings() (picoshare.Settings, error) {
-	var expirationInDays time.Duration
+	var expirationInDays int8
 	if err := d.ctx.QueryRow(`
 	SELECT
 		default_expiration_in_days
@@ -26,18 +26,19 @@ func (d db) ReadSettings() (picoshare.Settings, error) {
 	}
 
 	return picoshare.Settings{
-		DefaultEntryLifetime: expirationInDays,
+		DefaultEntryLifetime: time.Hour * 24 * time.Duration(expirationInDays),
 	}, nil
 }
 
 func (d db) UpdateSettings(s picoshare.Settings) error {
+	expirationInDays := s.DefaultEntryLifetime.Hours() / 24
 	_, err := d.ctx.Exec(`
 	UPDATE
 		settings
 	SET
 		default_expiration_in_days = ?
 	WHERE
-		id = ?`, s.DefaultEntryLifetime, settingsRowID)
+		id = ?`, expirationInDays, settingsRowID)
 	if err != nil {
 		return err
 	}

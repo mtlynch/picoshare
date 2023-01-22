@@ -2,6 +2,7 @@
 {{ end }}
 
 {{ define "script-tags" }}
+  <script type="module" src="/js/settings.js"></script>
 {{ end }}
 
 {{ define "custom-elements" }}
@@ -12,19 +13,36 @@
 
   <form id="settings-form">
     <div class="field my-5">
-      <label class="label">Expiration</label>
+      <label class="label">Default File Expiration</label>
       <div class="control">
-        <input id="note" class="input is-normal" type="number" />
+        <input
+          id="default-expiration-days"
+          class="input is-normal"
+          type="number"
+          required
+          min="1"
+          max="3650"
+        />
+        <div class="select">
+          <select>
+            <option value="days">Days</option>
+            <option value="years">Years</option>
+          </select>
+        </div>
       </div>
     </div>
 
     <div class="control">
-      <button class="button is-primary" id="save-btn">
+      <button class="button is-primary" type="submit">
         <i class="fa fa-save mr-2"></i>
         Save
       </button>
     </div>
   </form>
+
+  <div class="fa-3x is-hidden" id="progress-spinner">
+    <i class="fas fa-spinner fa-spin"></i>
+  </div>
 
   <div id="error" class="is-hidden my-3">
     <article class="message is-danger">
