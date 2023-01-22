@@ -16,10 +16,7 @@ import (
 	"github.com/mtlynch/picoshare/v2/store"
 )
 
-const (
-	FileLifetime  = 7 * 24 * time.Hour
-	EntryIDLength = 10
-)
+const EntryIDLength = 10
 
 // Omit visually similar characters (I,l,1), (0,O)
 var entryIDCharacters = []rune("abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789")
