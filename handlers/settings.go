@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"time"
 
+	"github.com/mtlynch/picoshare/v2/handlers/parse"
 	"github.com/mtlynch/picoshare/v2/picoshare"
 )
 
@@ -25,8 +25,6 @@ func (s Server) settingsPut() http.HandlerFunc {
 			http.Error(w, fmt.Sprintf("Failed to save settings: %v", err), http.StatusInternalServerError)
 			return
 		}
-
-		//respondJSON(w, GuestLinkPostResponse{ID: string(gl.ID)})
 	}
 }
 
@@ -40,10 +38,12 @@ func settingsFromRequest(r *http.Request) (picoshare.Settings, error) {
 		return picoshare.Settings{}, err
 	}
 
-	// TODO: Actually parse this
-	defaultExpirationDays := payload.DefaultExpirationDays
+	defaultExpiration, err := parse.FileLifetime(payload.DefaultExpirationDays)
+	if err != nil {
+		return picoshare.Settings{}, err
+	}
 
 	return picoshare.Settings{
-		DefaultFileLifetime: picoshare.NewFileLifetime(time.Hour * 24 * time.Duration(defaultExpirationDays)),
+		DefaultFileLifetime: defaultExpiration,
 	}, nil
 }
