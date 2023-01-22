@@ -30,7 +30,7 @@ func (s Server) settingsPut() http.HandlerFunc {
 
 func settingsFromRequest(r *http.Request) (picoshare.Settings, error) {
 	var payload struct {
-		DefaultExpirationDays int8 `json:"defaultExpirationDays"`
+		DefaultExpirationDays uint16 `json:"defaultExpirationDays"`
 	}
 	err := json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil {

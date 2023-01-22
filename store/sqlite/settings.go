@@ -11,7 +11,7 @@ import (
 const settingsRowID = 1
 
 func (d db) ReadSettings() (picoshare.Settings, error) {
-	var expirationInDays int8
+	var expirationInDays uint16
 	if err := d.ctx.QueryRow(`
 	SELECT
 		default_expiration_in_days
