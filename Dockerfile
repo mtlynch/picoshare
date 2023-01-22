@@ -25,7 +25,7 @@ RUN set -x && \
     go build \
       -tags netgo \
       -ldflags '-w -extldflags "-static"' \
-      -o /app/picoshare \
+      -o /app/bin/picoshare \
       cmd/picoshare/main.go
 
 FROM debian:stable-20211011-slim AS litestream_downloader
@@ -59,7 +59,7 @@ FROM alpine:3.15
 
 RUN apk add --no-cache bash
 
-COPY --from=builder /app/picoshare /app/picoshare
+COPY --from=builder /app/bin/picoshare /app/picoshare
 COPY --from=litestream_downloader /litestream/litestream /app/litestream
 COPY ./docker-entrypoint /app/docker-entrypoint
 COPY ./litestream.yml /etc/litestream.yml
