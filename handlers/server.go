@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"sync"
+
 	"github.com/gorilla/mux"
 
 	"github.com/mtlynch/picoshare/v2/garbagecollect"
@@ -9,13 +11,20 @@ import (
 	"github.com/mtlynch/picoshare/v2/store"
 )
 
-type Server struct {
-	router        *mux.Router
-	authenticator auth.Authenticator
-	store         store.Store
-	collector     *garbagecollect.Collector
-	settings      picoshare.Settings
-}
+type (
+	syncedSettings struct {
+		settings picoshare.Settings
+		mu       *sync.RWMutex
+	}
+
+	Server struct {
+		router        *mux.Router
+		authenticator auth.Authenticator
+		store         store.Store
+		collector     *garbagecollect.Collector
+		settings      *syncedSettings
+	}
+)
 
 // Router returns the underlying router interface for the server.
 func (s Server) Router() *mux.Router {
@@ -34,9 +43,24 @@ func New(authenticator auth.Authenticator, store store.Store, collector *garbage
 		authenticator: authenticator,
 		store:         store,
 		collector:     collector,
-		settings:      settings,
+		settings: &syncedSettings{
+			settings: settings,
+			mu:       &sync.RWMutex{},
+		},
 	}
 
 	s.routes()
 	return s, nil
+}
+
+func (ss syncedSettings) Get() picoshare.Settings {
+	ss.mu.RLock()
+	defer ss.mu.RUnlock()
+	return ss.settings
+}
+
+func (ss *syncedSettings) Update(s picoshare.Settings) {
+	ss.mu.Lock()
+	ss.settings = s
+	ss.mu.Unlock()
 }

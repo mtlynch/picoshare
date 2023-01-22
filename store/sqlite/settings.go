@@ -32,7 +32,7 @@ func (d db) ReadSettings() (picoshare.Settings, error) {
 }
 
 func (d db) UpdateSettings(s picoshare.Settings) error {
-	log.Printf("saving new settings: {lifetime=%s}", s.DefaultFileLifetime.FriendlyName())
+	log.Printf("saving new settings: %s", s)
 	expirationInDays := s.DefaultFileLifetime.Days()
 	_, err := d.ctx.Exec(`
 	UPDATE
