@@ -22,6 +22,18 @@ func TestFileLifetime(t *testing.T) {
 			err:         nil,
 		},
 		{
+			description: "accepts the minimum valid lifetime",
+			input:       1,
+			output:      picoshare.NewFileLifetime(24 * time.Hour * 1),
+			err:         nil,
+		},
+		{
+			description: "accepts the maximum valid lifetime",
+			input:       365 * 10,
+			output:      picoshare.NewFileLifetime(24 * time.Hour * 365 * 10),
+			err:         nil,
+		},
+		{
 			description: "rejects too short a lifetime",
 			input:       0,
 			output:      picoshare.FileLifetime{},
