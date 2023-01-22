@@ -18,6 +18,9 @@ func (s Server) settingsPut() http.HandlerFunc {
 			return
 		}
 
+		// TODO: Do we need to lock?
+		s.settings = settings
+
 		if err := s.store.UpdateSettings(settings); err != nil {
 			log.Printf("failed to save settings: %v", err)
 			http.Error(w, fmt.Sprintf("Failed to save settings: %v", err), http.StatusInternalServerError)

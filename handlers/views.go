@@ -275,21 +275,28 @@ func (s Server) authGet() http.HandlerFunc {
 
 func (s Server) uploadGet() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		//settings, err := s.store.ReadSettings()
 		type expirationOption struct {
 			FriendlyName string
 			Expiration   time.Time
 			IsDefault    bool
 		}
 		expirationOptions := []expirationOption{
-			{"Custom", time.Time{}, false},
 			{"1 day", time.Now().AddDate(0, 0, 1), false},
 			{"7 days", time.Now().AddDate(0, 0, 7), false},
-			{"30 days", time.Now().AddDate(0, 0, 30), true},
+			{"30 days", time.Now().AddDate(0, 0, 30), false},
 			{"1 year", time.Now().AddDate(1, 0, 0), false},
-			{"Never", time.Time(picoshare.NeverExpire), false},
 		}
-		// TODO: Check settings
+
+		// TODO: Merge more gracefully
+		expirationOptions = append(expirationOptions, expirationOption{
+			FriendlyName: fmt.Sprintf("%d days", int(s.settings.DefaultEntryLifetime.Hours()/24)),
+			Expiration:   time.Now().Add(s.settings.DefaultEntryLifetime),
+			IsDefault:    true,
+		})
+
+		expirationOptions = append(expirationOptions, expirationOption{"Never", time.Time(picoshare.NeverExpire), false})
+		expirationOptions = append(expirationOptions, expirationOption{"Custom", time.Time{}, false})
+
 		if err := renderTemplate(w, "upload.html", struct {
 			commonProps
 			ExpirationOptions []expirationOption
@@ -362,10 +369,21 @@ func (s Server) guestUploadGet() http.HandlerFunc {
 
 func (s Server) settingsGet() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		expirationInDays := int(s.settings.DefaultEntryLifetime.Hours() / 24)
+		expirationValue := expirationInDays
+		expirationTimeUnit := "days"
+		if expirationInDays%365 == 0 {
+			expirationValue /= 365
+			expirationTimeUnit = "years"
+		}
 		if err := renderTemplate(w, "settings.html", struct {
 			commonProps
+			DefaultExpiration  uint16
+			ExpirationTimeUnit string
 		}{
-			commonProps: makeCommonProps("PicoShare - Settings", r.Context()),
+			commonProps:        makeCommonProps("PicoShare - Settings", r.Context()),
+			DefaultExpiration:  uint16(expirationValue),
+			ExpirationTimeUnit: expirationTimeUnit,
 		}, template.FuncMap{}); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
