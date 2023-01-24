@@ -1,4 +1,5 @@
 {{ define "style-tags" }}
+  <link rel="stylesheet" type="text/css" href="/css/settings.css" />
 {{ end }}
 
 {{ define "script-tags" }}
@@ -14,20 +15,23 @@
   <form id="settings-form">
     <div class="field my-5">
       <label class="label">Default File Expiration</label>
-      <div class="control">
-        <input
-          id="default-expiration"
-          class="input is-normal"
-          type="number"
-          required
-          min="1"
-          {{ if eq .ExpirationTimeUnit "days" }}
-            max="3650"
-          {{ else }}
-            max="10"
-          {{ end }}
-          value="{{ .DefaultExpiration }}"
-        />
+      <div class="is-flex is-flex-direction-row">
+        <div class="control mr-1">
+          <input
+            id="default-expiration"
+            class="input is-normal"
+            type="number"
+            required
+            min="1"
+            {{ if eq .ExpirationTimeUnit "days" }}
+              max="3650"
+            {{ else }}
+              max="10"
+            {{ end }}
+            size="3"
+            value="{{ .DefaultExpiration }}"
+          />
+        </div>
         <div class="select">
           <select id="time-unit">
             <option
@@ -48,7 +52,7 @@
     </div>
 
     <div class="control">
-      <button class="button is-primary" type="submit">
+      <button class="button is-primary" disabled type="submit">
         <i class="fa fa-save mr-2"></i>
         Save
       </button>
