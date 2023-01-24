@@ -10,7 +10,7 @@ test("logs in and logs out", async ({ page }) => {
   await page.locator("form input[type='submit']").click();
 
   await expect(page).toHaveURL("/");
-  await page.locator(".navbar-end .navbar-item.is-hoverable").hover();
+  await page.locator("data-test-id=system-dropdown").hover();
   await page.locator("#navbar-log-out").click();
 
   await expect(
