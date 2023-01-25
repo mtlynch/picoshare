@@ -275,27 +275,60 @@ func (s Server) authGet() http.HandlerFunc {
 
 func (s Server) uploadGet() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		settings := s.settings.Get()
+		type lifetimeOption struct {
+			Lifetime  picoshare.FileLifetime
+			IsDefault bool
+		}
+		lifetimeOptions := []lifetimeOption{
+			{picoshare.NewFileLifetimeInDays(1), false},
+			{picoshare.NewFileLifetimeInDays(7), false},
+			{picoshare.NewFileLifetimeInDays(30), false},
+			{picoshare.NewFileLifetimeInYears(1), false},
+		}
+
+		defaultIsBuiltIn := false
+		for i, lto := range lifetimeOptions {
+			if lto.Lifetime.Equal(settings.DefaultFileLifetime) {
+				lifetimeOptions[i].IsDefault = true
+				defaultIsBuiltIn = true
+			}
+		}
+		// If the default isn't one of the built-in options, add it and sort the
+		// list.
+		if !defaultIsBuiltIn {
+			lifetimeOptions = append(lifetimeOptions, lifetimeOption{settings.DefaultFileLifetime, true})
+			sort.Slice(lifetimeOptions, func(i, j int) bool {
+				return lifetimeOptions[i].Lifetime.Duration() < lifetimeOptions[j].Lifetime.Duration()
+			})
+		}
+
 		type expirationOption struct {
 			FriendlyName string
 			Expiration   time.Time
 			IsDefault    bool
 		}
+		expirationOptions := []expirationOption{}
+		for _, lto := range lifetimeOptions {
+			expirationOptions = append(expirationOptions, expirationOption{
+				FriendlyName: lto.Lifetime.FriendlyName(),
+				Expiration:   time.Now().Add(lto.Lifetime.Duration()),
+				IsDefault:    lto.IsDefault,
+			})
+		}
+
+		expirationOptions = append(expirationOptions, expirationOption{"Never", time.Time(picoshare.NeverExpire), false})
+		expirationOptions = append(expirationOptions, expirationOption{"Custom", time.Time{}, false})
+
 		if err := renderTemplate(w, "upload.html", struct {
 			commonProps
 			ExpirationOptions []expirationOption
 			MaxNoteLength     int
 			GuestLinkMetadata picoshare.GuestLink
 		}{
-			commonProps:   makeCommonProps("PicoShare - Upload", r.Context()),
-			MaxNoteLength: parse.MaxFileNoteBytes,
-			ExpirationOptions: []expirationOption{
-				{"Custom", time.Time{}, false},
-				{"1 day", time.Now().AddDate(0, 0, 1), false},
-				{"7 days", time.Now().AddDate(0, 0, 7), false},
-				{"30 days", time.Now().AddDate(0, 0, 30), true},
-				{"1 year", time.Now().AddDate(1, 0, 0), false},
-				{"Never", time.Time(picoshare.NeverExpire), false},
-			},
+			commonProps:       makeCommonProps("PicoShare - Upload", r.Context()),
+			MaxNoteLength:     parse.MaxFileNoteBytes,
+			ExpirationOptions: expirationOptions,
 		}, template.FuncMap{
 			"formatExpiration": func(t time.Time) string {
 				if t.IsZero() {
@@ -351,6 +384,30 @@ func (s Server) guestUploadGet() http.HandlerFunc {
 			"formatExpiration": func(t time.Time) string {
 				return t.Format(time.RFC3339)
 			}}); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+}
+
+func (s Server) settingsGet() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		settings := s.settings.Get()
+		expirationValue := settings.DefaultFileLifetime.Days()
+		expirationTimeUnit := "days"
+		if settings.DefaultFileLifetime.IsYearBoundary() {
+			expirationValue = settings.DefaultFileLifetime.Years()
+			expirationTimeUnit = "years"
+		}
+		if err := renderTemplate(w, "settings.html", struct {
+			commonProps
+			DefaultExpiration  uint16
+			ExpirationTimeUnit string
+		}{
+			commonProps:        makeCommonProps("PicoShare - Settings", r.Context()),
+			DefaultExpiration:  expirationValue,
+			ExpirationTimeUnit: expirationTimeUnit,
+		}, template.FuncMap{}); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}

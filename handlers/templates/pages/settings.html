@@ -1,0 +1,77 @@
+{{ define "style-tags" }}
+  <link rel="stylesheet" type="text/css" href="/css/settings.css" />
+{{ end }}
+
+{{ define "script-tags" }}
+  <script type="module" src="/js/settings.js"></script>
+{{ end }}
+
+{{ define "custom-elements" }}
+{{ end }}
+
+{{ define "content" }}
+  <h1 class="title">Settings</h1>
+
+  <form id="settings-form">
+    <div class="field my-5">
+      <label class="label">Default File Expiration</label>
+      <div class="is-flex is-flex-direction-row">
+        <div class="control mr-1">
+          <input
+            id="default-expiration"
+            class="input is-normal"
+            type="number"
+            required
+            min="1"
+            {{ if eq .ExpirationTimeUnit "days" }}
+              max="3650"
+            {{ else }}
+              max="10"
+            {{ end }}
+            size="3"
+            value="{{ .DefaultExpiration }}"
+          />
+        </div>
+        <div class="select">
+          <select id="time-unit">
+            <option
+              value="days"
+              {{ if eq .ExpirationTimeUnit "days" }}selected{{ end }}
+            >
+              Days
+            </option>
+            <option
+              value="years"
+              {{ if eq .ExpirationTimeUnit "years" }}selected{{ end }}
+            >
+              Years
+            </option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="control">
+      <button class="button is-primary" disabled type="submit">
+        <i class="fa fa-save mr-2"></i>
+        Save
+      </button>
+    </div>
+  </form>
+
+  <div class="fa-3x is-hidden" id="progress-spinner">
+    <i class="fas fa-spinner fa-spin"></i>
+  </div>
+
+  <div id="error" class="is-hidden my-3">
+    <article class="message is-danger">
+      <div class="message-header">
+        Error
+        <button class="delete" aria-label="delete"></button>
+      </div>
+      <div id="error-message" class="message-body">Placeholder error.</div>
+    </article>
+  </div>
+{{ end }}
+
+{{ template "base.html" }}

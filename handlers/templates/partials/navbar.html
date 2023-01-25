@@ -19,7 +19,12 @@
         {{ if .IsAuthenticated }}
           <div class="navbar-start">
             <div class="navbar-item">
-              <a class="button is-primary is-success" href="/">Upload</a>
+              <a
+                class="button is-primary is-success"
+                href="/"
+                data-test-id="upload-btn"
+                >Upload</a
+              >
             </div>
             <a class="navbar-item" href="/files">Files</a>
             <a class="navbar-item" href="/guest-links">Guest Links</a>
@@ -28,8 +33,9 @@
         <div class="navbar-end">
           {{ if .IsAuthenticated }}
             <div class="navbar-item has-dropdown is-hoverable">
-              <a class="navbar-link">Account</a>
+              <a class="navbar-link" data-test-id="system-dropdown">System</a>
               <div class="navbar-dropdown">
+                <a class="navbar-item" href="/settings">Settings</a>
                 <a class="navbar-item" id="navbar-log-out">Log Out</a>
               </div>
             </div>

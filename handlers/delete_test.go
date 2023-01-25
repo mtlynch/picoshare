@@ -22,7 +22,10 @@ func TestDeleteExistingFile(t *testing.T) {
 			ID: picoshare.EntryID("hR87apiUCj"),
 		})
 
-	s := handlers.New(mockAuthenticator{}, dataStore, nilGarbageCollector)
+	s, err := handlers.New(mockAuthenticator{}, dataStore, nilGarbageCollector)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	req, err := http.NewRequest("DELETE", "/api/entry/hR87apiUCj", nil)
 	if err != nil {
@@ -46,7 +49,10 @@ func TestDeleteExistingFile(t *testing.T) {
 func TestDeleteNonExistentFile(t *testing.T) {
 	dataStore := test_sqlite.New()
 
-	s := handlers.New(mockAuthenticator{}, dataStore, nilGarbageCollector)
+	s, err := handlers.New(mockAuthenticator{}, dataStore, nilGarbageCollector)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	req, err := http.NewRequest("DELETE", "/api/entry/hR87apiUCj", nil)
 	if err != nil {
@@ -66,7 +72,10 @@ func TestDeleteNonExistentFile(t *testing.T) {
 func TestDeleteInvalidEntryID(t *testing.T) {
 	dataStore := test_sqlite.New()
 
-	s := handlers.New(mockAuthenticator{}, dataStore, nilGarbageCollector)
+	s, err := handlers.New(mockAuthenticator{}, dataStore, nilGarbageCollector)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	req, err := http.NewRequest("DELETE", "/api/entry/invalid-entry-id", nil)
 	if err != nil {
