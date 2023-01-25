@@ -8,7 +8,6 @@ test("default file expiration is 30 days", async ({ page }) => {
   await page.locator("a[href='/settings']").click();
   await expect(page).toHaveURL("/settings");
 
-  // Expiration should default to 30 days.
   await expect(page.locator("#default-expiration")).toHaveValue("30");
   await expect(page.locator("#time-unit")).toHaveValue("days");
 
@@ -27,7 +26,6 @@ test("changes default file expiration to 5 days", async ({ page }) => {
   await page.locator("a[href='/settings']").click();
   await expect(page).toHaveURL("/settings");
 
-  // Change default expiration to 5 days.
   await page.locator("#default-expiration").fill("5");
   await page.locator("#settings-form button[type='submit']").click();
 
@@ -46,7 +44,6 @@ test("changes default file expiration to 1 year", async ({ page }) => {
   await page.locator("a[href='/settings']").click();
   await expect(page).toHaveURL("/settings");
 
-  // Change default expiration to 1 year.
   await page.locator("#default-expiration").fill("1");
   await page.locator("#time-unit").selectOption("years");
   await page.locator("#settings-form button[type='submit']").click();
