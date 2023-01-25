@@ -3,7 +3,6 @@ package sqlite
 import (
 	"database/sql"
 	"log"
-	"time"
 
 	"github.com/mtlynch/picoshare/v2/picoshare"
 )
@@ -27,7 +26,7 @@ func (d db) ReadSettings() (picoshare.Settings, error) {
 	}
 
 	return picoshare.Settings{
-		DefaultFileLifetime: picoshare.NewFileLifetime(time.Hour * 24 * time.Duration(expirationInDays)),
+		DefaultFileLifetime: picoshare.NewFileLifetimeInDays(expirationInDays),
 	}, nil
 }
 

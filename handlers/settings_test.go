@@ -6,7 +6,6 @@ import (
 	"reflect"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/mtlynch/picoshare/v2/handlers"
 	"github.com/mtlynch/picoshare/v2/picoshare"
@@ -26,7 +25,7 @@ func TestSettingsPut(t *testing.T) {
 					"defaultExpirationDays": 7
 				}`,
 			settings: picoshare.Settings{
-				DefaultFileLifetime: picoshare.NewFileLifetime(time.Hour * 24 * 7),
+				DefaultFileLifetime: picoshare.NewFileLifetimeInDays(7),
 			},
 			status: http.StatusOK,
 		},
@@ -83,7 +82,7 @@ func TestSettingsPut(t *testing.T) {
 
 			settings, err := dataStore.ReadSettings()
 			if err != nil {
-				t.Fatalf("%s: failed to retrieve settings from datastore: %v", tt.description, err)
+				t.Fatalf("failed to retrieve settings from datastore: %v", err)
 			}
 
 			if got, want := settings, tt.settings; !reflect.DeepEqual(got, want) {

@@ -5,6 +5,8 @@ import (
 	"time"
 )
 
+const hoursPerDay = 24
+
 // This is imprecise, but we're only using it for file lifetime values, which
 // are imprecise.
 const daysPerYear = 365
@@ -13,8 +15,14 @@ type FileLifetime struct {
 	d time.Duration
 }
 
-func NewFileLifetime(d time.Duration) FileLifetime {
-	return FileLifetime{d}
+func NewFileLifetimeInDays(days uint16) FileLifetime {
+	return FileLifetime{
+		d: hoursPerDay * time.Hour * time.Duration(days),
+	}
+}
+
+func NewFileLifetimeInYears(years uint16) FileLifetime {
+	return NewFileLifetimeInDays(years * daysPerYear)
 }
 
 func (lt FileLifetime) Duration() time.Duration {

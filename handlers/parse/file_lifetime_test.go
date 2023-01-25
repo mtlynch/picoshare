@@ -2,7 +2,6 @@ package parse_test
 
 import (
 	"testing"
-	"time"
 
 	"github.com/mtlynch/picoshare/v2/handlers/parse"
 	"github.com/mtlynch/picoshare/v2/picoshare"
@@ -18,19 +17,19 @@ func TestFileLifetime(t *testing.T) {
 		{
 			description: "valid lifetime",
 			input:       7,
-			output:      picoshare.NewFileLifetime(24 * time.Hour * 7),
+			output:      picoshare.NewFileLifetimeInDays(7),
 			err:         nil,
 		},
 		{
 			description: "accepts the minimum valid lifetime",
 			input:       1,
-			output:      picoshare.NewFileLifetime(24 * time.Hour * 1),
+			output:      picoshare.NewFileLifetimeInDays(1),
 			err:         nil,
 		},
 		{
 			description: "accepts the maximum valid lifetime",
 			input:       365 * 10,
-			output:      picoshare.NewFileLifetime(24 * time.Hour * 365 * 10),
+			output:      picoshare.NewFileLifetimeInYears(10),
 			err:         nil,
 		},
 		{

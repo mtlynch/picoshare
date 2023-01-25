@@ -281,10 +281,10 @@ func (s Server) uploadGet() http.HandlerFunc {
 			IsDefault bool
 		}
 		lifetimeOptions := []lifetimeOption{
-			{picoshare.NewFileLifetime(1 * 24 * time.Hour), false},
-			{picoshare.NewFileLifetime(7 * 24 * time.Hour), false},
-			{picoshare.NewFileLifetime(30 * 24 * time.Hour), false},
-			{picoshare.NewFileLifetime(365 * 24 * time.Hour), false},
+			{picoshare.NewFileLifetimeInDays(1), false},
+			{picoshare.NewFileLifetimeInDays(7), false},
+			{picoshare.NewFileLifetimeInDays(30), false},
+			{picoshare.NewFileLifetimeInYears(1), false},
 		}
 
 		defaultIsBuiltIn := false

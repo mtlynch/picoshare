@@ -2,15 +2,12 @@ package parse
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/mtlynch/picoshare/v2/picoshare"
 )
 
 const minFileLifetimeInDays = 1
 const maxFileLifetimeInYears = 10
-
-const hoursPerDay = 24
 
 // This is imprecise, but it's okay because file lifetimes are not exact
 // measures of time.
@@ -28,5 +25,5 @@ func FileLifetime(lifetimeInDays uint16) (picoshare.FileLifetime, error) {
 	if lifetimeInDays > (maxFileLifetimeInYears * daysPerYear) {
 		return picoshare.FileLifetime{}, ErrFileLifetimeTooLong
 	}
-	return picoshare.NewFileLifetime(hoursPerDay * time.Hour * time.Duration(lifetimeInDays)), nil
+	return picoshare.NewFileLifetimeInDays(lifetimeInDays), nil
 }
