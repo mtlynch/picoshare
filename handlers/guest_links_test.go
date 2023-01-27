@@ -56,7 +56,7 @@ func TestGuestLinksPostAcceptsValidRequest(t *testing.T) {
 		t.Run(tt.description, func(t *testing.T) {
 			dataStore := test_sqlite.New()
 
-			s, err := handlers.New(mockAuthenticator{}, dataStore, nilGarbageCollector)
+			s, err := handlers.New(mockAuthenticator{}, dataStore, nilSpaceChecker, nilGarbageCollector)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -212,7 +212,7 @@ func TestGuestLinksPostRejectsInvalidRequest(t *testing.T) {
 		t.Run(tt.description, func(t *testing.T) {
 			dataStore := test_sqlite.New()
 
-			s, err := handlers.New(mockAuthenticator{}, dataStore, nilGarbageCollector)
+			s, err := handlers.New(mockAuthenticator{}, dataStore, nilSpaceChecker, nilGarbageCollector)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -250,7 +250,7 @@ func TestDeleteExistingGuestLink(t *testing.T) {
 		Expires: mustParseExpirationTime("2030-01-02T03:04:25Z"),
 	})
 
-	s, err := handlers.New(mockAuthenticator{}, dataStore, nilGarbageCollector)
+	s, err := handlers.New(mockAuthenticator{}, dataStore, nilSpaceChecker, nilGarbageCollector)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -276,7 +276,7 @@ func TestDeleteExistingGuestLink(t *testing.T) {
 func TestDeleteNonExistentGuestLink(t *testing.T) {
 	dataStore := test_sqlite.New()
 
-	s, err := handlers.New(mockAuthenticator{}, dataStore, nilGarbageCollector)
+	s, err := handlers.New(mockAuthenticator{}, dataStore, nilSpaceChecker, nilGarbageCollector)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -299,7 +299,7 @@ func TestDeleteNonExistentGuestLink(t *testing.T) {
 func TestDeleteInvalidGuestLink(t *testing.T) {
 	dataStore := test_sqlite.New()
 
-	s, err := handlers.New(mockAuthenticator{}, dataStore, nilGarbageCollector)
+	s, err := handlers.New(mockAuthenticator{}, dataStore, nilSpaceChecker, nilGarbageCollector)
 	if err != nil {
 		t.Fatal(err)
 	}

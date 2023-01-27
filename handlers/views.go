@@ -167,19 +167,7 @@ func (s Server) fileIndexGet() http.HandlerFunc {
 				delta := time.Until(t)
 				return fmt.Sprintf("%s (%.0f days)", t.Format("2006-01-02"), delta.Hours()/24)
 			},
-			"formatFileSize": func(b uint64) string {
-				const unit = 1024
-
-				if b < unit {
-					return fmt.Sprintf("%d B", b)
-				}
-				div, exp := uint64(unit), 0
-				for n := b / unit; n >= unit; n /= unit {
-					div *= unit
-					exp++
-				}
-				return fmt.Sprintf("%.2f %cB", float64(b)/float64(div), "kMGTPE"[exp])
-			},
+			"formatFileSize": humanReadableFileSize,
 		}); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -412,6 +400,48 @@ func (s Server) settingsGet() http.HandlerFunc {
 			return
 		}
 	}
+}
+
+func (s Server) diskUsageGet() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		space, err := s.spaceChecker.Check()
+		if err != nil {
+			log.Printf("error checking available space: %v", err)
+			http.Error(w, fmt.Sprintf("failed to check available space: %v", err), http.StatusInternalServerError)
+			return
+		}
+		if err := renderTemplate(w, "disk-usage.html", struct {
+			commonProps
+			UsedBytes  uint64
+			TotalBytes uint64
+		}{
+			commonProps: makeCommonProps("PicoShare - Disk Usage", r.Context()),
+			UsedBytes:   space.TotalBytes - space.AvailableBytes,
+			TotalBytes:  space.TotalBytes,
+		}, template.FuncMap{
+			"formatFileSize": humanReadableFileSize,
+			"percentage": func(part, total uint64) string {
+				return fmt.Sprintf("%.0f%%", 100.0*(float64(part)/float64(total)))
+			},
+		}); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+}
+
+func humanReadableFileSize(b uint64) string {
+	const unit = 1024
+
+	if b < unit {
+		return fmt.Sprintf("%d B", b)
+	}
+	div, exp := uint64(unit), 0
+	for n := b / unit; n >= unit; n /= unit {
+		div *= unit
+		exp++
+	}
+	return fmt.Sprintf("%.2f %cB", float64(b)/float64(div), "kMGTPE"[exp])
 }
 
 func makeCommonProps(title string, ctx context.Context) commonProps {

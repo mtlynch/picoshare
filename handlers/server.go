@@ -8,6 +8,7 @@ import (
 	"github.com/mtlynch/picoshare/v2/garbagecollect"
 	"github.com/mtlynch/picoshare/v2/handlers/auth"
 	"github.com/mtlynch/picoshare/v2/picoshare"
+	"github.com/mtlynch/picoshare/v2/space"
 	"github.com/mtlynch/picoshare/v2/store"
 )
 
@@ -21,6 +22,7 @@ type (
 		router        *mux.Router
 		authenticator auth.Authenticator
 		store         store.Store
+		spaceChecker  space.Checker
 		collector     *garbagecollect.Collector
 		settings      *syncedSettings
 	}
@@ -33,7 +35,7 @@ func (s Server) Router() *mux.Router {
 
 // New creates a new server with all the state it needs to satisfy HTTP
 // requests.
-func New(authenticator auth.Authenticator, store store.Store, collector *garbagecollect.Collector) (Server, error) {
+func New(authenticator auth.Authenticator, store store.Store, spaceChecker space.Checker, collector *garbagecollect.Collector) (Server, error) {
 	settings, err := store.ReadSettings()
 	if err != nil {
 		return Server{}, err
@@ -42,6 +44,7 @@ func New(authenticator auth.Authenticator, store store.Store, collector *garbage
 		router:        mux.NewRouter(),
 		authenticator: authenticator,
 		store:         store,
+		spaceChecker:  spaceChecker,
 		collector:     collector,
 		settings: &syncedSettings{
 			settings: settings,

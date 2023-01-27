@@ -44,6 +44,7 @@ func (s *Server) routes() {
 	authenticatedViews := s.router.PathPrefix("/").Subrouter()
 	authenticatedViews.Use(s.requireAuthentication)
 	authenticatedViews.Use(enforceContentSecurityPolicy)
+	authenticatedViews.HandleFunc("/disk-usage", s.diskUsageGet()).Methods(http.MethodGet)
 	authenticatedViews.HandleFunc("/files", s.fileIndexGet()).Methods(http.MethodGet)
 	authenticatedViews.HandleFunc("/files/{id}/edit", s.fileEditGet()).Methods(http.MethodGet)
 	authenticatedViews.HandleFunc("/files/{id}/confirm-delete", s.fileConfirmDeleteGet()).Methods(http.MethodGet)

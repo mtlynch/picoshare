@@ -94,7 +94,7 @@ func TestEntryPost(t *testing.T) {
 	} {
 		t.Run(tt.description, func(t *testing.T) {
 			store := test_sqlite.New()
-			s, err := handlers.New(mockAuthenticator{}, store, nilGarbageCollector)
+			s, err := handlers.New(mockAuthenticator{}, store, nilSpaceChecker, nilGarbageCollector)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -229,7 +229,7 @@ func TestEntryPut(t *testing.T) {
 		t.Run(tt.description, func(t *testing.T) {
 			store := test_sqlite.New()
 			store.InsertEntry(strings.NewReader(("dummy data")), originalEntry)
-			s, err := handlers.New(mockAuthenticator{}, store, nilGarbageCollector)
+			s, err := handlers.New(mockAuthenticator{}, store, nilSpaceChecker, nilGarbageCollector)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -386,7 +386,7 @@ func TestGuestUpload(t *testing.T) {
 				}
 			}
 
-			s, err := handlers.New(authenticator, store, nilGarbageCollector)
+			s, err := handlers.New(authenticator, store, nilSpaceChecker, nilGarbageCollector)
 			if err != nil {
 				t.Fatal(err)
 			}
