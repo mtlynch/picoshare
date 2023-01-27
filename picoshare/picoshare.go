@@ -23,7 +23,7 @@ type (
 		ContentType ContentType
 		Uploaded    time.Time
 		Expires     ExpirationTime
-		Size        int64
+		Size        uint64
 	}
 
 	UploadEntry struct {
