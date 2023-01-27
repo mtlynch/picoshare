@@ -3,6 +3,15 @@
     .progress {
       max-width: 70ch;
     }
+
+    .notification {
+      max-width: 70ch;
+    }
+
+    .code {
+      font-family: "Courier New", Courier, monospace;
+      font-weight: bold;
+    }
   </style>
 {{ end }}
 
@@ -29,6 +38,20 @@
     ({{ percentage .UsedBytes .TotalBytes }})
   </p>
   <p><strong>Total disk space</strong>: {{ formatFileSize .TotalBytes }}</p>
+
+  <div class="notification is-info is-light">
+    <p>
+      <strong>Note</strong>: Your used space may be higher than the sum total of
+      your files.
+    </p>
+    <p>
+      When you delete files, PicoShare retains the space and reuses it to store
+      future uploads. To reclaim the space immediately, see the
+      <a href="https://github.com/mtlynch/picoshare#parameters"
+        ><span class="code">-vacuum</span> option</a
+      >.
+    </p>
+  </div>
 {{ end }}
 
 {{ template "base.html" }}
