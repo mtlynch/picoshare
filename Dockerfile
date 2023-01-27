@@ -7,6 +7,7 @@ COPY ./garbagecollect /app/garbagecollect
 COPY ./handlers /app/handlers
 COPY ./picoshare /app/picoshare
 COPY ./random /app/random
+COPY ./space /app/space
 COPY ./store /app/store
 COPY ./go.* /app/
 
