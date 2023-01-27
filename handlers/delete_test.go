@@ -9,10 +9,12 @@ import (
 	"github.com/mtlynch/picoshare/v2/garbagecollect"
 	"github.com/mtlynch/picoshare/v2/handlers"
 	"github.com/mtlynch/picoshare/v2/picoshare"
+	"github.com/mtlynch/picoshare/v2/space"
 	"github.com/mtlynch/picoshare/v2/store"
 	"github.com/mtlynch/picoshare/v2/store/test_sqlite"
 )
 
+var nilSpaceChecker space.Checker
 var nilGarbageCollector *garbagecollect.Collector
 
 func TestDeleteExistingFile(t *testing.T) {
@@ -22,7 +24,7 @@ func TestDeleteExistingFile(t *testing.T) {
 			ID: picoshare.EntryID("hR87apiUCj"),
 		})
 
-	s, err := handlers.New(mockAuthenticator{}, dataStore, nilGarbageCollector)
+	s, err := handlers.New(mockAuthenticator{}, dataStore, nilSpaceChecker, nilGarbageCollector)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -49,7 +51,7 @@ func TestDeleteExistingFile(t *testing.T) {
 func TestDeleteNonExistentFile(t *testing.T) {
 	dataStore := test_sqlite.New()
 
-	s, err := handlers.New(mockAuthenticator{}, dataStore, nilGarbageCollector)
+	s, err := handlers.New(mockAuthenticator{}, dataStore, nilSpaceChecker, nilGarbageCollector)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -72,7 +74,7 @@ func TestDeleteNonExistentFile(t *testing.T) {
 func TestDeleteInvalidEntryID(t *testing.T) {
 	dataStore := test_sqlite.New()
 
-	s, err := handlers.New(mockAuthenticator{}, dataStore, nilGarbageCollector)
+	s, err := handlers.New(mockAuthenticator{}, dataStore, nilSpaceChecker, nilGarbageCollector)
 	if err != nil {
 		t.Fatal(err)
 	}

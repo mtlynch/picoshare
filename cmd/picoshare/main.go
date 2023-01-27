@@ -14,6 +14,7 @@ import (
 	"github.com/mtlynch/picoshare/v2/garbagecollect"
 	"github.com/mtlynch/picoshare/v2/handlers"
 	"github.com/mtlynch/picoshare/v2/handlers/auth/shared_secret"
+	"github.com/mtlynch/picoshare/v2/space"
 	"github.com/mtlynch/picoshare/v2/store/sqlite"
 )
 
@@ -30,15 +31,19 @@ func main() {
 		log.Fatalf("invalid shared secret: %v", err)
 	}
 
-	ensureDirExists(filepath.Dir(*dbPath))
+	dbDir := filepath.Dir(*dbPath)
+
+	ensureDirExists(dbDir)
 
 	store := sqlite.New(*dbPath, isLitestreamEnabled())
+
+	spaceChecker := space.NewChecker(dbDir)
 
 	collector := garbagecollect.NewCollector(store, *vacuumDb)
 	gc := garbagecollect.NewScheduler(&collector, 7*time.Hour)
 	gc.StartAsync()
 
-	server, err := handlers.New(authenticator, store, &collector)
+	server, err := handlers.New(authenticator, store, spaceChecker, &collector)
 	if err != nil {
 		panic(err)
 	}

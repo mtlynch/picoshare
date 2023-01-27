@@ -1,0 +1,34 @@
+{{ define "style-tags" }}
+  <style nonce="{{ .CspNonce }}">
+    .progress {
+      max-width: 70ch;
+    }
+  </style>
+{{ end }}
+
+{{ define "script-tags" }}
+{{ end }}
+
+{{ define "custom-elements" }}
+{{ end }}
+
+{{ define "content" }}
+  <h1 class="title">Disk Usage</h1>
+
+  <progress
+    class="progress is-primary"
+    max="{{ .TotalBytes }}"
+    value="{{ .UsedBytes }}"
+  >
+    {{ percentage .UsedBytes .TotalBytes }}
+  </progress>
+
+  <p>
+    <strong>Used space</strong>:
+    {{ formatFileSize .UsedBytes }}
+    ({{ percentage .UsedBytes .TotalBytes }})
+  </p>
+  <p><strong>Total disk space</strong>: {{ formatFileSize .TotalBytes }}</p>
+{{ end }}
+
+{{ template "base.html" }}
