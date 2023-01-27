@@ -45,7 +45,7 @@ func (d db) GetEntriesMetadata() ([]picoshare.UploadMetadata, error) {
 		var contentType string
 		var uploadTimeRaw string
 		var expirationTimeRaw string
-		var fileSize int64
+		var fileSize uint64
 		err = rows.Scan(&id, &filename, &note, &contentType, &uploadTimeRaw, &expirationTimeRaw, &fileSize)
 		if err != nil {
 			return []picoshare.UploadMetadata{}, err

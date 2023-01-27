@@ -76,17 +76,17 @@ func TestCollectExpiredFile(t *testing.T) {
 		{
 			ID:      picoshare.EntryID("BBBBBBBBBBBB"),
 			Expires: mustParseExpirationTime("3000-01-01T00:00:00Z"),
-			Size:    int64(len(d)),
+			Size:    uint64(len(d)),
 		},
 		{
 			ID:      picoshare.EntryID("CCCCCCCCCCCC"),
 			Expires: picoshare.NeverExpire,
-			Size:    int64(len(d)),
+			Size:    uint64(len(d)),
 		},
 		{
 			ID:      picoshare.EntryID("EEEEEEEEEEEE"),
 			Expires: expireInFiveMins,
-			Size:    int64(len(d)),
+			Size:    uint64(len(d)),
 		},
 	}
 	if !reflect.DeepEqual(expected, remaining) {
@@ -133,17 +133,17 @@ func TestCollectDoesNothingWhenNoFilesAreExpired(t *testing.T) {
 		{
 			ID:      picoshare.EntryID("AAAAAAAAAAAA"),
 			Expires: mustParseExpirationTime("4000-01-01T00:00:00Z"),
-			Size:    int64(len(d)),
+			Size:    uint64(len(d)),
 		},
 		{
 			ID:      picoshare.EntryID("BBBBBBBBBBBB"),
 			Expires: mustParseExpirationTime("3000-01-01T00:00:00Z"),
-			Size:    int64(len(d)),
+			Size:    uint64(len(d)),
 		},
 		{
 			ID:      picoshare.EntryID("CCCCCCCCCCCC"),
 			Expires: picoshare.NeverExpire,
-			Size:    int64(len(d)),
+			Size:    uint64(len(d)),
 		},
 	}
 	if !reflect.DeepEqual(expected, remaining) {
