@@ -1,8 +1,6 @@
 package space
 
 import (
-	"path/filepath"
-
 	"golang.org/x/sys/unix"
 )
 
@@ -27,8 +25,7 @@ func NewChecker(dir string) Checker {
 
 func (c defaultChecker) Check() (CheckResult, error) {
 	var stat unix.Statfs_t
-	dataDir := filepath.Dir(c.dataDir)
-	if err := unix.Statfs(dataDir, &stat); err != nil {
+	if err := unix.Statfs(c.dataDir, &stat); err != nil {
 		return CheckResult{}, err
 	}
 
