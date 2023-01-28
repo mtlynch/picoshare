@@ -20,8 +20,8 @@
 
 {{ define "script-tags" }}
   <script type="module" nonce="{{ .CspNonce }}">
-    import { guestUploadFile, uploadFile } from "./controllers/files.js";
-    import { showElement, hideElement } from "./lib/bulma.js";
+    import { guestUploadFile, uploadFile } from "/js/controllers/files.js";
+    import { showElement, hideElement } from "/js/lib/bulma.js";
 
     const uploadEl = document.querySelector(".file");
     const resultEl = document.getElementById("upload-result");
