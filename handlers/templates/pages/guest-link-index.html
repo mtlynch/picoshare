@@ -1,9 +1,88 @@
 {{ define "style-tags" }}
-  <link rel="stylesheet" type="text/css" href="/css/guest-link-index.css" />
+  <style nonce="{{ .CspNonce }}">
+    .deleted-entry {
+      text-decoration: line-through;
+      color: darkgray;
+      visibility: collapse;
+      opacity: 0;
+    }
+
+    .table tr {
+      transition: all 1000ms ease-out;
+    }
+
+    .table .inactive {
+      background-color: #d9d9d9;
+    }
+
+    .table .inactive [pico-purpose="copy"] {
+      display: none;
+    }
+
+    #error {
+      max-width: 60ch;
+    }
+  </style>
 {{ end }}
 
 {{ define "script-tags" }}
-  <script type="module" src="/js/guestLinkIndex.js"></script>
+  <script type="module" nonce="{{ .CspNonce }}">
+    import { guestLinkDelete } from "/js/controllers/guestLinks.js";
+    import { showElement, hideElement } from "/js/lib/bulma.js";
+    import { copyToClipboard } from "/js/lib/clipboard.js";
+
+    const errorContainer = document.getElementById("error");
+
+    function makeGuestLink(linkId) {
+      return `${window.location.origin}/g/${linkId}`;
+    }
+
+    document
+      .querySelectorAll('[pico-purpose="delete"]')
+      .forEach((deleteBtn) => {
+        deleteBtn.addEventListener("click", () => {
+          const id = deleteBtn.getAttribute("pico-link-id");
+          guestLinkDelete(id)
+            .then(() => {
+              let currentEl = deleteBtn.parentElement;
+              while (currentEl && currentEl.nodeName !== "TR") {
+                currentEl = currentEl.parentElement;
+              }
+              if (!currentEl) {
+                return;
+              }
+
+              currentEl.classList.add("deleted-entry");
+            })
+            .catch((error) => {
+              document.getElementById("error-message").innerText = error;
+              showElement(errorContainer);
+            });
+        });
+      });
+
+    document.querySelector("#error .delete").addEventListener("click", () => {
+      hideElement(errorContainer);
+    });
+
+    document.querySelectorAll('[pico-purpose="copy"]').forEach((copyBtn) => {
+      copyBtn.addEventListener("click", () => {
+        const linkId = copyBtn.getAttribute("pico-link-id");
+        const guestLink = makeGuestLink(linkId);
+
+        copyToClipboard(guestLink)
+          .then(() =>
+            document
+              .querySelector("snackbar-notifications")
+              .addInfoMessage("Copied link")
+          )
+          .catch((error) => {
+            document.getElementById("error-message").innerText = error;
+            showElement(errorContainer);
+          });
+      });
+    });
+  </script>
 {{ end }}
 
 {{ define "custom-elements" }}
