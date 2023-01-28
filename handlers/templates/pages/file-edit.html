@@ -3,8 +3,8 @@
 
 {{ define "script-tags" }}
   <script type="module" nonce="{{ .CspNonce }}">
-    import { editFile } from "./controllers/files.js";
-    import { showElement, hideElement } from "./lib/bulma.js";
+    import { editFile } from "/js/controllers/files.js";
+    import { showElement, hideElement } from "/js/lib/bulma.js";
 
     const editForm = document.getElementById("edit-form");
     const errorContainer = document.getElementById("error");
