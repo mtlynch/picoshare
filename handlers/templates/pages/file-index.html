@@ -1,9 +1,91 @@
 {{ define "style-tags" }}
-  <link rel="stylesheet" type="text/css" href="/css/file-index.css" />
+  <style nonce="{{ .CspNonce }}">
+    .tooltip {
+      position: relative;
+      display: inline-block;
+    }
+
+    .tooltip .tooltip-text {
+      position: absolute;
+      top: -9px;
+      left: 150%;
+      visibility: hidden;
+      width: max-content;
+      max-width: 400px;
+      padding: 0.5rem 0.75rem;
+      color: black;
+      background-color: #f5faff;
+      border: 1px solid #004e9c;
+      border-radius: 6px;
+      text-align: center;
+      z-index: 1;
+    }
+
+    .tooltip:hover .tooltip-text {
+      visibility: visible;
+    }
+
+    #error {
+      max-width: 60ch;
+    }
+  </style>
 {{ end }}
 
 {{ define "script-tags" }}
-  <script type="module" src="/js/fileIndex.js"></script>
+  <script type="module" nonce="{{ .CspNonce }}">
+    import { deleteFile } from "./controllers/files.js";
+    import { showElement, hideElement } from "./lib/bulma.js";
+    import { copyToClipboard } from "./lib/clipboard.js";
+    import { makeShortLink } from "./lib/links.js";
+
+    const errorContainer = document.getElementById("error");
+
+    document
+      .querySelectorAll('[pico-purpose="delete"]')
+      .forEach((deleteBtn) => {
+        deleteBtn.addEventListener("click", () => {
+          const id = deleteBtn.getAttribute("pico-entry-id");
+          deleteFile(id)
+            .then(() => {
+              let currentEl = deleteBtn.parentElement;
+              while (currentEl && currentEl.nodeName !== "TR") {
+                currentEl = currentEl.parentElement;
+              }
+              if (!currentEl) {
+                return;
+              }
+
+              currentEl.classList.add("deleted-entry");
+            })
+            .catch((error) => {
+              document.getElementById("error-message").innerText = error;
+              showElement(errorContainer);
+            });
+        });
+      });
+
+    document.querySelector("#error .delete").addEventListener("click", () => {
+      hideElement(errorContainer);
+    });
+
+    document.querySelectorAll('[pico-purpose="copy"]').forEach((copyBtn) => {
+      copyBtn.addEventListener("click", () => {
+        const fileId = copyBtn.getAttribute("pico-entry-id");
+        const shortLink = makeShortLink(fileId);
+
+        copyToClipboard(shortLink)
+          .then(() =>
+            document
+              .querySelector("snackbar-notifications")
+              .addInfoMessage("Copied link")
+          )
+          .catch((error) => {
+            document.getElementById("error-message").innerText = error;
+            showElement(errorContainer);
+          });
+      });
+    });
+  </script>
 {{ end }}
 
 {{ define "custom-elements" }}
