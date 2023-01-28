@@ -8,8 +8,8 @@
 
 {{ define "script-tags" }}
   <script type="module" nonce="{{ .CspNonce }}">
-    import { settingsPut } from "./controllers/settings.js";
-    import { showElement, hideElement } from "./lib/bulma.js";
+    import { settingsPut } from "/js/controllers/settings.js";
+    import { showElement, hideElement } from "/js/lib/bulma.js";
 
     const errorContainer = document.getElementById("error");
     const progressSpinner = document.getElementById("progress-spinner");
