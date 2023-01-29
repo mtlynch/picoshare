@@ -15,6 +15,10 @@ type FileLifetime struct {
 	d time.Duration
 }
 
+// FileLifetimeInfinite is a sentinel value representing a lifetime that does
+// not expire, effectively.
+var FileLifetimeInfinite = NewFileLifetimeInYears(100)
+
 func NewFileLifetimeInDays(days uint16) FileLifetime {
 	return FileLifetime{
 		d: hoursPerDay * time.Hour * time.Duration(days),

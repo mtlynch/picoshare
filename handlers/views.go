@@ -273,6 +273,7 @@ func (s Server) uploadGet() http.HandlerFunc {
 			{picoshare.NewFileLifetimeInDays(7), false},
 			{picoshare.NewFileLifetimeInDays(30), false},
 			{picoshare.NewFileLifetimeInYears(1), false},
+			{picoshare.FileLifetimeInfinite, false},
 		}
 
 		defaultIsBuiltIn := false
@@ -298,14 +299,19 @@ func (s Server) uploadGet() http.HandlerFunc {
 		}
 		expirationOptions := []expirationOption{}
 		for _, lto := range lifetimeOptions {
+			friendlyName := lto.Lifetime.FriendlyName()
+			expiration := time.Now().Add(lto.Lifetime.Duration())
+			if lto.Lifetime.Equal(picoshare.FileLifetimeInfinite) {
+				friendlyName = "Never"
+				expiration = time.Time(picoshare.NeverExpire)
+			}
 			expirationOptions = append(expirationOptions, expirationOption{
-				FriendlyName: lto.Lifetime.FriendlyName(),
-				Expiration:   time.Now().Add(lto.Lifetime.Duration()),
+				FriendlyName: friendlyName,
+				Expiration:   expiration,
 				IsDefault:    lto.IsDefault,
 			})
 		}
 
-		expirationOptions = append(expirationOptions, expirationOption{"Never", time.Time(picoshare.NeverExpire), false})
 		expirationOptions = append(expirationOptions, expirationOption{"Custom", time.Time{}, false})
 
 		if err := renderTemplate(w, "upload.html", struct {
