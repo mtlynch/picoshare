@@ -15,6 +15,9 @@
     const progressSpinner = document.getElementById("progress-spinner");
     const defaultExpiration = document.getElementById("default-expiration");
     const timeUnit = document.getElementById("time-unit");
+    const storeForeverCheckbox = document.getElementById(
+      "store-forever-checkbox"
+    );
     const saveBtn = document.querySelector(
       "#settings-form button[type='submit']"
     );
@@ -22,13 +25,22 @@
     const daysPerYear = 365;
 
     function readDefaultFileExpiration() {
-      let defaultExpiration = parseInt(
-        document.getElementById("default-expiration").value
-      );
+      let defaultExpirationDays = parseInt(defaultExpiration.value);
       if (timeUnit.value === "years") {
-        defaultExpiration *= daysPerYear;
+        defaultExpirationDays *= daysPerYear;
       }
-      return defaultExpiration;
+      return defaultExpirationDays;
+    }
+
+    function readSettings() {
+      if (storeForeverCheckbox.checked) {
+        return {
+          defaultNeverExpire: true,
+        };
+      }
+      return {
+        defaultExpirationDays: readDefaultFileExpiration(),
+      };
     }
 
     function disableSaveButton() {
@@ -56,6 +68,22 @@
       enableSaveButton();
     });
 
+    storeForeverCheckbox.addEventListener("change", (evt) => {
+      enableSaveButton();
+      const neverExpire = evt.target.checked;
+
+      if (neverExpire) {
+        defaultExpiration.setAttribute("disabled", "true");
+        timeUnit.setAttribute("disabled", "true");
+      } else {
+        defaultExpiration.removeAttribute("disabled");
+        timeUnit.removeAttribute("disabled");
+      }
+    });
+
+    // TODO: Enable/disable checkbox and input fields on page load depending on
+    // current values.
+
     document
       .getElementById("settings-form")
       .addEventListener("submit", (evt) => {
@@ -65,7 +93,7 @@
         showElement(progressSpinner);
         disableSaveButton();
 
-        settingsPut(readDefaultFileExpiration())
+        settingsPut(readSettings())
           .then(() => {
             document
               .querySelector("snackbar-notifications")
@@ -92,6 +120,7 @@
   <form id="settings-form">
     <div class="field my-5">
       <label class="label">Default File Expiration</label>
+
       <div class="is-flex is-flex-direction-row">
         <div class="control mr-1">
           <input
@@ -126,6 +155,12 @@
           </select>
         </div>
       </div>
+    </div>
+    <div class="field my-5">
+      <label class="checkbox">
+        <input type="checkbox" id="store-forever-checkbox" />
+        Default to store files forever
+      </label>
     </div>
 
     <div class="control">

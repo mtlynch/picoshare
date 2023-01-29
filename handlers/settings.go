@@ -31,6 +31,7 @@ func (s Server) settingsPut() http.HandlerFunc {
 func settingsFromRequest(r *http.Request) (picoshare.Settings, error) {
 	var payload struct {
 		DefaultExpirationDays uint16 `json:"defaultExpirationDays"`
+		DefaultNeverExpire    bool   `json:"defaultNeverExpire"`
 	}
 	err := json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil {
@@ -38,12 +39,19 @@ func settingsFromRequest(r *http.Request) (picoshare.Settings, error) {
 		return picoshare.Settings{}, err
 	}
 
-	defaultExpiration, err := parse.FileLifetime(payload.DefaultExpirationDays)
-	if err != nil {
-		return picoshare.Settings{}, err
+	defaultNeverExpire := payload.DefaultNeverExpire
+
+	var defaultLifetime picoshare.FileLifetime
+	if defaultNeverExpire {
+		defaultLifetime = picoshare.FileLifetimeInfinite
+	} else {
+		defaultLifetime, err = parse.FileLifetime(payload.DefaultExpirationDays)
+		if err != nil {
+			return picoshare.Settings{}, err
+		}
 	}
 
 	return picoshare.Settings{
-		DefaultFileLifetime: defaultExpiration,
+		DefaultFileLifetime: defaultLifetime,
 	}, nil
 }
