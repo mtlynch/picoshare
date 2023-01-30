@@ -28,34 +28,27 @@ func enforceContentSecurityPolicy(next http.Handler) http.Handler {
 			{
 				name: "default-src",
 				values: []string{
-					"self",
+					"'self'",
 				},
 			},
 			{
 				name: "script-src",
 				values: []string{
-					"self",
-					"nonce-" + nonce,
+					"'self'",
+					"'nonce-" + nonce + "'",
 				},
 			},
 			{
 				name: "style-src",
 				values: []string{
-					"self",
-					// Firefox refuses to load an inline <style> tag in an HTML custom
-					// element, even if we specify a nonce:
-					// https://github.com/mtlynch/picoshare/issues/249
-					"unsafe-inline",
+					"'self'",
+					"'nonce-" + nonce + "'",
 				},
 			},
 		}
 		policyParts := []string{}
 		for _, directive := range directives {
-			valuesFormatted := make([]string, len(directive.values))
-			for i, value := range directive.values {
-				valuesFormatted[i] = fmt.Sprintf("'%s'", value)
-			}
-			policyParts = append(policyParts, fmt.Sprintf("%s %s", directive.name, strings.Join(valuesFormatted, " ")))
+			policyParts = append(policyParts, fmt.Sprintf("%s %s", directive.name, strings.Join(directive.values, " ")))
 		}
 		policy := strings.Join(policyParts, "; ") + ";"
 
