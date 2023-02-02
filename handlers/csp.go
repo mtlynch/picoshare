@@ -43,6 +43,10 @@ func enforceContentSecurityPolicy(next http.Handler) http.Handler {
 				values: []string{
 					"'self'",
 					"'nonce-" + nonce + "'",
+					// Firefox refuses to load an inline <style> tag in an HTML custom
+					// element, even if we specify a nonce:
+					// https://github.com/mtlynch/picoshare/issues/249
+					"unsafe-inline",
 				},
 			},
 			{
