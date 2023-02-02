@@ -45,6 +45,13 @@ func enforceContentSecurityPolicy(next http.Handler) http.Handler {
 					"'nonce-" + nonce + "'",
 				},
 			},
+			{
+				name: "img-src",
+				values: []string{
+					"'self'",
+					"data:",
+				},
+			},
 		}
 		policyParts := []string{}
 		for _, directive := range directives {
