@@ -49,9 +49,12 @@ func enforceContentSecurityPolicy(next http.Handler) http.Handler {
 				},
 			},
 			{
-				name: "img-src",
+				name: "media-src",
 				values: []string{
 					"'self'",
+					// For some reason, Firefox throws an error if we don't allow data in
+					// as a media-src, even on pages where there are no video, audio, or
+					// track tags.
 					"data:",
 				},
 			},
