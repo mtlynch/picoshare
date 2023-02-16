@@ -62,7 +62,7 @@ func main() {
 	}
 
 	stop := setupSignalHandler()
-	httpSrv := &http.Server{Addr: fmt.Sprintf(":%s", port), Handler: h}
+	httpSrv := http.Server{Addr: fmt.Sprintf(":%s", port), Handler: h}
 	go func() {
 		log.Printf("listening on %s", port)
 		log.Fatal(httpSrv.ListenAndServe())
@@ -93,7 +93,7 @@ func isLitestreamEnabled() bool {
 	return os.Getenv("LITESTREAM_BUCKET") != ""
 }
 
-func setupSignalHandler() (stopCh <-chan struct{}) {
+func setupSignalHandler() <-chan struct{} {
 	stop := make(chan struct{})
 	c := make(chan os.Signal, 2)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
