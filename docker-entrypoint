@@ -57,8 +57,8 @@ if [[ "${IS_LITESTREAM_ENABLED}" == 'true' ]]; then
   fi
 
   # Let Litestream start PicoShare as a child process
-  /app/litestream replicate -exec "$PS_LAUNCH_CMD"
+  exec /app/litestream replicate -exec "$PS_LAUNCH_CMD"
 else
   echo "Starting without litestream"
-  eval "${PS_LAUNCH_CMD}"
+  eval "exec ${PS_LAUNCH_CMD}"
 fi
