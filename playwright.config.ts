@@ -26,12 +26,17 @@ const config: PlaywrightTestConfig = {
         ...devices["Desktop Chrome"],
       },
     },
+    {
+      name: "firefox",
+      use: { ...devices["Desktop Firefox"] },
+    },
   ],
 
   outputDir: "e2e-results/",
 
   webServer: {
-    command: "PS_SHARED_SECRET=dummypass PORT=6001 ./bin/picoshare",
+    command:
+      "PS_SHARED_SECRET=dummypass PORT=6001 ./bin/picoshare -db data/store-e2e.db",
     port: 6001,
   },
 };
