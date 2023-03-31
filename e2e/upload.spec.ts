@@ -150,6 +150,18 @@ test("uploads a file and deletes it", async ({ page }) => {
 test("uploads a file and then uploads another", async ({ page }) => {
   await login(page);
 
+  // Set default to 30 days.
+  await page.locator("data-test-id=system-dropdown").hover();
+  await page.locator("a[href='/settings']").click();
+  await expect(page).toHaveURL("/settings");
+
+  await page.locator("#default-expiration").fill("30");
+  await page.locator("#time-unit").selectOption("days");
+  await page.locator("#settings-form button[type='submit']").click();
+
+  await page.locator("data-test-id=upload-btn").click();
+  await expect(page).toHaveURL("/");
+
   await page.locator(".file-input").setInputFiles([
     {
       name: "upload-1.txt",
