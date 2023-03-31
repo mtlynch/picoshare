@@ -310,7 +310,7 @@
         <label class="label">Expiration</label>
         <div class="control">
           <div class="select">
-            <select id="expiration-select">
+            <select id="expiration-select" autocomplete="off">
               {{ range .ExpirationOptions }}
                 <option
                   value="{{ formatExpiration .Expiration }}"
