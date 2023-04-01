@@ -97,6 +97,9 @@ jobs:
       - attach_workspace:
           at: ./
       - run:
+          name: Compile dev backend
+          command: dev-scripts/build-backend dev
+      - run:
           name: Install dependencies
           command: npm install
       - run:

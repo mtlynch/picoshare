@@ -32,7 +32,7 @@ const config: PlaywrightTestConfig = {
 
   webServer: {
     command:
-      "PS_SHARED_SECRET=dummypass PORT=6001 ./bin/picoshare -db data/store-e2e.db",
+      "PS_SHARED_SECRET=dummypass PORT=6001 ./bin/picoshare-dev -db data/store-e2e.db",
     port: 6001,
   },
 };

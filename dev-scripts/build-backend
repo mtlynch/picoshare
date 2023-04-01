@@ -3,10 +3,24 @@
 # Exit build script on first failure.
 set -e
 
-# Echo commands to stdout.
+# Echo commands.
 set -x
+
+if [[ -z $1 ]]; then
+  MODE="prod"
+else
+  MODE="$1"
+fi
 
 # Exit on unset variable.
 set -u
 
-go build -o ./bin/picoshare cmd/picoshare/main.go
+if [[ "${MODE}" == "prod" ]]; then
+  BINARY="./bin/picoshare"
+  EXTRA_FLAGS=()
+else
+  BINARY="./bin/picoshare-${MODE}"
+  EXTRA_FLAGS=("--tags" "${MODE}")
+fi
+
+go build "${EXTRA_FLAGS[@]}" -o "${BINARY}" cmd/picoshare/main.go

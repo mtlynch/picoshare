@@ -18,7 +18,7 @@ const (
 )
 
 type (
-	db struct {
+	DB struct {
 		ctx       *sql.DB
 		chunkSize int
 	}
@@ -61,7 +61,7 @@ func NewWithChunkSize(path string, chunkSize int, optimizeForLitestream bool) st
 
 	applyMigrations(ctx)
 
-	return &db{
+	return &DB{
 		ctx:       ctx,
 		chunkSize: chunkSize,
 	}

@@ -1,5 +1,10 @@
 import { test, expect } from "@playwright/test";
+import { wipeDB } from "./helpers/db.js";
 import { login } from "./helpers/login.js";
+
+test.beforeEach(async ({ page }) => {
+  await wipeDB(page);
+});
 
 test("default file expiration is 30 days", async ({ page }) => {
   await login(page);
