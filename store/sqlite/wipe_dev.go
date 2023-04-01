@@ -15,4 +15,16 @@ func (d DB) Clear() {
 	if _, err := d.ctx.Exec(`DELETE FROM settings`); err != nil {
 		log.Fatalf("failed to delete users: %v", err)
 	}
+
+	if _, err := d.ctx.Exec(`
+	INSERT INTO settings (
+		id,
+		default_expiration_in_days
+	) VALUES (
+		1,
+		30
+	)`); err != nil {
+		log.Fatalf("failed to reset settings: %v", err)
+	}
+
 }
