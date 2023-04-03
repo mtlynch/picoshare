@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strings"
 	"syscall"
 	"time"
 
@@ -75,6 +76,13 @@ func main() {
 
 func requireEnv(key string) string {
 	val := os.Getenv(key)
+	if val == "" {
+		filename := os.Getenv(key + "_FILE")
+		if data, err := os.ReadFile(filename); err == nil {
+			val = string(data)
+			val = strings.TrimSpace(val)
+		}
+	}
 	if val == "" {
 		panic(fmt.Sprintf("missing required environment variable: %s", key))
 	}
