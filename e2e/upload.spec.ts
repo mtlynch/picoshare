@@ -1,5 +1,10 @@
 import { test, expect } from "@playwright/test";
+import { wipeDB } from "./helpers/db.js";
 import { login } from "./helpers/login.js";
+
+test.beforeEach(async ({ page }) => {
+  await wipeDB(page);
+});
 
 test("uploads a file without specifying any parameters", async ({
   page,
@@ -232,7 +237,7 @@ test("uploads a file and changes its expiration time", async ({ page }) => {
   await page.locator(".navbar a[href='/files']").click();
   await page
     .locator(
-      ".table tr[test-data-filename='upload-with-temporary-note.txt'] [pico-purpose='edit']"
+      ".table tr[test-data-filename='file-with-new-expiration.txt'] [pico-purpose='edit']"
     )
     .click();
 
@@ -246,7 +251,7 @@ test("uploads a file and changes its expiration time", async ({ page }) => {
   await expect(page).toHaveURL("/files");
   await expect(
     page.locator(
-      ".table tr[test-data-filename='upload-with-temporary-note.txt'] [test-data-id='expiration']"
+      ".table tr[test-data-filename='file-with-new-expiration.txt'] [test-data-id='expiration']"
     )
   ).toHaveText(/^2029-09-04/);
 });

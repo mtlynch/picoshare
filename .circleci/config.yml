@@ -81,12 +81,16 @@ jobs:
       - attach_workspace:
           at: ./
       - run:
-          name: Compile backend
+          name: Compile production backend
           command: dev-scripts/build-backend
+      - run:
+          name: Compile dev backend
+          command: dev-scripts/build-backend dev
       - persist_to_workspace:
           root: ./
           paths:
             - ./bin/picoshare
+            - ./bin/picoshare-dev
   e2e:
     docker:
       - image: mcr.microsoft.com/playwright:v1.32.1-focal

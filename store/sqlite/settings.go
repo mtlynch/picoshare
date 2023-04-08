@@ -10,7 +10,7 @@ import (
 // We only store one set of settings at a time, so we used a fixed row ID.
 const settingsRowID = 1
 
-func (d db) ReadSettings() (picoshare.Settings, error) {
+func (d DB) ReadSettings() (picoshare.Settings, error) {
 	var expirationInDays uint16
 	if err := d.ctx.QueryRow(`
 	SELECT
@@ -30,7 +30,7 @@ func (d db) ReadSettings() (picoshare.Settings, error) {
 	}, nil
 }
 
-func (d db) UpdateSettings(s picoshare.Settings) error {
+func (d DB) UpdateSettings(s picoshare.Settings) error {
 	log.Printf("saving new settings: %s", s)
 	expirationInDays := s.DefaultFileLifetime.Days()
 	_, err := d.ctx.Exec(`
