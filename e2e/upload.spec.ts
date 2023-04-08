@@ -150,6 +150,62 @@ test("uploads a file and deletes it", async ({ page }) => {
   ).toHaveCount(0);
 });
 
+// Prevent a regression of a bug affecting Firefox:
+// https://github.com/mtlynch/picoshare/issues/405
+test("uploads a file and then uploads another", async ({ page }) => {
+  await login(page);
+
+  // Set default to 30 days.
+  await page.locator("data-test-id=system-dropdown").hover();
+  await page.locator("a[href='/settings']").click();
+  await expect(page).toHaveURL("/settings");
+
+  await page.locator("#default-expiration").fill("30");
+  await page.locator("#time-unit").selectOption("days");
+  await page.locator("#settings-form button[type='submit']").click();
+
+  await page.locator("data-test-id=upload-btn").click();
+  await expect(page).toHaveURL("/");
+
+  await page.locator(".file-input").setInputFiles([
+    {
+      name: "upload-1.txt",
+      mimeType: "text/plain",
+      buffer: Buffer.from("I'm the first upload"),
+    },
+  ]);
+  await expect(page.locator("#upload-result .message-body")).toHaveText(
+    "Upload complete!"
+  );
+
+  await page.locator("#upload-another-btn").click();
+
+  await page.locator(".file-input").setInputFiles([
+    {
+      name: "upload-2.txt",
+      mimeType: "text/plain",
+      buffer: Buffer.from("I'm the second upload"),
+    },
+  ]);
+  await expect(page.locator("#upload-result .message-body")).toHaveText(
+    "Upload complete!"
+  );
+
+  await page.locator(".navbar a[href='/files']").click();
+
+  await expect(page).toHaveURL("/files");
+  await expect(
+    page.locator(
+      ".table tr[test-data-filename='upload-1.txt'] td[test-data-id='expiration']"
+    )
+  ).toHaveText(/ \(30 days\)$/);
+  await expect(
+    page.locator(
+      ".table tr[test-data-filename='upload-2.txt'] td[test-data-id='expiration']"
+    )
+  ).toHaveText(/ \(30 days\)$/);
+});
+
 test("uploads a file and deletes its note", async ({ page }) => {
   await login(page);
 
