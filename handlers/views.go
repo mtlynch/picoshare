@@ -263,7 +263,11 @@ func (s Server) authGet() http.HandlerFunc {
 
 func (s Server) uploadGet() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		settings := s.settings.Get()
+		settings, err := s.getDB(r).ReadSettings()
+		if err != nil {
+			http.Error(w, fmt.Sprintf("failed to read settings from database: %v", err), http.StatusInternalServerError)
+			return
+		}
 		type lifetimeOption struct {
 			Lifetime  picoshare.FileLifetime
 			IsDefault bool
@@ -380,7 +384,11 @@ func (s Server) guestUploadGet() http.HandlerFunc {
 
 func (s Server) settingsGet() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		settings := s.settings.Get()
+		settings, err := s.getDB(r).ReadSettings()
+		if err != nil {
+			http.Error(w, fmt.Sprintf("failed to read settings from database: %v", err), http.StatusInternalServerError)
+			return
+		}
 		expirationValue := settings.DefaultFileLifetime.Days()
 		expirationTimeUnit := "days"
 		if settings.DefaultFileLifetime.IsYearBoundary() {
