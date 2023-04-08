@@ -11,7 +11,7 @@ import (
 	"github.com/mtlynch/picoshare/v2/store/sqlite/file"
 )
 
-func (d db) GetEntriesMetadata() ([]picoshare.UploadMetadata, error) {
+func (d DB) GetEntriesMetadata() ([]picoshare.UploadMetadata, error) {
 	rows, err := d.ctx.Query(`
 	SELECT
 		entries.id AS id,
@@ -75,7 +75,7 @@ func (d db) GetEntriesMetadata() ([]picoshare.UploadMetadata, error) {
 	return ee, nil
 }
 
-func (d db) GetEntry(id picoshare.EntryID) (picoshare.UploadEntry, error) {
+func (d DB) GetEntry(id picoshare.EntryID) (picoshare.UploadEntry, error) {
 	metadata, err := d.GetEntryMetadata(id)
 	if err != nil {
 		return picoshare.UploadEntry{}, err
@@ -92,7 +92,7 @@ func (d db) GetEntry(id picoshare.EntryID) (picoshare.UploadEntry, error) {
 	}, nil
 }
 
-func (d db) GetEntryMetadata(id picoshare.EntryID) (picoshare.UploadMetadata, error) {
+func (d DB) GetEntryMetadata(id picoshare.EntryID) (picoshare.UploadMetadata, error) {
 	var filename string
 	var note *string
 	var contentType string
@@ -135,7 +135,7 @@ func (d db) GetEntryMetadata(id picoshare.EntryID) (picoshare.UploadMetadata, er
 	}, nil
 }
 
-func (d db) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) error {
+func (d DB) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) error {
 	log.Printf("saving new entry %s", metadata.ID)
 
 	// Note: We deliberately don't use a transaction here, as it bloats memory, so
@@ -182,7 +182,7 @@ func (d db) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) err
 	return nil
 }
 
-func (d db) UpdateEntryMetadata(id picoshare.EntryID, metadata picoshare.UploadMetadata) error {
+func (d DB) UpdateEntryMetadata(id picoshare.EntryID, metadata picoshare.UploadMetadata) error {
 	log.Printf("updating metadata for entry %s", id)
 
 	res, err := d.ctx.Exec(`
@@ -212,7 +212,7 @@ func (d db) UpdateEntryMetadata(id picoshare.EntryID, metadata picoshare.UploadM
 	return nil
 }
 
-func (d db) DeleteEntry(id picoshare.EntryID) error {
+func (d DB) DeleteEntry(id picoshare.EntryID) error {
 	log.Printf("deleting entry %v", id)
 
 	tx, err := d.ctx.BeginTx(context.Background(), nil)

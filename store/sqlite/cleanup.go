@@ -7,7 +7,7 @@ import (
 )
 
 // Purge deletes expired entries and clears orphaned rows from the database.
-func (d db) Purge() error {
+func (d DB) Purge() error {
 	if err := d.deleteExpiredEntries(); err != nil {
 		return err
 	}
@@ -19,7 +19,7 @@ func (d db) Purge() error {
 	return nil
 }
 
-func (d db) Compact() error {
+func (d DB) Compact() error {
 	log.Printf("vacuuming database")
 
 	if _, err := d.ctx.Exec("VACUUM"); err != nil {
@@ -32,7 +32,7 @@ func (d db) Compact() error {
 	return nil
 }
 
-func (d db) deleteExpiredEntries() error {
+func (d DB) deleteExpiredEntries() error {
 	log.Printf("deleting expired entries from database")
 
 	tx, err := d.ctx.BeginTx(context.Background(), nil)
@@ -73,7 +73,7 @@ func (d db) deleteExpiredEntries() error {
 	return tx.Commit()
 }
 
-func (d db) deleteOrphanedRows() error {
+func (d DB) deleteOrphanedRows() error {
 	log.Printf("purging orphaned rows from database")
 
 	// Delete rows from entries_data if they don't reference valid rows in

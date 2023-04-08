@@ -1,5 +1,10 @@
 import { test, expect } from "@playwright/test";
+import { wipeDB } from "./helpers/db.js";
 import { login } from "./helpers/login.js";
+
+test.beforeEach(async ({ page }) => {
+  await wipeDB(page);
+});
 
 test("creates a guest link and uploads a file as a guest", async ({ page }) => {
   await login(page);
