@@ -12,7 +12,6 @@ test("uploads a file without specifying any parameters", async ({
 }) => {
   await login(page);
 
-  // TODO: Add randomness to each filename.
   await page.locator(".file-input").setInputFiles([
     {
       name: "simple-upload.txt",
