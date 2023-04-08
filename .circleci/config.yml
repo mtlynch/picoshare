@@ -106,6 +106,28 @@ jobs:
       - run:
           name: Run end-to-end tests
           command: ./dev-scripts/run-e2e-tests --skip-build
+      - run:
+          name: Download backblaze CLI tool
+          command: |
+            wget https://github.com/Backblaze/B2_Command_Line_Tool/releases/latest/download/b2-linux && \
+            mv b2-linux b2 && \
+            chmod +x b2 && \
+            ./b2 version
+      - run:
+          name: Authorize Backblaze CLI tool
+          command: |
+            set -u
+            ./b2 authorize-account "${BACKBLAZE_KEY_ID}" "${BACKBLAZE_KEY}"
+      - run:
+          name: Upload artifacts to backblaze bucket
+          command: |
+            ./b2 sync ./playwright-report "b2://artifacts/${CIRCLE_TAG}/playwright-report"
+            ./b2 sync ./e2e-results "b2://artifacts/${CIRCLE_TAG}/e2e-results"
+      - run:
+          name: Print public URLs of images
+          command: |
+            echo "Uploaded images to:"
+            echo "https://f000.backblazeb2.com/file/picoshare-e2e-artifacts/artifacts/${CIRCLE_TAG}/playwright-report"
       - store_artifacts:
           path: playwright-report
       - store_artifacts:
