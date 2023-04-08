@@ -96,6 +96,7 @@ jobs:
       - image: mcr.microsoft.com/playwright:v1.32.1-focal
     environment:
       NODE_ENV: development
+      BACKBLAZE_BUCKET: picoshare-e2e-artifacts
     steps:
       - checkout
       - attach_workspace:
@@ -125,12 +126,12 @@ jobs:
             ./b2 authorize-account "${BACKBLAZE_KEY_ID}" "${BACKBLAZE_KEY}"
       - run:
           name: Upload artifacts to backblaze bucket
-          command: ./b2 sync ./playwright-report "b2://picoshare-e2e-artifacts/artifacts/${CIRCLE_SHA1}/playwright-report"
+          command: ./b2 sync ./playwright-report "b2://${BACKBLAZE_BUCKET}/artifacts/${CIRCLE_SHA1}/playwright-report"
       - run:
           name: Print public URLs of images
           command: |
             echo "Uploaded images to:"
-            echo "https://f002.backblazeb2.com/file/picoshare-e2e-artifacts/artifacts/${CIRCLE_SHA1}/playwright-report/index.html"
+            echo "https://f002.backblazeb2.com/file/${BACKBLAZE_BUCKET}/artifacts/${CIRCLE_SHA1}/playwright-report/index.html"
   build_docker_images:
     docker:
       - image: cimg/base:stable
