@@ -48,8 +48,8 @@ func (s *Server) cleanupPost() http.HandlerFunc {
 func usePerSessionDB(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if _, err := r.Cookie(dbTokenCookieName); err != nil {
-			log.Printf("provisioning a new private database")
 			token := dbToken(random.String(30, []rune("abcdefghijkmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")))
+			log.Printf("provisioning a new private database with token %s", token)
 			createDBCookie(token, w)
 			tokenToDB[token] = test_sqlite.New()
 		}
