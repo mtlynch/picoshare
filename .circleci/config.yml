@@ -1,4 +1,6 @@
 version: 2.1
+orbs:
+  github: circleci/github@1.0.1
 jobs:
   check_whitespace:
     docker:
@@ -136,6 +138,12 @@ jobs:
           command: |
             echo "Uploaded images to:"
             echo "https://f002.backblazeb2.com/file/${BACKBLAZE_BUCKET}/artifacts/${CIRCLE_SHA1}/playwright-report/index.html"
+      - github/update-status:
+          context: "build"
+          description: |
+            ## Playwright test results
+
+            <https://f002.backblazeb2.com/file/${BACKBLAZE_BUCKET}/artifacts/${CIRCLE_SHA1}/playwright-report/index.html>
   build_docker_images:
     docker:
       - image: cimg/base:stable
