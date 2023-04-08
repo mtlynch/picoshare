@@ -77,9 +77,9 @@ Notes:
 - Only run one Docker container for each Litestream location.
   - PicoShare can't sync writes across multiple instances.
 
-### Using Docker Compose or Docker Swarm
+### Using Docker Compose
 
-To run PicoShare under docker-compose or docker swarm, copy the following to a file called `docker-compose.yml`, create a file called ``password` with your password, and then run `docker-compose up`.
+To run PicoShare under docker-compose, copy the following to a file called `docker-compose.yml` and then run `docker-compose up`.
 
 ```yaml
 version: "3.2"
@@ -88,17 +88,12 @@ services:
     image: mtlynch/picoshare
     environment:
       - PORT=4001
-      - PS_SHARED_SECRET_FILE=/run/secrets/password
+      - PS_SHARED_SECRET=dummypass # Change to any password
     ports:
       - 4001:4001
     command: -db /data/store.db
     volumes:
       - ./data:/data
-    secrets:
-      - password
-secrets:
-  password:
-    file: password
 ```
 
 ## Parameters
@@ -112,11 +107,12 @@ secrets:
 
 ### Environment variables
 
-| Environment Variable | Meaning                                                                              |
-| -------------------- | ------------------------------------------------------------------------------------ |
-| `PORT`               | TCP port on which to listen for HTTP connections (defaults to 4001).                 |
-| `PS_BEHIND_PROXY`    | Set to `"true"` for better logging when PicoShare is running behind a reverse proxy. |
-| `PS_SHARED_SECRET`   | (required) Specifies a passphrase for the admin user to log in to PicoShare.         |
+| Environment Variable     | Meaning                                                                              |
+| ------------------------ | ------------------------------------------------------------------------------------ |
+| `PORT`                   | TCP port on which to listen for HTTP connections (defaults to 4001).                 |
+| `PS_BEHIND_PROXY`        | Set to `"true"` for better logging when PicoShare is running behind a reverse proxy. |
+| `PS_SHARED_SECRET`       | (required) Specifies a passphrase for the admin user to log in to PicoShare.         |
+| `PS_SHARED_SECRET_FILE`  | Path to a file containing admin user passphrase. Use instead of PS_SHARE_SECRET.     |
 
 ### Docker environment variables
 
