@@ -34,7 +34,7 @@ test("uploads a file without specifying any parameters", async ({
   ).toBeVisible();
 
   // Verify that cleanup doesn't incorrectly remove the file.
-  await request.post("/api/cleanup");
+  await request.post("/api/debug/db/cleanup");
 
   await page.locator(".navbar a[href='/files']").click();
   await expect(
