@@ -9,6 +9,7 @@ set -x
 REBUILD="true"
 if [[ "$1" = "--skip-build" ]]; then
   REBUILD="false"
+  shift
 fi
 readonly REBUILD
 
