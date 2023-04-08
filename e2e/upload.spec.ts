@@ -1,5 +1,10 @@
 import { test, expect } from "@playwright/test";
+import { wipeDB } from "./helpers/db.js";
 import { login } from "./helpers/login.js";
+
+test.beforeEach(async ({ page }) => {
+  await wipeDB(page);
+});
 
 test("uploads a file without specifying any parameters", async ({
   page,
@@ -29,7 +34,7 @@ test("uploads a file without specifying any parameters", async ({
   ).toBeVisible();
 
   // Verify that cleanup doesn't incorrectly remove the file.
-  await request.post("/api/cleanup");
+  await request.post("/api/debug/db/cleanup");
 
   await page.locator(".navbar a[href='/files']").click();
   await expect(
@@ -145,6 +150,62 @@ test("uploads a file and deletes it", async ({ page }) => {
   ).toHaveCount(0);
 });
 
+// Prevent a regression of a bug affecting Firefox:
+// https://github.com/mtlynch/picoshare/issues/405
+test("uploads a file and then uploads another", async ({ page }) => {
+  await login(page);
+
+  // Set default to 30 days.
+  await page.locator("data-test-id=system-dropdown").hover();
+  await page.locator("a[href='/settings']").click();
+  await expect(page).toHaveURL("/settings");
+
+  await page.locator("#default-expiration").fill("30");
+  await page.locator("#time-unit").selectOption("days");
+  await page.locator("#settings-form button[type='submit']").click();
+
+  await page.locator("data-test-id=upload-btn").click();
+  await expect(page).toHaveURL("/");
+
+  await page.locator(".file-input").setInputFiles([
+    {
+      name: "upload-1.txt",
+      mimeType: "text/plain",
+      buffer: Buffer.from("I'm the first upload"),
+    },
+  ]);
+  await expect(page.locator("#upload-result .message-body")).toHaveText(
+    "Upload complete!"
+  );
+
+  await page.locator("#upload-another-btn").click();
+
+  await page.locator(".file-input").setInputFiles([
+    {
+      name: "upload-2.txt",
+      mimeType: "text/plain",
+      buffer: Buffer.from("I'm the second upload"),
+    },
+  ]);
+  await expect(page.locator("#upload-result .message-body")).toHaveText(
+    "Upload complete!"
+  );
+
+  await page.locator(".navbar a[href='/files']").click();
+
+  await expect(page).toHaveURL("/files");
+  await expect(
+    page.locator(
+      ".table tr[test-data-filename='upload-1.txt'] td[test-data-id='expiration']"
+    )
+  ).toHaveText(/ \(30 days\)$/);
+  await expect(
+    page.locator(
+      ".table tr[test-data-filename='upload-2.txt'] td[test-data-id='expiration']"
+    )
+  ).toHaveText(/ \(30 days\)$/);
+});
+
 test("uploads a file and deletes its note", async ({ page }) => {
   await login(page);
 
@@ -232,7 +293,7 @@ test("uploads a file and changes its expiration time", async ({ page }) => {
   await page.locator(".navbar a[href='/files']").click();
   await page
     .locator(
-      ".table tr[test-data-filename='upload-with-temporary-note.txt'] [pico-purpose='edit']"
+      ".table tr[test-data-filename='file-with-new-expiration.txt'] [pico-purpose='edit']"
     )
     .click();
 
@@ -246,7 +307,7 @@ test("uploads a file and changes its expiration time", async ({ page }) => {
   await expect(page).toHaveURL("/files");
   await expect(
     page.locator(
-      ".table tr[test-data-filename='upload-with-temporary-note.txt'] [test-data-id='expiration']"
+      ".table tr[test-data-filename='file-with-new-expiration.txt'] [test-data-id='expiration']"
     )
   ).toHaveText(/^2029-09-04/);
 });

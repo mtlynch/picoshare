@@ -6,6 +6,13 @@ set -e
 # Echo commands to stdout.
 set -x
 
+REBUILD="true"
+if [[ "$1" = "--skip-build" ]]; then
+  REBUILD="false"
+  shift
+fi
+readonly REBUILD
+
 # Exit on unset variable.
 set -u
 
@@ -14,6 +21,8 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 readonly SCRIPT_DIR
 cd "${SCRIPT_DIR}/.."
 
-./dev-scripts/reset-db
+if [[ "${REBUILD}" == "true" ]]; then
+  ./dev-scripts/build-backend dev
+fi
 
-npx playwright test
+npx playwright test "$@"

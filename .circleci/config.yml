@@ -81,17 +81,22 @@ jobs:
       - attach_workspace:
           at: ./
       - run:
-          name: Compile backend
+          name: Compile production backend
           command: dev-scripts/build-backend
+      - run:
+          name: Compile dev backend
+          command: dev-scripts/build-backend dev
       - persist_to_workspace:
           root: ./
           paths:
             - ./bin/picoshare
+            - ./bin/picoshare-dev
   e2e:
     docker:
       - image: mcr.microsoft.com/playwright:v1.32.1-focal
     environment:
       NODE_ENV: development
+      BACKBLAZE_BUCKET: picoshare-e2e-artifacts
     steps:
       - checkout
       - attach_workspace:
@@ -100,12 +105,37 @@ jobs:
           name: Install dependencies
           command: npm install
       - run:
-          name: Run playwright tests
-          command: npx playwright test
+          name: Run end-to-end tests
+          command: ./dev-scripts/run-e2e-tests --skip-build
       - store_artifacts:
           path: playwright-report
-      - store_artifacts:
-          path: e2e-results
+      # Playwright's artifacts don't render correctly in CircleCI, so upload an
+      # extra copy to Backblaze.
+      # https://github.com/microsoft/playwright/issues/18108
+      - run:
+          name: Download backblaze CLI tool
+          when: always
+          command: |
+            wget https://github.com/Backblaze/B2_Command_Line_Tool/releases/latest/download/b2-linux && \
+            mv b2-linux b2 && \
+            chmod +x b2 && \
+            ./b2 version
+      - run:
+          name: Authorize Backblaze CLI tool
+          when: always
+          command: |
+            set -u
+            ./b2 authorize-account "${BACKBLAZE_KEY_ID}" "${BACKBLAZE_KEY}"
+      - run:
+          name: Upload artifacts to backblaze bucket
+          when: always
+          command: ./b2 sync ./playwright-report "b2://${BACKBLAZE_BUCKET}/artifacts/${CIRCLE_SHA1}/playwright-report"
+      - run:
+          name: Print public URLs of images
+          when: always
+          command: |
+            echo "Uploaded images to:"
+            echo "https://f002.backblazeb2.com/file/${BACKBLAZE_BUCKET}/artifacts/${CIRCLE_SHA1}/playwright-report/index.html"
   build_docker_images:
     docker:
       - image: cimg/base:stable

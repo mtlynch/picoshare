@@ -110,13 +110,20 @@ secrets:
 | `-db`     | Path to SQLite database                                                  | `"data/store.db"` |
 | `-vacuum` | Vacuum database periodically to reclaim disk space (increases RAM usage) | `false`           |
 
+### Environment variables
+
+| Environment Variable | Meaning                                                                              |
+| -------------------- | ------------------------------------------------------------------------------------ |
+| `PORT`               | TCP port on which to listen for HTTP connections (defaults to 4001).                 |
+| `PS_BEHIND_PROXY`    | Set to `"true"` for better logging when PicoShare is running behind a reverse proxy. |
+| `PS_SHARED_SECRET`   | (required) Specifies a passphrase for the admin user to log in to PicoShare.         |
+
 ### Docker environment variables
 
-You can adjust behavior of the Docker container by passing these parameters with `docker run -e`:
+You can adjust behavior of the Docker container by specifying these Docker-specific variables with `docker run -e`:
 
 | Environment Variable           | Meaning                                                                                               |
 | ------------------------------ | ----------------------------------------------------------------------------------------------------- |
-| `PORT`                         | TCP port on which to listen for HTTP connections (defaults to 4001).                                  |
 | `LITESTREAM_BUCKET`            | Litestream-compatible cloud storage bucket where Litestream should replicate data.                    |
 | `LITESTREAM_ENDPOINT`          | Litestream-compatible cloud storage endpoint where Litestream should replicate data.                  |
 | `LITESTREAM_ACCESS_KEY_ID`     | Litestream-compatible cloud storage access key ID to the bucket where you want to replicate data.     |
