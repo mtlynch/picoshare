@@ -26,5 +26,4 @@ func (d DB) Clear() {
 	)`); err != nil {
 		log.Fatalf("failed to reset settings: %v", err)
 	}
-
 }
