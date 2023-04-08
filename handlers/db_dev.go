@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/mtlynch/picoshare/v2/store"
 	"github.com/mtlynch/picoshare/v2/store/sqlite"
 )
 
@@ -15,6 +16,10 @@ import (
 func (s *Server) addDevRoutes() {
 	s.router.HandleFunc("/api/debug/db/cleanup", s.cleanupPost()).Methods(http.MethodPost)
 	s.router.HandleFunc("/api/debug/db/wipe", s.wipeDB()).Methods(http.MethodGet)
+}
+
+func (s Server) getDB(*http.Request) store.Store {
+	return s.store
 }
 
 // cleanupPost is mainly for debugging/testing, as the garbagecollect package

@@ -43,7 +43,7 @@ func (s Server) indexGet() http.HandlerFunc {
 
 func (s Server) guestLinkIndexGet() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		links, err := s.store.GetGuestLinks()
+		links, err := s.getDB(r).GetGuestLinks()
 		if err != nil {
 			log.Printf("failed to retrieve guest links: %v", err)
 			http.Error(w, "Failed to retrieve guest links", http.StatusInternalServerError)
@@ -140,7 +140,7 @@ func (s Server) guestLinksNewGet() http.HandlerFunc {
 
 func (s Server) fileIndexGet() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		em, err := s.store.GetEntriesMetadata()
+		em, err := s.getDB(r).GetEntriesMetadata()
 		if err != nil {
 			log.Printf("failed to retrieve entries metadata: %v", err)
 			http.Error(w, "failed to retrieve file index", http.StatusInternalServerError)
@@ -184,7 +184,7 @@ func (s Server) fileEditGet() http.HandlerFunc {
 			return
 		}
 
-		metadata, err := s.store.GetEntryMetadata(id)
+		metadata, err := s.getDB(r).GetEntryMetadata(id)
 		if _, ok := err.(store.EntryNotFoundError); ok {
 			http.Error(w, "entry not found", http.StatusNotFound)
 			return
@@ -226,7 +226,7 @@ func (s Server) fileConfirmDeleteGet() http.HandlerFunc {
 			return
 		}
 
-		metadata, err := s.store.GetEntryMetadata(id)
+		metadata, err := s.getDB(r).GetEntryMetadata(id)
 		if _, ok := err.(store.EntryNotFoundError); ok {
 			http.Error(w, "entry not found", http.StatusNotFound)
 			return
@@ -339,7 +339,7 @@ func (s Server) guestUploadGet() http.HandlerFunc {
 			return
 		}
 
-		gl, err := s.store.GetGuestLink(guestLinkID)
+		gl, err := s.getDB(r).GetGuestLink(guestLinkID)
 		if _, ok := err.(store.GuestLinkNotFoundError); ok {
 			http.Error(w, "Invalid guest link ID", http.StatusNotFound)
 			return

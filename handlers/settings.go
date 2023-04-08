@@ -20,7 +20,7 @@ func (s Server) settingsPut() http.HandlerFunc {
 
 		s.settings.Update(settings)
 
-		if err := s.store.UpdateSettings(settings); err != nil {
+		if err := s.getDB(r).UpdateSettings(settings); err != nil {
 			log.Printf("failed to save settings: %v", err)
 			http.Error(w, fmt.Sprintf("Failed to save settings: %v", err), http.StatusInternalServerError)
 			return
