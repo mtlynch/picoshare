@@ -120,18 +120,12 @@ jobs:
             ./b2 authorize-account "${BACKBLAZE_KEY_ID}" "${BACKBLAZE_KEY}"
       - run:
           name: Upload artifacts to backblaze bucket
-          command: |
-            ./b2 sync ./playwright-report "b2://artifacts/${CIRCLE_TAG}/playwright-report"
-            ./b2 sync ./e2e-results "b2://artifacts/${CIRCLE_TAG}/e2e-results"
+          command: ./b2 sync ./playwright-report "b2://picoshare-e2e-artifacts/artifacts/${CIRCLE_SHA1}/playwright-report"
       - run:
           name: Print public URLs of images
           command: |
             echo "Uploaded images to:"
-            echo "https://f000.backblazeb2.com/file/picoshare-e2e-artifacts/artifacts/${CIRCLE_TAG}/playwright-report"
-      - store_artifacts:
-          path: playwright-report
-      - store_artifacts:
-          path: e2e-results
+            echo "https://f002.backblazeb2.com/file/picoshare-e2e-artifacts/artifacts/${CIRCLE_SHA1}/playwright-report"
   build_docker_images:
     docker:
       - image: cimg/base:stable
