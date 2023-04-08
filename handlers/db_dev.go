@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"sync"
 
 	"github.com/mtlynch/picoshare/v2/random"
 	"github.com/mtlynch/picoshare/v2/store"
@@ -27,11 +28,14 @@ type dbToken string
 var (
 	// usePerSessionDB is a global flag that indicates whether to use a
 	// per-session datastore. This is mainly useful for end-to-end tests.
-	usePerSessionDB bool
-	tokenToDB       map[dbToken]store.Store = map[dbToken]store.Store{}
+	usePerSessionDB     bool
+	usePerSessionDBLock sync.RWMutex
+	tokenToDB           map[dbToken]store.Store = map[dbToken]store.Store{}
 )
 
 func (s Server) getDB(r *http.Request) store.Store {
+	usePerSessionDBLock.RLock()
+	defer usePerSessionDBLock.Unlock()
 	if !usePerSessionDB {
 		return s.store
 	}
@@ -44,6 +48,9 @@ func (s Server) getDB(r *http.Request) store.Store {
 
 func dbInPerSessionPost() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		usePerSessionDBLock.Lock()
+		defer usePerSessionDBLock.Unlock()
+		log.Printf("per-session database is now enabled")
 		usePerSessionDB = true
 	}
 }
@@ -62,6 +69,8 @@ func (s *Server) cleanupPost() http.HandlerFunc {
 
 func loadPerSessionDB(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		usePerSessionDBLock.RLock()
+		defer usePerSessionDBLock.Unlock()
 		if usePerSessionDB {
 			if _, err := r.Cookie(dbTokenCookieName); err != nil {
 				token := dbToken(random.String(30, []rune("abcdefghijkmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")))
