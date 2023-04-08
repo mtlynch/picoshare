@@ -107,12 +107,12 @@ services:
 
 ### Environment variables
 
-| Environment Variable     | Meaning                                                                              |
-| ------------------------ | ------------------------------------------------------------------------------------ |
-| `PORT`                   | TCP port on which to listen for HTTP connections (defaults to 4001).                 |
-| `PS_BEHIND_PROXY`        | Set to `"true"` for better logging when PicoShare is running behind a reverse proxy. |
-| `PS_SHARED_SECRET`       | (required) Specifies a passphrase for the admin user to log in to PicoShare.         |
-| `PS_SHARED_SECRET_FILE`  | Path to a file containing admin user passphrase. Use instead of PS_SHARE_SECRET.     |
+| Environment Variable    | Meaning                                                                              |
+| ----------------------- | ------------------------------------------------------------------------------------ |
+| `PORT`                  | TCP port on which to listen for HTTP connections (defaults to 4001).                 |
+| `PS_BEHIND_PROXY`       | Set to `"true"` for better logging when PicoShare is running behind a reverse proxy. |
+| `PS_SHARED_SECRET`      | (required) Specifies a passphrase for the admin user to log in to PicoShare.         |
+| `PS_SHARED_SECRET_FILE` | Path to a file containing admin user passphrase: use instead of `PS_SHARED_SECRET`.  |
 
 ### Docker environment variables
 
