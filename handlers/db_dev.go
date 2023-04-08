@@ -35,7 +35,7 @@ var (
 
 func (s Server) getDB(r *http.Request) store.Store {
 	usePerSessionDBLock.RLock()
-	defer usePerSessionDBLock.Unlock()
+	defer usePerSessionDBLock.RUnlock()
 	if !usePerSessionDB {
 		return s.store
 	}
@@ -70,7 +70,6 @@ func (s *Server) cleanupPost() http.HandlerFunc {
 func loadPerSessionDB(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		usePerSessionDBLock.RLock()
-		defer usePerSessionDBLock.Unlock()
 		if usePerSessionDB {
 			if _, err := r.Cookie(dbTokenCookieName); err != nil {
 				token := dbToken(random.String(30, []rune("abcdefghijkmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")))
@@ -79,6 +78,7 @@ func loadPerSessionDB(h http.Handler) http.Handler {
 				tokenToDB[token] = test_sqlite.New()
 			}
 		}
+		usePerSessionDBLock.RUnlock()
 		h.ServeHTTP(w, r)
 	})
 }
