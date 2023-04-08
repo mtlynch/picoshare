@@ -17,7 +17,7 @@ import (
 func (s *Server) addDevRoutes() {
 	s.router.Use(loadPerSessionDB)
 	s.router.HandleFunc("/api/debug/db/cleanup", s.cleanupPost()).Methods(http.MethodPost)
-	s.router.HandleFunc("/api/debug/db/per-session", dbInPerSessionGet()).Methods(http.MethodGet)
+	s.router.HandleFunc("/api/debug/db/per-session", dbInPerSessionPost()).Methods(http.MethodPost)
 }
 
 const dbTokenCookieName = "db-token"
@@ -25,6 +25,8 @@ const dbTokenCookieName = "db-token"
 type dbToken string
 
 var (
+	// usePerSessionDB is a global flag that indicates whether to use a
+	// per-session datastore. This is mainly useful for end-to-end tests.
 	usePerSessionDB bool
 	tokenToDB       map[dbToken]store.Store = map[dbToken]store.Store{}
 )
@@ -40,7 +42,7 @@ func (s Server) getDB(r *http.Request) store.Store {
 	return tokenToDB[dbToken(c.Value)]
 }
 
-func dbInPerSessionGet() http.HandlerFunc {
+func dbInPerSessionPost() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		usePerSessionDB = true
 	}
