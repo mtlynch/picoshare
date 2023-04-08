@@ -199,12 +199,12 @@ test("uploads a file and then uploads another", async ({ page }) => {
     page.locator(
       ".table tr[test-data-filename='upload-1.txt'] td[test-data-id='expiration']"
     )
-  ).toHaveText(/ (30 days)$/);
+  ).toHaveText(/ \(30 days\)$/);
   await expect(
     page.locator(
       ".table tr[test-data-filename='upload-2.txt'] td[test-data-id='expiration']"
     )
-  ).toHaveText(/ (30 days)$/);
+  ).toHaveText(/ \(30 days\)$/);
 });
 
 test("uploads a file and deletes its note", async ({ page }) => {
