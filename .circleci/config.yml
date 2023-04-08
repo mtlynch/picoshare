@@ -114,6 +114,7 @@ jobs:
       # https://github.com/microsoft/playwright/issues/18108
       - run:
           name: Download backblaze CLI tool
+          when: always
           command: |
             wget https://github.com/Backblaze/B2_Command_Line_Tool/releases/latest/download/b2-linux && \
             mv b2-linux b2 && \
@@ -121,14 +122,17 @@ jobs:
             ./b2 version
       - run:
           name: Authorize Backblaze CLI tool
+          when: always
           command: |
             set -u
             ./b2 authorize-account "${BACKBLAZE_KEY_ID}" "${BACKBLAZE_KEY}"
       - run:
           name: Upload artifacts to backblaze bucket
+          when: always
           command: ./b2 sync ./playwright-report "b2://${BACKBLAZE_BUCKET}/artifacts/${CIRCLE_SHA1}/playwright-report"
       - run:
-          name: Print public URLs of Playwright results
+          name: Print public URLs of images
+          when: always
           command: |
             echo "Uploaded images to:"
             echo "https://f002.backblazeb2.com/file/${BACKBLAZE_BUCKET}/artifacts/${CIRCLE_SHA1}/playwright-report/index.html"
