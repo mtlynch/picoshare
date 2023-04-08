@@ -7,19 +7,30 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/mtlynch/picoshare/v2/random"
 	"github.com/mtlynch/picoshare/v2/store"
-	"github.com/mtlynch/picoshare/v2/store/sqlite"
+	"github.com/mtlynch/picoshare/v2/store/test_sqlite"
 )
 
 // addDevRoutes adds debug routes that we only use during development or e2e
 // tests.
 func (s *Server) addDevRoutes() {
+	s.router.Use(usePerSessionDB)
 	s.router.HandleFunc("/api/debug/db/cleanup", s.cleanupPost()).Methods(http.MethodPost)
-	s.router.HandleFunc("/api/debug/db/wipe", s.wipeDB()).Methods(http.MethodGet)
 }
 
-func (s Server) getDB(*http.Request) store.Store {
-	return s.store
+const dbTokenCookieName = "db-token"
+
+type dbToken string
+
+var tokenToDB map[dbToken]store.Store = map[dbToken]store.Store{}
+
+func (s Server) getDB(r *http.Request) store.Store {
+	c, err := r.Cookie(dbTokenCookieName)
+	if err != nil {
+		panic(err)
+	}
+	return tokenToDB[dbToken(c.Value)]
 }
 
 // cleanupPost is mainly for debugging/testing, as the garbagecollect package
@@ -34,13 +45,22 @@ func (s *Server) cleanupPost() http.HandlerFunc {
 	}
 }
 
-// wipeDB wipes the database back to a freshly initialized state.
-func (s Server) wipeDB() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		sqlStore, ok := s.store.(*sqlite.DB)
-		if !ok {
-			log.Fatalf("store is not SQLite, can't wipe database")
+func usePerSessionDB(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if _, err := r.Cookie(dbTokenCookieName); err != nil {
+			log.Printf("provisioning a new private database")
+			token := dbToken(random.String(30, []rune("abcdefghijkmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")))
+			createDBCookie(token, w)
+			tokenToDB[token] = test_sqlite.New()
 		}
-		sqlStore.Clear()
-	}
+		h.ServeHTTP(w, r)
+	})
+}
+
+func createDBCookie(token dbToken, w http.ResponseWriter) {
+	http.SetCookie(w, &http.Cookie{
+		Name:  dbTokenCookieName,
+		Value: string(token),
+		Path:  "/",
+	})
 }
