@@ -104,8 +104,8 @@ jobs:
           name: Install dependencies
           command: npm install
       - run:
-          name: Run playwright tests
-          command: npx playwright test
+          name: Run end-to-end tests
+          command: ./dev-scripts/run-e2e-tests --skip-build
       - store_artifacts:
           path: playwright-report
       - store_artifacts:
