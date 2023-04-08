@@ -15,22 +15,35 @@ import (
 // addDevRoutes adds debug routes that we only use during development or e2e
 // tests.
 func (s *Server) addDevRoutes() {
-	s.router.Use(usePerSessionDB)
+	s.router.Use(loadPerSessionDB)
 	s.router.HandleFunc("/api/debug/db/cleanup", s.cleanupPost()).Methods(http.MethodPost)
+	s.router.HandleFunc("/api/debug/db/per-session", dbInPerSessionGet()).Methods(http.MethodGet)
 }
 
 const dbTokenCookieName = "db-token"
 
 type dbToken string
 
-var tokenToDB map[dbToken]store.Store = map[dbToken]store.Store{}
+var (
+	usePerSessionDB bool
+	tokenToDB       map[dbToken]store.Store = map[dbToken]store.Store{}
+)
 
 func (s Server) getDB(r *http.Request) store.Store {
+	if !usePerSessionDB {
+		return s.store
+	}
 	c, err := r.Cookie(dbTokenCookieName)
 	if err != nil {
 		panic(err)
 	}
 	return tokenToDB[dbToken(c.Value)]
+}
+
+func dbInPerSessionGet() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		usePerSessionDB = true
+	}
 }
 
 // cleanupPost is mainly for debugging/testing, as the garbagecollect package
@@ -45,7 +58,7 @@ func (s *Server) cleanupPost() http.HandlerFunc {
 	}
 }
 
-func usePerSessionDB(h http.Handler) http.Handler {
+func loadPerSessionDB(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if _, err := r.Cookie(dbTokenCookieName); err != nil {
 			token := dbToken(random.String(30, []rune("abcdefghijkmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")))
