@@ -85,7 +85,7 @@ jobs:
           command: dev-scripts/build-backend
       - run:
           name: Compile dev backend
-          command: dev-scripts/build-backend
+          command: dev-scripts/build-backend dev
       - persist_to_workspace:
           root: ./
           paths:
