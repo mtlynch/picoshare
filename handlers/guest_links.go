@@ -37,7 +37,7 @@ func (s Server) guestLinksPost() http.HandlerFunc {
 		gl.ID = generateGuestLinkID()
 		gl.Created = time.Now()
 
-		if err := s.store.InsertGuestLink(gl); err != nil {
+		if err := s.getDB(r).InsertGuestLink(gl); err != nil {
 			log.Printf("failed to save guest link: %v", err)
 			http.Error(w, fmt.Sprintf("Failed to save guest link: %v", err), http.StatusInternalServerError)
 			return
@@ -56,7 +56,7 @@ func (s Server) guestLinksDelete() http.HandlerFunc {
 			return
 		}
 
-		if err := s.store.DeleteGuestLink(id); err != nil {
+		if err := s.getDB(r).DeleteGuestLink(id); err != nil {
 			log.Printf("failed to delete guest link: %v", err)
 			http.Error(w, fmt.Sprintf("Failed to delete guest link: %v", err), http.StatusInternalServerError)
 			return

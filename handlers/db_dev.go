@@ -6,15 +6,66 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"sync"
 
-	"github.com/mtlynch/picoshare/v2/store/sqlite"
+	"github.com/mtlynch/picoshare/v2/random"
+	"github.com/mtlynch/picoshare/v2/store"
+	"github.com/mtlynch/picoshare/v2/store/test_sqlite"
 )
 
 // addDevRoutes adds debug routes that we only use during development or e2e
 // tests.
 func (s *Server) addDevRoutes() {
+	s.router.Use(assignSessionDB)
 	s.router.HandleFunc("/api/debug/db/cleanup", s.cleanupPost()).Methods(http.MethodPost)
-	s.router.HandleFunc("/api/debug/db/wipe", s.wipeDB()).Methods(http.MethodGet)
+	s.router.HandleFunc("/api/debug/db/per-session", dbPerSessionPost()).Methods(http.MethodPost)
+}
+
+const dbTokenCookieName = "db-token"
+
+type (
+	dbToken string
+
+	dbSettings struct {
+		isolateBySession bool
+		lock             sync.RWMutex
+	}
+)
+
+func (dbs *dbSettings) IsolateBySession() bool {
+	dbs.lock.RLock()
+	isolate := dbs.isolateBySession
+	dbs.lock.RUnlock()
+	return isolate
+}
+
+func (dbs *dbSettings) SetIsolateBySession(isolate bool) {
+	dbs.lock.Lock()
+	dbs.isolateBySession = isolate
+	dbs.lock.Unlock()
+	log.Printf("per-session database = %v", isolate)
+}
+
+var (
+	sharedDBSettings dbSettings
+	tokenToDB        map[dbToken]store.Store = map[dbToken]store.Store{}
+)
+
+func (s Server) getDB(r *http.Request) store.Store {
+	if !sharedDBSettings.IsolateBySession() {
+		return s.store
+	}
+	c, err := r.Cookie(dbTokenCookieName)
+	if err != nil {
+		panic(err)
+	}
+	return tokenToDB[dbToken(c.Value)]
+}
+
+func dbPerSessionPost() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		sharedDBSettings.SetIsolateBySession(true)
+	}
 }
 
 // cleanupPost is mainly for debugging/testing, as the garbagecollect package
@@ -29,13 +80,27 @@ func (s *Server) cleanupPost() http.HandlerFunc {
 	}
 }
 
-// wipeDB wipes the database back to a freshly initialized state.
-func (s Server) wipeDB() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		sqlStore, ok := s.store.(*sqlite.DB)
-		if !ok {
-			log.Fatalf("store is not SQLite, can't wipe database")
+// assignSessionDB provisions a session-specific database if per-session
+// databases are enabled. If per-session databases are not enabled (the default)
+// this is a no-op.
+func assignSessionDB(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if sharedDBSettings.IsolateBySession() {
+			if _, err := r.Cookie(dbTokenCookieName); err != nil {
+				token := dbToken(random.String(30, []rune("abcdefghijkmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")))
+				log.Printf("provisioning a new private database with token %s", token)
+				createDBCookie(token, w)
+				tokenToDB[token] = test_sqlite.New()
+			}
 		}
-		sqlStore.Clear()
-	}
+		h.ServeHTTP(w, r)
+	})
+}
+
+func createDBCookie(token dbToken, w http.ResponseWriter) {
+	http.SetCookie(w, &http.Cookie{
+		Name:  dbTokenCookieName,
+		Value: string(token),
+		Path:  "/",
+	})
 }

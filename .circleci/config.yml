@@ -107,11 +107,23 @@ jobs:
       - run:
           name: Run end-to-end tests
           command: ./dev-scripts/run-e2e-tests --skip-build
+      - persist_to_workspace:
+          root: ./
+          paths:
+            - ./playwright-report
       - store_artifacts:
           path: playwright-report
-      # Playwright's artifacts don't render correctly in CircleCI, so upload an
-      # extra copy to Backblaze.
-      # https://github.com/microsoft/playwright/issues/18108
+  # Playwright's artifacts don't render correctly in CircleCI, so upload an
+  # extra copy to Backblaze.
+  # https://github.com/microsoft/playwright/issues/18108
+  e2e_results_to_cloud:
+    docker:
+      - image: cimg/base:stable
+    environment:
+      BACKBLAZE_BUCKET: picoshare-e2e-artifacts
+    steps:
+      - attach_workspace:
+          at: ./
       - run:
           name: Download backblaze CLI tool
           command: |
@@ -235,6 +247,16 @@ workflows:
               only: /.*/
           requires:
             - build_backend
+      - e2e_results_to_cloud:
+          filters:
+            branches:
+              # Skip forked PRs, as they don't have access to cloud storage
+              # credentials.
+              ignore: /pull\/[0-9]+/
+            tags:
+              only: /.*/
+          requires:
+            - e2e
       - build_docker_images:
           requires:
             - check_whitespace

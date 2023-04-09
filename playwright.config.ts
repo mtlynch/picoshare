@@ -7,11 +7,12 @@ const config: PlaywrightTestConfig = {
   expect: {
     timeout: 5 * 1000,
   },
-  fullyParallel: false,
+  fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: 0,
-  workers: 1,
+  workers: undefined,
   reporter: "html",
+  globalSetup: require.resolve("./e2e/helpers/global-setup"),
   use: {
     baseURL: "http://localhost:6001",
     actionTimeout: 0,
@@ -35,8 +36,7 @@ const config: PlaywrightTestConfig = {
   outputDir: "e2e-results/",
 
   webServer: {
-    command:
-      "PS_SHARED_SECRET=dummypass PORT=6001 ./bin/picoshare-dev -db data/store-e2e.db",
+    command: "PS_SHARED_SECRET=dummypass PORT=6001 ./bin/picoshare-dev",
     port: 6001,
   },
 };
