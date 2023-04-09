@@ -90,7 +90,7 @@ func (s Server) entryPut() http.HandlerFunc {
 			return
 		}
 
-		if err := s.store.UpdateEntryMetadata(id, metadata); err != nil {
+		if err := s.getDB(r).UpdateEntryMetadata(id, metadata); err != nil {
 			if _, ok := err.(store.EntryNotFoundError); ok {
 				http.Error(w, "Invalid entry ID", http.StatusNotFound)
 				return
@@ -111,7 +111,7 @@ func (s Server) guestEntryPost() http.HandlerFunc {
 			return
 		}
 
-		gl, err := s.store.GetGuestLink(guestLinkID)
+		gl, err := s.getDB(r).GetGuestLink(guestLinkID)
 		if _, ok := err.(store.GuestLinkNotFoundError); ok {
 			http.Error(w, "Invalid guest link ID", http.StatusNotFound)
 			return
@@ -258,7 +258,7 @@ func (s Server) insertFileFromRequest(r *http.Request, expiration picoshare.Expi
 	}
 
 	id := generateEntryID()
-	err = s.store.InsertEntry(reader,
+	err = s.getDB(r).InsertEntry(reader,
 		picoshare.UploadMetadata{
 			ID:          id,
 			Filename:    filename,
