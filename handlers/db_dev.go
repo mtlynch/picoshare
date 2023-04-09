@@ -16,27 +16,43 @@ import (
 // addDevRoutes adds debug routes that we only use during development or e2e
 // tests.
 func (s *Server) addDevRoutes() {
-	s.router.Use(loadPerSessionDB)
+	s.router.Use(assignSessionDB)
 	s.router.HandleFunc("/api/debug/db/cleanup", s.cleanupPost()).Methods(http.MethodPost)
-	s.router.HandleFunc("/api/debug/db/per-session", dbInPerSessionPost()).Methods(http.MethodPost)
+	s.router.HandleFunc("/api/debug/db/per-session", dbPerSessionPost()).Methods(http.MethodPost)
 }
 
 const dbTokenCookieName = "db-token"
 
-type dbToken string
+type (
+	dbToken string
+
+	dbSettings struct {
+		isolateBySession bool
+		lock             sync.RWMutex
+	}
+)
+
+func (dbs *dbSettings) IsolateBySession() bool {
+	dbs.lock.RLock()
+	isolate := dbs.isolateBySession
+	dbs.lock.RUnlock()
+	return isolate
+}
+
+func (dbs *dbSettings) SetIsolateBySession(isolate bool) {
+	dbs.lock.Lock()
+	dbs.isolateBySession = isolate
+	dbs.lock.Unlock()
+	log.Printf("per-session database = %v", isolate)
+}
 
 var (
-	// usePerSessionDB is a global flag that indicates whether to use a
-	// per-session datastore. This is mainly useful for end-to-end tests.
-	usePerSessionDB     bool
-	usePerSessionDBLock sync.RWMutex
-	tokenToDB           map[dbToken]store.Store = map[dbToken]store.Store{}
+	sharedDBSettings dbSettings
+	tokenToDB        map[dbToken]store.Store = map[dbToken]store.Store{}
 )
 
 func (s Server) getDB(r *http.Request) store.Store {
-	usePerSessionDBLock.RLock()
-	defer usePerSessionDBLock.RUnlock()
-	if !usePerSessionDB {
+	if !sharedDBSettings.IsolateBySession() {
 		return s.store
 	}
 	c, err := r.Cookie(dbTokenCookieName)
@@ -46,12 +62,9 @@ func (s Server) getDB(r *http.Request) store.Store {
 	return tokenToDB[dbToken(c.Value)]
 }
 
-func dbInPerSessionPost() http.HandlerFunc {
+func dbPerSessionPost() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		usePerSessionDBLock.Lock()
-		defer usePerSessionDBLock.Unlock()
-		log.Printf("per-session database is now enabled")
-		usePerSessionDB = true
+		sharedDBSettings.SetIsolateBySession(true)
 	}
 }
 
@@ -67,10 +80,12 @@ func (s *Server) cleanupPost() http.HandlerFunc {
 	}
 }
 
-func loadPerSessionDB(h http.Handler) http.Handler {
+// assignSessionDB provisions a session-specific database if per-session
+// databases are enabled. If per-session databases are not enabled (the default)
+// this is a no-op.
+func assignSessionDB(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		usePerSessionDBLock.RLock()
-		if usePerSessionDB {
+		if sharedDBSettings.IsolateBySession() {
 			if _, err := r.Cookie(dbTokenCookieName); err != nil {
 				token := dbToken(random.String(30, []rune("abcdefghijkmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")))
 				log.Printf("provisioning a new private database with token %s", token)
@@ -78,7 +93,6 @@ func loadPerSessionDB(h http.Handler) http.Handler {
 				tokenToDB[token] = test_sqlite.New()
 			}
 		}
-		usePerSessionDBLock.RUnlock()
 		h.ServeHTTP(w, r)
 	})
 }
