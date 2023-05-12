@@ -96,7 +96,6 @@ jobs:
       - image: mcr.microsoft.com/playwright:v1.32.1-focal
     environment:
       NODE_ENV: development
-      BACKBLAZE_BUCKET: picoshare-e2e-artifacts
     steps:
       - checkout
       - attach_workspace:
@@ -107,43 +106,8 @@ jobs:
       - run:
           name: Run end-to-end tests
           command: ./dev-scripts/run-e2e-tests --skip-build
-      - persist_to_workspace:
-          root: ./
-          paths:
-            - ./playwright-report
       - store_artifacts:
           path: playwright-report
-  # Playwright's artifacts don't render correctly in CircleCI, so upload an
-  # extra copy to Backblaze.
-  # https://github.com/microsoft/playwright/issues/18108
-  e2e_results_to_cloud:
-    docker:
-      - image: cimg/base:stable
-    environment:
-      BACKBLAZE_BUCKET: picoshare-e2e-artifacts
-    steps:
-      - attach_workspace:
-          at: ./
-      - run:
-          name: Download backblaze CLI tool
-          command: |
-            wget https://github.com/Backblaze/B2_Command_Line_Tool/releases/latest/download/b2-linux && \
-            mv b2-linux b2 && \
-            chmod +x b2 && \
-            ./b2 version
-      - run:
-          name: Authorize Backblaze CLI tool
-          command: |
-            set -u
-            ./b2 authorize-account "${BACKBLAZE_KEY_ID}" "${BACKBLAZE_KEY}"
-      - run:
-          name: Upload artifacts to backblaze bucket
-          command: ./b2 sync ./playwright-report "b2://${BACKBLAZE_BUCKET}/artifacts/${CIRCLE_SHA1}/playwright-report"
-      - run:
-          name: Print public URLs of Playwright results
-          command: |
-            echo "Uploaded images to:"
-            echo "https://f002.backblazeb2.com/file/${BACKBLAZE_BUCKET}/artifacts/${CIRCLE_SHA1}/playwright-report/index.html"
   build_docker_images:
     docker:
       - image: cimg/base:stable
@@ -247,16 +211,6 @@ workflows:
               only: /.*/
           requires:
             - build_backend
-      - e2e_results_to_cloud:
-          filters:
-            branches:
-              # Skip forked PRs, as they don't have access to cloud storage
-              # credentials.
-              ignore: /pull\/[0-9]+/
-            tags:
-              only: /.*/
-          requires:
-            - e2e
       - build_docker_images:
           requires:
             - check_whitespace
