@@ -128,7 +128,7 @@ jobs:
           name: Upload artifacts to backblaze bucket
           command: ./b2 sync ./playwright-report "b2://${BACKBLAZE_BUCKET}/artifacts/${CIRCLE_SHA1}/playwright-report"
       - run:
-          name: Print public URLs of Playwright results
+          name: Print public URLs of images
           command: |
             echo "Uploaded images to:"
             echo "https://f002.backblazeb2.com/file/${BACKBLAZE_BUCKET}/artifacts/${CIRCLE_SHA1}/playwright-report/index.html"
