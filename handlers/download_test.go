@@ -11,6 +11,38 @@ import (
 	"github.com/mtlynch/picoshare/v2/store/test_sqlite"
 )
 
+type mockEntry struct {
+	ID          picoshare.EntryID
+	Filename    picoshare.Filename
+	ContentType picoshare.ContentType
+}
+
+var (
+	dummyTextEntry = mockEntry{
+		ID:          "TTTTTTTTTT",
+		Filename:    picoshare.Filename("test.txt"),
+		ContentType: picoshare.ContentType("text/plain;charset=utf-8"),
+	}
+	dummyAudioEntry = mockEntry{
+		ID:          "AAAAAAAAAA",
+		Filename:    picoshare.Filename("test.mp3"),
+		ContentType: picoshare.ContentType("audio/mpeg"),
+	}
+	dummyAudioEntrywithoutContentType = mockEntry{
+		ID:       "AAAAAAAA22",
+		Filename: picoshare.Filename("test0.mp3"),
+	}
+	dummyVideoEntry = mockEntry{
+		ID:          "VVVVVVVVVV",
+		Filename:    picoshare.Filename("test.mp4"),
+		ContentType: picoshare.ContentType("video/mp4"),
+	}
+	dummyVideoEntryWithoutContentType = mockEntry{
+		ID:       "VVVVVVVV22",
+		Filename: picoshare.Filename("test0.mp4"),
+	}
+)
+
 func TestEntryGet(t *testing.T) {
 	for _, tt := range []struct {
 		description                string
@@ -63,53 +95,21 @@ func TestEntryGet(t *testing.T) {
 		t.Run(tt.description, func(t *testing.T) {
 			dataStore := test_sqlite.New()
 
-			// We have to create the dummy data in each test, otherwise the state of
-			// the Reader property will change across tests.
-			dummyTextEntry := picoshare.UploadEntry{
-				UploadMetadata: picoshare.UploadMetadata{
-					ID:          "TTTTTTTTTT",
-					Filename:    picoshare.Filename("test.txt"),
-					ContentType: picoshare.ContentType("text/plain;charset=utf-8"),
-				},
-				Reader: strings.NewReader("dummy text contents"),
-			}
-			dummyAudioEntry := picoshare.UploadEntry{
-				UploadMetadata: picoshare.UploadMetadata{
-					ID:          "AAAAAAAAAA",
-					Filename:    picoshare.Filename("test.mp3"),
-					ContentType: picoshare.ContentType("audio/mpeg"),
-				},
-				Reader: strings.NewReader("dummy audio contents"),
-			}
-			dummyAudioEntrywithoutContentType := picoshare.UploadEntry{
-				UploadMetadata: picoshare.UploadMetadata{
-					ID:       "AAAAAAAA22",
-					Filename: picoshare.Filename("test0.mp3"),
-				},
-				Reader: strings.NewReader("dummy audio contents"),
-			}
-			dummyVideoEntry := picoshare.UploadEntry{
-				UploadMetadata: picoshare.UploadMetadata{
-					ID:          "VVVVVVVVVV",
-					Filename:    picoshare.Filename("test.mp4"),
-					ContentType: picoshare.ContentType("video/mp4"),
-				},
-				Reader: strings.NewReader("dummy video contents"),
-			}
-			dummyVideoEntryWithoutContentType := picoshare.UploadEntry{
-				UploadMetadata: picoshare.UploadMetadata{
-					ID:       "VVVVVVVV22",
-					Filename: picoshare.Filename("test0.mp4"),
-				},
-				Reader: strings.NewReader("dummy video contents"),
-			}
-			for _, entry := range []picoshare.UploadEntry{
+			for _, mockEntry := range []mockEntry{
 				dummyTextEntry,
 				dummyAudioEntry,
 				dummyAudioEntrywithoutContentType,
 				dummyVideoEntry,
 				dummyVideoEntryWithoutContentType,
 			} {
+				entry := picoshare.UploadEntry{
+					UploadMetadata: picoshare.UploadMetadata{
+						ID:          mockEntry.ID,
+						Filename:    mockEntry.Filename,
+						ContentType: mockEntry.ContentType,
+					},
+					Reader: strings.NewReader("dummy data"),
+				}
 				if err := dataStore.InsertEntry(entry.Reader, entry.UploadMetadata); err != nil {
 					panic(err)
 				}
