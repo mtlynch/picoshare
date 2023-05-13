@@ -48,6 +48,8 @@ func (s Server) entryGet() http.HandlerFunc {
 }
 
 func inferContentTypeFromFilename(f picoshare.Filename) (picoshare.ContentType, error) {
+	// For files that modern browser can play natively, infer the content type if
+	// none was specified at upload time.
 	switch filepath.Ext(f.String()) {
 	case ".mp4":
 		return picoshare.ContentType("video/mp4"), nil
