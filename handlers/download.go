@@ -1,11 +1,14 @@
 package handlers
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
+	"path/filepath"
 
 	"github.com/gorilla/mux"
+	"github.com/mtlynch/picoshare/v2/picoshare"
 	"github.com/mtlynch/picoshare/v2/store"
 )
 
@@ -32,8 +35,25 @@ func (s Server) entryGet() http.HandlerFunc {
 			w.Header().Set("Content-Disposition", fmt.Sprintf(`filename="%s"`, entry.Filename))
 		}
 
-		w.Header().Set("Content-Type", string(entry.ContentType))
+		contentType := entry.ContentType
+		if contentType == "" {
+			if inferred, err := inferContentTypeFromFilename(entry.Filename); err == nil {
+				contentType = inferred
+			}
+		}
+		w.Header().Set("Content-Type", string(contentType))
 
 		http.ServeContent(w, r, string(entry.Filename), entry.Uploaded, entry.Reader)
+	}
+}
+
+func inferContentTypeFromFilename(f picoshare.Filename) (picoshare.ContentType, error) {
+	switch filepath.Ext(f.String()) {
+	case ".mp4":
+		return picoshare.ContentType("video/mp4"), nil
+	case ".mp3":
+		return picoshare.ContentType("audio/mpeg"), nil
+	default:
+		return picoshare.ContentType(""), errors.New("could not infer content type from filename")
 	}
 }

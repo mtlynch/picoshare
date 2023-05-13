@@ -34,10 +34,24 @@ func TestEntryGet(t *testing.T) {
 			expectedContentType:        "audio/mpeg",
 		},
 		{
+			description:                "retrieves audio entry and infers content-type when it wasn't specified at upload time",
+			requestRoute:               "/-AAAAAAAA22",
+			expectedStatus:             http.StatusOK,
+			expectedContentDisposition: `filename="test0.mp3"`,
+			expectedContentType:        "audio/mpeg",
+		},
+		{
 			description:                "retrieves video entry",
 			requestRoute:               "/-VVVVVVVVVV",
 			expectedStatus:             http.StatusOK,
 			expectedContentDisposition: `filename="test.mp4"`,
+			expectedContentType:        "video/mp4",
+		},
+		{
+			description:                "retrieves video entry and infers content-type when it wasn't specified at upload time",
+			requestRoute:               "/-VVVVVVVV22",
+			expectedStatus:             http.StatusOK,
+			expectedContentDisposition: `filename="test0.mp4"`,
 			expectedContentType:        "video/mp4",
 		},
 		{
@@ -67,6 +81,13 @@ func TestEntryGet(t *testing.T) {
 				},
 				Reader: strings.NewReader("dummy audio contents"),
 			}
+			dummyAudioEntrywithoutContentType := picoshare.UploadEntry{
+				UploadMetadata: picoshare.UploadMetadata{
+					ID:       "AAAAAAAA22",
+					Filename: picoshare.Filename("test0.mp3"),
+				},
+				Reader: strings.NewReader("dummy audio contents"),
+			}
 			dummyVideoEntry := picoshare.UploadEntry{
 				UploadMetadata: picoshare.UploadMetadata{
 					ID:          "VVVVVVVVVV",
@@ -75,7 +96,20 @@ func TestEntryGet(t *testing.T) {
 				},
 				Reader: strings.NewReader("dummy video contents"),
 			}
-			for _, entry := range []picoshare.UploadEntry{dummyTextEntry, dummyAudioEntry, dummyVideoEntry} {
+			dummyVideoEntryWithoutContentType := picoshare.UploadEntry{
+				UploadMetadata: picoshare.UploadMetadata{
+					ID:       "VVVVVVVV22",
+					Filename: picoshare.Filename("test0.mp4"),
+				},
+				Reader: strings.NewReader("dummy video contents"),
+			}
+			for _, entry := range []picoshare.UploadEntry{
+				dummyTextEntry,
+				dummyAudioEntry,
+				dummyAudioEntrywithoutContentType,
+				dummyVideoEntry,
+				dummyVideoEntryWithoutContentType,
+			} {
 				if err := dataStore.InsertEntry(entry.Reader, entry.UploadMetadata); err != nil {
 					panic(err)
 				}
