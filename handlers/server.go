@@ -26,7 +26,7 @@ func (s Server) Router() *mux.Router {
 
 // New creates a new server with all the state it needs to satisfy HTTP
 // requests.
-func New(authenticator auth.Authenticator, store store.Store, spaceChecker space.Checker, collector *garbagecollect.Collector) (Server, error) {
+func New(authenticator auth.Authenticator, store store.Store, spaceChecker space.Checker, collector *garbagecollect.Collector) Server {
 	s := Server{
 		router:        mux.NewRouter(),
 		authenticator: authenticator,
@@ -36,5 +36,5 @@ func New(authenticator auth.Authenticator, store store.Store, spaceChecker space
 	}
 
 	s.routes()
-	return s, nil
+	return s
 }

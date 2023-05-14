@@ -115,10 +115,7 @@ func TestEntryGet(t *testing.T) {
 				}
 			}
 
-			s, err := handlers.New(mockAuthenticator{}, dataStore, nilSpaceChecker, nilGarbageCollector)
-			if err != nil {
-				t.Fatal(err)
-			}
+			s := handlers.New(mockAuthenticator{}, dataStore, nilSpaceChecker, nilGarbageCollector)
 
 			req, err := http.NewRequest("GET", tt.requestRoute, nil)
 			if err != nil {
