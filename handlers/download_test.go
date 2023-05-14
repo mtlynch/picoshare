@@ -37,9 +37,10 @@ var (
 		Filename:    picoshare.Filename("test.mp4"),
 		ContentType: picoshare.ContentType("video/mp4"),
 	}
-	dummyVideoEntryWithoutContentType = mockEntry{
-		ID:       "VVVVVVVV22",
-		Filename: picoshare.Filename("test0.mp4"),
+	dummyVideoEntryWithGenericContentType = mockEntry{
+		ID:          "VVVVVVVV22",
+		Filename:    picoshare.Filename("test0.mp4"),
+		ContentType: picoshare.ContentType("application/octet-stream"),
 	}
 )
 
@@ -100,7 +101,7 @@ func TestEntryGet(t *testing.T) {
 				dummyAudioEntry,
 				dummyAudioEntrywithoutContentType,
 				dummyVideoEntry,
-				dummyVideoEntryWithoutContentType,
+				dummyVideoEntryWithGenericContentType,
 			} {
 				entry := picoshare.UploadEntry{
 					UploadMetadata: picoshare.UploadMetadata{

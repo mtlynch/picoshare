@@ -36,7 +36,7 @@ func (s Server) entryGet() http.HandlerFunc {
 		}
 
 		contentType := entry.ContentType
-		if contentType == "" {
+		if contentType == "" || contentType == "application/octet-stream" {
 			if inferred, err := inferContentTypeFromFilename(entry.Filename); err == nil {
 				contentType = inferred
 			}
