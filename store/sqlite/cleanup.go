@@ -8,6 +8,7 @@ import (
 
 // Purge deletes expired entries and clears orphaned rows from the database.
 func (d DB) Purge() error {
+	log.Printf("deleting expired entries and orphaned data from database")
 	if err := d.deleteExpiredEntries(); err != nil {
 		return err
 	}
