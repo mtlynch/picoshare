@@ -100,3 +100,7 @@ func (d DB) deleteOrphanedRows() error {
 
 	return nil
 }
+
+func (d DB) Close() error {
+	return d.ctx.Close()
+}

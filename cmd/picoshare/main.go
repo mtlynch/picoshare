@@ -42,8 +42,12 @@ func main() {
 
 	spaceChecker := space.NewChecker(dbDir)
 
+	log.Printf("debug compacting db")
+	err = store.Compact()
+	log.Printf("debug compacting db is done: %v", err)
+
 	collector := garbagecollect.NewCollector(store, *vacuumDb)
-	gc := garbagecollect.NewScheduler(&collector, 7*time.Hour)
+	gc := garbagecollect.NewScheduler(&collector, 40*time.Second)
 	gc.StartAsync()
 
 	server := handlers.New(authenticator, store, spaceChecker, &collector)
@@ -65,6 +69,7 @@ func main() {
 		log.Fatal(httpSrv.ListenAndServe())
 	}()
 	<-stop
+	log.Printf("closing store: %v", store.Close())
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	log.Fatal(httpSrv.Shutdown(ctx))
