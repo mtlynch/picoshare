@@ -151,7 +151,7 @@ test("uploads a file and then uploads another", async ({ page }) => {
   await login(page);
 
   // Set default to 30 days.
-  await page.locator("data-test-id=system-dropdown").hover();
+  await page.getByTestId("system-dropdown").hover();
   await page.locator("a[href='/settings']").click();
   await expect(page).toHaveURL("/settings");
 
@@ -159,7 +159,7 @@ test("uploads a file and then uploads another", async ({ page }) => {
   await page.locator("#time-unit").selectOption("days");
   await page.locator("#settings-form button[type='submit']").click();
 
-  await page.locator("data-test-id=upload-btn").click();
+  await page.getByTestId("upload-btn").click();
   await expect(page).toHaveURL("/");
 
   await page.locator(".file-input").setInputFiles([
