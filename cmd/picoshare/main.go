@@ -1,12 +1,15 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
 	"path/filepath"
+	"syscall"
 	"time"
 
 	gorilla "github.com/mtlynch/gorilla-handlers"
@@ -43,24 +46,28 @@ func main() {
 	gc := garbagecollect.NewScheduler(&collector, 7*time.Hour)
 	gc.StartAsync()
 
-	server, err := handlers.New(authenticator, store, spaceChecker, &collector)
-	if err != nil {
-		panic(err)
-	}
+	server := handlers.New(authenticator, store, spaceChecker, &collector)
 
 	h := gorilla.LoggingHandler(os.Stdout, server.Router())
 	if os.Getenv("PS_BEHIND_PROXY") != "" {
 		h = gorilla.ProxyIPHeadersHandler(h)
 	}
-	http.Handle("/", h)
 
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "4001"
 	}
-	log.Printf("listening on %s", port)
 
-	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", port), nil))
+	stop := setupSignalHandler()
+	httpSrv := http.Server{Addr: fmt.Sprintf(":%s", port), Handler: h}
+	go func() {
+		log.Printf("listening on %s", port)
+		log.Fatal(httpSrv.ListenAndServe())
+	}()
+	<-stop
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	log.Fatal(httpSrv.Shutdown(ctx))
 }
 
 func requireEnv(key string) string {
@@ -81,4 +88,17 @@ func ensureDirExists(dir string) {
 
 func isLitestreamEnabled() bool {
 	return os.Getenv("LITESTREAM_BUCKET") != ""
+}
+
+func setupSignalHandler() <-chan struct{} {
+	stop := make(chan struct{})
+	c := make(chan os.Signal, 2)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-c
+		close(stop)
+		<-c
+		os.Exit(1) // second signal. Exit directly.
+	}()
+	return stop
 }
