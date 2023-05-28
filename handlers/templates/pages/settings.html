@@ -66,11 +66,11 @@
       const neverExpire = evt.target.checked;
 
       if (neverExpire) {
-        defaultExpiration.setAttribute("disabled", "true");
-        timeUnit.setAttribute("disabled", "true");
+        disableElement(defaultExpiration);
+        disableElement(timeUnit);
       } else {
-        defaultExpiration.removeAttribute("disabled");
-        timeUnit.removeAttribute("disabled");
+        enableElement(defaultExpiration);
+        enableElement(timeUnit);
       }
     });
 
