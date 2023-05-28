@@ -22,7 +22,7 @@
               <a
                 class="button is-primary is-success"
                 href="/"
-                data-test-id="upload-btn"
+                data-testid="upload-btn"
                 >Upload</a
               >
             </div>
@@ -33,7 +33,7 @@
         <div class="navbar-end">
           {{ if .IsAuthenticated }}
             <div class="navbar-item has-dropdown is-hoverable">
-              <a class="navbar-link" data-test-id="system-dropdown">System</a>
+              <a class="navbar-link" data-testid="system-dropdown">System</a>
               <div class="navbar-dropdown">
                 <a class="navbar-item" href="/settings">Settings</a>
                 <a class="navbar-item" href="/disk-usage">Disk Usage</a>
@@ -42,7 +42,7 @@
             </div>
           {{ else }}
             <div class="navbar-item">
-              <a class="button is-primary" data-test-id="log-in" href="/login">
+              <a class="button is-primary" data-testid="log-in" href="/login">
                 Log In
               </a>
             </div>

@@ -4,7 +4,7 @@ import { login } from "./helpers/login.js";
 test("default file expiration is 30 days", async ({ page }) => {
   await login(page);
 
-  await page.locator("data-test-id=system-dropdown").hover();
+  await page.getByTestId("system-dropdown").hover();
   await page.locator("a[href='/settings']").click();
   await expect(page).toHaveURL("/settings");
 
@@ -15,7 +15,7 @@ test("default file expiration is 30 days", async ({ page }) => {
   await expect(page.locator("#default-expiration")).toHaveValue("30");
   await expect(page.locator("#time-unit")).toHaveValue("days");
 
-  await page.locator("data-test-id=upload-btn").click();
+  await page.getByTestId("upload-btn").click();
   await expect(page).toHaveURL("/");
 
   await expect(page.locator("#expiration-select option[selected]")).toHaveText(
@@ -26,7 +26,7 @@ test("default file expiration is 30 days", async ({ page }) => {
 test("changes default file expiration to 5 days", async ({ page }) => {
   await login(page);
 
-  await page.locator("data-test-id=system-dropdown").hover();
+  await page.getByTestId("system-dropdown").hover();
   await page.locator("a[href='/settings']").click();
   await expect(page).toHaveURL("/settings");
 
@@ -37,7 +37,7 @@ test("changes default file expiration to 5 days", async ({ page }) => {
   await page.locator("#default-expiration").fill("5");
   await page.locator("#settings-form button[type='submit']").click();
 
-  await page.locator("data-test-id=upload-btn").click();
+  await page.getByTestId("upload-btn").click();
   await expect(page).toHaveURL("/");
 
   await expect(page.locator("#expiration-select option[selected]")).toHaveText(
@@ -48,7 +48,7 @@ test("changes default file expiration to 5 days", async ({ page }) => {
 test("changes default file expiration to 1 year", async ({ page }) => {
   await login(page);
 
-  await page.locator("data-test-id=system-dropdown").hover();
+  await page.getByTestId("system-dropdown").hover();
   await page.locator("a[href='/settings']").click();
   await expect(page).toHaveURL("/settings");
 
@@ -60,7 +60,7 @@ test("changes default file expiration to 1 year", async ({ page }) => {
   await page.locator("#time-unit").selectOption("years");
   await page.locator("#settings-form button[type='submit']").click();
 
-  await page.locator("data-test-id=upload-btn").click();
+  await page.getByTestId("upload-btn").click();
   await expect(page).toHaveURL("/");
 
   await expect(page.locator("#expiration-select option[selected]")).toHaveText(
@@ -83,7 +83,7 @@ test("changes default file expiration to 1 year", async ({ page }) => {
 test("changes default file expiration to 10 years", async ({ page }) => {
   await login(page);
 
-  await page.locator("data-test-id=system-dropdown").hover();
+  await page.getByTestId("system-dropdown").hover();
   await page.locator("a[href='/settings']").click();
   await expect(page).toHaveURL("/settings");
 
@@ -96,7 +96,7 @@ test("changes default file expiration to 10 years", async ({ page }) => {
   await page.locator("#time-unit").selectOption("years");
   await page.locator("#settings-form button[type='submit']").click();
 
-  await page.locator("data-test-id=upload-btn").click();
+  await page.getByTestId("upload-btn").click();
   await expect(page).toHaveURL("/");
 
   await expect(page.locator("#expiration-select option[selected]")).toHaveText(
@@ -107,7 +107,7 @@ test("changes default file expiration to 10 years", async ({ page }) => {
 test("changes default file expiration to never", async ({ page }) => {
   await login(page);
 
-  await page.locator("data-test-id=system-dropdown").hover();
+  await page.getByTestId("system-dropdown").hover();
   await page.locator("a[href='/settings']").click();
   await expect(page).toHaveURL("/settings");
 
@@ -126,7 +126,7 @@ test("changes default file expiration to never", async ({ page }) => {
   await expect(page.locator("id=time-unit")).toBeDisabled();
   await expect(page.locator("id=time-unit")).toHaveValue("days");
 
-  await page.locator("data-test-id=upload-btn").click();
+  await page.getByTestId("upload-btn").click();
   await expect(page).toHaveURL("/");
 
   await expect(page.locator("#expiration-select option[selected]")).toHaveText(
