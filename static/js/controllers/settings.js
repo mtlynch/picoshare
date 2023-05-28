@@ -1,12 +1,10 @@
 "use strict";
 
-export async function settingsPut(defaultExpirationDays) {
+export async function settingsPut(settings) {
   return fetch("/api/settings", {
     method: "PUT",
     credentials: "include",
-    body: JSON.stringify({
-      defaultExpirationDays,
-    }),
+    body: JSON.stringify(settings),
   })
     .then((response) => {
       if (!response.ok) {

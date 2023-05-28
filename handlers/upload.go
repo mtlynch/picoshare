@@ -173,6 +173,7 @@ func entryMetadataFromRequest(r *http.Request) (picoshare.UploadMetadata, error)
 		return picoshare.UploadMetadata{}, err
 	}
 
+	// Treat an empty expiration string as NeverExpire.
 	expiration := picoshare.NeverExpire
 	if payload.Expiration != "" {
 		expiration, err = parse.Expiration(payload.Expiration)

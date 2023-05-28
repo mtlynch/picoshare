@@ -20,12 +20,22 @@ func TestSettingsPut(t *testing.T) {
 		status      int
 	}{
 		{
-			description: "valid request",
+			description: "valid request for 7-day expiration",
 			payload: `{
 					"defaultExpirationDays": 7
 				}`,
 			settings: picoshare.Settings{
 				DefaultFileLifetime: picoshare.NewFileLifetimeInDays(7),
+			},
+			status: http.StatusOK,
+		},
+		{
+			description: "valid request for never-expiring files",
+			payload: `{
+					"defaultNeverExpire": true
+				}`,
+			settings: picoshare.Settings{
+				DefaultFileLifetime: picoshare.FileLifetimeInfinite,
 			},
 			status: http.StatusOK,
 		},
