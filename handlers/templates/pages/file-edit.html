@@ -5,6 +5,7 @@
   <script type="module" nonce="{{ .CspNonce }}">
     import { editFile } from "/js/controllers/files.js";
     import { showElement, hideElement } from "/js/lib/bulma.js";
+    import { enableElement, disableElement } from "/js/lib/html.js";
 
     const editForm = document.getElementById("edit-form");
     const errorContainer = document.getElementById("error");
@@ -49,9 +50,9 @@
 
     expireCheckbox.addEventListener("change", () => {
       if (expireCheckbox.checked) {
-        expirationPicker.removeAttribute("disabled");
+        enableElement(expirationPicker);
       } else {
-        expirationPicker.setAttribute("disabled", true);
+        disableElement(expirationPicker);
       }
     });
   </script>

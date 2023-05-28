@@ -10,6 +10,7 @@
   <script type="module" nonce="{{ .CspNonce }}">
     import { settingsPut } from "/js/controllers/settings.js";
     import { showElement, hideElement } from "/js/lib/bulma.js";
+    import { enableElement, disableElement } from "/js/lib/html.js";
 
     const errorContainer = document.getElementById("error");
     const progressSpinner = document.getElementById("progress-spinner");
@@ -43,16 +44,8 @@
       };
     }
 
-    function disableSaveButton() {
-      saveBtn.setAttribute("disabled", "true");
-    }
-
-    function enableSaveButton() {
-      saveBtn.removeAttribute("disabled");
-    }
-
     defaultExpiration.addEventListener("input", () => {
-      enableSaveButton();
+      enableElement(saveBtn);
     });
 
     timeUnit.addEventListener("change", (evt) => {
@@ -65,7 +58,7 @@
           daysPerYear * maxExpirationInYears
         );
       }
-      enableSaveButton();
+      enableElement(saveBtn);
     });
 
     storeForeverCheckbox.addEventListener("change", (evt) => {
@@ -91,7 +84,7 @@
 
         hideElement(errorContainer);
         showElement(progressSpinner);
-        disableSaveButton();
+        disableElement(saveBtn);
 
         settingsPut(readSettings())
           .then(() => {
@@ -102,7 +95,7 @@
           .catch((error) => {
             document.getElementById("error-message").innerText = error;
             showElement(errorContainer);
-            enableSaveButton();
+            enableElement(saveBtn);
           })
           .finally(() => {
             hideElement(progressSpinner);
