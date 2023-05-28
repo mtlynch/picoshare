@@ -62,7 +62,7 @@
     });
 
     storeForeverCheckbox.addEventListener("change", (evt) => {
-      enableSaveButton();
+      enableElement(saveBtn);
       const neverExpire = evt.target.checked;
 
       if (neverExpire) {
@@ -73,9 +73,6 @@
         enableElement(timeUnit);
       }
     });
-
-    // TODO: Enable/disable checkbox and input fields on page load depending on
-    // current values.
 
     document
       .getElementById("settings-form")
@@ -114,6 +111,16 @@
     <div class="field my-5">
       <label class="label">Default File Expiration</label>
 
+      <div class="field my-3">
+        <label class="checkbox">
+          <input
+            type="checkbox"
+            id="store-forever-checkbox"
+            {{ if .DefaultNeverExpire }}checked{{ end }}
+          />
+          Store files forever
+        </label>
+      </div>
       <div class="is-flex is-flex-direction-row">
         <div class="control mr-1">
           <input
@@ -127,15 +134,18 @@
             {{ else }}
               max="10"
             {{ end }}
+            {{ if .DefaultNeverExpire }}disabled{{ end }}
             size="3"
             value="{{ .DefaultExpiration }}"
           />
         </div>
         <div class="select">
-          <select id="time-unit">
+          <select id="time-unit" {{ if .DefaultNeverExpire }}disabled{{ end }}>
             <option
               value="days"
-              {{ if eq .ExpirationTimeUnit "days" }}selected{{ end }}
+              {{ if eq .ExpirationTimeUnit "days" }}
+                selected
+              {{ end }}
             >
               Days
             </option>
@@ -148,12 +158,6 @@
           </select>
         </div>
       </div>
-    </div>
-    <div class="field my-5">
-      <label class="checkbox">
-        <input type="checkbox" id="store-forever-checkbox" />
-        Default to store files forever
-      </label>
     </div>
 
     <div class="control">

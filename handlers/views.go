@@ -395,20 +395,31 @@ func (s Server) settingsGet() http.HandlerFunc {
 			http.Error(w, fmt.Sprintf("failed to read settings from database: %v", err), http.StatusInternalServerError)
 			return
 		}
-		expirationValue := settings.DefaultFileLifetime.Days()
-		expirationTimeUnit := "days"
-		if settings.DefaultFileLifetime.IsYearBoundary() {
-			expirationValue = settings.DefaultFileLifetime.Years()
-			expirationTimeUnit = "years"
+		var defaultExpiration uint16
+		var expirationTimeUnit string
+		defaultNeverExpire := settings.DefaultFileLifetime.Equal(picoshare.FileLifetimeInfinite)
+		if defaultNeverExpire {
+			defaultExpiration = 30
+			expirationTimeUnit = "days"
+		} else {
+			defaultExpiration = settings.DefaultFileLifetime.Days()
+			expirationTimeUnit = "days"
+			if settings.DefaultFileLifetime.IsYearBoundary() {
+				defaultExpiration = settings.DefaultFileLifetime.Years()
+				expirationTimeUnit = "years"
+			}
 		}
+
 		if err := renderTemplate(w, "settings.html", struct {
 			commonProps
 			DefaultExpiration  uint16
 			ExpirationTimeUnit string
+			DefaultNeverExpire bool
 		}{
 			commonProps:        makeCommonProps("PicoShare - Settings", r.Context()),
-			DefaultExpiration:  expirationValue,
+			DefaultExpiration:  defaultExpiration,
 			ExpirationTimeUnit: expirationTimeUnit,
+			DefaultNeverExpire: defaultNeverExpire,
 		}, template.FuncMap{}); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
