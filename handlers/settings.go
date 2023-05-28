@@ -42,11 +42,8 @@ func settingsFromRequest(r *http.Request) (picoshare.Settings, error) {
 	var defaultLifetime picoshare.FileLifetime
 	if defaultNeverExpire {
 		defaultLifetime = picoshare.FileLifetimeInfinite
-	} else {
-		defaultLifetime, err = parse.FileLifetime(payload.DefaultExpirationDays)
-		if err != nil {
-			return picoshare.Settings{}, err
-		}
+	} else if defaultLifetime, err = parse.FileLifetime(payload.DefaultExpirationDays); err != nil {
+		return picoshare.Settings{}, err
 	}
 
 	return picoshare.Settings{
