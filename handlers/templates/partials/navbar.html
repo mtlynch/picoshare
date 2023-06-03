@@ -21,28 +21,42 @@
             <div class="navbar-item">
               <a
                 class="button is-primary is-success"
+                role="menuitem"
                 href="/"
                 data-testid="upload-btn"
                 >Upload</a
               >
             </div>
-            <a class="navbar-item" href="/files">Files</a>
-            <a class="navbar-item" href="/guest-links">Guest Links</a>
+            <a class="navbar-item" role="menuitem" href="/files">Files</a>
+            <a class="navbar-item" role="menuitem" href="/guest-links"
+              >Guest Links</a
+            >
           </div>
         {{ end }}
         <div class="navbar-end">
           {{ if .IsAuthenticated }}
             <div class="navbar-item has-dropdown is-hoverable">
-              <a class="navbar-link" data-testid="system-dropdown">System</a>
+              <a
+                class="navbar-link"
+                role="menuitem"
+                data-testid="system-dropdown"
+                >System</a
+              >
               <div class="navbar-dropdown">
-                <a class="navbar-item" href="/settings">Settings</a>
-                <a class="navbar-item" href="/disk-usage">Disk Usage</a>
-                <a class="navbar-item" id="navbar-log-out">Log Out</a>
+                <a class="navbar-item" role="menuitem" href="/settings"
+                  >Settings</a
+                >
+                <a class="navbar-item" role="menuitem" href="/disk-usage"
+                  >Disk Usage</a
+                >
+                <a id="navbar-log-out" class="navbar-item" role="menuitem"
+                  >Log Out</a
+                >
               </div>
             </div>
           {{ else }}
             <div class="navbar-item">
-              <a class="button is-primary" data-testid="log-in" href="/login">
+              <a class="button is-primary" role="menuitem" href="/login">
                 Log In
               </a>
             </div>

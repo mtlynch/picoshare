@@ -4,8 +4,8 @@ import { login } from "./helpers/login.js";
 test("default file expiration is 30 days", async ({ page }) => {
   await login(page);
 
-  await page.getByTestId("system-dropdown").hover();
-  await page.locator("a[href='/settings']").click();
+  await page.getByRole("menuitem", { name: "System" }).hover();
+  await page.getByRole("menuitem", { name: "Settings" }).click();
   await expect(page).toHaveURL("/settings");
 
   await expect(
@@ -26,8 +26,8 @@ test("default file expiration is 30 days", async ({ page }) => {
 test("changes default file expiration to 5 days", async ({ page }) => {
   await login(page);
 
-  await page.getByTestId("system-dropdown").hover();
-  await page.locator("a[href='/settings']").click();
+  await page.getByRole("menuitem", { name: "System" }).hover();
+  await page.getByRole("menuitem", { name: "Settings" }).click();
   await expect(page).toHaveURL("/settings");
 
   await expect(
@@ -48,8 +48,8 @@ test("changes default file expiration to 5 days", async ({ page }) => {
 test("changes default file expiration to 1 year", async ({ page }) => {
   await login(page);
 
-  await page.getByTestId("system-dropdown").hover();
-  await page.locator("a[href='/settings']").click();
+  await page.getByRole("menuitem", { name: "System" }).hover();
+  await page.getByRole("menuitem", { name: "Settings" }).click();
   await expect(page).toHaveURL("/settings");
 
   await expect(
@@ -83,8 +83,8 @@ test("changes default file expiration to 1 year", async ({ page }) => {
 test("changes default file expiration to 10 years", async ({ page }) => {
   await login(page);
 
-  await page.getByTestId("system-dropdown").hover();
-  await page.locator("a[href='/settings']").click();
+  await page.getByRole("menuitem", { name: "System" }).hover();
+  await page.getByRole("menuitem", { name: "Settings" }).click();
   await expect(page).toHaveURL("/settings");
 
   await expect(
@@ -107,8 +107,8 @@ test("changes default file expiration to 10 years", async ({ page }) => {
 test("changes default file expiration to never", async ({ page }) => {
   await login(page);
 
-  await page.getByTestId("system-dropdown").hover();
-  await page.locator("a[href='/settings']").click();
+  await page.getByRole("menuitem", { name: "System" }).hover();
+  await page.getByRole("menuitem", { name: "Settings" }).click();
   await expect(page).toHaveURL("/settings");
 
   await page.getByRole("checkbox", { name: "Store files forever" }).check();
