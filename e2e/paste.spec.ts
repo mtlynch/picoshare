@@ -38,7 +38,7 @@ test("pastes text in the upload input", async ({ page }) => {
     page.locator("#upload-result upload-links #short-link-box #link")
   ).toBeVisible();
 
-  await page.locator(".navbar a[href='/files']").click();
+  await page.getByRole("menuitem", { name: "Files" }).click();
   await expect(
     page.locator(".table tbody tr:first-child [test-data-id='filename']")
   ).toHaveText(/pasted-.*/);
