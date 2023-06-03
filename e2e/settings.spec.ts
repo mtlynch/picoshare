@@ -15,7 +15,7 @@ test("default file expiration is 30 days", async ({ page }) => {
   await expect(page.locator("#default-expiration")).toHaveValue("30");
   await expect(page.locator("#time-unit")).toHaveValue("days");
 
-  await page.getByTestId("upload-btn").click();
+  await page.getByRole("menuitem", { name: "Upload" }).click();
   await expect(page).toHaveURL("/");
 
   await expect(page.locator("#expiration-select option[selected]")).toHaveText(
@@ -35,9 +35,9 @@ test("changes default file expiration to 5 days", async ({ page }) => {
   ).not.toBeChecked();
 
   await page.locator("#default-expiration").fill("5");
-  await page.locator("#settings-form button[type='submit']").click();
+  await page.getByRole("button", { name: "Save" }).click();
 
-  await page.getByTestId("upload-btn").click();
+  await page.getByRole("menuitem", { name: "Upload" }).click();
   await expect(page).toHaveURL("/");
 
   await expect(page.locator("#expiration-select option[selected]")).toHaveText(
@@ -58,9 +58,9 @@ test("changes default file expiration to 1 year", async ({ page }) => {
 
   await page.locator("#default-expiration").fill("1");
   await page.locator("#time-unit").selectOption("years");
-  await page.locator("#settings-form button[type='submit']").click();
+  await page.getByRole("button", { name: "Save" }).click();
 
-  await page.getByTestId("upload-btn").click();
+  await page.getByRole("menuitem", { name: "Upload" }).click();
   await expect(page).toHaveURL("/");
 
   await expect(page.locator("#expiration-select option[selected]")).toHaveText(
@@ -94,9 +94,9 @@ test("changes default file expiration to 10 years", async ({ page }) => {
   // Change default expiration to 10 years.
   await page.locator("#default-expiration").fill("10");
   await page.locator("#time-unit").selectOption("years");
-  await page.locator("#settings-form button[type='submit']").click();
+  await page.getByRole("button", { name: "Save" }).click();
 
-  await page.getByTestId("upload-btn").click();
+  await page.getByRole("menuitem", { name: "Upload" }).click();
   await expect(page).toHaveURL("/");
 
   await expect(page.locator("#expiration-select option[selected]")).toHaveText(
@@ -115,7 +115,7 @@ test("changes default file expiration to never", async ({ page }) => {
 
   await expect(page.locator("#default-expiration")).toBeDisabled();
   await expect(page.locator("#time-unit")).toBeDisabled();
-  await page.locator("#settings-form button[type='submit']").click();
+  await page.getByRole("button", { name: "Save" }).click();
 
   await page.reload();
   await expect(
@@ -126,7 +126,7 @@ test("changes default file expiration to never", async ({ page }) => {
   await expect(page.locator("id=time-unit")).toBeDisabled();
   await expect(page.locator("id=time-unit")).toHaveValue("days");
 
-  await page.getByTestId("upload-btn").click();
+  await page.getByRole("menuitem", { name: "Upload" }).click();
   await expect(page).toHaveURL("/");
 
   await expect(page.locator("#expiration-select option[selected]")).toHaveText(

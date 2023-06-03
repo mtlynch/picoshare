@@ -19,11 +19,7 @@
         {{ if .IsAuthenticated }}
           <div class="navbar-start">
             <div class="navbar-item">
-              <a
-                class="button is-primary is-success"
-                role="menuitem"
-                href="/"
-                data-testid="upload-btn"
+              <a class="button is-primary is-success" role="menuitem" href="/"
                 >Upload</a
               >
             </div>
@@ -36,12 +32,7 @@
         <div class="navbar-end">
           {{ if .IsAuthenticated }}
             <div class="navbar-item has-dropdown is-hoverable">
-              <a
-                class="navbar-link"
-                role="menuitem"
-                data-testid="system-dropdown"
-                >System</a
-              >
+              <a class="navbar-link" role="menuitem">System</a>
               <div class="navbar-dropdown">
                 <a class="navbar-item" role="menuitem" href="/settings"
                   >Settings</a

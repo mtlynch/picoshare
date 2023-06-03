@@ -6,13 +6,13 @@ test("creates a guest link and uploads a file as a guest", async ({ page }) => {
 
   await page.getByRole("menuitem", { name: "Guest Links" }).click();
 
-  await page.locator(".content .button.is-primary").click();
+  await page.getByRole("button", { name: "Create new" }).click();
 
   await expect(page).toHaveURL("/guest-links/new");
   await page.locator("#label").fill("For e2e testing");
   await page.locator("#max-file-size").fill("50");
   await page.locator("#file-upload-limit").fill("1");
-  await page.locator("#create-guest-link-form input[type='submit']").click();
+  await page.getByRole("button", { name: "Create" }).click();
 
   await expect(page).toHaveURL("/guest-links");
   const guestLinkElement = page.locator(
@@ -55,7 +55,7 @@ test("creates a guest link and uploads a file as a guest", async ({ page }) => {
     page.locator("#upload-result upload-links #short-link-box #link")
   ).toBeVisible();
 
-  await page.locator("#upload-another-btn").click();
+  await page.getByRole("button", { name: "Upload Another" }).click();
 
   await expect(page.locator("h1")).toContainText("Guest Link Inactive");
   await expect(page.locator(".file-input")).toHaveCount(0);
