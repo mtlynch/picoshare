@@ -4,7 +4,7 @@ import { login } from "./helpers/login.js";
 test("creates a guest link and uploads a file as a guest", async ({ page }) => {
   await login(page);
 
-  await page.locator("nav .navbar-item[href='/guest-links']").click();
+  await page.getByRole("menuitem", { name: "Guest Links" }).click();
 
   await page.locator(".content .button.is-primary").click();
 
@@ -28,8 +28,8 @@ test("creates a guest link and uploads a file as a guest", async ({ page }) => {
   expect(guestLinkRouteValue).not.toBeNull();
   const guestLinkRoute = String(guestLinkRouteValue);
 
-  await page.locator(".navbar-end .navbar-item.is-hoverable").hover();
-  await page.locator("#navbar-log-out").click();
+  await page.getByRole("menuitem", { name: "System" }).hover();
+  await page.getByRole("menuitem", { name: "Log Out" }).click();
 
   await expect(page).toHaveURL("/");
   await page.goto(guestLinkRoute);

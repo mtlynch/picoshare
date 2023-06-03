@@ -31,7 +31,7 @@ test("uploads a file without specifying any parameters", async ({
   // Verify that cleanup doesn't incorrectly remove the file.
   await request.post("/api/debug/db/cleanup");
 
-  await page.locator(".navbar a[href='/files']").click();
+  await page.getByRole("menuitem", { name: "Files" }).click();
   await expect(
     page.locator(
       ".table tr[test-data-filename='simple-upload.txt'] [test-data-id='filename']"
@@ -64,7 +64,7 @@ test("uploads a file with a custom expiration time", async ({ page }) => {
     "Upload complete!"
   );
 
-  await page.locator(".navbar a[href='/files']").click();
+  await page.getByRole("menuitem", { name: "Files" }).click();
   await expect(
     page.locator(
       ".table tr[test-data-filename='custom-expiration-upload.txt'] [test-data-id='filename']"
@@ -99,7 +99,7 @@ test("uploads a file with a note", async ({ page }) => {
     "Upload complete!"
   );
 
-  await page.locator(".navbar a[href='/files']").click();
+  await page.getByRole("menuitem", { name: "Files" }).click();
   await expect(
     page.locator(
       ".table tr[test-data-filename='upload-with-note.txt'] [test-data-id='filename']"
@@ -126,7 +126,7 @@ test("uploads a file and deletes it", async ({ page }) => {
     "Upload complete!"
   );
 
-  await page.locator(".navbar a[href='/files']").click();
+  await page.getByRole("menuitem", { name: "Files" }).click();
   await page
     .locator(
       ".table tr[test-data-filename='upload-for-deletion.txt'] [pico-purpose='edit']"
@@ -151,8 +151,8 @@ test("uploads a file and then uploads another", async ({ page }) => {
   await login(page);
 
   // Set default to 30 days.
-  await page.getByTestId("system-dropdown").hover();
-  await page.locator("a[href='/settings']").click();
+  await page.getByRole("menuitem", { name: "System" }).hover();
+  await page.getByRole("menuitem", { name: "Settings" }).click();
   await expect(page).toHaveURL("/settings");
 
   await page.locator("#default-expiration").fill("30");
@@ -186,7 +186,7 @@ test("uploads a file and then uploads another", async ({ page }) => {
     "Upload complete!"
   );
 
-  await page.locator(".navbar a[href='/files']").click();
+  await page.getByRole("menuitem", { name: "Files" }).click();
 
   await expect(page).toHaveURL("/files");
   await expect(
@@ -217,7 +217,7 @@ test("uploads a file and deletes its note", async ({ page }) => {
     "Upload complete!"
   );
 
-  await page.locator(".navbar a[href='/files']").click();
+  await page.getByRole("menuitem", { name: "Files" }).click();
   await page
     .locator(
       ".table tr[test-data-filename='upload-with-temporary-note.txt'] [pico-purpose='edit']"
@@ -252,7 +252,7 @@ test("uploads a file and edits its note", async ({ page }) => {
     "Upload complete!"
   );
 
-  await page.locator(".navbar a[href='/files']").click();
+  await page.getByRole("menuitem", { name: "Files" }).click();
   await page
     .locator(
       ".table tr[test-data-filename='upload-with-note-i-will-edit.txt'] [pico-purpose='edit']"
@@ -285,7 +285,7 @@ test("uploads a file and changes its expiration time", async ({ page }) => {
     "Upload complete!"
   );
 
-  await page.locator(".navbar a[href='/files']").click();
+  await page.getByRole("menuitem", { name: "Files" }).click();
   await page
     .locator(
       ".table tr[test-data-filename='file-with-new-expiration.txt'] [pico-purpose='edit']"
