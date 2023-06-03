@@ -137,7 +137,7 @@ test("uploads a file and deletes it", async ({ page }) => {
   await page.locator("[pico-purpose='delete']").click();
 
   await expect(page).toHaveURL(/\/files\/.+\/confirm-delete$/);
-  await page.locator("#delete-btn").click();
+  await page.getByRole("button", { name: "Delete" }).click();
 
   await expect(page).toHaveURL("/files");
   await expect(
@@ -159,7 +159,7 @@ test("uploads a file and then uploads another", async ({ page }) => {
   await page.locator("#time-unit").selectOption("days");
   await page.locator("#settings-form button[type='submit']").click();
 
-  await page.getByTestId("upload-btn").click();
+  await page.getByRole("menuitem", { name: "Upload" }).click();
   await expect(page).toHaveURL("/");
 
   await page.locator(".file-input").setInputFiles([
@@ -173,7 +173,7 @@ test("uploads a file and then uploads another", async ({ page }) => {
     "Upload complete!"
   );
 
-  await page.locator("#upload-another-btn").click();
+  await page.getByRole("button", { name: "Upload Another" }).click();
 
   await page.locator(".file-input").setInputFiles([
     {
@@ -226,7 +226,7 @@ test("uploads a file and deletes its note", async ({ page }) => {
 
   await expect(page).toHaveURL(/\/files\/.+\/edit$/);
   await page.locator("#note").fill("");
-  await page.locator("form .button.is-primary").click();
+  await page.getByRole("button", { name: "Save" }).click();
 
   await expect(page).toHaveURL("/files");
   await expect(
@@ -261,7 +261,7 @@ test("uploads a file and edits its note", async ({ page }) => {
 
   await expect(page).toHaveURL(/\/files\/.+\/edit$/);
   await page.locator("#note").fill("I have a different note now");
-  await page.locator("form .button.is-primary").click();
+  await page.getByRole("button", { name: "Save" }).click();
 
   await expect(page).toHaveURL("/files");
   await expect(
@@ -297,7 +297,7 @@ test("uploads a file and changes its expiration time", async ({ page }) => {
   await page.locator("#expiration-picker #expiration").fill("2029-09-04");
   // Move focus to note field just to so the expiration date saves.
   await page.locator("#note").click();
-  await page.locator("form .button.is-primary").click();
+  await page.getByRole("button", { name: "Save" }).click();
 
   await expect(page).toHaveURL("/files");
   await expect(

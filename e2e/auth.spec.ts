@@ -7,7 +7,7 @@ test("logs in and logs out", async ({ page }) => {
 
   await expect(page).toHaveURL("/login");
   await page.locator("form input[type='password']").fill("dummypass");
-  await page.locator("form input[type='submit']").click();
+  await page.getByRole("button", { name: "Authenticate" }).click();
 
   await expect(page).toHaveURL("/");
 
