@@ -67,6 +67,8 @@ COPY ./litestream.yml /etc/litestream.yml
 COPY ./static /app/static
 COPY ./LICENSE /app/LICENSE
 
+ENV LITESTREAM_RETENTION=72h
+
 WORKDIR /app
 
 ENTRYPOINT ["/app/docker-entrypoint"]

@@ -23,6 +23,7 @@ set +x
 set -x
 
 PS_SHARED_SECRET=somepassword
+LITESTREAM_RETENTION=${LITESTREAM_RETENTION:-72h}
 
 docker rm -f picoshare || true
 
@@ -33,6 +34,7 @@ docker run \
   --env "LITESTREAM_ENDPOINT=${LITESTREAM_ENDPOINT}" \
   --env "LITESTREAM_ACCESS_KEY_ID=${LITESTREAM_ACCESS_KEY_ID}" \
   --env "LITESTREAM_SECRET_ACCESS_KEY=${LITESTREAM_SECRET_ACCESS_KEY}" \
+  --env "LITESTREAM_RETENTION=${LITESTREAM_RETENTION}" \
   --publish "0.0.0.0:4002:4002" \
   --name picoshare \
   picoshare

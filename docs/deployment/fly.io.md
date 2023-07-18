@@ -77,6 +77,8 @@ LITESTREAM_BUCKET="my-pico-bucket"
 LITESTREAM_ENDPOINT="s3.us-west-002.backblazeb2.com"
 ```
 
+Additionally you can set up "retention" (see [Litestream replica settings](https://litestream.io/reference/config/#replica-settings)) for how long snapshots will be kept, using `LITESTREAM_RETENTION` variable. If unset, default value of `72h` will be used.
+
 ## Set a passphrase
 
 Choose a passphrase to secure your instance.
