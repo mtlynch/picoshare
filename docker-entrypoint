@@ -47,6 +47,7 @@ if [[ "${IS_LITESTREAM_ENABLED}" == 'true' ]]; then
   /app/litestream version
   echo "LITESTREAM_BUCKET=${LITESTREAM_BUCKET}"
   echo "LITESTREAM_ENDPOINT=${LITESTREAM_ENDPOINT}"
+  echo "LITESTREAM_RETENTION=${LITESTREAM_RETENTION}"
 
   if [[ -f "$DB_PATH" ]]; then
     echo "Existing database is $(stat -c %s "${DB_PATH}") bytes"

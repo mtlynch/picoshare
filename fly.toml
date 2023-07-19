@@ -9,6 +9,7 @@ processes = []
   PS_BEHIND_PROXY="yes"
   LITESTREAM_BUCKET="picoshare-litestream"
   LITESTREAM_ENDPOINT="s3.us-west-002.backblazeb2.com"
+  LITESTREAM_RETENTION="72h"
 
 [experimental]
   allowed_public_ports = []
