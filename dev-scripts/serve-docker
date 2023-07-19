@@ -23,7 +23,6 @@ set +x
 set -x
 
 PS_SHARED_SECRET=somepassword
-LITESTREAM_RETENTION=${LITESTREAM_RETENTION:-72h}
 
 docker rm -f picoshare || true
 
