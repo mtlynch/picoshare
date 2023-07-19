@@ -77,7 +77,6 @@ LITESTREAM_BUCKET="my-pico-bucket"
 LITESTREAM_ENDPOINT="s3.us-west-002.backblazeb2.com"
 ```
 
-
 ## Set a passphrase
 
 Choose a passphrase to secure your instance.
