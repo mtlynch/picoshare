@@ -1,46 +1,42 @@
 app = "picoshare"
-
+primary_region = "iad"
 kill_signal = "SIGINT"
-kill_timeout = 5
-processes = []
-
-[env]
-  PORT = "8080"
-  PS_BEHIND_PROXY="yes"
-  LITESTREAM_BUCKET="picoshare-litestream"
-  LITESTREAM_ENDPOINT="s3.us-west-002.backblazeb2.com"
-  LITESTREAM_RETENTION="72h"
+kill_timeout = "5s"
 
 [experimental]
-  allowed_public_ports = []
   auto_rollback = true
 
-[mounts]
-source="pico_data"
-destination="/data"
+[env]
+  LITESTREAM_BUCKET = "picoshare-litestream"
+  LITESTREAM_ENDPOINT = "s3.us-west-002.backblazeb2.com"
+  LITESTREAM_RETENTION = "72h"
+  PORT = "8080"
+  PS_BEHIND_PROXY = "yes"
+
+[[mounts]]
+  source = "pico_data"
+  destination = "/data"
+  processes = ["app"]
 
 [[services]]
-  http_checks = []
+  protocol = "tcp"
   internal_port = 8080
   processes = ["app"]
-  protocol = "tcp"
-  script_checks = []
 
+  [[services.ports]]
+    port = 80
+    handlers = ["http"]
+
+  [[services.ports]]
+    port = 443
+    handlers = ["tls", "http"]
   [services.concurrency]
+    type = "connections"
     hard_limit = 25
     soft_limit = 20
-    type = "connections"
-
-  [[services.ports]]
-    handlers = ["http"]
-    port = 80
-
-  [[services.ports]]
-    handlers = ["tls", "http"]
-    port = 443
 
   [[services.tcp_checks]]
-    grace_period = "1s"
     interval = "15s"
-    restart_limit = 0
     timeout = "2s"
+    grace_period = "1s"
+    restart_limit = 0
