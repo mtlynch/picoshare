@@ -112,7 +112,8 @@ jobs:
     docker:
       - image: cimg/base:stable
     environment:
-      BUILD_TARGETS: "linux/amd64"
+      #BUILD_TARGETS: "linux/amd64"
+      BUILD_TARGETS: "linux/arm/v7,linux/arm64,linux/amd64" # TESTING
     steps:
       - checkout
       - setup_remote_docker:
