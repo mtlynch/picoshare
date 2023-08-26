@@ -163,7 +163,8 @@ jobs:
       - run:
           name: Authenticate to Docker Hub
           command: echo "${DOCKERHUB_ACCESS_TOKEN}" | \
-              docker login --username "$DOCKERHUB_USERNAME" --password-stdin
+            docker login --username "$DOCKERHUB_USERNAME" --password-stdin
+      - run:
           name: Publish docker images
           command: |
             docker buildx build \
