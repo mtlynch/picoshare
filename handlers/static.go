@@ -1,34 +1,40 @@
 package handlers
 
 import (
+	"embed"
+	"io/fs"
 	"log"
 	"net/http"
-	"os"
-	"path"
 	"strconv"
 	"time"
 )
 
+//go:embed static
+var staticFS embed.FS
+
 // serveStaticResource serves any static file under the ./handlers/static
 // directory.
 func serveStaticResource() http.HandlerFunc {
-	const staticRootDir = "./handlers/static"
-	fs := http.FileServer(http.Dir(staticRootDir))
+	fSys, err := fs.Sub(staticFS, "static")
+	if err != nil {
+		panic(err)
+	}
+	server := http.FileServer(http.FS(fSys))
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Set cache headers
-		if mt, ok := lastModTime(path.Join(staticRootDir, r.URL.Path)); ok {
+		if mt, ok := lastModTime(staticFS, r.URL.Path); ok {
 			etag := "\"" + strconv.FormatInt(mt.UnixMilli(), 10) + "\""
 			w.Header().Set("Etag", etag)
 			w.Header().Set("Cache-Control", "max-age=3600")
 		}
 
-		fs.ServeHTTP(w, r)
+		server.ServeHTTP(w, r)
 	}
 }
 
-func lastModTime(path string) (time.Time, bool) {
-	file, err := os.Open(path)
+func lastModTime(fs fs.FS, path string) (time.Time, bool) {
+	file, err := fs.Open(path)
 	if err != nil {
 		return time.Time{}, false
 	}
