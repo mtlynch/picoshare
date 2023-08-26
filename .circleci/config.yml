@@ -162,6 +162,14 @@ jobs:
           version: 20.10.24
           docker_layer_caching: true
       - run:
+          name: Build binaries
+          command: |
+            docker buildx build \
+              --platform "${BUILD_TARGETS}" \
+              --target=artifact \
+              --output "type=local,dest=$(pwd)/build/" \
+              .
+      - run:
           name: Authenticate to Docker Hub
           command: echo "${DOCKERHUB_ACCESS_TOKEN}" | \
             docker login --username "$DOCKERHUB_USERNAME" --password-stdin
