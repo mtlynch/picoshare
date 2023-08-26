@@ -3,6 +3,7 @@ FROM golang:1.18.4 AS builder
 ARG TARGETPLATFORM
 
 COPY ./cmd /app/cmd
+COPY ./dev-scripts /app/dev-scripts
 COPY ./garbagecollect /app/garbagecollect
 COPY ./handlers /app/handlers
 COPY ./picoshare /app/picoshare
@@ -13,21 +14,7 @@ COPY ./go.* /app/
 
 WORKDIR /app
 
-RUN set -x && \
-    if [ "$TARGETPLATFORM" = "linux/arm/v7" ]; then \
-      GOARCH="arm"; \
-    elif [ "$TARGETPLATFORM" = "linux/arm64" ]; then \
-      GOARCH="arm64"; \
-    else \
-      GOARCH="amd64"; \
-    fi && \
-    set -u && \
-    GOOS=linux \
-    go build \
-      -tags netgo \
-      -ldflags '-w -extldflags "-static"' \
-      -o /app/bin/picoshare \
-      cmd/picoshare/main.go
+RUN TARGETPLATFORM="${TARGETPLATFORM}" ./dev-scripts/build-backend "prod"
 
 FROM debian:stable-20211011-slim AS litestream_downloader
 

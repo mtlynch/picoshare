@@ -12,15 +12,37 @@ else
   MODE="$1"
 fi
 
+PLATFORM="${TARGETPLATFORM:-linux/amd64}"
+
 # Exit on unset variable.
 set -u
 
+GO_BUILD_TAGS=()
+EXTRA_FLAGS=()
+BINARY="./bin/picoshare"
 if [[ "${MODE}" == "prod" ]]; then
-  BINARY="./bin/picoshare"
-  EXTRA_FLAGS=()
+  GO_BUILD_TAGS+="netgo"
+  EXTRA_FLAGS=('-ldflags' '-w -extldflags "-static"')
 else
-  BINARY="./bin/picoshare-${MODE}"
-  EXTRA_FLAGS=("--tags" "${MODE}")
+  BINARY="${BINARY}-${MODE}"
+  GO_BUILD_TAGS+="${MODE}"
 fi
 
-go build "${EXTRA_FLAGS[@]}" -o "${BINARY}" cmd/picoshare/main.go
+GOOS='linux'
+if [ "${PLATFORM}" = "linux/arm/v7" ]; then
+  GOARCH='arm'
+elif [ "${PLATFORM}" = "linux/arm64" ]; then
+  GOARCH='arm64'
+elif [ "${PLATFORM}" = "linux/amd64" ]; then
+  # Default to linux/amd64.
+  GOARCH='amd64'
+else
+  echo "Unsupported platform: ${PLATFORM}"
+  exit 1
+fi
+
+go build \
+  -tags "${GO_BUILD_TAGS[@]}" \
+  "${EXTRA_FLAGS[@]}" \
+  -o "${BINARY}" \
+  cmd/picoshare/main.go
