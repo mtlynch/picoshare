@@ -7,7 +7,7 @@ set -e
 set -x
 
 if [[ -z $1 ]]; then
-  MODE="prod"
+  MODE='prod'
 else
   MODE="$1"
 fi
@@ -19,9 +19,9 @@ set -u
 
 GO_BUILD_TAGS=()
 EXTRA_FLAGS=()
-BINARY="./bin/picoshare"
-if [[ "${MODE}" == "prod" ]]; then
-  GO_BUILD_TAGS+=("netgo")
+BINARY='./bin/picoshare'
+if [[ "${MODE}" == 'prod' ]]; then
+  GO_BUILD_TAGS+=('netgo')
   EXTRA_FLAGS=('-ldflags' '-w -extldflags "-static"')
 else
   BINARY="${BINARY}-${MODE}"
@@ -32,11 +32,11 @@ readonly GO_BUILD_TAGS
 readonly EXTRA_FLAGS
 
 export readonly GOOS='linux'
-if [ "${PLATFORM}" = "linux/amd64" ]; then
+if [ "${PLATFORM}" = 'linux/amd64' ]; then
   GOARCH='amd64'
-elif [ "${PLATFORM}" = "linux/arm/v7" ]; then
+elif [ "${PLATFORM}" = 'linux/arm/v7' ]; then
   GOARCH='arm'
-elif [ "${PLATFORM}" = "linux/arm64" ]; then
+elif [ "${PLATFORM}" = 'linux/arm64' ]; then
   GOARCH='arm64'
 else
   echo "Unsupported platform: ${PLATFORM}"
