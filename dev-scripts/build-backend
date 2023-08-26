@@ -15,12 +15,39 @@ fi
 # Exit on unset variable.
 set -u
 
-if [[ "${MODE}" == "prod" ]]; then
-  BINARY="./bin/picoshare"
-  EXTRA_FLAGS=()
+
+if [ "${TARGETPLATFORM}" = "linux/arm/v7" ]; then
+  GOARCH='arm'
+  GOOS='linux'
+elif [ "${TARGETPLATFORM}" = "linux/arm64" ]; then
+  GOARCH='arm64'
+  GOOS='linux'
+  CC='musl-gcc'
+elif [ "{$TARGETPLATFORM}" = "linux/amd64" ]; then
+  GOARCH='amd64'
+  GOOS='linux'
+  CC='musl-gcc'
+elif [ "{$TARGETPLATFORM}" = "windows/amd64" ]; then
+  GOARCH='amd64'
+  GOOS='windows'
+  CXX='x86_64-w64-mingw32-g++'
+  CC='x86_64-w64-mingw32-gcc'
 else
-  BINARY="./bin/picoshare-${MODE}"
-  EXTRA_FLAGS=("--tags" "${MODE}")
+  GOARCH='amd64'
+  GOOS='linux'
 fi
 
+if [[ "${MODE}" == "prod" ]]; then
+  BINARY="./releases/${TARGETPLATFORM}/picoshare"
+  EXTRA_FLAGS=('--ldflags' '-linkmode external -extldflags "-static"')
+  EXTRA_FLAGS+=('-tags' 'netgo')
+  CGO_ENABLED=1
+else
+  BINARY="./bin/picoshare-${MODE}"
+  EXTRA_FLAGS=("-tags" "${MODE}")
+fi
+
+mkdir -p "$(dirname ${BINARY})"
+
+# sudo apt-get install gcc-mingw-w64
 go build "${EXTRA_FLAGS[@]}" -o "${BINARY}" cmd/picoshare/main.go

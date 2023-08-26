@@ -3,6 +3,7 @@ FROM golang:1.18.4 AS builder
 ARG TARGETPLATFORM
 
 COPY ./cmd /app/cmd
+COPY ./dev-scripts /app/dev-scripts
 COPY ./garbagecollect /app/garbagecollect
 COPY ./handlers /app/handlers
 COPY ./picoshare /app/picoshare

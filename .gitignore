@@ -1,5 +1,6 @@
 # Compiled binaries
 bin/
+releases/
 
 # Persistent data directory
 data/
