@@ -12,7 +12,7 @@ export function sortClipboardItems(items) {
   return items.sort((a, b) => {
     // Prioritize images ahead of other formats.
     const isImage = (x) => {
-      x.type.startsWith("image");
+      return x.type.startsWith("image");
     };
     if (isImage(a) && !isImage(b)) {
       return -1;
