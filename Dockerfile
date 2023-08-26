@@ -64,7 +64,6 @@ COPY --from=builder /app/bin/picoshare /app/picoshare
 COPY --from=litestream_downloader /litestream/litestream /app/litestream
 COPY ./docker-entrypoint /app/docker-entrypoint
 COPY ./litestream.yml /etc/litestream.yml
-COPY ./static /app/static
 COPY ./LICENSE /app/LICENSE
 
 ENV LITESTREAM_RETENTION=72h

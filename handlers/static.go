@@ -9,9 +9,10 @@ import (
 	"time"
 )
 
-// serveStaticResource serves any static file under the ./static directory.
+// serveStaticResource serves any static file under the ./handlers/static
+// directory.
 func serveStaticResource() http.HandlerFunc {
-	const staticRootDir = "./static"
+	const staticRootDir = "./handlers/static"
 	fs := http.FileServer(http.Dir(staticRootDir))
 
 	return func(w http.ResponseWriter, r *http.Request) {
