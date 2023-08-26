@@ -22,7 +22,10 @@ EXTRA_FLAGS=()
 BINARY='./bin/picoshare'
 if [[ "${MODE}" == 'prod' ]]; then
   GO_BUILD_TAGS+=('netgo')
+  # Disable dynamically-loaded extensions, which cause a compile time warning.
+  # https://www.arp242.net/static-go.html
   GO_BUILD_TAGS+=('sqlite_omit_load_extension')
+
   EXTRA_FLAGS=('-ldflags' '-w -extldflags "-static"')
 else
   BINARY="${BINARY}-${MODE}"
