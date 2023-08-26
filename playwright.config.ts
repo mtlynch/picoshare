@@ -12,7 +12,7 @@ const config: PlaywrightTestConfig = {
   retries: 0,
   workers: undefined,
   reporter: "html",
-  globalSetup: "./e2e/helpers/global-setup",
+  globalSetup: require.resolve("./e2e/helpers/global-setup"),
   use: {
     baseURL: "http://localhost:6001",
     actionTimeout: 0,
