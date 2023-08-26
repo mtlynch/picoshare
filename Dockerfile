@@ -16,6 +16,9 @@ WORKDIR /app
 
 RUN TARGETPLATFORM="${TARGETPLATFORM}" ./dev-scripts/build-backend "prod"
 
+FROM scratch as artifact
+COPY --from=builder /app/bin/picoshare ./
+
 FROM debian:stable-20211011-slim AS litestream_downloader
 
 ARG TARGETPLATFORM
@@ -42,10 +45,6 @@ RUN set -x && \
     wget "https://github.com/benbjohnson/litestream/releases/download/${litestream_version}/${litestream_binary_tgz_filename}" && \
     mv "${litestream_binary_tgz_filename}" litestream.tgz
 RUN tar -xvzf litestream.tgz
-
-FROM scratch as artifact
-
-COPY --from=builder /app/bin/picoshare ./
 
 FROM alpine:3.15
 
