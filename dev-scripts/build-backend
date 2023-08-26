@@ -22,6 +22,7 @@ EXTRA_FLAGS=()
 BINARY='./bin/picoshare'
 if [[ "${MODE}" == 'prod' ]]; then
   GO_BUILD_TAGS+=('netgo')
+  GO_BUILD_TAGS+=('sqlite_omit_load_extension')
   EXTRA_FLAGS=('-ldflags' '-w -extldflags "-static"')
 else
   BINARY="${BINARY}-${MODE}"
@@ -44,8 +45,18 @@ else
 fi
 export readonly GOARCH
 
+# Join together build tags
+BUILD_TAGS_JOINED=""
+for tag in "${GO_BUILD_TAGS[@]}"; do
+    BUILD_TAGS_JOINED+=" $tag"
+done
+
+# Trim leading space.
+BUILD_TAGS_JOINED="${BUILD_TAGS_JOINED# }"
+readonly BUILD_TAGS_JOINED
+
 go build \
-  -tags "${GO_BUILD_TAGS[@]}" \
+  -tags "${BUILD_TAGS_JOINED}" \
   "${EXTRA_FLAGS[@]}" \
   -o "${BINARY}" \
   cmd/picoshare/main.go
