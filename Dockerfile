@@ -43,6 +43,10 @@ RUN set -x && \
     mv "${litestream_binary_tgz_filename}" litestream.tgz
 RUN tar -xvzf litestream.tgz
 
+FROM scratch as artifact
+
+COPY --from=builder /app/bin/picoshare ./
+
 FROM alpine:3.15
 
 RUN apk add --no-cache bash
