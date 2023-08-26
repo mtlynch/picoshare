@@ -29,13 +29,12 @@ else
 fi
 
 GOOS='linux'
-if [ "${PLATFORM}" = "linux/arm/v7" ]; then
+if [ "${PLATFORM}" = "linux/amd64" ]; then
+  GOARCH='amd64'
+elif [ "${PLATFORM}" = "linux/arm/v7" ]; then
   GOARCH='arm'
 elif [ "${PLATFORM}" = "linux/arm64" ]; then
   GOARCH='arm64'
-elif [ "${PLATFORM}" = "linux/amd64" ]; then
-  # Default to linux/amd64.
-  GOARCH='amd64'
 else
   echo "Unsupported platform: ${PLATFORM}"
   exit 1
