@@ -19,7 +19,7 @@ module.exports = {
     ],
   },
   ignorePatterns: [
-    "playwright-report/*",
+    "e2e/playwright-report/*",
     "handlers/static/third-party/**/*.js",
   ],
 };

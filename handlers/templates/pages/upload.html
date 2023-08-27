@@ -22,6 +22,7 @@
   <script type="module" nonce="{{ .CspNonce }}">
     import { guestUploadFile, uploadFile } from "/js/controllers/files.js";
     import { showElement, hideElement } from "/js/lib/bulma.js";
+    import { sortClipboardItems } from "/js/lib/clipboard.js";
 
     const uploadEl = document.querySelector(".file");
     const resultEl = document.getElementById("upload-result");
@@ -68,29 +69,6 @@
       }
 
       btn.href = `/files/${entryId}/edit`;
-    }
-
-    // Sorts clipboard items in descending priority of which format we think the
-    // user wants to upload.
-    function sortClipboardItems(items) {
-      return items.sort((a, b) => {
-        // Prioritize images ahead of other formats.
-        const isImage = (x) => {
-          x.type.startsWith("image");
-        };
-        if (isImage(a) && !isImage(b)) {
-          return -1;
-        }
-        if (isImage(b) && !isImage(a)) {
-          return 1;
-        }
-
-        if (a.kind === "string" && b.kind === "string") {
-          // Prefer text/plain strings ahead of other string types.
-          return a.type === "text/plain" ? -1 : 1;
-        }
-        return 0;
-      });
     }
 
     function updateProgress(bytesUploaded, bytesTotal) {

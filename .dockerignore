@@ -3,6 +3,7 @@
 data/
 .coverage*
 *.env
+*.test.js
 fly.toml
 modd.conf
 Dockerfile

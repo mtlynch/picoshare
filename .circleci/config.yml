@@ -50,6 +50,12 @@ jobs:
       - run:
           name: Check lint
           command: npm run lint
+      - run:
+          name: Run JS unit tests
+          command: |
+            ./node_modules/.bin/mocha \
+              --recursive \
+              handlers/static/js/.tests/*.test.js
   test_go:
     docker:
       - image: cimg/go:1.18.4
@@ -102,12 +108,12 @@ jobs:
           at: ./
       - run:
           name: Install dependencies
-          command: npm install
+          command: cd e2e && npm install
       - run:
           name: Run end-to-end tests
           command: ./dev-scripts/run-e2e-tests --skip-build
       - store_artifacts:
-          path: playwright-report
+          path: e2e/playwright-report
   build_binaries:
     docker:
       - image: cimg/base:stable
