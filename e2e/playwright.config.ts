@@ -2,7 +2,7 @@ import type { PlaywrightTestConfig } from "@playwright/test";
 import { devices } from "@playwright/test";
 
 const config: PlaywrightTestConfig = {
-  testDir: "./e2e",
+  testDir: "./",
   timeout: 35 * 1000,
   expect: {
     timeout: 5 * 1000,
@@ -12,7 +12,7 @@ const config: PlaywrightTestConfig = {
   retries: 0,
   workers: undefined,
   reporter: "html",
-  globalSetup: require.resolve("./e2e/helpers/global-setup"),
+  globalSetup: require.resolve("./helpers/global-setup"),
   use: {
     baseURL: "http://localhost:6001",
     actionTimeout: 0,
@@ -33,10 +33,10 @@ const config: PlaywrightTestConfig = {
     },
   ],
 
-  outputDir: "e2e-results/",
+  outputDir: "results/",
 
   webServer: {
-    command: "PS_SHARED_SECRET=dummypass PORT=6001 ./bin/picoshare-dev",
+    command: "PS_SHARED_SECRET=dummypass PORT=6001 ../bin/picoshare-dev",
     port: 6001,
   },
 };

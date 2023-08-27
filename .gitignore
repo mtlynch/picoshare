@@ -16,6 +16,6 @@ node_modules/
 .DS_Store
 
 # Playwright output
-/playwright-report/
+/e2e/playwright-report/
 /playwright/.cache/
-/e2e-results/
+e2e/results/
