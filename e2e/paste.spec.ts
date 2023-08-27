@@ -45,13 +45,17 @@ test("pastes text in the upload input", async ({ page }) => {
     page.getByRole("row").filter({ hasText: /pasted-.*/ })
   ).toBeVisible();
   await expect(
-    page.getByRole("row").getByRole("cell").nth(noteColumn)
+    page
+      .getByRole("row")
+      .filter({ hasText: /pasted-.*/ })
+      .getByRole("cell")
+      .nth(noteColumn)
   ).toBeEmpty();
 
   await page
-    .getByRole("row")
-    .getByRole("button")
-    .filter({ has: page.locator(".fa-edit") })
+    .getByRole("cell")
+    .filter({ hasText: /pasted-.*/ })
+    .getByRole("link")
     .click();
 
   await expect(await page.innerText("body")).toEqual("I'm pasting dummy text!");
