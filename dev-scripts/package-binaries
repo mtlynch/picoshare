@@ -16,9 +16,14 @@ readonly VERSION
 # Exit on unset variable.
 set -u
 
+# Change directory to repository root.
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+readonly SCRIPT_DIR
+cd "${SCRIPT_DIR}/.."
+
 cd build
 
-readonly OUTPUT_DIR="../dist"
+readonly OUTPUT_DIR="${PWD}/../dist"
 mkdir -p "${OUTPUT_DIR}"
 
 for d in ./*_*; do
@@ -34,9 +39,10 @@ for d in ./*_*; do
   ARCH="${FOLDER_PARTS[*]}"
   ARCH="${ARCH//[[:blank:]]}"
 
+  pushd "$d"
   tar \
     --create \
-    --verbose \
     --file="${OUTPUT_DIR}/picoshare-v${VERSION}-${OS}-${ARCH}.tar.gz" \
-    "${d}/picoshare"
+    picoshare
+  popd
 done
