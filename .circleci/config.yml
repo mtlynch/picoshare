@@ -147,9 +147,9 @@ jobs:
               .
       - store_artifacts:
           path: build
-  publish_release:
+  package_release:
     docker:
-      - image: cibuilds/github:0.13.0
+      - image: cimg/base:stable
     environment:
       BUILD_TARGETS: "linux/arm/v7,linux/arm64,linux/amd64"
     steps:
@@ -168,8 +168,18 @@ jobs:
       - run:
           name: Package binaries for distribution
           command: ./dev-scripts/package-binaries "${CIRCLE_TAG}"
+      - persist_to_workspace:
+          root: ./
+          paths:
+            - ./dist
+  publish_release:
+    docker:
+      - image: cibuilds/github:0.13.0
+    steps:
+      - attach_workspace:
+          at: ./
       - run:
-          name: Publish Release on GitHub
+          name: Publish release on GitHub
           command: |
             VERSION="${CIRCLE_TAG}"
             ghr \
@@ -179,6 +189,12 @@ jobs:
               -commitish "${CIRCLE_SHA1}" \
               -replace "${VERSION}" \
               ./dist/
+  publish_docker_images:
+    docker:
+      - image: cimg/base:stable
+    environment:
+      BUILD_TARGETS: "linux/arm/v7,linux/arm64,linux/amd64"
+    steps:
       - run:
           name: Authenticate to Docker Hub
           command: echo "${DOCKERHUB_ACCESS_TOKEN}" | \
@@ -254,7 +270,7 @@ workflows:
           filters:
             tags:
               only: /.*/
-      - publish_release:
+      - package_release:
           requires:
             - check_whitespace
             - check_bash
@@ -267,6 +283,18 @@ workflows:
               only: /[0-9]+(\.[0-9]+){2}/
             branches:
               ignore: /.*/
+      - publish_release:
+          requires:
+            - package_release
+          filters:
+            tags:
+              only: /.*/
+      - publish_docker_images:
+          requires:
+            - package_release
+          filters:
+            tags:
+              only: /.*/
       - deploy:
           requires:
             - check_whitespace
