@@ -148,6 +148,9 @@ jobs:
               .
       - store_artifacts:
           path: build
+      - run:
+          name: package bins # TESTING
+          command: ./dev-scripts/package-binaries 1.3.8
   publish_release:
     docker:
       - image: cimg/base:stable
@@ -169,7 +172,7 @@ jobs:
       - run:
           name: Authenticate to Docker Hub
           command: echo "${DOCKERHUB_ACCESS_TOKEN}" | \
-            docker login --username "$DOCKERHUB_USERNAME" --password-stdin
+            docker login --username "${DOCKERHUB_USERNAME}" --password-stdin
       - run:
           name: Publish docker images
           command: |

@@ -1,0 +1,37 @@
+#!/bin/bash
+
+# Exit script on first failure.
+set -e
+
+# Echo commands before executing them, by default to stderr.
+set -x
+
+VERSION="$1"
+if [[ -z "${VERSION}" ]]; then
+  >&2 echo "Must specify a version number like 1.2.3"
+  exit 1
+fi
+readonly VERSION
+
+# Exit on unset variable.
+set -u
+
+cd build
+
+for d in ./*_*; do
+  JOINED="$(basename "$d")"
+  FOLDER_PARTS=(${JOINED//_/ })
+
+  OS="${FOLDER_PARTS[0]}"
+
+  # Join remaining parts and remove spaces.
+  FOLDER_PARTS=("${FOLDER_PARTS[@]:1}")
+  ARCH="${FOLDER_PARTS[@]}"
+  ARCH="${ARCH//[[:blank:]]}"
+
+  tar \
+    --create \
+    --verbose \
+    --file=../releases/picoshare-v${VERSION}-${OS}-${ARCH}.tar.gz \
+    "${d}/picoshare"
+done
