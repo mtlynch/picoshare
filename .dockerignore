@@ -1,6 +1,9 @@
 .circleci/
 .vscode/
 data/
+bin/
+build/
+dist/
 .coverage*
 *.env
 *.test.js

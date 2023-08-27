@@ -105,20 +105,16 @@ jobs:
           command: ./dev-scripts/run-e2e-tests --skip-build
       - store_artifacts:
           path: e2e/playwright-report
-  build_docker_images:
+  build_binaries:
     docker:
       - image: cimg/base:stable
     environment:
-      BUILD_TARGETS: "linux/arm/v7,linux/arm64,linux/amd64"
+      BUILD_TARGETS: "linux/amd64"
     steps:
       - checkout
       - setup_remote_docker:
-          version: 20.10.11
-      - run:
-          name: Log in to Docker Hub
-          command: |
-            echo "$DOCKERHUB_ACCESS_TOKEN" | \
-              docker login --username "$DOCKERHUB_USERNAME" --password-stdin
+          version: 20.10.24
+          docker_layer_caching: true
       - run:
           name: Enable multiarch builds with QEMU
           command: |
@@ -142,11 +138,57 @@ jobs:
           name: Ensure builder has booted
           command: docker buildx inspect --bootstrap
       - run:
-          name: Build docker images
+          name: Build binaries
+          command: |
+            docker buildx build \
+              --platform "${BUILD_TARGETS}" \
+              --target=artifact \
+              --output "type=local,dest=$(pwd)/build/" \
+              .
+      - store_artifacts:
+          path: build
+  publish_release:
+    docker:
+      - image: cibuilds/github:0.13.0
+    environment:
+      BUILD_TARGETS: "linux/arm/v7,linux/arm64,linux/amd64"
+    steps:
+      - checkout
+      - setup_remote_docker:
+          version: 20.10.24
+          docker_layer_caching: true
+      - run:
+          name: Build binaries
+          command: |
+            docker buildx build \
+              --platform "${BUILD_TARGETS}" \
+              --target=artifact \
+              --output "type=local,dest=$(pwd)/build/" \
+              .
+      - run:
+          name: Package binaries for distribution
+          command: ./dev-scripts/package-binaries "${CIRCLE_TAG}"
+      - run:
+          name: Publish Release on GitHub
+          command: |
+            VERSION="${CIRCLE_TAG}"
+            ghr \
+              -token "${GITHUB_TOKEN}" \
+              -username "${CIRCLE_PROJECT_USERNAME}" \
+              -repository "${CIRCLE_PROJECT_REPONAME}" \
+              -commitish "${CIRCLE_SHA1}" \
+              -replace "${VERSION}" \
+              ./dist/
+      - run:
+          name: Authenticate to Docker Hub
+          command: echo "${DOCKERHUB_ACCESS_TOKEN}" | \
+            docker login --username "${DOCKERHUB_USERNAME}" --password-stdin
+      - run:
+          name: Publish docker images
           command: |
             docker buildx build \
               --push \
-              --platform "$BUILD_TARGETS" \
+              --platform "${BUILD_TARGETS}" \
               --tag "mtlynch/picoshare:${CIRCLE_TAG}" \
               --tag mtlynch/picoshare:latest \
               .
@@ -208,13 +250,18 @@ workflows:
               only: /.*/
           requires:
             - build_backend
-      - build_docker_images:
+      - build_binaries:
+          filters:
+            tags:
+              only: /.*/
+      - publish_release:
           requires:
             - check_whitespace
             - check_bash
             - check_frontend
             - test_go
             - build_backend
+            - build_binaries
           filters:
             tags:
               only: /[0-9]+(\.[0-9]+){2}/

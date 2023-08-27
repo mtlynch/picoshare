@@ -16,6 +16,9 @@ WORKDIR /app
 
 RUN TARGETPLATFORM="${TARGETPLATFORM}" ./dev-scripts/build-backend "prod"
 
+FROM scratch as artifact
+COPY --from=builder /app/bin/picoshare ./
+
 FROM debian:stable-20211011-slim AS litestream_downloader
 
 ARG TARGETPLATFORM
