@@ -179,6 +179,10 @@ jobs:
     environment:
       BUILD_TARGETS: "linux/arm/v7,linux/arm64,linux/amd64"
     steps:
+      - checkout
+      - setup_remote_docker:
+          version: 20.10.24
+          docker_layer_caching: true
       - run:
           name: Authenticate to Docker Hub
           command: echo "${DOCKERHUB_ACCESS_TOKEN}" | \
