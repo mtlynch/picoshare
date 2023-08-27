@@ -117,26 +117,7 @@ jobs:
           docker_layer_caching: true
       - run:
           name: Enable multiarch builds with QEMU
-          command: |
-            docker run \
-              --rm \
-              --privileged \
-              multiarch/qemu-user-static \
-              --reset \
-              -p yes
-      - run:
-          name: Create multiarch build context
-          command: docker context create builder
-      - run:
-          name: Create multiplatform builder
-          command: |
-            docker buildx create builder \
-              --name builder \
-              --driver docker-container \
-              --use
-      - run:
-          name: Ensure builder has booted
-          command: docker buildx inspect --bootstrap
+          command: ./dev-scripts/enable-multiarch-docker
       - run:
           name: Build binaries
           command: |
@@ -157,6 +138,9 @@ jobs:
       - setup_remote_docker:
           version: 20.10.24
           docker_layer_caching: true
+      - run:
+          name: Enable multiarch builds with QEMU
+          command: ./dev-scripts/enable-multiarch-docker
       - run:
           name: Build binaries
           command: |
