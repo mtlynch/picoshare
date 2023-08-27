@@ -11,6 +11,4 @@ set -u
 
 ./dev-scripts/run-go-tests --quick
 ./dev-scripts/check-go-formatting
-
-npm run check-format
-npm run lint
+./dev-scripts/build-frontend

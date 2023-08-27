@@ -1,8 +1,7 @@
 {
-  "name": "picoshare-dev",
-  "type": "module",
+  "name": "picoshare-e2e",
   "version": "1.0.0",
-  "description": "PicoShare dev scripts",
+  "description": "PicoShare e2e",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/mtlynch/picoshare.git"
@@ -15,11 +14,6 @@
   "homepage": "https://pico.rocks",
   "devDependencies": {
     "@playwright/test": "1.32.1",
-    "eslint": "^8.11.0",
-    "eslint-plugin-playwright": "^0.11.2",
-    "isomorphic-fetch": "^3.0.0",
-    "mocha": "^10.2.0",
-    "prettier": "^2.6.0",
-    "prettier-plugin-go-template": "0.0.13"
+    "isomorphic-fetch": "^3.0.0"
   }
 }

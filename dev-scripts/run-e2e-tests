@@ -25,4 +25,5 @@ if [[ "${REBUILD}" == "true" ]]; then
   ./dev-scripts/build-backend dev
 fi
 
+cd e2e
 npx playwright test "$@"

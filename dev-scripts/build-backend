@@ -58,6 +58,9 @@ done
 BUILD_TAGS_JOINED="${BUILD_TAGS_JOINED# }"
 readonly BUILD_TAGS_JOINED
 
+# cgo is required for mattn/go-sqlite3.
+export CGO_ENABLED=1
+
 go build \
   -tags "${BUILD_TAGS_JOINED}" \
   "${EXTRA_FLAGS[@]}" \
