@@ -16,7 +16,7 @@ test("creates a guest link and uploads a file as a guest", async ({ page }) => {
 
   await expect(page).toHaveURL("/guest-links");
   const guestLinkElement = page.locator(
-    '.table tbody tr:first-child td[test-data-id="guest-link-label"] a',
+    '.table tbody tr:first-child td[data-testid="guest-link-label"] a',
     {
       hasText: "For e2e testing",
     }

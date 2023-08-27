@@ -40,14 +40,14 @@ test("pastes text in the upload input", async ({ page }) => {
 
   await page.getByRole("menuitem", { name: "Files" }).click();
   await expect(
-    page.locator(".table tbody tr:first-child [test-data-id='filename']")
+    page.locator(".table tbody tr:first-child [data-testid='filename']")
   ).toHaveText(/pasted-.*/);
   await expect(
-    page.locator(".table tbody tr:first-child [test-data-id='note']")
+    page.locator(".table tbody tr:first-child [data-testid='note']")
   ).toHaveCount(0);
 
   await page
-    .locator(".table tbody tr:first-child [test-data-id='filename'] a")
+    .locator(".table tbody tr:first-child [data-testid='filename'] a")
     .click();
 
   await expect(await page.innerText("body")).toEqual("I'm pasting dummy text!");
