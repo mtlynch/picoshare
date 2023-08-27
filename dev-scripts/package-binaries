@@ -18,6 +18,9 @@ set -u
 
 cd build
 
+readonly OUTPUT_DIR="../dist"
+mkdir -p "${OUTPUT_DIR}"
+
 for d in ./*_*; do
   FOLDER_NAME="$(basename "$d")"
 
@@ -34,6 +37,6 @@ for d in ./*_*; do
   tar \
     --create \
     --verbose \
-    --file="../releases/picoshare-v${VERSION}-${OS}-${ARCH}.tar.gz" \
+    --file="${OUTPUT_DIR}/picoshare-v${VERSION}-${OS}-${ARCH}.tar.gz" \
     "${d}/picoshare"
 done

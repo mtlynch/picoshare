@@ -3,7 +3,7 @@
 data/
 bin/
 build/
-releases/
+dist/
 .coverage*
 *.env
 *.test.js

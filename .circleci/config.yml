@@ -182,7 +182,7 @@ jobs:
               -repository "${CIRCLE_PROJECT_REPONAME}" \
               -commitish "${CIRCLE_SHA1}" \
               -replace "${VERSION}" \
-              ./releases/
+              ./dist/
       - run:
           name: Authenticate to Docker Hub
           command: echo "${DOCKERHUB_ACCESS_TOKEN}" | \
