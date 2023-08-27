@@ -108,12 +108,12 @@ jobs:
           at: ./
       - run:
           name: Install dependencies
-          command: npm install
+          command: cd e2e && npm install
       - run:
           name: Run end-to-end tests
           command: ./dev-scripts/run-e2e-tests --skip-build
       - store_artifacts:
-          path: playwright-report
+          path: e2e/playwright-report
   build_docker_images:
     docker:
       - image: cimg/base:stable
