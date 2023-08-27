@@ -1,6 +1,8 @@
 import { test, expect } from "@playwright/test";
 import { login } from "./helpers/login.js";
 
+const labelColumn = 0;
+
 test("creates a guest link and uploads a file as a guest", async ({ page }) => {
   await login(page);
 
@@ -15,16 +17,17 @@ test("creates a guest link and uploads a file as a guest", async ({ page }) => {
   await page.getByRole("button", { name: "Create" }).click();
 
   await expect(page).toHaveURL("/guest-links");
-  const guestLinkElement = page.locator(
-    '.table tbody tr:first-child td[data-testid="guest-link-label"] a',
-    {
-      hasText: "For e2e testing",
-    }
-  );
-  expect(guestLinkElement).toBeVisible();
+  const guestLinkRow = await page
+    .getByRole("row")
+    .filter({ hasText: "For e2e testing" });
+  await expect(guestLinkRow).toBeVisible();
 
   // Save the route to the guest link URL so that we can return to it later.
-  const guestLinkRouteValue = await guestLinkElement.getAttribute("href");
+  const guestLinkRouteValue = await guestLinkRow
+    .getByRole("cell")
+    .nth(labelColumn)
+    .getByRole("link")
+    .getAttribute("href");
   expect(guestLinkRouteValue).not.toBeNull();
   const guestLinkRoute = String(guestLinkRouteValue);
 
