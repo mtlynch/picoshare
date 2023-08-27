@@ -105,7 +105,7 @@ jobs:
           command: ./dev-scripts/run-e2e-tests --skip-build
       - store_artifacts:
           path: e2e/playwright-report
-  build_docker_images:
+  build_binaries:
     docker:
       - image: cimg/base:stable
     environment:
