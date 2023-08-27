@@ -185,8 +185,12 @@ jobs:
           docker_layer_caching: true
       - run:
           name: Authenticate to Docker Hub
-          command: echo "${DOCKERHUB_ACCESS_TOKEN}" | \
-            docker login --username "${DOCKERHUB_USERNAME}" --password-stdin
+          command: |
+            echo "${DOCKERHUB_ACCESS_TOKEN}" | \
+              docker login --username "${DOCKERHUB_USERNAME}" --password-stdin
+      - run:
+          name: Enable multiarch builds with QEMU
+          command: ./dev-scripts/enable-multiarch-docker
       - run:
           name: Publish docker images
           command: |
