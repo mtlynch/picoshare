@@ -19,19 +19,21 @@ set -u
 cd build
 
 for d in ./*_*; do
-  JOINED="$(basename "$d")"
-  FOLDER_PARTS=(${JOINED//_/ })
+  FOLDER_NAME="$(basename "$d")"
+
+  # Split FOLDER_NAME into an array with underscore as a delimiter.
+  IFS="_" read -r -a FOLDER_PARTS <<< "${FOLDER_NAME}"
 
   OS="${FOLDER_PARTS[0]}"
 
   # Join remaining parts and remove spaces.
   FOLDER_PARTS=("${FOLDER_PARTS[@]:1}")
-  ARCH="${FOLDER_PARTS[@]}"
+  ARCH="${FOLDER_PARTS[*]}"
   ARCH="${ARCH//[[:blank:]]}"
 
   tar \
     --create \
     --verbose \
-    --file=../releases/picoshare-v${VERSION}-${OS}-${ARCH}.tar.gz \
+    --file="../releases/picoshare-v${VERSION}-${OS}-${ARCH}.tar.gz" \
     "${d}/picoshare"
 done
