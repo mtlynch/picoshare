@@ -132,7 +132,7 @@
       <tbody>
         {{ range .GuestLinks }}
           <tr {{ if not (isActive .) }}class="inactive"{{ end }}>
-            <td class="is-vcentered" test-data-id="guest-link-label">
+            <td class="is-vcentered" data-testid="guest-link-label">
               {{ if isActive . }}
                 <a href="/g/{{ .ID }}">
                   {{ template "label-formatted" . }}

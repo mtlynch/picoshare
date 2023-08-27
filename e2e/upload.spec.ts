@@ -34,12 +34,12 @@ test("uploads a file without specifying any parameters", async ({
   await page.getByRole("menuitem", { name: "Files" }).click();
   await expect(
     page.locator(
-      ".table tr[test-data-filename='simple-upload.txt'] [test-data-id='filename']"
+      ".table tr[test-data-filename='simple-upload.txt'] [data-testid='filename']"
     )
   ).toHaveText("simple-upload.txt");
   await expect(
     page.locator(
-      ".table tr[test-data-filename='simple-upload.txt'] [test-data-id='note']"
+      ".table tr[test-data-filename='simple-upload.txt'] [data-testid='note']"
     )
   ).toHaveCount(0);
 });
@@ -67,18 +67,18 @@ test("uploads a file with a custom expiration time", async ({ page }) => {
   await page.getByRole("menuitem", { name: "Files" }).click();
   await expect(
     page.locator(
-      ".table tr[test-data-filename='custom-expiration-upload.txt'] [test-data-id='filename']"
+      ".table tr[test-data-filename='custom-expiration-upload.txt'] [data-testid='filename']"
     )
   ).toHaveText("custom-expiration-upload.txt");
   await expect(
     page.locator(
-      ".table tr[test-data-filename='custom-expiration-upload.txt'] [test-data-id='note']"
+      ".table tr[test-data-filename='custom-expiration-upload.txt'] [data-testid='note']"
     )
   ).toHaveCount(0);
 
   await expect(
     page.locator(
-      ".table tr[test-data-filename='custom-expiration-upload.txt'] [test-data-id='expiration']"
+      ".table tr[test-data-filename='custom-expiration-upload.txt'] [data-testid='expiration']"
     )
   ).toHaveText(/^2029-09-03/);
 });
@@ -102,12 +102,12 @@ test("uploads a file with a note", async ({ page }) => {
   await page.getByRole("menuitem", { name: "Files" }).click();
   await expect(
     page.locator(
-      ".table tr[test-data-filename='upload-with-note.txt'] [test-data-id='filename']"
+      ".table tr[test-data-filename='upload-with-note.txt'] [data-testid='filename']"
     )
   ).toHaveText("upload-with-note.txt");
   await expect(
     page.locator(
-      ".table tr[test-data-filename='upload-with-note.txt'] [test-data-id='note']"
+      ".table tr[test-data-filename='upload-with-note.txt'] [data-testid='note']"
     )
   ).toHaveText("For Pico, with Love and Squalor");
 });
@@ -191,12 +191,12 @@ test("uploads a file and then uploads another", async ({ page }) => {
   await expect(page).toHaveURL("/files");
   await expect(
     page.locator(
-      ".table tr[test-data-filename='upload-1.txt'] td[test-data-id='expiration']"
+      ".table tr[test-data-filename='upload-1.txt'] td[data-testid='expiration']"
     )
   ).toHaveText(/ \(30 days\)$/);
   await expect(
     page.locator(
-      ".table tr[test-data-filename='upload-2.txt'] td[test-data-id='expiration']"
+      ".table tr[test-data-filename='upload-2.txt'] td[data-testid='expiration']"
     )
   ).toHaveText(/ \(30 days\)$/);
 });
@@ -231,7 +231,7 @@ test("uploads a file and deletes its note", async ({ page }) => {
   await expect(page).toHaveURL("/files");
   await expect(
     page.locator(
-      ".table tr[test-data-filename='upload-with-temporary-note.txt'] [test-data-id='note']"
+      ".table tr[test-data-filename='upload-with-temporary-note.txt'] [data-testid='note']"
     )
   ).toHaveCount(0);
 });
@@ -266,7 +266,7 @@ test("uploads a file and edits its note", async ({ page }) => {
   await expect(page).toHaveURL("/files");
   await expect(
     page.locator(
-      ".table tr[test-data-filename='upload-with-note-i-will-edit.txt'] [test-data-id='note']"
+      ".table tr[test-data-filename='upload-with-note-i-will-edit.txt'] [data-testid='note']"
     )
   ).toHaveText("I have a different note now");
 });
@@ -302,7 +302,7 @@ test("uploads a file and changes its expiration time", async ({ page }) => {
   await expect(page).toHaveURL("/files");
   await expect(
     page.locator(
-      ".table tr[test-data-filename='file-with-new-expiration.txt'] [test-data-id='expiration']"
+      ".table tr[test-data-filename='file-with-new-expiration.txt'] [data-testid='expiration']"
     )
   ).toHaveText(/^2029-09-04/);
 });
