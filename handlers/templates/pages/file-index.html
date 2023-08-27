@@ -109,22 +109,20 @@
       <tbody>
         {{ range .Files }}
           <tr test-data-filename="{{ .Filename }}">
-            <td class="is-vcentered" data-testid="filename">
+            <td class="is-vcentered">
               <a href="/-{{ .ID }}">{{ .Filename }}</a>
             </td>
             <td class="is-vcentered">
               {{ if .Note.Value }}
                 <div class="tooltip">
                   <i class="fa-solid fa-note-sticky mx-auto"></i>
-                  <span class="tooltip-text" data-testid="note"
-                    >{{ .Note }}</span
-                  >
+                  <span class="tooltip-text">{{ .Note }}</span>
                 </div>
               {{ end }}
             </td>
             <td class="is-vcentered">{{ formatFileSize .Size }}</td>
             <td class="is-vcentered">{{ formatDate .Uploaded }}</td>
-            <td class="is-vcentered" data-testid="expiration">
+            <td class="is-vcentered">
               {{- formatExpiration .Expires -}}
             </td>
             <td class="is-vcentered">
@@ -133,6 +131,7 @@
                   <a
                     class="button is-link"
                     href="/files/{{ .ID }}/edit"
+                    role="button"
                     pico-purpose="edit"
                     pico-entry-id="{{ .ID }}"
                   >

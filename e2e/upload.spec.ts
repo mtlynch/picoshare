@@ -1,6 +1,9 @@
 import { test, expect } from "@playwright/test";
 import { login } from "./helpers/login.js";
 
+const noteColumn = 1;
+const expirationColumn = 4;
+
 test("uploads a file without specifying any parameters", async ({
   page,
   request,
@@ -32,16 +35,11 @@ test("uploads a file without specifying any parameters", async ({
   await request.post("/api/debug/db/cleanup");
 
   await page.getByRole("menuitem", { name: "Files" }).click();
-  await expect(
-    page.locator(
-      ".table tr[test-data-filename='simple-upload.txt'] [data-testid='filename']"
-    )
-  ).toHaveText("simple-upload.txt");
-  await expect(
-    page.locator(
-      ".table tr[test-data-filename='simple-upload.txt'] [data-testid='note']"
-    )
-  ).toHaveCount(0);
+  const matchingRow = await page
+    .getByRole("row")
+    .filter({ hasText: "simple-upload.txt" });
+  await expect(matchingRow).toBeVisible();
+  await expect(matchingRow.getByRole("cell").nth(noteColumn)).toBeEmpty();
 });
 
 test("uploads a file with a custom expiration time", async ({ page }) => {
@@ -65,22 +63,15 @@ test("uploads a file with a custom expiration time", async ({ page }) => {
   );
 
   await page.getByRole("menuitem", { name: "Files" }).click();
-  await expect(
-    page.locator(
-      ".table tr[test-data-filename='custom-expiration-upload.txt'] [data-testid='filename']"
-    )
-  ).toHaveText("custom-expiration-upload.txt");
-  await expect(
-    page.locator(
-      ".table tr[test-data-filename='custom-expiration-upload.txt'] [data-testid='note']"
-    )
-  ).toHaveCount(0);
 
-  await expect(
-    page.locator(
-      ".table tr[test-data-filename='custom-expiration-upload.txt'] [data-testid='expiration']"
-    )
-  ).toHaveText(/^2029-09-03/);
+  const matchingRow = await page
+    .getByRole("row")
+    .filter({ hasText: "custom-expiration-upload.txt" });
+  await expect(matchingRow).toBeVisible();
+  await expect(matchingRow.getByRole("cell").nth(noteColumn)).toBeEmpty();
+  await expect(matchingRow.getByRole("cell").nth(expirationColumn)).toHaveText(
+    /^2029-09-03/
+  );
 });
 
 test("uploads a file with a note", async ({ page }) => {
@@ -100,16 +91,14 @@ test("uploads a file with a note", async ({ page }) => {
   );
 
   await page.getByRole("menuitem", { name: "Files" }).click();
-  await expect(
-    page.locator(
-      ".table tr[test-data-filename='upload-with-note.txt'] [data-testid='filename']"
-    )
-  ).toHaveText("upload-with-note.txt");
-  await expect(
-    page.locator(
-      ".table tr[test-data-filename='upload-with-note.txt'] [data-testid='note']"
-    )
-  ).toHaveText("For Pico, with Love and Squalor");
+
+  const matchingRow = await page
+    .getByRole("row")
+    .filter({ hasText: "upload-with-note.txt" });
+  await expect(matchingRow).toBeVisible();
+  await expect(matchingRow.getByRole("cell").nth(noteColumn)).toHaveText(
+    "For Pico, with Love and Squalor"
+  );
 });
 
 test("uploads a file and deletes it", async ({ page }) => {
@@ -127,10 +116,12 @@ test("uploads a file and deletes it", async ({ page }) => {
   );
 
   await page.getByRole("menuitem", { name: "Files" }).click();
+
   await page
-    .locator(
-      ".table tr[test-data-filename='upload-for-deletion.txt'] [pico-purpose='edit']"
-    )
+    .getByRole("row")
+    .filter({ hasText: "upload-for-deletion.txt" })
+    .getByRole("button")
+    .filter({ has: page.locator(".fa-edit") })
     .click();
 
   await expect(page).toHaveURL(/\/files\/.+\/edit$/);
@@ -141,7 +132,7 @@ test("uploads a file and deletes it", async ({ page }) => {
 
   await expect(page).toHaveURL("/files");
   await expect(
-    page.locator(".table tr[test-data-filename='upload-for-deletion.txt']")
+    await page.getByRole("row").filter({ hasText: "upload-for-deletion.txt" })
   ).toHaveCount(0);
 });
 
@@ -190,14 +181,18 @@ test("uploads a file and then uploads another", async ({ page }) => {
 
   await expect(page).toHaveURL("/files");
   await expect(
-    page.locator(
-      ".table tr[test-data-filename='upload-1.txt'] td[data-testid='expiration']"
-    )
+    page
+      .getByRole("row")
+      .filter({ hasText: "upload-1.txt" })
+      .getByRole("cell")
+      .nth(expirationColumn)
   ).toHaveText(/ \(30 days\)$/);
   await expect(
-    page.locator(
-      ".table tr[test-data-filename='upload-2.txt'] td[data-testid='expiration']"
-    )
+    page
+      .getByRole("row")
+      .filter({ hasText: "upload-2.txt" })
+      .getByRole("cell")
+      .nth(expirationColumn)
   ).toHaveText(/ \(30 days\)$/);
 });
 
@@ -218,10 +213,16 @@ test("uploads a file and deletes its note", async ({ page }) => {
   );
 
   await page.getByRole("menuitem", { name: "Files" }).click();
-  await page
-    .locator(
-      ".table tr[test-data-filename='upload-with-temporary-note.txt'] [pico-purpose='edit']"
-    )
+
+  const matchingRow = await page
+    .getByRole("row")
+    .filter({ hasText: "upload-with-temporary-note.txt" });
+  await expect(matchingRow.getByRole("cell").nth(noteColumn)).toHaveText(
+    "For Pico, with Love and Squalor"
+  );
+  await matchingRow
+    .getByRole("button")
+    .filter({ has: page.locator(".fa-edit") })
     .click();
 
   await expect(page).toHaveURL(/\/files\/.+\/edit$/);
@@ -230,10 +231,12 @@ test("uploads a file and deletes its note", async ({ page }) => {
 
   await expect(page).toHaveURL("/files");
   await expect(
-    page.locator(
-      ".table tr[test-data-filename='upload-with-temporary-note.txt'] [data-testid='note']"
-    )
-  ).toHaveCount(0);
+    page
+      .getByRole("row")
+      .filter({ hasText: "upload-with-temporary-note.txt" })
+      .getByRole("cell")
+      .nth(noteColumn)
+  ).toBeEmpty();
 });
 
 test("uploads a file and edits its note", async ({ page }) => {
@@ -254,9 +257,10 @@ test("uploads a file and edits its note", async ({ page }) => {
 
   await page.getByRole("menuitem", { name: "Files" }).click();
   await page
-    .locator(
-      ".table tr[test-data-filename='upload-with-note-i-will-edit.txt'] [pico-purpose='edit']"
-    )
+    .getByRole("row")
+    .filter({ hasText: "upload-with-note-i-will-edit.txt" })
+    .getByRole("button")
+    .filter({ has: page.locator(".fa-edit") })
     .click();
 
   await expect(page).toHaveURL(/\/files\/.+\/edit$/);
@@ -265,9 +269,11 @@ test("uploads a file and edits its note", async ({ page }) => {
 
   await expect(page).toHaveURL("/files");
   await expect(
-    page.locator(
-      ".table tr[test-data-filename='upload-with-note-i-will-edit.txt'] [data-testid='note']"
-    )
+    await page
+      .getByRole("row")
+      .filter({ hasText: "upload-with-note-i-will-edit.txt" })
+      .getByRole("cell")
+      .nth(noteColumn)
   ).toHaveText("I have a different note now");
 });
 
@@ -287,9 +293,10 @@ test("uploads a file and changes its expiration time", async ({ page }) => {
 
   await page.getByRole("menuitem", { name: "Files" }).click();
   await page
-    .locator(
-      ".table tr[test-data-filename='file-with-new-expiration.txt'] [pico-purpose='edit']"
-    )
+    .getByRole("row")
+    .filter({ hasText: "file-with-new-expiration.txt" })
+    .getByRole("button")
+    .filter({ has: page.locator(".fa-edit") })
     .click();
 
   await expect(page).toHaveURL(/\/files\/.+\/edit$/);
@@ -300,9 +307,12 @@ test("uploads a file and changes its expiration time", async ({ page }) => {
   await page.getByRole("button", { name: "Save" }).click();
 
   await expect(page).toHaveURL("/files");
+
   await expect(
-    page.locator(
-      ".table tr[test-data-filename='file-with-new-expiration.txt'] [data-testid='expiration']"
-    )
+    page
+      .getByRole("row")
+      .filter({ hasText: "file-with-new-expiration.txt" })
+      .getByRole("cell")
+      .nth(expirationColumn)
   ).toHaveText(/^2029-09-04/);
 });

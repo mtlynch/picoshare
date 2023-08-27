@@ -1,6 +1,8 @@
 import { test, expect } from "@playwright/test";
 import { login } from "./helpers/login.js";
 
+const noteColumn = 1;
+
 // Playwright can't yet copy to clipboard, so this is a workaround.
 // https://github.com/microsoft/playwright/issues/15860
 async function clipboardCopy(page, text) {
@@ -40,14 +42,20 @@ test("pastes text in the upload input", async ({ page }) => {
 
   await page.getByRole("menuitem", { name: "Files" }).click();
   await expect(
-    page.locator(".table tbody tr:first-child [data-testid='filename']")
-  ).toHaveText(/pasted-.*/);
+    page.getByRole("row").filter({ hasText: /pasted-.*/ })
+  ).toBeVisible();
   await expect(
-    page.locator(".table tbody tr:first-child [data-testid='note']")
-  ).toHaveCount(0);
+    page
+      .getByRole("row")
+      .filter({ hasText: /pasted-.*/ })
+      .getByRole("cell")
+      .nth(noteColumn)
+  ).toBeEmpty();
 
   await page
-    .locator(".table tbody tr:first-child [data-testid='filename'] a")
+    .getByRole("cell")
+    .filter({ hasText: /pasted-.*/ })
+    .getByRole("link")
     .click();
 
   await expect(await page.innerText("body")).toEqual("I'm pasting dummy text!");
