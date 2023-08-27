@@ -45,17 +45,8 @@ jobs:
           name: Download npm packages
           command: npm install
       - run:
-          name: Check formatting
-          command: npm run check-format
-      - run:
-          name: Check lint
-          command: npm run lint
-      - run:
-          name: Run JS unit tests
-          command: |
-            ./node_modules/.bin/mocha \
-              --recursive \
-              handlers/static/js/.tests/*.test.js
+          name: Run frontend checks
+          command: ./dev-scripts/build-frontend
   test_go:
     docker:
       - image: cimg/go:1.18.4

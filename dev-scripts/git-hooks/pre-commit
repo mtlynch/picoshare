@@ -11,7 +11,4 @@ set -u
 
 ./dev-scripts/run-go-tests --quick
 ./dev-scripts/check-go-formatting
-
-npm run check-format
-npm run lint
-./node_modules/.bin/mocha --recursive handlers/static/js/.tests/*.test.js
+./dev-scripts/build-frontend
