@@ -141,11 +141,12 @@ jobs:
               readonly VERSION="${CIRCLE_TAG}"
             elif [[ "${CIRCLE_BRANCH}" == 'master' ]]; then
               readonly VERSION="${CIRCLE_SHA1}"
-            else
-              # Skip packaging unless we've built multiple platforms.
-              circleci-agent step halt
             fi
-            ./dev-scripts/package-binaries "${VERSION}"
+            if [[ -n "${VERSION}" ]]; then
+              ./dev-scripts/package-binaries "${VERSION}"
+            else
+              echo "Skipping packaging step"
+            fi
       - persist_to_workspace:
           root: ./
           paths:
