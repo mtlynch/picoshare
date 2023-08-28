@@ -105,11 +105,9 @@ jobs:
           command: ./dev-scripts/run-e2e-tests --skip-build
       - store_artifacts:
           path: e2e/playwright-report
-  build_binaries:
+  package_release:
     docker:
       - image: cimg/base:stable
-    environment:
-      BUILD_TARGETS: "linux/amd64"
     steps:
       - checkout
       - setup_remote_docker:
@@ -121,6 +119,13 @@ jobs:
       - run:
           name: Build binaries
           command: |
+            set -eux
+            if [[ "${CIRCLE_TAG-''}" =~ ^[0-9]+(\.[0-9]+){2}.*  || \
+                  "${CIRCLE_BRANCH}" == 'master' ]]; then
+              readonly BUILD_TARGETS='linux/arm/v7,linux/arm64,linux/amd64'
+            else
+              readonly BUILD_TARGETS='linux/amd64'
+            fi
             docker buildx build \
               --platform "${BUILD_TARGETS}" \
               --target=artifact \
@@ -128,30 +133,24 @@ jobs:
               .
       - store_artifacts:
           path: build
-  package_release:
-    docker:
-      - image: cimg/base:stable
-    environment:
-      BUILD_TARGETS: "linux/arm/v7,linux/arm64,linux/amd64"
-    steps:
-      - checkout
-      - setup_remote_docker:
-          version: 20.10.24
-          docker_layer_caching: true
-      - run:
-          name: Enable multiarch builds with QEMU
-          command: ./dev-scripts/enable-multiarch-docker
-      - run:
-          name: Build binaries
-          command: |
-            docker buildx build \
-              --platform "${BUILD_TARGETS}" \
-              --target=artifact \
-              --output "type=local,dest=$(pwd)/build/" \
-              .
       - run:
           name: Package binaries for distribution
-          command: ./dev-scripts/package-binaries "${CIRCLE_TAG}"
+          command: |
+            set -eux
+            VERSION=''
+            if [[ "${CIRCLE_TAG-''}" =~ ^[0-9]+(\.[0-9]+){2}.* ]]; then
+              VERSION="${CIRCLE_TAG}"
+            elif [[ "${CIRCLE_BRANCH}" == 'master' ]]; then
+              VERSION="${CIRCLE_SHA1}"
+            fi
+            readonly VERSION
+
+            if [[ -n "${VERSION}" ]]; then
+              ./dev-scripts/package-binaries "${VERSION}"
+            else
+              echo "Skipping packaging step"
+              circleci-agent step halt
+            fi
       - persist_to_workspace:
           root: ./
           paths:
@@ -165,7 +164,6 @@ jobs:
       - run:
           name: Publish release on GitHub
           command: |
-            VERSION="${CIRCLE_TAG}"
             ghr \
               -token "${GITHUB_TOKEN}" \
               -username "${CIRCLE_PROJECT_USERNAME}" \
@@ -258,25 +256,17 @@ workflows:
               only: /.*/
           requires:
             - build_backend
-      - build_binaries:
+      - package_release:
           filters:
             tags:
               only: /.*/
-      - package_release:
+      - publish_release:
           requires:
             - check_whitespace
             - check_bash
             - check_frontend
             - test_go
             - build_backend
-            - build_binaries
-          filters:
-            tags:
-              only: /[0-9]+(\.[0-9]+){2}/
-            branches:
-              only: master
-      - publish_release:
-          requires:
             - package_release
           filters:
             tags:
