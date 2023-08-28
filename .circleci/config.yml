@@ -149,6 +149,7 @@ jobs:
               ./dev-scripts/package-binaries "${VERSION}"
             else
               echo "Skipping packaging step"
+              circleci-agent step halt
             fi
       - persist_to_workspace:
           root: ./
