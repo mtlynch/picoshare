@@ -253,17 +253,16 @@ workflows:
           requires:
             - build_backend
       - package_release:
+          filters:
+            tags:
+              only: /.*/
+      - publish_release:
           requires:
             - check_whitespace
             - check_bash
             - check_frontend
             - test_go
             - build_backend
-          filters:
-            tags:
-              only: /.*/
-      - publish_release:
-          requires:
             - package_release
           filters:
             tags:
