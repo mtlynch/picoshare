@@ -217,6 +217,47 @@ func (s Server) fileEditGet() http.HandlerFunc {
 	}
 }
 
+func (s Server) fileInfoGet() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id, err := parseEntryID(mux.Vars(r)["id"])
+		if err != nil {
+			log.Printf("error parsing ID: %v", err)
+			http.Error(w, fmt.Sprintf("bad entry ID: %v", err), http.StatusBadRequest)
+			return
+		}
+
+		metadata, err := s.getDB(r).GetEntryMetadata(id)
+		if _, ok := err.(store.EntryNotFoundError); ok {
+			http.Error(w, "entry not found", http.StatusNotFound)
+			return
+		} else if err != nil {
+			log.Printf("error retrieving entry with id %v: %v", id, err)
+			http.Error(w, "failed to retrieve entry", http.StatusInternalServerError)
+			return
+		}
+
+		if err := renderTemplate(w, "file-info.html", struct {
+			commonProps
+			Metadata picoshare.UploadMetadata
+		}{
+			commonProps: makeCommonProps("PicoShare - File Information", r.Context()),
+			Metadata:    metadata,
+		}, template.FuncMap{
+			"formatExpiration": func(et picoshare.ExpirationTime) string {
+				if et == picoshare.NeverExpire {
+					return "Never"
+				}
+				t := time.Time(et)
+				delta := time.Until(t)
+				return fmt.Sprintf("%s (%.0f days)", t.Format("2006-01-02"), delta.Hours()/24)
+			},
+		}); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+}
+
 func (s Server) fileConfirmDeleteGet() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id, err := parseEntryID(mux.Vars(r)["id"])

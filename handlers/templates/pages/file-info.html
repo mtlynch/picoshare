@@ -1,0 +1,53 @@
+{{ define "style-tags" }}
+{{ end }}
+
+{{ define "script-tags" }}
+  <script type="module" nonce="{{ .CspNonce }}"></script>
+{{ end }}
+
+{{ define "custom-elements" }}
+  {{ template "upload-link-box.html" . }}
+  {{ template "upload-links.html" . }}
+{{ end }}
+
+{{ define "content" }}
+  <h1 class="title">File Information</h1>
+
+  {{ with .Metadata }}
+
+    <div class="field my-5">
+      <label class="label">Links</label>
+
+      <upload-links file-id="{{ .ID }}" filename="{{ .Filename }}">
+      </upload-links>
+    </div>
+    <div class="field my-5">
+      <label class="label">Filename</label>
+      {{ .Filename }}
+    </div>
+
+    <div class="field my-5">
+      <label class="label">Expires</label>
+
+      {{ formatExpiration .Expires }}
+    </div>
+
+    <div class="field my-5">
+      <label class="label">Note</label>
+      {{ if .Note.Value }}
+        {{ .Note }}
+      {{ else }}
+        None
+      {{ end }}
+    </div>
+
+    <p class="control">
+      <a class="button is-link" href="/files/{{ .ID }}/edit">
+        <i class="fas fa-edit mr-2"></i>
+        Edit</a
+      >
+    </p>
+  {{ end }}
+{{ end }}
+
+{{ template "base.html" }}

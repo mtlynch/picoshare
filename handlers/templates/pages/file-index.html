@@ -103,7 +103,7 @@
           <th>Size</th>
           <th>Uploaded</th>
           <th>Expires</th>
-          <th class="has-text-right">Actions</th>
+          <th></th>
         </tr>
       </thead>
       <tbody>
@@ -127,6 +127,15 @@
             </td>
             <td class="is-vcentered">
               <div class="field is-grouped is-justify-content-flex-end">
+                <p class="control">
+                  <a
+                    class="button is-link"
+                    href="/files/{{ .ID }}/info"
+                    role="button"
+                  >
+                    <i class="fas fa-circle-info"></i>
+                  </a>
+                </p>
                 <p class="control">
                   <a
                     class="button is-link"
