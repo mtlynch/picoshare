@@ -19,7 +19,7 @@ cd "${SCRIPT_DIR}/.."
 set -u
 
 readonly page_name="$1"
-readonly page_path="templates/${page_name}.html"
+readonly page_path="handlers/templates/pages/${page_name}.html"
 
 if [[ -f "$page_path" ]]; then
   >&2 echo "page already exists: ${page_path}"
