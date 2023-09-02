@@ -77,7 +77,7 @@ func guestLinkFromRequest(r *http.Request) (picoshare.GuestLink, error) {
 		return picoshare.GuestLink{}, err
 	}
 
-	label, err := parseLabel(payload.Label)
+	label, err := parse.GuestLinkLabel(payload.Label)
 	if err != nil {
 		return picoshare.GuestLink{}, err
 	}
@@ -103,16 +103,6 @@ func guestLinkFromRequest(r *http.Request) (picoshare.GuestLink, error) {
 		MaxFileBytes:   maxFileBytes,
 		MaxFileUploads: maxFileUploads,
 	}, nil
-}
-
-func parseLabel(label string) (picoshare.GuestLinkLabel, error) {
-	// Arbitrary limit to prevent too-long labels
-	limit := 200
-	if len(label) > limit {
-		return picoshare.GuestLinkLabel(""), fmt.Errorf("label too long - limit %d characters", limit)
-	}
-
-	return picoshare.GuestLinkLabel(label), nil
 }
 
 func parseMaxFileBytes(limitRaw *uint64) (picoshare.GuestUploadMaxFileBytes, error) {
