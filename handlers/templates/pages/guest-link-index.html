@@ -7,16 +7,18 @@
       opacity: 0;
     }
 
-    .table tr {
-      transition: all 1000ms ease-out;
-    }
+    .table {
+      & tr {
+        transition: all 1000ms ease-out;
+      }
 
-    .table .inactive {
-      background-color: #d9d9d9;
-    }
+      & .inactive {
+        background-color: #d9d9d9;
+      }
 
-    .table .inactive [aria-label="Copy"] {
-      display: none;
+      & .inactive [aria-label="Copy"] {
+        display: none;
+      }
     }
 
     #error {
