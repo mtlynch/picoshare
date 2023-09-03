@@ -13,9 +13,6 @@
 
 {{ define "script-tags" }}
   <script type="module" nonce="{{ .CspNonce }}">
-    const uploadLinksEl = document.querySelector("upload-links");
-    const uploadTimestamp = document.getElementById("upload-timestamp");
-
     function parseTimestamp(raw) {
       // Make sure the timestamp is valid.
       const timestamp = Date.parse(raw);
@@ -39,14 +36,19 @@
           hour: "numeric",
           minute: "numeric",
         });
+
+      const uploadTimestamp = document.getElementById("upload-timestamp");
       uploadTimestamp.innerText = dateToTime(
         parseTimestamp(uploadTimestamp.innerText)
       );
-      uploadLinksEl.addEventListener("link-copied", () => {
-        document
-          .querySelector("snackbar-notifications")
-          .addInfoMessage("Copied link");
-      });
+
+      document
+        .querySelector("upload-links")
+        .addEventListener("link-copied", () => {
+          document
+            .querySelector("snackbar-notifications")
+            .addInfoMessage("Copied link");
+        });
     });
   </script>
 {{ end }}
