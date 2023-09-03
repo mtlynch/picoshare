@@ -125,7 +125,7 @@ test("uploads a file and deletes it", async ({ page }) => {
     .click();
 
   await expect(page).toHaveURL(/\/files\/.+\/edit$/);
-  await page.locator("[pico-purpose='delete']").click();
+  await page.getByRole("button", { name: "Delete" }).click();
 
   await expect(page).toHaveURL(/\/files\/.+\/confirm-delete$/);
   await page.getByRole("button", { name: "Delete" }).click();
@@ -315,4 +315,35 @@ test("uploads a file and changes its expiration time", async ({ page }) => {
       .getByRole("cell")
       .nth(expirationColumn)
   ).toHaveText(/^2029-09-04/);
+});
+
+test("edits a file and cancels the edit", async ({ page, request }) => {
+  await login(page);
+
+  await page.locator(".file-input").setInputFiles([
+    {
+      name: "simple-upload.txt",
+      mimeType: "text/plain",
+      buffer: Buffer.from("I'm just a simple upload"),
+    },
+  ]);
+  await expect(page.locator("#upload-result .message-body")).toHaveText(
+    "Upload complete!"
+  );
+
+  await page.getByRole("menuitem", { name: "Files" }).click();
+
+  await expect(page).toHaveURL(/\/files$/);
+  await page
+    .getByRole("row")
+    .filter({ hasText: "simple-upload.txt" })
+    .getByRole("button")
+    .filter({ has: page.locator(".fa-edit") })
+    .click();
+
+  await expect(page).toHaveURL(/\/files\/.+\/edit$/);
+  await page.getByRole("button", { name: "Cancel" }).click();
+
+  // We should end up back on the /files page.
+  await expect(page).toHaveURL(/\/files$/);
 });
