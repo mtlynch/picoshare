@@ -33,7 +33,6 @@
 
 {{ define "script-tags" }}
   <script type="module" nonce="{{ .CspNonce }}">
-    import { deleteFile } from "/js/controllers/files.js";
     import { showElement, hideElement } from "/js/lib/bulma.js";
     import { copyToClipboard } from "/js/lib/clipboard.js";
     import { makeShortLink } from "/js/lib/links.js";
