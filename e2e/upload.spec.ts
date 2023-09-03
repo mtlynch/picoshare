@@ -373,6 +373,36 @@ test("views file info, starts an edit, and cancels the edit", async ({
       .filter({ has: page.getByRole("heading", { name: "Filename" }) })
       .locator(".value")
   ).toHaveText("simple-upload.txt");
+  await expect(
+    page
+      .locator("section")
+      .filter({ has: page.getByRole("heading", { name: "Size" }) })
+      .locator(".value")
+  ).toHaveText("24 B");
+  await expect(
+    page
+      .locator("section")
+      .filter({ has: page.getByRole("heading", { name: "Expires" }) })
+      .locator(".value")
+  ).toHaveText(/ \(30 days\)$/);
+  await expect(
+    page
+      .locator("section")
+      .filter({ has: page.getByRole("heading", { name: "Note" }) })
+      .locator(".value")
+  ).toHaveText("None");
+  await expect(
+    page
+      .locator("section")
+      .filter({ has: page.getByRole("heading", { name: "Uploaded by" }) })
+      .locator(".value")
+  ).toHaveText("You");
+  await expect(
+    page
+      .locator("section")
+      .filter({ has: page.getByRole("heading", { name: "Upload time" }) })
+      .locator(".value")
+  ).toHaveText("Foo");
 
   await page.getByRole("button", { name: "Edit" }).click();
 

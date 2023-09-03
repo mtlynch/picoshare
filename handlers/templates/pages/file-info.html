@@ -64,19 +64,17 @@
     </section>
 
     <section class="my-5">
-      <label class="label">Size</label>
+      <h2>Size</h2>
       <p class="value">{{ formatFileSize .Size }}</p>
     </section>
 
     <section class="my-5">
-      <label class="label">Expires</label>
-      <p class="value">
-        {{ formatExpiration .Expires }}
-      </p>
+      <h2>Expires</h2>
+      <p class="value">{{ formatExpiration .Expires }}</p>
     </section>
 
     <section class="my-5">
-      <label class="label">Note</label>
+      <h2>Note</h2>
       <p class="value">
         {{ if .Note.Value }}
           {{ .Note }}
@@ -87,7 +85,7 @@
     </section>
 
     <section class="my-5">
-      <label class="label">Uploaded by</label>
+      <h2>Uploaded by</h2>
       <p class="value">
         {{ if .GuestLink.Empty }}
           You
@@ -104,7 +102,7 @@
     </section>
 
     <section class="my-5">
-      <label class="label">Upload time</label>
+      <h2>Upload time</h2>
       <span id="upload-timestamp" class="value"
         >{{ formatTimestamp .Uploaded }}</span
       >
