@@ -125,7 +125,7 @@ test("uploads a file and deletes it", async ({ page }) => {
     .click();
 
   await expect(page).toHaveURL(/\/files\/.+\/edit$/);
-  await page.locator("[pico-purpose='delete']").click();
+  await page.getByRole("link", { name: "Delete" }).click();
 
   await expect(page).toHaveURL(/\/files\/.+\/confirm-delete$/);
   await page.getByRole("button", { name: "Delete" }).click();
