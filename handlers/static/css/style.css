@@ -15,33 +15,31 @@ form {
   max-width: 70ch;
 }
 
-.navbar .navbar-brand {
-  font-size: 1.6em;
-}
+.navbar {
+  & .navbar-brand {
+    font-size: 1.6em;
 
-@media screen and (min-width: 1024px) {
-  .navbar .navbar-brand {
-    margin-left: 0 !important;
-    margin-right: 2rem;
+    @media screen and (min-width: 1024px) {
+      margin-left: 0 !important;
+      margin-right: 2rem;
+    }
+
+    @media screen and (min-width: 1024px) {
+      .navbar-item {
+        padding: 0;
+      }
+    }
   }
-}
 
-@media screen and (min-width: 1024px) {
-  .navbar .navbar-brand .navbar-item {
-    padding: 0;
+  .nav-item {
+    font-size: 1.3em;
   }
-}
-
-.navbar .nav-item {
-  font-size: 1.3em;
 }
 
 .content {
   padding: 3rem 1rem;
-}
 
-@media screen and (min-width: 1024px) {
-  .content {
+  @media screen and (min-width: 1024px) {
     padding: 3rem 0rem;
   }
 }
