@@ -255,15 +255,6 @@ func (s Server) fileInfoGet() http.HandlerFunc {
 				return t.Format(time.RFC3339)
 			},
 			"formatFileSize": humanReadableFileSize,
-			"formatGuestLink": func(gl picoshare.GuestLink) string {
-				if gl.Empty() {
-					return "You"
-				} else if gl.Label.Empty() {
-					return "Guest link: " + gl.Label.String()
-				} else {
-					return "Guest link: " + gl.ID.String()
-				}
-			},
 		}); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
