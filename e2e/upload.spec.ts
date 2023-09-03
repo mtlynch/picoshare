@@ -344,6 +344,46 @@ test("edits a file and cancels the edit", async ({ page, request }) => {
   await expect(page).toHaveURL(/\/files\/.+\/edit$/);
   await page.getByRole("button", { name: "Cancel" }).click();
 
-  // We should end up back on the /files page.
+  // We should end up back on the file index page.
+  await expect(page).toHaveURL(/\/files$/);
+});
+
+test("views file info, starts an edit, and cancels the edit", async ({
+  page,
+  request,
+}) => {
+  await login(page);
+
+  await page.locator(".file-input").setInputFiles([
+    {
+      name: "simple-upload.txt",
+      mimeType: "text/plain",
+      buffer: Buffer.from("I'm just a simple upload"),
+    },
+  ]);
+  await expect(page.locator("#upload-result .message-body")).toHaveText(
+    "Upload complete!"
+  );
+
+  await page.getByRole("menuitem", { name: "Files" }).click();
+
+  await expect(page).toHaveURL(/\/files$/);
+  await page
+    .getByRole("row")
+    .filter({ hasText: "simple-upload.txt" })
+    .getByRole("button", { name: "Info" })
+    .click();
+
+  await expect(page).toHaveURL(/\/files\/.+\/info$/);
+  await page.getByRole("button", { name: "Edit" }).click();
+
+  await expect(page).toHaveURL(/\/files\/.+\/edit$/);
+  await page.getByRole("button", { name: "Cancel" }).click();
+
+  // We should be back on the file info page.
+  await expect(page).toHaveURL(/\/files\/.+\/info$/);
+  await page.getByRole("button", { name: "Close" }).click();
+
+  // We should end up back on the file index page.
   await expect(page).toHaveURL(/\/files$/);
 });
