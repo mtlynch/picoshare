@@ -120,8 +120,7 @@ test("uploads a file and deletes it", async ({ page }) => {
   await page
     .getByRole("row")
     .filter({ hasText: "upload-for-deletion.txt" })
-    .getByRole("button")
-    .filter({ has: page.locator(".fa-edit") })
+    .getByRole("button", { name: "Edit" })
     .click();
 
   await expect(page).toHaveURL(/\/files\/.+\/edit$/);
@@ -220,10 +219,7 @@ test("uploads a file and deletes its note", async ({ page }) => {
   await expect(matchingRow.getByRole("cell").nth(noteColumn)).toHaveText(
     "For Pico, with Love and Squalor"
   );
-  await matchingRow
-    .getByRole("button")
-    .filter({ has: page.locator(".fa-edit") })
-    .click();
+  await matchingRow.getByRole("button", { name: "Edit" }).click();
 
   await expect(page).toHaveURL(/\/files\/.+\/edit$/);
   await page.locator("#note").fill("");
@@ -259,8 +255,7 @@ test("uploads a file and edits its note", async ({ page }) => {
   await page
     .getByRole("row")
     .filter({ hasText: "upload-with-note-i-will-edit.txt" })
-    .getByRole("button")
-    .filter({ has: page.locator(".fa-edit") })
+    .getByRole("button", { name: "Edit" })
     .click();
 
   await expect(page).toHaveURL(/\/files\/.+\/edit$/);
@@ -295,8 +290,7 @@ test("uploads a file and changes its expiration time", async ({ page }) => {
   await page
     .getByRole("row")
     .filter({ hasText: "file-with-new-expiration.txt" })
-    .getByRole("button")
-    .filter({ has: page.locator(".fa-edit") })
+    .getByRole("button", { name: "Edit" })
     .click();
 
   await expect(page).toHaveURL(/\/files\/.+\/edit$/);
@@ -337,8 +331,7 @@ test("edits a file and cancels the edit", async ({ page, request }) => {
   await page
     .getByRole("row")
     .filter({ hasText: "simple-upload.txt" })
-    .getByRole("button")
-    .filter({ has: page.locator(".fa-edit") })
+    .getByRole("button", { name: "Edit" })
     .click();
 
   await expect(page).toHaveURL(/\/files\/.+\/edit$/);
