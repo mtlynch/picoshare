@@ -1,4 +1,14 @@
 {{ define "style-tags" }}
+  <style nonce="{{ .CspNonce }}">
+    .content section {
+      margin-top: 1.5rem;
+      margin-bottom: 1.5rem;
+
+      & h2 {
+        font-size: 1.2em;
+      }
+    }
+  </style>
 {{ end }}
 
 {{ define "script-tags" }}
@@ -51,29 +61,29 @@
 
   {{ with .Metadata }}
 
-    <div class="my-5">
+    <section>
       <h2>Links</h2>
 
       <upload-links file-id="{{ .ID }}" filename="{{ .Filename }}">
       </upload-links>
-    </div>
+    </section>
 
-    <section class="my-5">
+    <section>
       <h2>Filename</h2>
       <p class="value">{{ .Filename }}</p>
     </section>
 
-    <section class="my-5">
+    <section>
       <h2>Size</h2>
       <p class="value">{{ formatFileSize .Size }}</p>
     </section>
 
-    <section class="my-5">
+    <section>
       <h2>Expires</h2>
       <p class="value">{{ formatExpiration .Expires }}</p>
     </section>
 
-    <section class="my-5">
+    <section>
       <h2>Note</h2>
       <p class="value">
         {{ if .Note.Value }}
@@ -84,7 +94,7 @@
       </p>
     </section>
 
-    <section class="my-5">
+    <section>
       <h2>Uploaded by</h2>
       <p class="value">
         {{ if .GuestLink.Empty }}
@@ -101,7 +111,7 @@
       </p>
     </section>
 
-    <section class="my-5">
+    <section>
       <h2>Upload time</h2>
       <span id="upload-timestamp" class="value"
         >{{ formatTimestamp .Uploaded }}</span

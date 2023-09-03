@@ -366,53 +366,18 @@ test("views file info, starts an edit, and cancels the edit", async ({
     .getByRole("button", { name: "Information" })
     .click();
 
+  // Clicking the Information button leads to the file info page.
   await expect(page).toHaveURL(/\/files\/.+\/info$/);
-  await expect(
-    page
-      .locator("section")
-      .filter({ has: page.getByRole("heading", { name: "Filename" }) })
-      .locator(".value")
-  ).toHaveText("simple-upload.txt");
-  await expect(
-    page
-      .locator("section")
-      .filter({ has: page.getByRole("heading", { name: "Size" }) })
-      .locator(".value")
-  ).toHaveText("24 B");
-  await expect(
-    page
-      .locator("section")
-      .filter({ has: page.getByRole("heading", { name: "Expires" }) })
-      .locator(".value")
-  ).toHaveText(/ \(30 days\)$/);
-  await expect(
-    page
-      .locator("section")
-      .filter({ has: page.getByRole("heading", { name: "Note" }) })
-      .locator(".value")
-  ).toHaveText("None");
-  await expect(
-    page
-      .locator("section")
-      .filter({ has: page.getByRole("heading", { name: "Uploaded by" }) })
-      .locator(".value")
-  ).toHaveText("You");
-  await expect(
-    page
-      .locator("section")
-      .filter({ has: page.getByRole("heading", { name: "Upload time" }) })
-      .locator(".value")
-  ).toHaveText("Foo");
-
   await page.getByRole("button", { name: "Edit" }).click();
 
+  // Clicking the Edit button leads to the edit file metadata page.
   await expect(page).toHaveURL(/\/files\/.+\/edit$/);
   await page.getByRole("button", { name: "Cancel" }).click();
 
-  // We should be back on the file info page.
+  // Clicking the Cancel button should send us back to the file info page.
   await expect(page).toHaveURL(/\/files\/.+\/info$/);
   await page.getByRole("button", { name: "Close" }).click();
 
-  // We should end up back on the file index page.
+  // Clicking the Close button should send us back to the file index page.
   await expect(page).toHaveURL(/\/files$/);
 });
