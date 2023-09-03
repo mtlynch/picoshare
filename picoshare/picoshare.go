@@ -17,13 +17,13 @@ type (
 
 	UploadMetadata struct {
 		ID          EntryID
-		GuestLinkID GuestLinkID
 		Filename    Filename
 		Note        FileNote
 		ContentType ContentType
 		Uploaded    time.Time
 		Expires     ExpirationTime
 		Size        uint64
+		GuestLink   GuestLink
 	}
 
 	UploadEntry struct {

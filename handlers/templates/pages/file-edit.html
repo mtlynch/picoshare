@@ -21,6 +21,10 @@
       return document.getElementById("note").value || null;
     }
 
+    document.getElementById("cancel-btn").addEventListener("click", () => {
+      history.back();
+    });
+
     document.getElementById("edit-form").addEventListener("submit", (evt) => {
       evt.preventDefault();
       const id = document
@@ -128,12 +132,12 @@
           </a>
         </div>
         <div class="control">
-          <a href="/files" class="button is-link is-light" role="button">
+          <button class="button is-link is-light" id="cancel-btn">
             Cancel
-          </a>
+          </button>
         </div>
         <div class="control">
-          <button class="button is-primary" id="save-btn">
+          <button class="button is-primary">
             <i class="fa fa-save mr-2"></i>
             Save
           </button>

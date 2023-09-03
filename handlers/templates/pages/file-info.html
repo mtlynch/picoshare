@@ -1,0 +1,137 @@
+{{ define "style-tags" }}
+  <style nonce="{{ .CspNonce }}">
+    .content section {
+      margin-top: 1.5rem;
+      margin-bottom: 1.5rem;
+
+      & h2 {
+        font-size: 1.2em;
+      }
+    }
+  </style>
+{{ end }}
+
+{{ define "script-tags" }}
+  <script type="module" nonce="{{ .CspNonce }}">
+    function parseTimestamp(raw) {
+      // Make sure the timestamp is valid.
+      const timestamp = Date.parse(raw);
+      if (isNaN(timestamp)) {
+        return null;
+      }
+      // Get the timestamp in local time.
+      return new Date(timestamp);
+    }
+
+    document.getElementById("close-btn").addEventListener("click", () => {
+      history.back();
+    });
+
+    document.addEventListener("DOMContentLoaded", function () {
+      const dateToTime = (date) =>
+        date.toLocaleString("en-US", {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+          hour: "numeric",
+          minute: "numeric",
+        });
+
+      const uploadTimestamp = document.getElementById("upload-timestamp");
+      uploadTimestamp.innerText = dateToTime(
+        parseTimestamp(uploadTimestamp.innerText)
+      );
+
+      document
+        .querySelector("upload-links")
+        .addEventListener("link-copied", () => {
+          document
+            .querySelector("snackbar-notifications")
+            .addInfoMessage("Copied link");
+        });
+    });
+  </script>
+{{ end }}
+
+{{ define "custom-elements" }}
+  {{ template "upload-link-box.html" . }}
+  {{ template "upload-links.html" . }}
+{{ end }}
+
+{{ define "content" }}
+  <h1 class="title">File Information</h1>
+
+  {{ with .Metadata }}
+
+    <section>
+      <h2>Links</h2>
+
+      <upload-links file-id="{{ .ID }}" filename="{{ .Filename }}">
+      </upload-links>
+    </section>
+
+    <section>
+      <h2>Filename</h2>
+      <p class="value">{{ .Filename }}</p>
+    </section>
+
+    <section>
+      <h2>Size</h2>
+      <p class="value">{{ formatFileSize .Size }}</p>
+    </section>
+
+    <section>
+      <h2>Expires</h2>
+      <p class="value">{{ formatExpiration .Expires }}</p>
+    </section>
+
+    <section>
+      <h2>Note</h2>
+      <p class="value">
+        {{ if .Note.Value }}
+          {{ .Note }}
+        {{ else }}
+          None
+        {{ end }}
+      </p>
+    </section>
+
+    <section>
+      <h2>Uploaded by</h2>
+      <p class="value">
+        {{ if .GuestLink.Empty }}
+          You
+        {{ else }}
+          {{ $label := .GuestLink.ID }}
+          {{ if not .GuestLink.Label.Empty }}
+            {{ $label = .GuestLink.Label }}
+          {{ end }}
+
+          Guest link:
+          <a href="/g/{{ .GuestLink.ID.String }}">{{ $label.String }}</a>
+        {{ end }}
+      </p>
+    </section>
+
+    <section>
+      <h2>Upload time</h2>
+      <span id="upload-timestamp" class="value"
+        >{{ formatTimestamp .Uploaded }}</span
+      >
+    </section>
+
+    <div class="field is-grouped">
+      <div class="control">
+        <button class="button is-link is-light" id="close-btn">Close</button>
+      </div>
+      <div class="control">
+        <a class="button is-link" role="button" href="/files/{{ .ID }}/edit">
+          <i class="fas fa-edit mr-2"></i>
+          Edit</a
+        >
+      </div>
+    </div>
+  {{ end }}
+{{ end }}
+
+{{ template "base.html" }}
