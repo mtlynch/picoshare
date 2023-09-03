@@ -15,7 +15,7 @@
       background-color: #d9d9d9;
     }
 
-    .table .inactive [pico-purpose="copy"] {
+    .table .inactive [aria-label="Copy"] {
       display: none;
     }
 
@@ -37,35 +37,33 @@
       return `${window.location.origin}/g/${linkId}`;
     }
 
-    document
-      .querySelectorAll('[pico-purpose="delete"]')
-      .forEach((deleteBtn) => {
-        deleteBtn.addEventListener("click", () => {
-          const id = deleteBtn.getAttribute("pico-link-id");
-          guestLinkDelete(id)
-            .then(() => {
-              let currentEl = deleteBtn.parentElement;
-              while (currentEl && currentEl.nodeName !== "TR") {
-                currentEl = currentEl.parentElement;
-              }
-              if (!currentEl) {
-                return;
-              }
+    document.querySelectorAll('[aria-label="Delete"]').forEach((deleteBtn) => {
+      deleteBtn.addEventListener("click", () => {
+        const id = deleteBtn.getAttribute("pico-link-id");
+        guestLinkDelete(id)
+          .then(() => {
+            let currentEl = deleteBtn.parentElement;
+            while (currentEl && currentEl.nodeName !== "TR") {
+              currentEl = currentEl.parentElement;
+            }
+            if (!currentEl) {
+              return;
+            }
 
-              currentEl.classList.add("deleted-entry");
-            })
-            .catch((error) => {
-              document.getElementById("error-message").innerText = error;
-              showElement(errorContainer);
-            });
-        });
+            currentEl.classList.add("deleted-entry");
+          })
+          .catch((error) => {
+            document.getElementById("error-message").innerText = error;
+            showElement(errorContainer);
+          });
       });
+    });
 
     document.querySelector("#error .delete").addEventListener("click", () => {
       hideElement(errorContainer);
     });
 
-    document.querySelectorAll('[pico-purpose="copy"]').forEach((copyBtn) => {
+    document.querySelectorAll('[aria-label="Copy"]').forEach((copyBtn) => {
       copyBtn.addEventListener("click", () => {
         const linkId = copyBtn.getAttribute("pico-link-id");
         const guestLink = makeGuestLink(linkId);
@@ -157,7 +155,7 @@
                 <p class="control">
                   <button
                     class="button is-info"
-                    pico-purpose="copy"
+                    aria-label="Copy"
                     pico-link-id="{{ .ID }}"
                   >
                     <i class="fa-solid fa-copy"></i>
@@ -166,7 +164,7 @@
                 <p class="control">
                   <button
                     class="button is-danger"
-                    pico-purpose="delete"
+                    aria-label="Delete"
                     pico-link-id="{{ .ID }}"
                   >
                     <i class="fa fa-trash" aria-hidden="true"></i>
