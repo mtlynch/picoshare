@@ -13,20 +13,15 @@
         return null;
       }
       // Get the timestamp in local time.
-      const date = new Date(timestamp);
-      return new Date(
-        date.getUTCFullYear(),
-        date.getUTCMonth(),
-        date.getUTCDate(),
-        date.getUTCHours(),
-        date.getUTCMinutes(),
-        date.getUTCSeconds()
-      );
+      return new Date(timestamp);
     }
 
     document.addEventListener("DOMContentLoaded", function () {
       const dateToTime = (date) =>
         date.toLocaleString("en-US", {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
           hour: "numeric",
           minute: "numeric",
         });
@@ -104,12 +99,17 @@
       <span id="upload-timestamp">{{ formatTimestamp .Uploaded }}</span>
     </div>
 
-    <p class="control">
-      <a class="button is-link" href="/files/{{ .ID }}/edit">
-        <i class="fas fa-edit mr-2"></i>
-        Edit</a
-      >
-    </p>
+    <div class="field is-grouped">
+      <div class="control">
+        <a href="/files" class="button is-link is-light">Close</a>
+      </div>
+      <div class="control">
+        <a class="button is-link" href="/files/{{ .ID }}/edit">
+          <i class="fas fa-edit mr-2"></i>
+          Edit</a
+        >
+      </div>
+    </div>
   {{ end }}
 {{ end }}
 
