@@ -265,9 +265,11 @@ func (s Server) insertFileFromRequest(r *http.Request, expiration picoshare.Expi
 			Filename:    filename,
 			ContentType: contentType,
 			Note:        note,
-			GuestLinkID: guestLinkID,
-			Uploaded:    time.Now(),
-			Expires:     expiration,
+			GuestLink: picoshare.GuestLink{
+				ID: guestLinkID,
+			},
+			Uploaded: time.Now(),
+			Expires:  expiration,
 		})
 	if err != nil {
 		log.Printf("failed to save entry: %v", err)

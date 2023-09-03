@@ -2,7 +2,44 @@
 {{ end }}
 
 {{ define "script-tags" }}
-  <script type="module" nonce="{{ .CspNonce }}"></script>
+  <script type="module" nonce="{{ .CspNonce }}">
+    const uploadLinksEl = document.querySelector("upload-links");
+    const uploadTimestamp = document.getElementById("upload-timestamp");
+
+    function parseTimestamp(raw) {
+      // Make sure the timestamp is valid.
+      const timestamp = Date.parse(raw);
+      if (isNaN(timestamp)) {
+        return null;
+      }
+      // Get the timestamp in local time.
+      const date = new Date(timestamp);
+      return new Date(
+        date.getUTCFullYear(),
+        date.getUTCMonth(),
+        date.getUTCDate(),
+        date.getUTCHours(),
+        date.getUTCMinutes(),
+        date.getUTCSeconds()
+      );
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+      const dateToTime = (date) =>
+        date.toLocaleString("en-US", {
+          hour: "numeric",
+          minute: "numeric",
+        });
+      uploadTimestamp.innerText = dateToTime(
+        parseTimestamp(uploadTimestamp.innerText)
+      );
+      uploadLinksEl.addEventListener("link-copied", () => {
+        document
+          .querySelector("snackbar-notifications")
+          .addInfoMessage("Copied link");
+      });
+    });
+  </script>
 {{ end }}
 
 {{ define "custom-elements" }}
@@ -21,9 +58,15 @@
       <upload-links file-id="{{ .ID }}" filename="{{ .Filename }}">
       </upload-links>
     </div>
+
     <div class="field my-5">
       <label class="label">Filename</label>
       {{ .Filename }}
+    </div>
+
+    <div class="field my-5">
+      <label class="label">Size</label>
+      <td class="is-vcentered">{{ formatFileSize .Size }}</td>
     </div>
 
     <div class="field my-5">
@@ -39,6 +82,26 @@
       {{ else }}
         None
       {{ end }}
+    </div>
+
+    <div class="field my-5">
+      <label class="label">Uploaded by</label>
+      {{ if .GuestLink.Empty }}
+        You
+      {{ else }}
+        {{ $label := .GuestLink.ID }}
+        {{ if not .GuestLink.Label.Empty }}
+          {{ $label = .GuestLink.Label }}
+        {{ end }}
+
+        Guest link:
+        <a href="/g/{{ .GuestLink.ID.String }}">{{ $label.String }}</a>
+      {{ end }}
+    </div>
+
+    <div class="field my-5">
+      <label class="label">Upload time</label>
+      <span id="upload-timestamp">{{ formatTimestamp .Uploaded }}</span>
     </div>
 
     <p class="control">

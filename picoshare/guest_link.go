@@ -26,6 +26,18 @@ var (
 	GuestUploadUnlimitedFileUploads = GuestUploadCountLimit(nil)
 )
 
+func (glid GuestLinkID) Empty() bool {
+	return glid.String() == ""
+}
+
+func (glid GuestLinkID) String() string {
+	return string(glid)
+}
+
+func (gl GuestLink) Empty() bool {
+	return gl.ID.Empty()
+}
+
 func (gl GuestLink) CanAcceptMoreFiles() bool {
 	if gl.MaxFileUploads == GuestUploadUnlimitedFileUploads {
 		return true
@@ -42,4 +54,12 @@ func (gl GuestLink) IsExpired() bool {
 
 func (gl GuestLink) IsActive() bool {
 	return !gl.IsExpired() && gl.CanAcceptMoreFiles()
+}
+
+func (label GuestLinkLabel) Empty() bool {
+	return label.String() == ""
+}
+
+func (label GuestLinkLabel) String() string {
+	return string(label)
 }

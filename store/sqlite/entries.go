@@ -98,21 +98,43 @@ func (d DB) GetEntryMetadata(id picoshare.EntryID) (picoshare.UploadMetadata, er
 	var contentType string
 	var uploadTimeRaw string
 	var expirationTimeRaw string
+	var fileSize uint64
+	var guestLinkID picoshare.GuestLinkID
 	err := d.ctx.QueryRow(`
 	SELECT
-		filename,
-		note,
-		content_type,
-		upload_time,
-		expiration_time
+		entries.filename AS filename,
+		entries.note AS note,
+		entries.content_type AS content_type,
+		entries.upload_time AS upload_time,
+		entries.expiration_time AS expiration_time,
+		sizes.file_size AS file_size,
+		entries.guest_link_id AS guest_link_id
 	FROM
 		entries
+	INNER JOIN
+		(
+			SELECT
+				id,
+				SUM(LENGTH(chunk)) AS file_size
+			FROM
+				entries_data
+			GROUP BY
+				id
+		) sizes ON entries.id = sizes.id
 	WHERE
-		id=?`, id).Scan(&filename, &note, &contentType, &uploadTimeRaw, &expirationTimeRaw)
+		entries.id=?`, id).Scan(&filename, &note, &contentType, &uploadTimeRaw, &expirationTimeRaw, &fileSize, &guestLinkID)
 	if err == sql.ErrNoRows {
 		return picoshare.UploadMetadata{}, store.EntryNotFoundError{ID: id}
 	} else if err != nil {
 		return picoshare.UploadMetadata{}, err
+	}
+
+	var guestLink picoshare.GuestLink
+	if !guestLinkID.Empty() {
+		guestLink, err = d.GetGuestLink(guestLinkID)
+		if err != nil {
+			return picoshare.UploadMetadata{}, err
+		}
 	}
 
 	ut, err := parseDatetime(uploadTimeRaw)
@@ -128,10 +150,12 @@ func (d DB) GetEntryMetadata(id picoshare.EntryID) (picoshare.UploadMetadata, er
 	return picoshare.UploadMetadata{
 		ID:          id,
 		Filename:    picoshare.Filename(filename),
+		GuestLink:   guestLink,
 		Note:        picoshare.FileNote{Value: note},
 		ContentType: picoshare.ContentType(contentType),
 		Uploaded:    ut,
 		Expires:     picoshare.ExpirationTime(et),
+		Size:        fileSize,
 	}, nil
 }
 
@@ -167,7 +191,7 @@ func (d DB) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) err
 	)
 	VALUES(?,?,?,?,?,?,?)`,
 		metadata.ID,
-		metadata.GuestLinkID,
+		metadata.GuestLink.ID,
 		metadata.Filename,
 		metadata.Note.Value,
 		metadata.ContentType,

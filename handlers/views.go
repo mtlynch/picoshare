@@ -236,6 +236,8 @@ func (s Server) fileInfoGet() http.HandlerFunc {
 			return
 		}
 
+		log.Printf("meta=%+v", metadata)
+
 		if err := renderTemplate(w, "file-info.html", struct {
 			commonProps
 			Metadata picoshare.UploadMetadata
@@ -250,6 +252,19 @@ func (s Server) fileInfoGet() http.HandlerFunc {
 				t := time.Time(et)
 				delta := time.Until(t)
 				return fmt.Sprintf("%s (%.0f days)", t.Format("2006-01-02"), delta.Hours()/24)
+			},
+			"formatTimestamp": func(t time.Time) string {
+				return t.Format(time.RFC3339)
+			},
+			"formatFileSize": humanReadableFileSize,
+			"formatGuestLink": func(gl picoshare.GuestLink) string {
+				if gl.Empty() {
+					return "You"
+				} else if gl.Label.Empty() {
+					return "Guest link: " + gl.Label.String()
+				} else {
+					return "Guest link: " + gl.ID.String()
+				}
 			},
 		}); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
