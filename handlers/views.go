@@ -236,8 +236,6 @@ func (s Server) fileInfoGet() http.HandlerFunc {
 			return
 		}
 
-		log.Printf("meta=%+v", metadata)
-
 		if err := renderTemplate(w, "file-info.html", struct {
 			commonProps
 			Metadata picoshare.UploadMetadata

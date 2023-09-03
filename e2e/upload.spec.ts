@@ -311,7 +311,7 @@ test("uploads a file and changes its expiration time", async ({ page }) => {
   ).toHaveText(/^2029-09-04/);
 });
 
-test("edits a file and cancels the edit", async ({ page, request }) => {
+test("edits a file and cancels the edit", async ({ page }) => {
   await login(page);
 
   await page.locator(".file-input").setInputFiles([
@@ -343,7 +343,6 @@ test("edits a file and cancels the edit", async ({ page, request }) => {
 
 test("views file info, starts an edit, and cancels the edit", async ({
   page,
-  request,
 }) => {
   await login(page);
 
@@ -364,10 +363,17 @@ test("views file info, starts an edit, and cancels the edit", async ({
   await page
     .getByRole("row")
     .filter({ hasText: "simple-upload.txt" })
-    .getByRole("button", { name: "Info" })
+    .getByRole("button", { name: "Information" })
     .click();
 
   await expect(page).toHaveURL(/\/files\/.+\/info$/);
+  await expect(
+    page
+      .locator("section")
+      .filter({ has: page.getByRole("heading", { name: "Filename" }) })
+      .locator(".value")
+  ).toHaveText("simple-upload.txt");
+
   await page.getByRole("button", { name: "Edit" }).click();
 
   await expect(page).toHaveURL(/\/files\/.+\/edit$/);

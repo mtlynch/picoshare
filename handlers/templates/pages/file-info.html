@@ -16,6 +16,10 @@
       return new Date(timestamp);
     }
 
+    document.getElementById("close-btn").addEventListener("click", () => {
+      history.back();
+    });
+
     document.addEventListener("DOMContentLoaded", function () {
       const dateToTime = (date) =>
         date.toLocaleString("en-US", {
@@ -47,64 +51,71 @@
 
   {{ with .Metadata }}
 
-    <div class="field my-5">
-      <label class="label">Links</label>
+    <div class="my-5">
+      <h2>Links</h2>
 
       <upload-links file-id="{{ .ID }}" filename="{{ .Filename }}">
       </upload-links>
     </div>
 
-    <div class="field my-5">
-      <label class="label">Filename</label>
-      {{ .Filename }}
-    </div>
+    <section class="my-5">
+      <h2>Filename</h2>
+      <p class="value">{{ .Filename }}</p>
+    </section>
 
-    <div class="field my-5">
+    <section class="my-5">
       <label class="label">Size</label>
-      <td class="is-vcentered">{{ formatFileSize .Size }}</td>
-    </div>
+      <p class="value">{{ formatFileSize .Size }}</p>
+    </section>
 
-    <div class="field my-5">
+    <section class="my-5">
       <label class="label">Expires</label>
+      <p class="value">
+        {{ formatExpiration .Expires }}
+      </p>
+    </section>
 
-      {{ formatExpiration .Expires }}
-    </div>
-
-    <div class="field my-5">
+    <section class="my-5">
       <label class="label">Note</label>
-      {{ if .Note.Value }}
-        {{ .Note }}
-      {{ else }}
-        None
-      {{ end }}
-    </div>
-
-    <div class="field my-5">
-      <label class="label">Uploaded by</label>
-      {{ if .GuestLink.Empty }}
-        You
-      {{ else }}
-        {{ $label := .GuestLink.ID }}
-        {{ if not .GuestLink.Label.Empty }}
-          {{ $label = .GuestLink.Label }}
+      <p class="value">
+        {{ if .Note.Value }}
+          {{ .Note }}
+        {{ else }}
+          None
         {{ end }}
+      </p>
+    </section>
 
-        Guest link:
-        <a href="/g/{{ .GuestLink.ID.String }}">{{ $label.String }}</a>
-      {{ end }}
-    </div>
+    <section class="my-5">
+      <label class="label">Uploaded by</label>
+      <p class="value">
+        {{ if .GuestLink.Empty }}
+          You
+        {{ else }}
+          {{ $label := .GuestLink.ID }}
+          {{ if not .GuestLink.Label.Empty }}
+            {{ $label = .GuestLink.Label }}
+          {{ end }}
 
-    <div class="field my-5">
+          Guest link:
+          <a href="/g/{{ .GuestLink.ID.String }}">{{ $label.String }}</a>
+        {{ end }}
+      </p>
+    </section>
+
+    <section class="my-5">
       <label class="label">Upload time</label>
-      <span id="upload-timestamp">{{ formatTimestamp .Uploaded }}</span>
-    </div>
+      <span id="upload-timestamp" class="value"
+        >{{ formatTimestamp .Uploaded }}</span
+      >
+    </section>
 
     <div class="field is-grouped">
       <div class="control">
-        <a href="/files" class="button is-link is-light">Close</a>
+        <button class="button is-link is-light" id="close-btn">Close</button>
       </div>
       <div class="control">
-        <a class="button is-link" href="/files/{{ .ID }}/edit">
+        <a class="button is-link" role="button" href="/files/{{ .ID }}/edit">
           <i class="fas fa-edit mr-2"></i>
           Edit</a
         >
