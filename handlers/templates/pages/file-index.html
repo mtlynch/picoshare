@@ -33,36 +33,11 @@
 
 {{ define "script-tags" }}
   <script type="module" nonce="{{ .CspNonce }}">
-    import { deleteFile } from "/js/controllers/files.js";
     import { showElement, hideElement } from "/js/lib/bulma.js";
     import { copyToClipboard } from "/js/lib/clipboard.js";
     import { makeShortLink } from "/js/lib/links.js";
 
     const errorContainer = document.getElementById("error");
-
-    document
-      .querySelectorAll('[pico-purpose="delete"]')
-      .forEach((deleteBtn) => {
-        deleteBtn.addEventListener("click", () => {
-          const id = deleteBtn.getAttribute("pico-entry-id");
-          deleteFile(id)
-            .then(() => {
-              let currentEl = deleteBtn.parentElement;
-              while (currentEl && currentEl.nodeName !== "TR") {
-                currentEl = currentEl.parentElement;
-              }
-              if (!currentEl) {
-                return;
-              }
-
-              currentEl.classList.add("deleted-entry");
-            })
-            .catch((error) => {
-              document.getElementById("error-message").innerText = error;
-              showElement(errorContainer);
-            });
-        });
-      });
 
     document.querySelector("#error .delete").addEventListener("click", () => {
       hideElement(errorContainer);
@@ -132,7 +107,6 @@
                     class="button is-link"
                     href="/files/{{ .ID }}/edit"
                     role="button"
-                    pico-purpose="edit"
                     pico-entry-id="{{ .ID }}"
                   >
                     <i class="fas fa-edit"></i>
