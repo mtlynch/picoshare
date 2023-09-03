@@ -43,7 +43,7 @@
       hideElement(errorContainer);
     });
 
-    document.querySelectorAll('[pico-purpose="copy"]').forEach((copyBtn) => {
+    document.querySelectorAll('[aria-label="Copy"]').forEach((copyBtn) => {
       copyBtn.addEventListener("click", () => {
         const fileId = copyBtn.getAttribute("pico-entry-id");
         const shortLink = makeShortLink(fileId);
@@ -107,6 +107,7 @@
                     class="button is-link"
                     href="/files/{{ .ID }}/edit"
                     role="button"
+                    aria-label="Edit"
                     pico-entry-id="{{ .ID }}"
                   >
                     <i class="fas fa-edit"></i>
@@ -115,7 +116,7 @@
                 <p class="control">
                   <button
                     class="button is-info"
-                    pico-purpose="copy"
+                    aria-label="Copy"
                     pico-entry-id="{{ .ID }}"
                   >
                     <i class="fa-solid fa-copy"></i>
