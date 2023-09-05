@@ -18,16 +18,12 @@ PLATFORM="${TARGETPLATFORM:-linux/amd64}"
 set -u
 
 GO_BUILD_TAGS=()
-EXTRA_FLAGS=()
 BINARY='./bin/picoshare'
 
 GO_BUILD_TAGS+=('netgo')
 # Disable dynamically-loaded extensions, which cause a compile time warning.
 # https://www.arp242.net/static-go.html
 GO_BUILD_TAGS+=('sqlite_omit_load_extension')
-
-# Use static linking.
-readonly EXTRA_FLAGS=()
 
 if [[ "${MODE}" != 'prod' ]]; then
   BINARY="${BINARY}-${MODE}"
