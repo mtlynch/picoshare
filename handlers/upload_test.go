@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
-	"io/ioutil"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
@@ -472,7 +471,7 @@ func mustParseExpirationTime(s string) picoshare.ExpirationTime {
 }
 
 func mustReadAll(r io.Reader) []byte {
-	d, err := ioutil.ReadAll(r)
+	d, err := io.ReadAll(r)
 	if err != nil {
 		panic(err)
 	}

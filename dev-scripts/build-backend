@@ -18,22 +18,19 @@ PLATFORM="${TARGETPLATFORM:-linux/amd64}"
 set -u
 
 GO_BUILD_TAGS=()
-EXTRA_FLAGS=()
 BINARY='./bin/picoshare'
-if [[ "${MODE}" == 'prod' ]]; then
-  GO_BUILD_TAGS+=('netgo')
-  # Disable dynamically-loaded extensions, which cause a compile time warning.
-  # https://www.arp242.net/static-go.html
-  GO_BUILD_TAGS+=('sqlite_omit_load_extension')
 
-  EXTRA_FLAGS=('-ldflags' '-w -extldflags "-static"')
-else
+GO_BUILD_TAGS+=('netgo')
+# Disable dynamically-loaded extensions, which cause a compile time warning.
+# https://www.arp242.net/static-go.html
+GO_BUILD_TAGS+=('sqlite_omit_load_extension')
+
+if [[ "${MODE}" != 'prod' ]]; then
   BINARY="${BINARY}-${MODE}"
   GO_BUILD_TAGS+=("${MODE}")
 fi
 readonly BINARY
 readonly GO_BUILD_TAGS
-readonly EXTRA_FLAGS
 
 export readonly GOOS='linux'
 if [ "${PLATFORM}" = 'linux/amd64' ]; then
@@ -63,6 +60,6 @@ export CGO_ENABLED=1
 
 go build \
   -tags "${BUILD_TAGS_JOINED}" \
-  "${EXTRA_FLAGS[@]}" \
+  -ldflags '-w -extldflags "-static"' \
   -o "${BINARY}" \
   cmd/picoshare/main.go
