@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
-	"io/ioutil"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
@@ -343,18 +342,14 @@ func TestGuestUpload(t *testing.T) {
 			entriesInStore: []picoshare.UploadEntry{
 				{
 					UploadMetadata: picoshare.UploadMetadata{
-						ID: picoshare.EntryID("dummy-entry1"),
-						GuestLink: picoshare.GuestLink{
-							ID: picoshare.GuestLinkID("abcdefgh23456789"),
-						},
+						ID:          picoshare.EntryID("dummy-entry1"),
+						GuestLinkID: picoshare.GuestLinkID("abcdefgh23456789"),
 					},
 				},
 				{
 					UploadMetadata: picoshare.UploadMetadata{
-						ID: picoshare.EntryID("dummy-entry2"),
-						GuestLink: picoshare.GuestLink{
-							ID: picoshare.GuestLinkID("abcdefgh23456789"),
-						},
+						ID:          picoshare.EntryID("dummy-entry2"),
+						GuestLinkID: picoshare.GuestLinkID("abcdefgh23456789"),
 					},
 				},
 			},
@@ -472,7 +467,7 @@ func mustParseExpirationTime(s string) picoshare.ExpirationTime {
 }
 
 func mustReadAll(r io.Reader) []byte {
-	d, err := ioutil.ReadAll(r)
+	d, err := io.ReadAll(r)
 	if err != nil {
 		panic(err)
 	}

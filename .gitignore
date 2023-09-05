@@ -1,3 +1,5 @@
+.direnv
+
 # Compiled binaries
 bin/
 build/

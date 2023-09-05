@@ -29,7 +29,7 @@ func TestInsertDeleteSingleEntry(t *testing.T) {
 		t.Fatalf("failed to get entry from DB: %v", err)
 	}
 
-	contents, err := ioutil.ReadAll(entry.Reader)
+	contents, err := io.ReadAll(entry.Reader)
 	if err != nil {
 		t.Fatalf("failed to read entry contents: %v", err)
 	}

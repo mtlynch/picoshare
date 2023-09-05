@@ -38,7 +38,7 @@ jobs:
               store/sqlite/migrations
   check_frontend:
     docker:
-      - image: cimg/node:16.14.2
+      - image: cimg/node:18.14.1
     steps:
       - checkout
       - run:
@@ -49,7 +49,7 @@ jobs:
           command: ./dev-scripts/build-frontend
   test_go:
     docker:
-      - image: cimg/go:1.18.4
+      - image: cimg/go:1.19.6
     resource_class: medium
     steps:
       - checkout
@@ -72,7 +72,7 @@ jobs:
             - ~/go/pkg/mod
   build_backend:
     docker:
-      - image: cimg/go:1.18.4
+      - image: cimg/go:1.19.6
     steps:
       - checkout
       - attach_workspace:
