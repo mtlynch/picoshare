@@ -3,7 +3,6 @@ package sqlite_test
 import (
 	"bytes"
 	"io"
-	"io/ioutil"
 	"log"
 	"testing"
 	"time"
@@ -99,7 +98,7 @@ func TestReadLastByteOfEntry(t *testing.T) {
 		t.Fatalf("unexpected file position: got %d, want %d", pos, expectedPos)
 	}
 
-	contents, err := ioutil.ReadAll(entry.Reader)
+	contents, err := io.ReadAll(entry.Reader)
 	if err != nil {
 		t.Fatalf("failed to read entry contents: %v", err)
 	}

@@ -342,14 +342,18 @@ func TestGuestUpload(t *testing.T) {
 			entriesInStore: []picoshare.UploadEntry{
 				{
 					UploadMetadata: picoshare.UploadMetadata{
-						ID:          picoshare.EntryID("dummy-entry1"),
-						GuestLinkID: picoshare.GuestLinkID("abcdefgh23456789"),
+						ID: picoshare.EntryID("dummy-entry1"),
+						GuestLink: picoshare.GuestLink{
+							ID: picoshare.GuestLinkID("abcdefgh23456789"),
+						},
 					},
 				},
 				{
 					UploadMetadata: picoshare.UploadMetadata{
-						ID:          picoshare.EntryID("dummy-entry2"),
-						GuestLinkID: picoshare.GuestLinkID("abcdefgh23456789"),
+						ID: picoshare.EntryID("dummy-entry2"),
+						GuestLink: picoshare.GuestLink{
+							ID: picoshare.GuestLinkID("abcdefgh23456789"),
+						},
 					},
 				},
 			},
