@@ -27,7 +27,7 @@ GO_BUILD_TAGS+=('netgo')
 GO_BUILD_TAGS+=('sqlite_omit_load_extension')
 
 # Use static linking.
-readonly EXTRA_FLAGS=('-ldflags' '-w -extldflags "-static"')
+readonly EXTRA_FLAGS=()
 
 if [[ "${MODE}" != 'prod' ]]; then
   BINARY="${BINARY}-${MODE}"
@@ -64,6 +64,6 @@ export CGO_ENABLED=1
 
 go build \
   -tags "${BUILD_TAGS_JOINED}" \
-  "${EXTRA_FLAGS[@]}" \
+  -ldflags '-w -extldflags "-static"' \
   -o "${BINARY}" \
   cmd/picoshare/main.go
