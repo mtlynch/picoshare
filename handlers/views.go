@@ -300,18 +300,17 @@ func (s Server) fileDownloadsGet() http.HandlerFunc {
 			return
 		}
 
+		// Convert raw downloads to display-friendly information.
 		type downloadRecord struct {
 			Time     time.Time
 			ClientIP string
 			Browser  string
 			Platform string
 		}
-
-		downloadRecords := make([]downloadRecord, len(downloads))
-
+		records := make([]downloadRecord, len(downloads))
 		for i, d := range downloads {
 			agent := useragent.Parse(d.UserAgent)
-			downloadRecords[i] = downloadRecord{
+			records[i] = downloadRecord{
 				Time:     d.Time,
 				ClientIP: d.ClientIP,
 				Browser:  agent.Name,
@@ -326,7 +325,7 @@ func (s Server) fileDownloadsGet() http.HandlerFunc {
 		}{
 			commonProps: makeCommonProps("PicoShare - Downloads", r.Context()),
 			Metadata:    metadata,
-			Downloads:   downloadRecords,
+			Downloads:   records,
 		}, template.FuncMap{
 			"formatDownloadIndex": func(i int) int {
 				return len(downloads) - i
