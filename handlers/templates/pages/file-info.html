@@ -61,6 +61,7 @@
 {{ define "content" }}
   <h1 class="title">File Information</h1>
 
+  {{ $downloadCount := .DownloadCount }}
   {{ with .Metadata }}
 
     <section>
@@ -87,7 +88,9 @@
 
     <section>
       <h2>Downloads</h2>
-      <p class="value">25 <a href="/files/{{ .ID }}/downloads">(History)</a></p>
+      <p class="value">
+        {{ $downloadCount }} <a href="/files/{{ .ID }}/downloads">(History)</a>
+      </p>
     </section>
 
     <section>

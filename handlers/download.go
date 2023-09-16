@@ -4,10 +4,13 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"path/filepath"
+	"time"
 
 	"github.com/gorilla/mux"
+
 	"github.com/mtlynch/picoshare/v2/picoshare"
 	"github.com/mtlynch/picoshare/v2/store"
 )
@@ -44,6 +47,19 @@ func (s Server) entryGet() http.HandlerFunc {
 		w.Header().Set("Content-Type", string(contentType))
 
 		http.ServeContent(w, r, string(entry.Filename), entry.Uploaded, entry.Reader)
+
+		ip, _, err := net.SplitHostPort(r.RemoteAddr)
+		if err != nil {
+			ip = r.RemoteAddr
+		}
+
+		if err := s.getDB(r).InsertEntryDownload(entry.ID, picoshare.DownloadRecord{
+			Time:      time.Now(),
+			ClientIP:  ip,
+			UserAgent: r.Header.Get("User-Agent"),
+		}); err != nil {
+			log.Printf("failed to record download of file %s: %v", entry.ID.String(), err)
+		}
 	}
 }
 

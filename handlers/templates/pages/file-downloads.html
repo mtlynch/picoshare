@@ -23,33 +23,37 @@
     <h2>{{ .Filename }}</h2>
   {{ end }}
 
-
-  <div class="table-container">
-    <table class="table">
-      <thead>
-        <tr>
-          <th>Download</th>
-          <th>Time</th>
-          <th>Downloader IP</th>
-          <th>Browser</th>
-          <th>Platform</th>
-        </tr>
-      </thead>
-      <tbody>
-        {{ range $i, $v := .Downloads }}
+  {{ if gt (len .Downloads) 0 }}
+    <div class="table-container">
+      <table class="table">
+        <thead>
           <tr>
-            <td>{{ formatDownloadIndex $i }}</td>
-            {{ with $v }}
-              <td>{{ formatDownloadTime .Time }}</td>
-              <td>{{ .ClientIP }}</td>
-              <td>{{ .Browser }}</td>
-              <td>{{ .Platform }}</td>
-            {{ end }}
+            <th>Download</th>
+            <th>Time</th>
+            <th>Downloader IP</th>
+            <th>Browser</th>
+            <th>Platform</th>
           </tr>
-        {{ end }}
-      </tbody>
-    </table>
-  </div>
+        </thead>
+        <tbody>
+          {{ range $i, $v := .Downloads }}
+            <tr>
+              <td>{{ formatDownloadIndex $i }}</td>
+              {{ with $v }}
+                <td>{{ formatDownloadTime .Time }}</td>
+                <td>{{ .ClientIP }}</td>
+                <td>{{ .Browser }}</td>
+                <td>{{ .Platform }}</td>
+              {{ end }}
+            </tr>
+          {{ end }}
+        </tbody>
+      </table>
+    </div>
+  {{ else }}
+    <p>No downloads yet.</p>
+  {{ end }}
+
 
   <div class="field is-grouped">
     <div class="control">

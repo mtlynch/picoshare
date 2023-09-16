@@ -10,4 +10,7 @@ require (
 	golang.org/x/sys v0.0.0-20210615035016-665e8c7367d1
 )
 
-require github.com/felixge/httpsnoop v1.0.1 // indirect
+require (
+	github.com/felixge/httpsnoop v1.0.1 // indirect
+	github.com/mileusna/useragent v1.3.3 // indirect
+)

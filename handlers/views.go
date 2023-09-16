@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/mileusna/useragent"
 	"github.com/mtlynch/picoshare/v2/handlers/parse"
 	"github.com/mtlynch/picoshare/v2/picoshare"
 	"github.com/mtlynch/picoshare/v2/store"
@@ -236,12 +237,21 @@ func (s Server) fileInfoGet() http.HandlerFunc {
 			return
 		}
 
+		downloads, err := s.getDB(r).GetEntryDownloads(id)
+		if err != nil {
+			log.Printf("error retrieving downloads for id %v: %v", id, err)
+			http.Error(w, "failed to retrieve downloads", http.StatusInternalServerError)
+			return
+		}
+
 		if err := renderTemplate(w, "file-info.html", struct {
 			commonProps
-			Metadata picoshare.UploadMetadata
+			Metadata      picoshare.UploadMetadata
+			DownloadCount int
 		}{
-			commonProps: makeCommonProps("PicoShare - File Information", r.Context()),
-			Metadata:    metadata,
+			commonProps:   makeCommonProps("PicoShare - File Information", r.Context()),
+			Metadata:      metadata,
+			DownloadCount: len(downloads),
 		}, template.FuncMap{
 			"formatExpiration": func(et picoshare.ExpirationTime) string {
 				if et == picoshare.NeverExpire {
@@ -290,14 +300,33 @@ func (s Server) fileDownloadsGet() http.HandlerFunc {
 			return
 		}
 
+		type downloadRecord struct {
+			Time     time.Time
+			ClientIP string
+			Browser  string
+			Platform string
+		}
+
+		downloadRecords := make([]downloadRecord, len(downloads))
+
+		for i, d := range downloads {
+			agent := useragent.Parse(d.UserAgent)
+			downloadRecords[i] = downloadRecord{
+				Time:     d.Time,
+				ClientIP: d.ClientIP,
+				Browser:  agent.Name,
+				Platform: agent.OS,
+			}
+		}
+
 		if err := renderTemplate(w, "file-downloads.html", struct {
 			commonProps
 			Metadata  picoshare.UploadMetadata
-			Downloads []picoshare.DownloadRecord
+			Downloads []downloadRecord
 		}{
 			commonProps: makeCommonProps("PicoShare - Downloads", r.Context()),
 			Metadata:    metadata,
-			Downloads:   downloads,
+			Downloads:   downloadRecords,
 		}, template.FuncMap{
 			"formatDownloadIndex": func(i int) int {
 				return len(downloads) - i
