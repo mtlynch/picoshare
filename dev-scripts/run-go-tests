@@ -42,7 +42,7 @@ go vet ./...
 # Install staticcheck if it's not present.
 STATICCHECK_PATH="$(go env GOPATH)/bin/staticcheck"
 readonly STATICCHECK_PATH
-readonly STATICCHECK_VERSION="v0.3.3"
+readonly STATICCHECK_VERSION="v0.4.6"
 if [[ ! -f "${STATICCHECK_PATH}" ]]; then
     go install "honnef.co/go/tools/cmd/staticcheck@${STATICCHECK_VERSION}"
 fi
