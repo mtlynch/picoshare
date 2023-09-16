@@ -271,7 +271,9 @@ func (s Server) fileDownloadsGet() http.HandlerFunc {
 			return
 		}
 
-		metadata, err := s.getDB(r).GetEntryMetadata(id)
+		db := s.getDB(r)
+
+		metadata, err := db.GetEntryMetadata(id)
 		if _, ok := err.(store.EntryNotFoundError); ok {
 			http.Error(w, "entry not found", http.StatusNotFound)
 			return
@@ -281,20 +283,29 @@ func (s Server) fileDownloadsGet() http.HandlerFunc {
 			return
 		}
 
-		type downloads struct {
+		downloads, err := db.GetEntryDownloads(id)
+		if err != nil {
+			log.Printf("error retrieving downloads for id %v: %v", id, err)
+			http.Error(w, "failed to retrieve downloads", http.StatusInternalServerError)
+			return
 		}
 
 		if err := renderTemplate(w, "file-downloads.html", struct {
 			commonProps
 			Metadata  picoshare.UploadMetadata
-			Downloads []downloads
+			Downloads []picoshare.DownloadRecord
 		}{
 			commonProps: makeCommonProps("PicoShare - Downloads", r.Context()),
 			Metadata:    metadata,
-			Downloads: []downloads{
-				downloads{},
+			Downloads:   downloads,
+		}, template.FuncMap{
+			"formatDownloadIndex": func(i int) int {
+				return len(downloads) - i
 			},
-		}, template.FuncMap{}); err != nil {
+			"formatDownloadTime": func(t time.Time) string {
+				return t.Format(time.RFC3339)
+			},
+		}); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}

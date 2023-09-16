@@ -36,18 +36,15 @@
         </tr>
       </thead>
       <tbody>
-        {{ range .Downloads }}
+        {{ range $i, $v := .Downloads }}
           <tr>
-            <!-- count -->
-            <td>1</td>
-            <!-- time -->
-            <td>2023-04-09 13:45:32 (EST)</td>
-            <!-- IP  -->
-            <td>192.168.1.1</td>
-            <!-- browser  -->
-            <td>Firefox</td>
-            <!-- platform  -->
-            <td>Windows</td>
+            <td>{{ formatDownloadIndex $i }}</td>
+            {{ with $v }}
+              <td>{{ formatDownloadTime .Time }}</td>
+              <td>{{ .ClientIP }}</td>
+              <td>{{ .Browser }}</td>
+              <td>{{ .Platform }}</td>
+            {{ end }}
           </tr>
         {{ end }}
       </tbody>

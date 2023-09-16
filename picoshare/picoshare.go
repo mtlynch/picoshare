@@ -26,6 +26,13 @@ type (
 		GuestLink   GuestLink
 	}
 
+	DownloadRecord struct {
+		Time     time.Time
+		ClientIP string
+		Browser  string
+		Platform string
+	}
+
 	UploadEntry struct {
 		UploadMetadata
 		Reader io.ReadSeeker
