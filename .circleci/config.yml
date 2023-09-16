@@ -38,7 +38,7 @@ jobs:
               store/sqlite/migrations
   check_frontend:
     docker:
-      - image: cimg/node:18.14.1
+      - image: cimg/node:20.6.1
     steps:
       - checkout
       - run:
