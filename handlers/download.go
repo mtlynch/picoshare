@@ -48,17 +48,8 @@ func (s Server) entryGet() http.HandlerFunc {
 
 		http.ServeContent(w, r, string(entry.Filename), entry.Uploaded, entry.Reader)
 
-		ip, _, err := net.SplitHostPort(r.RemoteAddr)
-		if err != nil {
-			ip = r.RemoteAddr
-		}
-
-		if err := s.getDB(r).InsertEntryDownload(entry.ID, picoshare.DownloadRecord{
-			Time:      time.Now(),
-			ClientIP:  ip,
-			UserAgent: r.Header.Get("User-Agent"),
-		}); err != nil {
-			log.Printf("failed to record download of file %s: %v", entry.ID.String(), err)
+		if err := recordDownload(s.getDB(r), entry.ID, r.RemoteAddr, r.Header.Get("User-Agent")); err != nil {
+			log.Printf("failed to record download of file %s: %v", id.String(), err)
 		}
 	}
 }
@@ -74,4 +65,17 @@ func inferContentTypeFromFilename(f picoshare.Filename) (picoshare.ContentType, 
 	default:
 		return picoshare.ContentType(""), errors.New("could not infer content type from filename")
 	}
+}
+
+func recordDownload(db store.Store, id picoshare.EntryID, remoteAddr, userAgent string) error {
+	ip, _, err := net.SplitHostPort(remoteAddr)
+	if err != nil {
+		ip = remoteAddr
+	}
+
+	return db.InsertEntryDownload(id, picoshare.DownloadRecord{
+		Time:      time.Now(),
+		ClientIP:  ip,
+		UserAgent: userAgent,
+	})
 }
