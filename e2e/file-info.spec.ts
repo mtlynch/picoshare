@@ -48,6 +48,12 @@ test("upload a file with no attributes, and verify the file info page is correct
   await expect(
     page
       .locator("section")
+      .filter({ has: page.getByRole("heading", { name: "Downloads" }) })
+      .locator(".value")
+  ).toHaveText("0 (History)");
+  await expect(
+    page
+      .locator("section")
       .filter({ has: page.getByRole("heading", { name: "Note" }) })
       .locator(".value")
   ).toHaveText("None");
