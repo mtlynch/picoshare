@@ -1,0 +1,64 @@
+{{ define "style-tags" }}
+{{ end }}
+
+{{ define "script-tags" }}
+  <script type="module" nonce="{{ .CspNonce }}">
+    document.getElementById("close-btn").addEventListener("click", () => {
+      history.back();
+    });
+
+    document.addEventListener("DOMContentLoaded", function () {
+      // TODO
+    });
+  </script>
+{{ end }}
+
+{{ define "custom-elements" }}
+{{ end }}
+
+{{ define "content" }}
+  <h1 class="title">Downloads</h1>
+
+  {{ with .Metadata }}
+    <h2>{{ .Filename }}</h2>
+  {{ end }}
+
+
+  <div class="table-container">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Download</th>
+          <th>Time</th>
+          <th>Downloader IP</th>
+          <th>Browser</th>
+          <th>Platform</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{ range .Downloads }}
+          <tr>
+            <!-- count -->
+            <td>1</td>
+            <!-- time -->
+            <td>2023-04-09 13:45:32 (EST)</td>
+            <!-- IP  -->
+            <td>192.168.1.1</td>
+            <!-- browser  -->
+            <td>Firefox</td>
+            <!-- platform  -->
+            <td>Windows</td>
+          </tr>
+        {{ end }}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="field is-grouped">
+    <div class="control">
+      <button class="button is-link is-light" id="close-btn">Close</button>
+    </div>
+  </div>
+{{ end }}
+
+{{ template "base.html" }}

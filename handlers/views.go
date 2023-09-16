@@ -262,6 +262,45 @@ func (s Server) fileInfoGet() http.HandlerFunc {
 	}
 }
 
+func (s Server) fileDownloadsGet() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id, err := parseEntryID(mux.Vars(r)["id"])
+		if err != nil {
+			log.Printf("error parsing ID: %v", err)
+			http.Error(w, fmt.Sprintf("bad entry ID: %v", err), http.StatusBadRequest)
+			return
+		}
+
+		metadata, err := s.getDB(r).GetEntryMetadata(id)
+		if _, ok := err.(store.EntryNotFoundError); ok {
+			http.Error(w, "entry not found", http.StatusNotFound)
+			return
+		} else if err != nil {
+			log.Printf("error retrieving entry with id %v: %v", id, err)
+			http.Error(w, "failed to retrieve entry", http.StatusInternalServerError)
+			return
+		}
+
+		type downloads struct {
+		}
+
+		if err := renderTemplate(w, "file-downloads.html", struct {
+			commonProps
+			Metadata  picoshare.UploadMetadata
+			Downloads []downloads
+		}{
+			commonProps: makeCommonProps("PicoShare - Downloads", r.Context()),
+			Metadata:    metadata,
+			Downloads: []downloads{
+				downloads{},
+			},
+		}, template.FuncMap{}); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+}
+
 func (s Server) fileConfirmDeleteGet() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id, err := parseEntryID(mux.Vars(r)["id"])

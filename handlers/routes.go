@@ -45,6 +45,7 @@ func (s *Server) routes() {
 	authenticatedViews.Use(enforceContentSecurityPolicy)
 	authenticatedViews.HandleFunc("/disk-usage", s.diskUsageGet()).Methods(http.MethodGet)
 	authenticatedViews.HandleFunc("/files", s.fileIndexGet()).Methods(http.MethodGet)
+	authenticatedViews.HandleFunc("/files/{id}/downloads", s.fileDownloadsGet()).Methods(http.MethodGet)
 	authenticatedViews.HandleFunc("/files/{id}/edit", s.fileEditGet()).Methods(http.MethodGet)
 	authenticatedViews.HandleFunc("/files/{id}/info", s.fileInfoGet()).Methods(http.MethodGet)
 	authenticatedViews.HandleFunc("/files/{id}/confirm-delete", s.fileConfirmDeleteGet()).Methods(http.MethodGet)
