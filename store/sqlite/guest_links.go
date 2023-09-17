@@ -94,24 +94,22 @@ func (d DB) DeleteGuestLink(id picoshare.GuestLinkID) error {
 		return err
 	}
 
-	_, err = tx.Exec(`
+	if _, err = tx.Exec(`
 	DELETE FROM
 		guest_links
 	WHERE
-		id=?`, id)
-	if err != nil {
+		id=?`, id); err != nil {
 		log.Printf("deleting %s from guest_links table failed: %v", id, err)
 		return err
 	}
 
-	_, err = tx.Exec(`
+	if _, err = tx.Exec(`
 	UPDATE
 		entries
 	SET
 		guest_link_id = NULL
 	WHERE
-		guest_link_id = ?`, id)
-	if err != nil {
+		guest_link_id = ?`, id); err != nil {
 		log.Printf("removing references to guest link %s from entries table failed: %v", id, err)
 		return err
 	}

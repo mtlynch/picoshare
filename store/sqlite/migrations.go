@@ -41,17 +41,15 @@ func applyMigrations(ctx *sql.DB) {
 			log.Fatalf("failed to create migration transaction %d: %v", migration.version, err)
 		}
 
-		_, err = tx.Exec(migration.query)
-		if err != nil {
+		if _, err := tx.Exec(migration.query); err != nil {
 			log.Fatalf("failed to perform DB migration %d: %v", migration.version, err)
 		}
 
-		_, err = tx.Exec(fmt.Sprintf(`pragma user_version=%d`, migration.version))
-		if err != nil {
+		if _, err := tx.Exec(fmt.Sprintf(`pragma user_version=%d`, migration.version)); err != nil {
 			log.Fatalf("failed to update DB version to %d: %v", migration.version, err)
 		}
 
-		if err = tx.Commit(); err != nil {
+		if err := tx.Commit(); err != nil {
 			log.Fatalf("failed to commit migration %d: %v", migration.version, err)
 		}
 

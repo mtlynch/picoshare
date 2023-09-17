@@ -43,7 +43,7 @@ func (d DB) deleteExpiredEntries() error {
 
 	currentTime := formatTime(time.Now())
 
-	_, err = tx.Exec(`
+	if _, err = tx.Exec(`
 	DELETE FROM
 		entries_data
 	WHERE
@@ -55,19 +55,17 @@ func (d DB) deleteExpiredEntries() error {
 			WHERE
 				entries.expiration_time IS NOT NULL AND
 				entries.expiration_time < ?
-		);`, currentTime)
-	if err != nil {
+		);`, currentTime); err != nil {
 		return err
 	}
 
-	_, err = tx.Exec(`
+	if _, err = tx.Exec(`
 	DELETE FROM
 		entries
 	WHERE
 		entries.expiration_time IS NOT NULL AND
 		entries.expiration_time < ?;
-	`, currentTime)
-	if err != nil {
+	`, currentTime); err != nil {
 		return err
 	}
 

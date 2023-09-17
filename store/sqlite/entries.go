@@ -46,8 +46,7 @@ func (d DB) GetEntriesMetadata() ([]picoshare.UploadMetadata, error) {
 		var uploadTimeRaw string
 		var expirationTimeRaw string
 		var fileSize uint64
-		err = rows.Scan(&id, &filename, &note, &contentType, &uploadTimeRaw, &expirationTimeRaw, &fileSize)
-		if err != nil {
+		if err = rows.Scan(&id, &filename, &note, &contentType, &uploadTimeRaw, &expirationTimeRaw, &fileSize); err != nil {
 			return []picoshare.UploadMetadata{}, err
 		}
 
@@ -244,22 +243,20 @@ func (d DB) DeleteEntry(id picoshare.EntryID) error {
 		return err
 	}
 
-	_, err = tx.Exec(`
+	if _, err := tx.Exec(`
 	DELETE FROM
 		entries
 	WHERE
-		id=?`, id)
-	if err != nil {
+		id=?`, id); err != nil {
 		log.Printf("delete from entries table failed, aborting transaction: %v", err)
 		return err
 	}
 
-	_, err = tx.Exec(`
+	if _, err := tx.Exec(`
 	DELETE FROM
 		entries_data
 	WHERE
-		id=?`, id)
-	if err != nil {
+		id=?`, id); err != nil {
 		log.Printf("delete from entries_data table failed, aborting transaction: %v", err)
 		return err
 	}
