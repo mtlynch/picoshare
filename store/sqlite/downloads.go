@@ -14,9 +14,9 @@ func (d DB) InsertEntryDownload(id picoshare.EntryID, r picoshare.DownloadRecord
 		downloads
 	(
 		entry_id,
-    download_timestamp,
-    client_ip,
-    user_agent
+		download_timestamp,
+		client_ip,
+		user_agent
 	)
 	VALUES(?,?,?,?)`,
 		id.String(),
