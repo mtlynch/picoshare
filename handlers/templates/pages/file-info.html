@@ -13,15 +13,7 @@
 
 {{ define "script-tags" }}
   <script type="module" nonce="{{ .CspNonce }}">
-    function parseTimestamp(raw) {
-      // Make sure the timestamp is valid.
-      const timestamp = Date.parse(raw);
-      if (isNaN(timestamp)) {
-        return null;
-      }
-      // Get the timestamp in local time.
-      return new Date(timestamp);
-    }
+    import { parseRfc3339 } from "/js/lib/time.js";
 
     document.getElementById("close-btn").addEventListener("click", () => {
       history.back();
@@ -39,7 +31,7 @@
 
       const uploadTimestamp = document.getElementById("upload-timestamp");
       uploadTimestamp.innerText = dateToTime(
-        parseTimestamp(uploadTimestamp.innerText)
+        parseRfc3339(uploadTimestamp.innerText)
       );
 
       document

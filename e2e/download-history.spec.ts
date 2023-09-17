@@ -43,7 +43,7 @@ test("upload a file and verify it has no download history", async ({
   await expect(page.getByText("No downloads yet.")).toBeVisible();
 });
 
-test("upload a file and verify it has a download history", async ({
+test("upload a file, download it, and verify it has a download history", async ({
   page,
   browserName,
 }) => {
