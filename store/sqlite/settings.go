@@ -33,14 +33,13 @@ func (d DB) ReadSettings() (picoshare.Settings, error) {
 func (d DB) UpdateSettings(s picoshare.Settings) error {
 	log.Printf("saving new settings: %s", s)
 	expirationInDays := s.DefaultFileLifetime.Days()
-	_, err := d.ctx.Exec(`
+	if _, err := d.ctx.Exec(`
 	UPDATE
 		settings
 	SET
 		default_expiration_in_days = ?
 	WHERE
-		id = ?`, expirationInDays, settingsRowID)
-	if err != nil {
+		id = ?`, expirationInDays, settingsRowID); err != nil {
 		return err
 	}
 

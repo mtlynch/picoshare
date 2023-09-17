@@ -9,7 +9,7 @@ import (
 
 func (d DB) InsertEntryDownload(id picoshare.EntryID, r picoshare.DownloadRecord) error {
 	log.Printf("recording download of file ID %s from client %s", id.String(), r.ClientIP)
-	_, err := d.ctx.Exec(`
+	if _, err := d.ctx.Exec(`
 	INSERT INTO
 		downloads
 	(
@@ -23,8 +23,7 @@ func (d DB) InsertEntryDownload(id picoshare.EntryID, r picoshare.DownloadRecord
 		formatTime(r.Time),
 		r.ClientIP,
 		r.UserAgent,
-	)
-	if err != nil {
+	); err != nil {
 		log.Printf("insert into downloads table failed: %v", err)
 		return err
 	}
@@ -43,7 +42,6 @@ func (d DB) GetEntryDownloads(id picoshare.EntryID) ([]picoshare.DownloadRecord,
 		entry_id=?
 	ORDER BY
 		download_timestamp DESC`, id)
-
 	if err == sql.ErrNoRows {
 		return []picoshare.DownloadRecord{}, nil
 	} else if err != nil {
