@@ -12,11 +12,11 @@ export function parseRfc3339(raw) {
 export function formatRfc3339Local(ts) {
   const year = ts.getFullYear();
   // Month is zero-based, so add 1.
-  const month = (ts.getMonth() + 1).toString().padStart(2, "0");
-  const day = ts.getDate().toString().padStart(2, "0");
-  const hours = ts.getHours().toString().padStart(2, "0");
-  const minutes = ts.getMinutes().toString().padStart(2, "0");
-  const seconds = ts.getSeconds().toString().padStart(2, "0");
+  const month = zeroPad(ts.getMonth() + 1, 2);
+  const day = zeroPad(ts.getDate(), 2);
+  const hours = zeroPad(ts.getHours(), 2);
+  const minutes = zeroPad(ts.getMinutes(), 2);
+  const seconds = zeroPad(ts.getSeconds(), 2);
 
   const timezoneOffsetHours = Math.floor(ts.getTimezoneOffset() / 60);
   const timezoneOffsetMinutes = Math.abs(ts.getTimezoneOffset() % 60);
@@ -24,8 +24,12 @@ export function formatRfc3339Local(ts) {
   const timezoneOffsetString =
     " " +
     (timezoneOffsetHours >= 0 ? "+" : "-") +
-    timezoneOffsetHours.toString().padStart(2, "0") +
-    timezoneOffsetMinutes.toString().padStart(2, "0");
+    zeroPad(timezoneOffsetHours, 2) +
+    zeroPad(timezoneOffsetMinutes, 2);
 
   return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}${timezoneOffsetString}`;
+}
+
+function zeroPad(n, padCount) {
+  return n.toString().padStart(padCount, "0");
 }
