@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/mileusna/useragent"
 	"github.com/mtlynch/picoshare/v2/handlers/parse"
 	"github.com/mtlynch/picoshare/v2/picoshare"
 	"github.com/mtlynch/picoshare/v2/store"
@@ -236,12 +237,21 @@ func (s Server) fileInfoGet() http.HandlerFunc {
 			return
 		}
 
+		downloads, err := s.getDB(r).GetEntryDownloads(id)
+		if err != nil {
+			log.Printf("error retrieving downloads for id %v: %v", id, err)
+			http.Error(w, "failed to retrieve downloads", http.StatusInternalServerError)
+			return
+		}
+
 		if err := renderTemplate(w, "file-info.html", struct {
 			commonProps
-			Metadata picoshare.UploadMetadata
+			Metadata      picoshare.UploadMetadata
+			DownloadCount int
 		}{
-			commonProps: makeCommonProps("PicoShare - File Information", r.Context()),
-			Metadata:    metadata,
+			commonProps:   makeCommonProps("PicoShare - File Information", r.Context()),
+			Metadata:      metadata,
+			DownloadCount: len(downloads),
 		}, template.FuncMap{
 			"formatExpiration": func(et picoshare.ExpirationTime) string {
 				if et == picoshare.NeverExpire {
@@ -255,6 +265,74 @@ func (s Server) fileInfoGet() http.HandlerFunc {
 				return t.Format(time.RFC3339)
 			},
 			"formatFileSize": humanReadableFileSize,
+		}); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+}
+
+func (s Server) fileDownloadsGet() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id, err := parseEntryID(mux.Vars(r)["id"])
+		if err != nil {
+			log.Printf("error parsing ID: %v", err)
+			http.Error(w, fmt.Sprintf("bad entry ID: %v", err), http.StatusBadRequest)
+			return
+		}
+
+		db := s.getDB(r)
+
+		metadata, err := db.GetEntryMetadata(id)
+		if _, ok := err.(store.EntryNotFoundError); ok {
+			http.Error(w, "entry not found", http.StatusNotFound)
+			return
+		} else if err != nil {
+			log.Printf("error retrieving entry with id %v: %v", id, err)
+			http.Error(w, "failed to retrieve entry", http.StatusInternalServerError)
+			return
+		}
+
+		downloads, err := db.GetEntryDownloads(id)
+		if err != nil {
+			log.Printf("error retrieving downloads for id %v: %v", id, err)
+			http.Error(w, "failed to retrieve downloads", http.StatusInternalServerError)
+			return
+		}
+
+		// Convert raw downloads to display-friendly information.
+		type downloadRecord struct {
+			Time     time.Time
+			ClientIP string
+			Browser  string
+			Platform string
+		}
+		records := make([]downloadRecord, len(downloads))
+		for i, d := range downloads {
+			agent := useragent.Parse(d.UserAgent)
+			records[i] = downloadRecord{
+				Time:     d.Time,
+				ClientIP: d.ClientIP,
+				Browser:  agent.Name,
+				Platform: agent.OS,
+			}
+		}
+
+		if err := renderTemplate(w, "file-downloads.html", struct {
+			commonProps
+			Metadata  picoshare.UploadMetadata
+			Downloads []downloadRecord
+		}{
+			commonProps: makeCommonProps("PicoShare - Downloads", r.Context()),
+			Metadata:    metadata,
+			Downloads:   records,
+		}, template.FuncMap{
+			"formatDownloadIndex": func(i int) int {
+				return len(downloads) - i
+			},
+			"formatDownloadTime": func(t time.Time) string {
+				return t.Format(time.RFC3339)
+			},
 		}); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
