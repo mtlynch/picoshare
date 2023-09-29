@@ -32,7 +32,8 @@ fi
 readonly BINARY
 readonly GO_BUILD_TAGS
 
-export readonly GOOS='linux'
+readonly GOOS='linux'
+export GOOS
 if [ "${PLATFORM}" = 'linux/amd64' ]; then
   GOARCH='amd64'
 elif [ "${PLATFORM}" = 'linux/arm/v7' ]; then
@@ -43,7 +44,8 @@ else
   echo "Unsupported platform: ${PLATFORM}"
   exit 1
 fi
-export readonly GOARCH
+readonly GOARCH
+export GOARCH
 
 # Join together build tags
 BUILD_TAGS_JOINED=""
