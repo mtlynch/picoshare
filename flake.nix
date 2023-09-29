@@ -17,6 +17,12 @@
         sha256 = "0wfaqjpi7bip86r2piqigqna1fx3m1d9riak4l3rm54lyjxprlpi";
       }) {inherit system; };
 
+      pkgs_for_shellcheck = import (builtins.fetchTarball {
+        # 0.9.0 release
+        url = "https://github.com/NixOS/nixpkgs/archive/8b5ab8341e33322e5b66fb46ce23d724050f6606.tar.gz";
+        sha256 = "05ynih3wc7shg324p7icz21qx71ckivzdhkgf5xcvdz6a407v53h";
+      }) {inherit system; };
+
       pkgs_for_go = import (builtins.fetchTarball {
         # 1.21.1 release
         url = "https://github.com/NixOS/nixpkgs/archive/78058d810644f5ed276804ce7ea9e82d92bee293.tar.gz";
@@ -36,14 +42,16 @@
           gotools
           pkgs_for_go.go_1_21
           pkgs_for_nodejs.nodejs_20
+          pkgs_for_shellcheck.shellcheck
           pkgs_for_sqlfluff.sqlfluff
         ];
 
         shellHook = ''
+          sqlfluff --version
+          echo "shellcheck" "$(shellcheck --version | grep '^version:')"
           echo "node" "$(node --version)"
           echo "npm" "$(npm --version)"
           go version
-          sqlfluff --version
         '';
       };
     });

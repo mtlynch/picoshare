@@ -18,8 +18,9 @@ while [ "$#" -gt 0 ]; do
     *) shift 1;;
   esac
 done
+readonly DB_PATH
 # We need to export DB_PATH because litestream.yml references it.
-export readonly DB_PATH
+export DB_PATH
 
 is_litestream_enabled() {
   set +ux
