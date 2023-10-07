@@ -17,7 +17,7 @@
 
     deleteForm.addEventListener("submit", (evt) => {
       evt.preventDefault();
-      const idEl = deleteForm.elements.namedItems("entry-id");
+      const idEl = deleteForm.elements.namedItem("entry-id");
       if (!idEl) {
         return;
       }
