@@ -123,8 +123,6 @@ test("files uploaded through guest link remain accessible after guest link is de
   await page.getByRole("menuitem", { name: "Files" }).click();
 
   const filenameColumn = 0;
-  //await page.getByRole("row").filter({ hasText: "guest-upload2.txt" }).click();
-
   await page
     .getByRole("row")
     .filter({ hasText: "guest-upload2.txt" })
