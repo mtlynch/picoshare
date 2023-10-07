@@ -4,8 +4,8 @@
   inputs = {
     flake-utils.url = "github:numtide/flake-utils";
 
-    # 1.19.1 release
-    go_dep.url = "github:NixOS/nixpkgs/8ba120420fbdd9bd35b3a5366fa0206d8c99ade3";
+    # 1.21.1 release
+    go_dep.url = "github:NixOS/nixpkgs/78058d810644f5ed276804ce7ea9e82d92bee293";
 
     # 20.6.1 release
     nodejs_dep.url = "github:NixOS/nixpkgs/78058d810644f5ed276804ce7ea9e82d92bee293";
@@ -30,7 +30,7 @@
         packages = [
           go_dep.gopls
           go_dep.gotools
-          go_dep.go_1_19
+          go_dep.go_1_21
           nodejs_dep.nodejs_20
           shellcheck_dep.shellcheck
           sqlfluff_dep.sqlfluff
