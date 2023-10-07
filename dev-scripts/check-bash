@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Run static analysis on bash scripts.
 
@@ -11,7 +11,7 @@ set -u
 BASH_SCRIPTS=()
 
 while read -r filepath; do
-  if head -n 1 "${filepath}" | grep --quiet --regexp '#!/bin/bash'; then
+  if head -n 1 "${filepath}" | grep --quiet --regexp 'bash'; then
       BASH_SCRIPTS+=("${filepath}")
   fi
 done < <(git ls-files)
