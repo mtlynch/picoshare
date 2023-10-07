@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Create a fly.toml file to deploy PicoShare to fly.io.
 
