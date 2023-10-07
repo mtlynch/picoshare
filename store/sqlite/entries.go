@@ -98,7 +98,7 @@ func (d DB) GetEntryMetadata(id picoshare.EntryID) (picoshare.UploadMetadata, er
 	var uploadTimeRaw string
 	var expirationTimeRaw string
 	var fileSize uint64
-	var guestLinkID picoshare.GuestLinkID
+	var guestLinkID *picoshare.GuestLinkID
 	err := d.ctx.QueryRow(`
 	SELECT
 		entries.filename AS filename,
@@ -129,8 +129,8 @@ func (d DB) GetEntryMetadata(id picoshare.EntryID) (picoshare.UploadMetadata, er
 	}
 
 	var guestLink picoshare.GuestLink
-	if !guestLinkID.Empty() {
-		guestLink, err = d.GetGuestLink(guestLinkID)
+	if guestLinkID != nil && !guestLinkID.Empty() {
+		guestLink, err = d.GetGuestLink(*guestLinkID)
 		if err != nil {
 			return picoshare.UploadMetadata{}, err
 		}

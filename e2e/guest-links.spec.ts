@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { login } from "./helpers/login.js";
+import { readDbTokenCookie } from "./helpers/db.js";
 
 const labelColumn = 0;
 
@@ -62,4 +63,73 @@ test("creates a guest link and uploads a file as a guest", async ({ page }) => {
 
   await expect(page.locator("h1")).toContainText("Guest Link Inactive");
   await expect(page.locator(".file-input")).toHaveCount(0);
+});
+
+test("files uploaded through guest link remain accessible after guest link is deleted", async ({
+  page,
+  browser,
+}) => {
+  await login(page);
+
+  await page.getByRole("menuitem", { name: "Guest Links" }).click();
+
+  await page.getByRole("button", { name: "Create new" }).click();
+
+  await expect(page).toHaveURL("/guest-links/new");
+  await page.locator("#label").fill("I'll be deleted soon");
+  await page.locator("#file-upload-limit").fill("1");
+  await page.getByRole("button", { name: "Create" }).click();
+
+  await expect(page).toHaveURL("/guest-links");
+  const guestLinkRow = await page
+    .getByRole("row")
+    .filter({ hasText: "I'll be deleted soon" });
+  await expect(guestLinkRow).toBeVisible();
+
+  // Save the route to the guest link URL so that we can return to it later.
+  const guestLinkRouteValue = await guestLinkRow
+    .getByRole("cell")
+    .nth(labelColumn)
+    .getByRole("link")
+    .getAttribute("href");
+  expect(guestLinkRouteValue).not.toBeNull();
+  const guestLinkRoute = String(guestLinkRouteValue);
+
+  {
+    const guestContext = await browser.newContext();
+
+    // Share database across users.
+    await guestContext.addCookies([
+      readDbTokenCookie(await page.context().cookies()),
+    ]);
+
+    const guestPage = await guestContext.newPage();
+
+    await guestPage.goto(guestLinkRoute);
+    await guestPage.locator(".file-input").setInputFiles([
+      {
+        name: "guest-upload2.txt",
+        mimeType: "text/plain",
+        buffer: Buffer.from("uploaded by a guest user"),
+      },
+    ]);
+    await expect(guestPage.locator("#upload-result .message-body")).toHaveText(
+      "Upload complete!"
+    );
+  }
+
+  await guestLinkRow.getByRole("button", { name: "Delete" }).click();
+
+  await page.getByRole("menuitem", { name: "Files" }).click();
+
+  const filenameColumn = 0;
+  await page
+    .getByRole("row")
+    .filter({ hasText: "guest-upload2.txt" })
+    .getByRole("cell")
+    .nth(filenameColumn)
+    .getByRole("link")
+    .click();
+
+  await expect(page.locator("body")).toHaveText("uploaded by a guest user");
 });
