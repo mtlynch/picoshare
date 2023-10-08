@@ -37,10 +37,6 @@
         ];
 
         shellHook = ''
-          # GOROOT conflicts if Go is installed system-wide, so we unset it when
-          # starting the shell.
-          unset GOROOT
-
           echo "shellcheck" "$(shellcheck --version | grep '^version:')"
           sqlfluff --version
           echo "node" "$(node --version)"
