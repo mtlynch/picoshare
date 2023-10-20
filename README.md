@@ -138,3 +138,4 @@ If you rebuild the Docker image from source, you can adjust the build behavior w
 PicoShare is easy to deploy to cloud hosting platforms:
 
 - [fly.io](docs/deployment/fly.io.md)
+- [Elestio](https://elest.io/open-source/picoshare)
