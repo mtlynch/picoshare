@@ -199,9 +199,9 @@ jobs:
               --tag mtlynch/picoshare:latest \
               .
   deploy:
-    machine:
-      image: ubuntu-2004:202010-01
-      docker_layer_caching: true
+    docker:
+      - image: cimg/base:stable
+    resource_class: small
     environment:
       # The flyctl changes too much to use a specific version, so use the latest for the
       # time being.
@@ -220,8 +220,7 @@ jobs:
           name: Deploy to fly.io
           command: |
             "${HOME}/.fly/bin/flyctl" deploy \
-              --access-token "${FLY_ACCESS_TOKEN}" \
-              --local-only
+              --access-token "${FLY_ACCESS_TOKEN}"
 workflows:
   version: 2
   test_deploy:
