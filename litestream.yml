@@ -10,3 +10,4 @@ dbs:
         force-path-style: true
         retention: ${LITESTREAM_RETENTION}
         snapshot-interval: 24h
+        region: ${LITESTREAM_REGION}
