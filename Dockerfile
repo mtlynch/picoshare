@@ -1,4 +1,4 @@
-FROM golang:1.21.1 AS builder
+FROM golang:1.21.3 AS builder
 
 ARG TARGETPLATFORM
 
@@ -22,7 +22,7 @@ COPY --from=builder /app/bin/picoshare ./
 FROM debian:stable-20211011-slim AS litestream_downloader
 
 ARG TARGETPLATFORM
-ARG litestream_version="v0.3.9"
+ARG litestream_version="v0.3.13"
 
 WORKDIR /litestream
 
@@ -46,7 +46,7 @@ RUN set -x && \
     mv "${litestream_binary_tgz_filename}" litestream.tgz
 RUN tar -xvzf litestream.tgz
 
-FROM alpine:3.15
+FROM alpine:3.18
 
 RUN apk add --no-cache bash
 
