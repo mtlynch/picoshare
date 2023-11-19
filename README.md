@@ -133,6 +133,12 @@ If you rebuild the Docker image from source, you can adjust the build behavior w
 | -------------------- | --------------------------------------------------------------------------- | ------------- |
 | `litestream_version` | Version of [Litestream](https://litestream.io/) to use for data replication | `0.3.9`       |
 
+## PicoShare's scope and future
+
+PicoShare is maintained by Michael Lynch as a hobby project.
+
+Due to time limitations, I keep PicoShare's scope limited to only the features that fit into my workflows. That unfortunately means that I sometimes reject proposals or contributions for perfectly good features. It's nothing against those features, but I only have bandwidth to maintain features that I use.
+
 ## Deployment
 
 PicoShare is easy to deploy to cloud hosting platforms:
