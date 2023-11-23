@@ -137,8 +137,7 @@ If you rebuild the Docker image from source, you can adjust the build behavior w
 
 ## Logos
 
-If you need to use some logos somewhere, like in your Unraid interface, you can copy the link of these ones: 
-
+If you need to use some logos somewhere, like in your Unraid interface, you can copy the link to these ones: 
 ![DALL·E 2023-11-23 15 58 19 - Create an alternative small square icon for PicoShare, a file sharing service  This design should emphasize the concepts of speed, sharing, and digita(1)](https://github.com/mtlynch/picoshare/assets/2109178/70e11225-a025-4040-bbb8-761b2def2598)
 ![DALL·E 2023-11-23 15 58 17 - Design a small square icon for PicoShare, a service for sharing images, videos, and other files  The icon should convey the idea of file sharing and s(1)](https://github.com/mtlynch/picoshare/assets/2109178/cdc1186c-498b-4fcb-ab20-eeaae0c721ca)
 
