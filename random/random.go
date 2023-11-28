@@ -1,15 +1,10 @@
 package random
 
 import (
+	cryptrand "crypto/rand"
 	"log"
 	"math/rand"
-	"time"
 )
-
-func init() {
-	log.Printf("initializing random seed")
-	rand.Seed(time.Now().UTC().UnixNano())
-}
 
 func String(n int, characters []rune) string {
 	b := make([]rune, n)
@@ -21,6 +16,8 @@ func String(n int, characters []rune) string {
 
 func Bytes(n int) []byte {
 	b := make([]byte, n)
-	rand.Read(b)
+	if _, err := cryptrand.Read(b); err != nil {
+		log.Fatalf("failed to generate random bytes: %v", err)
+	}
 	return b
 }
