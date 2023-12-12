@@ -42,6 +42,7 @@ for d in ./*_*; do
   pushd "$d"
   tar \
     --create \
+    --compress \
     --file="${OUTPUT_DIR}/picoshare-v${VERSION}-${OS}-${ARCH}.tar.gz" \
     picoshare
   popd

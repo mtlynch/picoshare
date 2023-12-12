@@ -134,6 +134,11 @@ jobs:
       - store_artifacts:
           path: build
       - run:
+          name: Install compress utility for gzip compression
+          command: |
+            sudo apt-get update
+            sudo apt-get install --yes ncompress
+      - run:
           name: Package binaries for distribution
           command: |
             set -eux
