@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"mime"
 	"net"
 	"net/http"
 	"path/filepath"
@@ -57,14 +58,10 @@ func (s Server) entryGet() http.HandlerFunc {
 func inferContentTypeFromFilename(f picoshare.Filename) (picoshare.ContentType, error) {
 	// For files that modern browser can play natively, infer the content type if
 	// none was specified at upload time.
-	switch filepath.Ext(f.String()) {
-	case ".mp4":
-		return picoshare.ContentType("video/mp4"), nil
-	case ".mp3":
-		return picoshare.ContentType("audio/mpeg"), nil
-	default:
-		return picoshare.ContentType(""), errors.New("could not infer content type from filename")
+	if mimetype := mime.TypeByExtension(filepath.Ext(f.String())); mimetype != "" {
+		return picoshare.ContentType(mimetype), nil
 	}
+	return picoshare.ContentType(""), errors.New("could not infer content type from filename")
 }
 
 func recordDownload(db store.Store, id picoshare.EntryID, remoteAddr, userAgent string) error {
