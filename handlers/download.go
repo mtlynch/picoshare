@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/http"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -48,7 +49,13 @@ func (s Server) entryGet() http.HandlerFunc {
 
 		http.ServeContent(w, r, string(entry.Filename), entry.Uploaded, entry.Reader)
 
-		if err := recordDownload(s.getDB(r), entry.ID, r.RemoteAddr, r.Header.Get("User-Agent")); err != nil {
+		clientIP := r.RemoteAddr
+		if proxyChain := r.Header.Get("X-Forwarded-For"); proxyChain != "" {
+			// The request has been reverse-proxied, and r.RemoteAddr is actually the IP of a reverse proxy.
+			// This header should then contain one or more IPs, and the first one should be the client IP.
+			clientIP = strings.Trim(strings.Split(proxyChain, ",")[0], " ")
+		}
+		if err := recordDownload(s.getDB(r), entry.ID, clientIP, r.Header.Get("User-Agent")); err != nil {
 			log.Printf("failed to record download of file %s: %v", id.String(), err)
 		}
 	}
