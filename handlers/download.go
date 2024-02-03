@@ -64,7 +64,7 @@ func inferContentTypeFromFilename(f picoshare.Filename) (picoshare.ContentType, 
 	return picoshare.ContentType(""), errors.New("could not infer content type from filename")
 }
 
-func recordDownload(db store.Store, id picoshare.EntryID, remoteAddr, userAgent string) error {
+func recordDownload(db Store, id picoshare.EntryID, remoteAddr, userAgent string) error {
 	ip, _, err := net.SplitHostPort(remoteAddr)
 	if err != nil {
 		ip = remoteAddr

@@ -7,9 +7,9 @@ import (
 	"github.com/mtlynch/picoshare/v2/picoshare"
 )
 
-func (d DB) InsertEntryDownload(id picoshare.EntryID, r picoshare.DownloadRecord) error {
+func (s Store) InsertEntryDownload(id picoshare.EntryID, r picoshare.DownloadRecord) error {
 	log.Printf("recording download of file ID %s from client %s", id.String(), r.ClientIP)
-	if _, err := d.ctx.Exec(`
+	if _, err := s.ctx.Exec(`
 	INSERT INTO
 		downloads
 	(
@@ -30,8 +30,8 @@ func (d DB) InsertEntryDownload(id picoshare.EntryID, r picoshare.DownloadRecord
 	return nil
 }
 
-func (d DB) GetEntryDownloads(id picoshare.EntryID) ([]picoshare.DownloadRecord, error) {
-	rows, err := d.ctx.Query(`
+func (s Store) GetEntryDownloads(id picoshare.EntryID) ([]picoshare.DownloadRecord, error) {
+	rows, err := s.ctx.Query(`
 	SELECT
 		download_timestamp,
 		client_ip,

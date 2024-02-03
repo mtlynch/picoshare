@@ -66,7 +66,7 @@ func TestSettingsPut(t *testing.T) {
 	} {
 		t.Run(tt.description, func(t *testing.T) {
 			dataStore := test_sqlite.New()
-			s := handlers.New(mockAuthenticator{}, dataStore, nilSpaceChecker, nilGarbageCollector)
+			s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceChecker, nilGarbageCollector)
 
 			req, err := http.NewRequest("PUT", "/api/settings", strings.NewReader(tt.payload))
 			if err != nil {

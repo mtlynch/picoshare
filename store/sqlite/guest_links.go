@@ -10,8 +10,8 @@ import (
 	"github.com/mtlynch/picoshare/v2/store"
 )
 
-func (d DB) GetGuestLink(id picoshare.GuestLinkID) (picoshare.GuestLink, error) {
-	row := d.ctx.QueryRow(`
+func (s Store) GetGuestLink(id picoshare.GuestLinkID) (picoshare.GuestLink, error) {
+	row := s.ctx.QueryRow(`
 		SELECT
 			guest_links.id AS id,
 			guest_links.label AS label,
@@ -32,8 +32,8 @@ func (d DB) GetGuestLink(id picoshare.GuestLinkID) (picoshare.GuestLink, error) 
 	return guestLinkFromRow(row)
 }
 
-func (d DB) GetGuestLinks() ([]picoshare.GuestLink, error) {
-	rows, err := d.ctx.Query(`
+func (s Store) GetGuestLinks() ([]picoshare.GuestLink, error) {
+	rows, err := s.ctx.Query(`
 		SELECT
 			guest_links.id AS id,
 			guest_links.label AS label,
@@ -65,10 +65,10 @@ func (d DB) GetGuestLinks() ([]picoshare.GuestLink, error) {
 	return gls, nil
 }
 
-func (d *DB) InsertGuestLink(guestLink picoshare.GuestLink) error {
+func (s *Store) InsertGuestLink(guestLink picoshare.GuestLink) error {
 	log.Printf("saving new guest link %s", guestLink.ID)
 
-	if _, err := d.ctx.Exec(`
+	if _, err := s.ctx.Exec(`
 	INSERT INTO guest_links
 		(
 			id,
@@ -86,10 +86,10 @@ func (d *DB) InsertGuestLink(guestLink picoshare.GuestLink) error {
 	return nil
 }
 
-func (d DB) DeleteGuestLink(id picoshare.GuestLinkID) error {
+func (s Store) DeleteGuestLink(id picoshare.GuestLinkID) error {
 	log.Printf("deleting guest link %s", id)
 
-	tx, err := d.ctx.BeginTx(context.Background(), nil)
+	tx, err := s.ctx.BeginTx(context.Background(), nil)
 	if err != nil {
 		return err
 	}

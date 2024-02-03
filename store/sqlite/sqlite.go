@@ -8,7 +8,6 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 
 	"github.com/mtlynch/picoshare/v2/picoshare"
-	"github.com/mtlynch/picoshare/v2/store"
 )
 
 const (
@@ -18,7 +17,7 @@ const (
 )
 
 type (
-	DB struct {
+	Store struct {
 		ctx       *sql.DB
 		chunkSize int
 	}
@@ -28,13 +27,13 @@ type (
 	}
 )
 
-func New(path string, optimizeForLitestream bool) store.Store {
+func New(path string, optimizeForLitestream bool) Store {
 	return NewWithChunkSize(path, defaultChunkSize, optimizeForLitestream)
 }
 
 // NewWithChunkSize creates a SQLite-based datastore with the user-specified
 // chunk size for writing files. Most callers should just use New().
-func NewWithChunkSize(path string, chunkSize int, optimizeForLitestream bool) store.Store {
+func NewWithChunkSize(path string, chunkSize int, optimizeForLitestream bool) Store {
 	log.Printf("reading DB from %s", path)
 	ctx, err := sql.Open("sqlite3", path)
 	if err != nil {
@@ -61,7 +60,7 @@ func NewWithChunkSize(path string, chunkSize int, optimizeForLitestream bool) st
 
 	applyMigrations(ctx)
 
-	return &DB{
+	return Store{
 		ctx:       ctx,
 		chunkSize: chunkSize,
 	}

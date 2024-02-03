@@ -7,23 +7,23 @@ import (
 )
 
 // Purge deletes expired entries and clears orphaned rows from the database.
-func (d DB) Purge() error {
+func (s Store) Purge() error {
 	log.Printf("deleting expired entries and orphaned data from database")
-	if err := d.deleteExpiredEntries(); err != nil {
+	if err := s.deleteExpiredEntries(); err != nil {
 		return err
 	}
 
-	if err := d.deleteOrphanedRows(); err != nil {
+	if err := s.deleteOrphanedRows(); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (d DB) deleteExpiredEntries() error {
+func (s Store) deleteExpiredEntries() error {
 	log.Printf("deleting expired entries from database")
 
-	tx, err := d.ctx.BeginTx(context.Background(), nil)
+	tx, err := s.ctx.BeginTx(context.Background(), nil)
 	if err != nil {
 		return err
 	}
@@ -59,12 +59,12 @@ func (d DB) deleteExpiredEntries() error {
 	return tx.Commit()
 }
 
-func (d DB) deleteOrphanedRows() error {
+func (s Store) deleteOrphanedRows() error {
 	log.Printf("purging orphaned rows from database")
 
 	// Delete rows from entries_data if they don't reference valid rows in
 	// entries. This can happen if the entry insertion fails partway through.
-	if _, err := d.ctx.Exec(`
+	if _, err := s.ctx.Exec(`
 		DELETE FROM
 			entries_data
 		WHERE
