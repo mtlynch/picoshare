@@ -79,10 +79,10 @@ jobs:
           at: ./
       - run:
           name: Compile production backend
-          command: PS_VERSION="${CIRCLE_TAG-''}" dev-scripts/build-backend
+          command: PS_VERSION="$(git describe --tags)" dev-scripts/build-backend
       - run:
           name: Compile dev backend
-          command: PS_VERSION="${CIRCLE_TAG-''}" dev-scripts/build-backend dev
+          command: PS_VERSION="$(git describe --tags)" dev-scripts/build-backend dev
       - persist_to_workspace:
           root: ./
           paths:
