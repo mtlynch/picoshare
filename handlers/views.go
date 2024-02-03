@@ -551,7 +551,7 @@ func (s Server) settingsGet() http.HandlerFunc {
 	}
 }
 
-func (s Server) diskUsageGet() http.HandlerFunc {
+func (s Server) systemInformationGet() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		space, err := s.spaceChecker.Check()
 		if err != nil {
@@ -560,14 +560,14 @@ func (s Server) diskUsageGet() http.HandlerFunc {
 			return
 		}
 
-		if err := renderTemplate(w, "disk-usage.html", struct {
+		if err := renderTemplate(w, "system-information.html", struct {
 			commonProps
 			UsedBytes  uint64
 			TotalBytes uint64
 			BuildTime  time.Time
 			Version    string
 		}{
-			commonProps: makeCommonProps("PicoShare - Disk Usage", r.Context()),
+			commonProps: makeCommonProps("PicoShare - System Information", r.Context()),
 			UsedBytes:   space.TotalBytes - space.AvailableBytes,
 			TotalBytes:  space.TotalBytes,
 			BuildTime:   build.Time(),
