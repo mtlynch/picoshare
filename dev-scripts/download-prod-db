@@ -15,8 +15,17 @@ export DB_COPY_PATH="data/${TIMESTAMP}.db"
 
 set +x
 # shellcheck disable=SC1091
-. prod.env
+. .env.prod
 set -x
+
+export LITESTREAM_BUCKET
+export LITESTREAM_ENDPOINT
+export LITESTREAM_ACCESS_KEY_ID
+export LITESTREAM_SECRET_ACCESS_KEY
+
+# Export DB_PATH so that litestream uses the variable to populate
+# litestream.yml.
+export DB_PATH
 
 litestream snapshots -config litestream.yml "${DB_PATH}"
 
