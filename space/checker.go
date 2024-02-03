@@ -1,72 +1,41 @@
 package space
 
-import (
-	"os"
-	"path/filepath"
-
-	"github.com/mtlynch/picoshare/v2/picoshare"
-	"golang.org/x/sys/unix"
-)
-
 type (
-	DatabaseMetadataReader interface {
-		GetEntriesMetadata() ([]picoshare.UploadMetadata, error)
-	}
-
 	Checker struct {
-		dbPath   string
-		dbReader DatabaseMetadataReader
+		fsChecker FileSystemChecker
+		dbChecker DatabaseChecker
 	}
 
 	CheckResult struct {
-		DataSize       uint64
-		DbSize         uint64
-		AvailableBytes uint64
-		TotalBytes     uint64
+		DataSize         uint64
+		DatabaseFileSize uint64
+		UsedBytes        uint64
+		TotalBytes       uint64
 	}
 )
 
 func NewChecker(dbPath string, dbReader DatabaseMetadataReader) Checker {
 	return Checker{
-		dbPath:   dbPath,
-		dbReader: dbReader,
+		fsChecker: NewFileSystemChecker(dbPath),
+		dbChecker: NewDatabaseChecker(dbReader),
 	}
 }
 
 func (c Checker) Check() (CheckResult, error) {
-	var stat unix.Statfs_t
-	if err := unix.Statfs(c.dbPath, &stat); err != nil {
-		return CheckResult{}, err
-	}
-
-	matches, err := filepath.Glob(c.dbPath + "*")
+	fsUsage, err := c.fsChecker.MeasureUsage()
 	if err != nil {
 		return CheckResult{}, err
 	}
 
-	var totalSize uint64
-	for _, f := range matches {
-		s, err := os.Stat(f)
-		if err != nil {
-			return CheckResult{}, err
-		}
-		totalSize += uint64(s.Size())
-	}
-
-	var dbTotal uint64
-	entries, err := c.dbReader.GetEntriesMetadata()
+	dbTotalSize, err := c.dbChecker.TotalSize()
 	if err != nil {
 		return CheckResult{}, err
-	}
-
-	for _, entry := range entries {
-		dbTotal += entry.Size
 	}
 
 	return CheckResult{
-		DataSize:       totalSize,
-		DbSize:         dbTotal,
-		AvailableBytes: stat.Bfree * uint64(stat.Bsize),
-		TotalBytes:     stat.Blocks * uint64(stat.Bsize),
+		DataSize:         dbTotalSize,
+		DatabaseFileSize: fsUsage.PicoShareDbFileSize,
+		UsedBytes:        fsUsage.TotalBytes - fsUsage.AvailableBytes,
+		TotalBytes:       fsUsage.TotalBytes,
 	}, nil
 }

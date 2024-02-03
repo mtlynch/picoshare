@@ -560,22 +560,24 @@ func (s Server) systemInformationGet() http.HandlerFunc {
 			return
 		}
 
+		log.Printf("space=%+v", space) // DEBUG
+
 		if err := renderTemplate(w, "system-information.html", struct {
 			commonProps
-			DataBytes     uint64
-			DatabaseBytes uint64
-			UsedBytes     uint64
-			TotalBytes    uint64
-			BuildTime     time.Time
-			Version       string
+			DataBytes         uint64
+			DatabaseFileBytes uint64
+			UsedBytes         uint64
+			TotalBytes        uint64
+			BuildTime         time.Time
+			Version           string
 		}{
-			commonProps:   makeCommonProps("PicoShare - System Information", r.Context()),
-			DataBytes:     space.DataSize,
-			DatabaseBytes: space.DbSize,
-			UsedBytes:     space.TotalBytes - space.AvailableBytes,
-			TotalBytes:    space.TotalBytes,
-			BuildTime:     build.Time(),
-			Version:       build.Version,
+			commonProps:       makeCommonProps("PicoShare - System Information", r.Context()),
+			DataBytes:         space.DataSize,
+			DatabaseFileBytes: space.DatabaseFileSize,
+			UsedBytes:         space.UsedBytes,
+			TotalBytes:        space.TotalBytes,
+			BuildTime:         build.Time(),
+			Version:           build.Version,
 		}, template.FuncMap{
 			"formatFileSize": humanReadableFileSize,
 			"percentage": func(part, total uint64) string {
