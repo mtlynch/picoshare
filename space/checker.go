@@ -15,9 +15,13 @@ type (
 )
 
 func NewChecker(dbPath string, dbReader DatabaseMetadataReader) Checker {
+	return NewCheckerFromCheckers(NewFileSystemChecker(dbPath), NewDatabaseChecker(dbReader))
+}
+
+func NewCheckerFromCheckers(fsChecker FileSystemChecker, dbChecker DatabaseChecker) Checker {
 	return Checker{
-		fsChecker: NewFileSystemChecker(dbPath),
-		dbChecker: NewDatabaseChecker(dbReader),
+		fsChecker,
+		dbChecker,
 	}
 }
 
