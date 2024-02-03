@@ -50,6 +50,22 @@
         "type": "github"
       }
     },
+    "litestream_dep": {
+      "locked": {
+        "lastModified": 1692684269,
+        "narHash": "sha256-zJk2pyF4Cuhtor0khtPlf+hfJIh22rzAUC+KU3Ob31Q=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "9d757ec498666cc1dcc6f2be26db4fd3e1e9ab37",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "9d757ec498666cc1dcc6f2be26db4fd3e1e9ab37",
+        "type": "github"
+      }
+    },
     "nodejs_dep": {
       "locked": {
         "lastModified": 1694343207,
@@ -87,6 +103,7 @@
         "flake-utils": "flake-utils",
         "flyctl_dep": "flyctl_dep",
         "go_dep": "go_dep",
+        "litestream_dep": "litestream_dep",
         "nodejs_dep": "nodejs_dep",
         "playwright_dep": "playwright_dep",
         "shellcheck_dep": "shellcheck_dep",
