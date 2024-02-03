@@ -4,7 +4,7 @@ data/
 bin/
 dist/
 .coverage*
-*.env
+.env*
 *.test.js
 fly.toml
 modd.conf
