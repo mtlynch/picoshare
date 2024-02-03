@@ -28,8 +28,14 @@
     {
       devShells.default = go_dep.mkShell.override { stdenv = go_dep.pkgsStatic.stdenv; } {
         packages = [
-          go_dep.gopls
           go_dep.gotools
+          go_dep.gopls
+          go_dep.go-outline
+          go_dep.gocode
+          go_dep.gopkgs
+          go_dep.gocode-gomod
+          go_dep.godef
+          go_dep.golint
           go_dep.go_1_21
           nodejs_dep.nodejs_20
           shellcheck_dep.shellcheck
@@ -37,6 +43,9 @@
         ];
 
         shellHook = ''
+          GOROOT="$(dirname $(dirname $(which go)))/share/go"
+          export GOROOT
+
           echo "shellcheck" "$(shellcheck --version | grep '^version:')"
           sqlfluff --version
           echo "node" "$(node --version)"
