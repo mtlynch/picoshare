@@ -23,7 +23,6 @@ type Store interface {
 	ReadSettings() (picoshare.Settings, error)
 	UpdateSettings(picoshare.Settings) error
 	Purge() error
-	Compact() error
 }
 
 // EntryNotFoundError occurs when no entry exists with the given ID.

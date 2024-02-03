@@ -100,10 +100,9 @@ services:
 
 ### Command-line flags
 
-| Flag      | Meaning                                                                  | Default Value     |
-| --------- | ------------------------------------------------------------------------ | ----------------- |
-| `-db`     | Path to SQLite database                                                  | `"data/store.db"` |
-| `-vacuum` | Vacuum database periodically to reclaim disk space (increases RAM usage) | `false`           |
+| Flag  | Meaning                 | Default Value     |
+| ----- | ----------------------- | ----------------- |
+| `-db` | Path to SQLite database | `"data/store.db"` |
 
 ### Environment variables
 
