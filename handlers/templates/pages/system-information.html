@@ -60,7 +60,7 @@
   <h2>Build info</h2>
   <p>Version: {{ .Version }}</p>
 
-  <p>Build time: {{ .BuildTime }}</p>
+  <p>Build time: {{ .BuildTime.Format "2006-01-02 15:04:05 UTC" }}</p>
 {{ end }}
 
 {{ template "base.html" }}
