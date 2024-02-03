@@ -39,7 +39,7 @@ func (c Checker) Check() (CheckResult, error) {
 	return CheckResult{
 		DataSize:         dbTotalSize,
 		DatabaseFileSize: fsUsage.PicoShareDbFileSize,
-		UsedBytes:        fsUsage.TotalBytes - fsUsage.AvailableBytes,
+		UsedBytes:        fsUsage.UsedBytes,
 		TotalBytes:       fsUsage.TotalBytes,
 	}, nil
 }

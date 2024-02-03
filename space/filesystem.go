@@ -13,8 +13,8 @@ type (
 	}
 
 	FileSystemUsage struct {
-		AvailableBytes uint64
-		TotalBytes     uint64
+		UsedBytes  uint64
+		TotalBytes uint64
 	}
 
 	PicoShareUsage struct {
@@ -40,8 +40,8 @@ func (fsc FileSystemChecker) MeasureUsage() (PicoShareUsage, error) {
 
 	return PicoShareUsage{
 		FileSystemUsage: FileSystemUsage{
-			AvailableBytes: fsu.AvailableBytes,
-			TotalBytes:     fsu.TotalBytes,
+			UsedBytes:  fsu.UsedBytes,
+			TotalBytes: fsu.TotalBytes,
 		},
 		PicoShareDbFileSize: dbFilesSize,
 	}, nil
@@ -52,10 +52,12 @@ func (fsc FileSystemChecker) measureWholeFilesystem() (FileSystemUsage, error) {
 	if err := unix.Statfs(fsc.dbPath, &stat); err != nil {
 		return FileSystemUsage{}, err
 	}
+	availableBytes := stat.Bfree * uint64(stat.Bsize)
+	totalBytes := stat.Blocks * uint64(stat.Bsize)
 
 	return FileSystemUsage{
-		AvailableBytes: stat.Bfree * uint64(stat.Bsize),
-		TotalBytes:     stat.Blocks * uint64(stat.Bsize),
+		UsedBytes:  totalBytes - availableBytes,
+		TotalBytes: totalBytes,
 	}, nil
 }
 
