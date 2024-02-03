@@ -4,17 +4,18 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/mtlynch/picoshare/v2/picoshare"
 	"golang.org/x/sys/unix"
 )
 
 type (
-	DatabaseTotaler interface {
-		TotalSize() (uint64, error)
+	DatabaseMetadataReader interface {
+		GetEntriesMetadata() ([]picoshare.UploadMetadata, error)
 	}
 
 	Checker struct {
-		dbPath    string
-		dbTotaler DatabaseTotaler
+		dbPath   string
+		dbReader DatabaseMetadataReader
 	}
 
 	CheckResult struct {
@@ -25,10 +26,10 @@ type (
 	}
 )
 
-func NewChecker(dbPath string, dbTotaler DatabaseTotaler) Checker {
+func NewChecker(dbPath string, dbReader DatabaseMetadataReader) Checker {
 	return Checker{
-		dbPath:    dbPath,
-		dbTotaler: dbTotaler,
+		dbPath:   dbPath,
+		dbReader: dbReader,
 	}
 }
 
@@ -52,14 +53,19 @@ func (c Checker) Check() (CheckResult, error) {
 		totalSize += uint64(s.Size())
 	}
 
-	dbTotalSize, err := c.dbTotaler.TotalSize()
+	var dbTotal uint64
+	entries, err := c.dbReader.GetEntriesMetadata()
 	if err != nil {
 		return CheckResult{}, err
 	}
 
+	for _, entry := range entries {
+		dbTotal += entry.Size
+	}
+
 	return CheckResult{
 		DataSize:       totalSize,
-		DbSize:         dbTotalSize,
+		DbSize:         dbTotal,
 		AvailableBytes: stat.Bfree * uint64(stat.Bsize),
 		TotalBytes:     stat.Blocks * uint64(stat.Bsize),
 	}, nil

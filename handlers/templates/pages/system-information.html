@@ -41,8 +41,13 @@
       <ul>
         <li>
           <strong>PicoShare data</strong>:
+          {{ formatFileSize .DatabaseBytes }}
+          ({{ percentage .DatabaseBytes .UsedBytes }})
+        </li>
+        <li>
+          <strong>PicoShare files</strong>:
           {{ formatFileSize .DataBytes }}
-          ({{ percentage .DataBytes .TotalBytes }})
+          ({{ percentage .DataBytes .UsedBytes }})
         </li>
       </ul>
     </li>
