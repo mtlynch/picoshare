@@ -18,9 +18,12 @@
 
     # 1.40.0
     playwright_dep.url = "github:NixOS/nixpkgs/f5c27c6136db4d76c30e533c20517df6864c46ee";
+
+    # 0.1.131 release
+    flyctl_dep.url = "github:NixOS/nixpkgs/09dc04054ba2ff1f861357d0e7e76d021b273cd7";
   };
 
-  outputs = { self, flake-utils, go_dep, nodejs_dep, shellcheck_dep, sqlfluff_dep, playwright_dep }@inputs :
+  outputs = { self, flake-utils, go_dep, nodejs_dep, shellcheck_dep, sqlfluff_dep, playwright_dep, flyctl_dep }@inputs :
     flake-utils.lib.eachDefaultSystem (system:
     let
       go_dep = inputs.go_dep.legacyPackages.${system};
@@ -28,6 +31,7 @@
       shellcheck_dep = inputs.shellcheck_dep.legacyPackages.${system};
       sqlfluff_dep = inputs.sqlfluff_dep.legacyPackages.${system};
       playwright_dep = inputs.playwright_dep.legacyPackages.${system};
+      flyctl_dep = inputs.flyctl_dep.legacyPackages.${system};
     in
     {
       devShells.default = go_dep.mkShell.override { stdenv = go_dep.pkgsStatic.stdenv; } {
@@ -45,6 +49,7 @@
           shellcheck_dep.shellcheck
           sqlfluff_dep.sqlfluff
           playwright_dep.playwright-driver.browsers
+          flyctl_dep.flyctl
         ];
 
         shellHook = ''
@@ -56,6 +61,7 @@
 
           echo "shellcheck" "$(shellcheck --version | grep '^version:')"
           sqlfluff --version
+          fly version | cut -d ' ' -f 1-3
           echo "node" "$(node --version)"
           echo "npm" "$(npm --version)"
           go version
