@@ -9,12 +9,11 @@ import (
 	"github.com/mtlynch/picoshare/v2/garbagecollect"
 	"github.com/mtlynch/picoshare/v2/handlers"
 	"github.com/mtlynch/picoshare/v2/picoshare"
-	"github.com/mtlynch/picoshare/v2/space"
 	"github.com/mtlynch/picoshare/v2/store"
 	"github.com/mtlynch/picoshare/v2/store/test_sqlite"
 )
 
-var nilSpaceChecker space.Checker
+var nilSpaceChecker handlers.SpaceChecker
 var nilGarbageCollector *garbagecollect.Collector
 
 func TestDeleteExistingFile(t *testing.T) {
