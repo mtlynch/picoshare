@@ -5,11 +5,7 @@ import (
 )
 
 type (
-	Checker interface {
-		Check() (CheckResult, error)
-	}
-
-	defaultChecker struct {
+	Checker struct {
 		dataDir string
 	}
 
@@ -20,10 +16,10 @@ type (
 )
 
 func NewChecker(dir string) Checker {
-	return defaultChecker{dir}
+	return Checker{dir}
 }
 
-func (c defaultChecker) Check() (CheckResult, error) {
+func (c Checker) Check() (CheckResult, error) {
 	var stat unix.Statfs_t
 	if err := unix.Statfs(c.dataDir, &stat); err != nil {
 		return CheckResult{}, err
