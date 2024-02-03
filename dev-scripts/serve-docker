@@ -19,7 +19,7 @@ DOCKER_BUILDKIT=1 \
 
 set +x
 # shellcheck disable=SC1091
-. dev.env
+. .env.dev
 set -x
 
 PS_SHARED_SECRET=somepassword

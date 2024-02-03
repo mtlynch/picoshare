@@ -8,7 +8,7 @@ dist/
 data/
 
 # Environment variables, which may contain secrets
-*.env
+.env*
 
 # Unit test code coverage output
 .coverage.*

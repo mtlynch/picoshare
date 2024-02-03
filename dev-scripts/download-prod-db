@@ -15,7 +15,7 @@ export DB_COPY_PATH="data/${TIMESTAMP}.db"
 
 set +x
 # shellcheck disable=SC1091
-. prod.env
+. .env.prod
 set -x
 
 litestream snapshots -config litestream.yml "${DB_PATH}"
