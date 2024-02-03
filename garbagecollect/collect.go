@@ -7,15 +7,13 @@ import (
 )
 
 type Collector struct {
-	store    store.Store
-	vacuumDB bool
-	mu       sync.Mutex
+	store store.Store
+	mu    sync.Mutex
 }
 
-func NewCollector(store store.Store, vacuumDB bool) Collector {
+func NewCollector(store store.Store) Collector {
 	return Collector{
-		store:    store,
-		vacuumDB: vacuumDB,
+		store: store,
 	}
 }
 
@@ -25,12 +23,6 @@ func (c *Collector) Collect() error {
 
 	if err := c.store.Purge(); err != nil {
 		return err
-	}
-
-	if c.vacuumDB {
-		if err := c.store.Compact(); err != nil {
-			return err
-		}
 	}
 
 	return nil

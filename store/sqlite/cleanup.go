@@ -20,19 +20,6 @@ func (d DB) Purge() error {
 	return nil
 }
 
-func (d DB) Compact() error {
-	log.Printf("vacuuming database")
-
-	if _, err := d.ctx.Exec("VACUUM"); err != nil {
-		log.Printf("failed to vacuum database: %v", err)
-		return err
-	}
-
-	log.Printf("vacuuming complete")
-
-	return nil
-}
-
 func (d DB) deleteExpiredEntries() error {
 	log.Printf("deleting expired entries from database")
 

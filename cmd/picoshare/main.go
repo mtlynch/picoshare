@@ -26,7 +26,6 @@ func main() {
 	log.Print("starting picoshare server")
 
 	dbPath := flag.String("db", "data/store.db", "path to database")
-	vacuumDb := flag.Bool("vacuum", false, "vacuum database periodically to reclaim disk space")
 	flag.Parse()
 
 	authenticator, err := shared_secret.New(requireEnv("PS_SHARED_SECRET"))
@@ -42,7 +41,7 @@ func main() {
 
 	spaceChecker := space.NewChecker(dbDir)
 
-	collector := garbagecollect.NewCollector(store, *vacuumDb)
+	collector := garbagecollect.NewCollector(store)
 	gc := garbagecollect.NewScheduler(&collector, 7*time.Hour)
 	gc.StartAsync()
 
