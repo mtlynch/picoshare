@@ -14,6 +14,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/mileusna/useragent"
+	"github.com/mtlynch/picoshare/v2/build"
 	"github.com/mtlynch/picoshare/v2/handlers/parse"
 	"github.com/mtlynch/picoshare/v2/picoshare"
 	"github.com/mtlynch/picoshare/v2/store"
@@ -550,7 +551,7 @@ func (s Server) settingsGet() http.HandlerFunc {
 	}
 }
 
-func (s Server) diskUsageGet() http.HandlerFunc {
+func (s Server) systemInformationGet() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		space, err := s.spaceChecker.Check()
 		if err != nil {
@@ -558,14 +559,19 @@ func (s Server) diskUsageGet() http.HandlerFunc {
 			http.Error(w, fmt.Sprintf("failed to check available space: %v", err), http.StatusInternalServerError)
 			return
 		}
-		if err := renderTemplate(w, "disk-usage.html", struct {
+
+		if err := renderTemplate(w, "system-information.html", struct {
 			commonProps
 			UsedBytes  uint64
 			TotalBytes uint64
+			BuildTime  time.Time
+			Version    string
 		}{
-			commonProps: makeCommonProps("PicoShare - Disk Usage", r.Context()),
+			commonProps: makeCommonProps("PicoShare - System Information", r.Context()),
 			UsedBytes:   space.TotalBytes - space.AvailableBytes,
 			TotalBytes:  space.TotalBytes,
+			BuildTime:   build.Time(),
+			Version:     build.Version,
 		}, template.FuncMap{
 			"formatFileSize": humanReadableFileSize,
 			"percentage": func(part, total uint64) string {
