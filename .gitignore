@@ -2,7 +2,6 @@
 
 # Compiled binaries
 bin/
-build/
 dist/
 
 # Persistent data directory
