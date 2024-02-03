@@ -4,17 +4,16 @@ import (
 	"fmt"
 
 	"github.com/mtlynch/picoshare/v2/random"
-	"github.com/mtlynch/picoshare/v2/store"
 	"github.com/mtlynch/picoshare/v2/store/sqlite"
 )
 
 const optimizeForLitestream = false
 
-func New() store.Store {
+func New() sqlite.Store {
 	return sqlite.New(ephemeralDbURI(), optimizeForLitestream)
 }
 
-func NewWithChunkSize(chunkSize int) store.Store {
+func NewWithChunkSize(chunkSize int) sqlite.Store {
 	return sqlite.NewWithChunkSize(ephemeralDbURI(), chunkSize, optimizeForLitestream)
 }
 

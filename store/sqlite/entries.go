@@ -11,8 +11,8 @@ import (
 	"github.com/mtlynch/picoshare/v2/store/sqlite/file"
 )
 
-func (d DB) GetEntriesMetadata() ([]picoshare.UploadMetadata, error) {
-	rows, err := d.ctx.Query(`
+func (s Store) GetEntriesMetadata() ([]picoshare.UploadMetadata, error) {
+	rows, err := s.ctx.Query(`
 	SELECT
 		entries.id AS id,
 		entries.filename AS filename,
@@ -74,13 +74,13 @@ func (d DB) GetEntriesMetadata() ([]picoshare.UploadMetadata, error) {
 	return ee, nil
 }
 
-func (d DB) GetEntry(id picoshare.EntryID) (picoshare.UploadEntry, error) {
-	metadata, err := d.GetEntryMetadata(id)
+func (s Store) GetEntry(id picoshare.EntryID) (picoshare.UploadEntry, error) {
+	metadata, err := s.GetEntryMetadata(id)
 	if err != nil {
 		return picoshare.UploadEntry{}, err
 	}
 
-	r, err := file.NewReader(d.ctx, id)
+	r, err := file.NewReader(s.ctx, id)
 	if err != nil {
 		return picoshare.UploadEntry{}, err
 	}
@@ -91,7 +91,7 @@ func (d DB) GetEntry(id picoshare.EntryID) (picoshare.UploadEntry, error) {
 	}, nil
 }
 
-func (d DB) GetEntryMetadata(id picoshare.EntryID) (picoshare.UploadMetadata, error) {
+func (s Store) GetEntryMetadata(id picoshare.EntryID) (picoshare.UploadMetadata, error) {
 	var filename string
 	var note *string
 	var contentType string
@@ -99,7 +99,7 @@ func (d DB) GetEntryMetadata(id picoshare.EntryID) (picoshare.UploadMetadata, er
 	var expirationTimeRaw string
 	var fileSize uint64
 	var guestLinkID *picoshare.GuestLinkID
-	err := d.ctx.QueryRow(`
+	err := s.ctx.QueryRow(`
 	SELECT
 		entries.filename AS filename,
 		entries.note AS note,
@@ -130,7 +130,7 @@ func (d DB) GetEntryMetadata(id picoshare.EntryID) (picoshare.UploadMetadata, er
 
 	var guestLink picoshare.GuestLink
 	if guestLinkID != nil && !guestLinkID.Empty() {
-		guestLink, err = d.GetGuestLink(*guestLinkID)
+		guestLink, err = s.GetGuestLink(*guestLinkID)
 		if err != nil {
 			return picoshare.UploadMetadata{}, err
 		}
@@ -158,7 +158,7 @@ func (d DB) GetEntryMetadata(id picoshare.EntryID) (picoshare.UploadMetadata, er
 	}, nil
 }
 
-func (d DB) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) error {
+func (s Store) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) error {
 	log.Printf("saving new entry %s", metadata.ID)
 
 	// Note: We deliberately don't use a transaction here, as it bloats memory, so
@@ -166,7 +166,7 @@ func (d DB) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) err
 	// Purge().
 	// See: https://github.com/mtlynch/picoshare/issues/284
 
-	w := file.NewWriter(d.ctx, metadata.ID, d.chunkSize)
+	w := file.NewWriter(s.ctx, metadata.ID, s.chunkSize)
 	if _, err := io.Copy(w, reader); err != nil {
 		return err
 	}
@@ -176,7 +176,7 @@ func (d DB) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) err
 		return err
 	}
 
-	_, err := d.ctx.Exec(`
+	_, err := s.ctx.Exec(`
 	INSERT INTO
 		entries
 	(
@@ -205,10 +205,10 @@ func (d DB) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) err
 	return nil
 }
 
-func (d DB) UpdateEntryMetadata(id picoshare.EntryID, metadata picoshare.UploadMetadata) error {
+func (s Store) UpdateEntryMetadata(id picoshare.EntryID, metadata picoshare.UploadMetadata) error {
 	log.Printf("updating metadata for entry %s", id)
 
-	res, err := d.ctx.Exec(`
+	res, err := s.ctx.Exec(`
 	UPDATE entries
 	SET
 		filename = ?,
@@ -235,10 +235,10 @@ func (d DB) UpdateEntryMetadata(id picoshare.EntryID, metadata picoshare.UploadM
 	return nil
 }
 
-func (d DB) DeleteEntry(id picoshare.EntryID) error {
+func (s Store) DeleteEntry(id picoshare.EntryID) error {
 	log.Printf("deleting entry %v", id)
 
-	tx, err := d.ctx.BeginTx(context.Background(), nil)
+	tx, err := s.ctx.BeginTx(context.Background(), nil)
 	if err != nil {
 		return err
 	}

@@ -9,7 +9,6 @@ import (
 	"sync"
 
 	"github.com/mtlynch/picoshare/v2/random"
-	"github.com/mtlynch/picoshare/v2/store"
 	"github.com/mtlynch/picoshare/v2/store/test_sqlite"
 )
 
@@ -48,10 +47,10 @@ func (dbs *dbSettings) SetIsolateBySession(isolate bool) {
 
 var (
 	sharedDBSettings dbSettings
-	tokenToDB        map[dbToken]store.Store = map[dbToken]store.Store{}
+	tokenToDB        map[dbToken]Store = map[dbToken]Store{}
 )
 
-func (s Server) getDB(r *http.Request) store.Store {
+func (s Server) getDB(r *http.Request) Store {
 	if !sharedDBSettings.IsolateBySession() {
 		return s.store
 	}
@@ -90,7 +89,8 @@ func assignSessionDB(h http.Handler) http.Handler {
 				token := dbToken(random.String(30, []rune("abcdefghijkmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")))
 				log.Printf("provisioning a new private database with token %s", token)
 				createDBCookie(token, w)
-				tokenToDB[token] = test_sqlite.New()
+				testDb := test_sqlite.New()
+				tokenToDB[token] = &testDb
 			}
 		}
 		h.ServeHTTP(w, r)

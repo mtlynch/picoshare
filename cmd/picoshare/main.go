@@ -45,7 +45,7 @@ func main() {
 	gc := garbagecollect.NewScheduler(&collector, 7*time.Hour)
 	gc.StartAsync()
 
-	server := handlers.New(authenticator, store, spaceChecker, &collector)
+	server := handlers.New(authenticator, &store, spaceChecker, &collector)
 
 	h := gorilla.LoggingHandler(os.Stdout, server.Router())
 	if os.Getenv("PS_BEHIND_PROXY") != "" {
