@@ -38,7 +38,15 @@
       <strong>Used space</strong>:
       {{ formatFileSize .UsedBytes }}
       ({{ percentage .UsedBytes .TotalBytes }})
+      <ul>
+        <li>
+          <strong>PicoShare data</strong>:
+          {{ formatFileSize .DataBytes }}
+          ({{ percentage .DataBytes .TotalBytes }})
+        </li>
+      </ul>
     </li>
+
     <li><strong>Total disk space</strong>: {{ formatFileSize .TotalBytes }}</li>
   </ul>
 
