@@ -15,15 +15,19 @@
 
     # 1.2.1 release
     sqlfluff_dep.url = "github:NixOS/nixpkgs/7cf5ccf1cdb2ba5f08f0ac29fc3d04b0b59a07e4";
+
+    # 1.40.0
+    playwright_dep.url = "github:NixOS/nixpkgs/f5c27c6136db4d76c30e533c20517df6864c46ee";
   };
 
-  outputs = { self, flake-utils, go_dep, nodejs_dep, shellcheck_dep, sqlfluff_dep }@inputs :
+  outputs = { self, flake-utils, go_dep, nodejs_dep, shellcheck_dep, sqlfluff_dep, playwright_dep }@inputs :
     flake-utils.lib.eachDefaultSystem (system:
     let
       go_dep = inputs.go_dep.legacyPackages.${system};
       nodejs_dep = inputs.nodejs_dep.legacyPackages.${system};
       shellcheck_dep = inputs.shellcheck_dep.legacyPackages.${system};
       sqlfluff_dep = inputs.sqlfluff_dep.legacyPackages.${system};
+      playwright_dep = inputs.playwright_dep.legacyPackages.${system};
     in
     {
       devShells.default = go_dep.mkShell.override { stdenv = go_dep.pkgsStatic.stdenv; } {
@@ -40,11 +44,15 @@
           nodejs_dep.nodejs_20
           shellcheck_dep.shellcheck
           sqlfluff_dep.sqlfluff
+          playwright_dep.playwright-driver.browsers
         ];
 
         shellHook = ''
           GOROOT="$(dirname $(dirname $(which go)))/share/go"
           export GOROOT
+
+          export PLAYWRIGHT_BROWSERS_PATH=${playwright_dep.playwright-driver.browsers}
+          export PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS=true
 
           echo "shellcheck" "$(shellcheck --version | grep '^version:')"
           sqlfluff --version
