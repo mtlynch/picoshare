@@ -33,12 +33,14 @@
     {{ percentage .UsedBytes .TotalBytes }}
   </progress>
 
-  <p>
-    <strong>Used space</strong>:
-    {{ formatFileSize .UsedBytes }}
-    ({{ percentage .UsedBytes .TotalBytes }})
-  </p>
-  <p><strong>Total disk space</strong>: {{ formatFileSize .TotalBytes }}</p>
+  <ul>
+    <li>
+      <strong>Used space</strong>:
+      {{ formatFileSize .UsedBytes }}
+      ({{ percentage .UsedBytes .TotalBytes }})
+    </li>
+    <li><strong>Total disk space</strong>: {{ formatFileSize .TotalBytes }}</li>
+  </ul>
 
   <div class="notification is-info is-light">
     <p>
@@ -57,10 +59,14 @@
     </p>
   </div>
 
-  <h2>Build info</h2>
-  <p>Version: {{ .Version }}</p>
-
-  <p>Build time: {{ .BuildTime.Format "2006-01-02 15:04:05 UTC" }}</p>
+  <h2>PicoShareVersion</h2>
+  <ul>
+    <li><strong>Version</strong>: {{ .Version }}</li>
+    <li>
+      <strong>Built at</strong>:
+      {{ .BuildTime.Format "2006-01-02 15:04:05 UTC" }}
+    </li>
+  </ul>
 {{ end }}
 
 {{ template "base.html" }}
