@@ -22,8 +22,9 @@
 {{ end }}
 
 {{ define "content" }}
-  <h1 class="title">Disk Usage</h1>
+  <h1 class="title">System Information</h1>
 
+  <h2>Disk Usage</h2>
   <progress
     class="progress is-primary"
     max="{{ .TotalBytes }}"
@@ -57,9 +58,9 @@
   </div>
 
   <h2>Build info</h2>
+  <p>Version: {{ .Version }}</p>
 
   <p>Build time: {{ .BuildTime }}</p>
-  <p>Version: {{ .Version }}</p>
 {{ end }}
 
 {{ template "base.html" }}

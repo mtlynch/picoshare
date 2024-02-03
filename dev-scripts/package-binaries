@@ -21,7 +21,7 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 readonly SCRIPT_DIR
 cd "${SCRIPT_DIR}/.."
 
-cd build
+cd bin
 
 readonly OUTPUT_DIR="${PWD}/../dist"
 mkdir -p "${OUTPUT_DIR}"

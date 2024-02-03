@@ -1,7 +1,9 @@
 FROM golang:1.21.1 AS builder
 
 ARG TARGETPLATFORM
+ARG PS_VERSION
 
+COPY ./build /app/build
 COPY ./cmd /app/cmd
 COPY ./dev-scripts /app/dev-scripts
 COPY ./garbagecollect /app/garbagecollect
@@ -14,7 +16,9 @@ COPY ./go.* /app/
 
 WORKDIR /app
 
-RUN TARGETPLATFORM="${TARGETPLATFORM}" ./dev-scripts/build-backend "prod"
+RUN TARGETPLATFORM="${TARGETPLATFORM}" \
+    PS_VERSION="${PS_VERSION}" \
+    ./dev-scripts/build-backend "prod"
 
 FROM scratch as artifact
 COPY --from=builder /app/bin/picoshare ./

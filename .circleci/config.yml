@@ -79,10 +79,10 @@ jobs:
           at: ./
       - run:
           name: Compile production backend
-          command: dev-scripts/build-backend
+          command: PS_VERSION="${CIRCLE_TAG-''}" dev-scripts/build-backend
       - run:
           name: Compile dev backend
-          command: dev-scripts/build-backend dev
+          command: PS_VERSION="${CIRCLE_TAG-''}" dev-scripts/build-backend dev
       - persist_to_workspace:
           root: ./
           paths:
@@ -129,10 +129,10 @@ jobs:
             docker buildx build \
               --platform "${BUILD_TARGETS}" \
               --target=artifact \
-              --output "type=local,dest=$(pwd)/build/" \
+              --output "type=local,dest=$(pwd)/bin/" \
               .
       - store_artifacts:
-          path: build
+          path: bin
       - run:
           name: Install compress utility for gzip compression
           command: |

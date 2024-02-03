@@ -2,7 +2,6 @@
 .vscode/
 data/
 bin/
-build/
 dist/
 .coverage*
 *.env
