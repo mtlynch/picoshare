@@ -90,7 +90,7 @@ jobs:
             - ./bin/picoshare-dev
   e2e:
     docker:
-      - image: mcr.microsoft.com/playwright:v1.38.0-focal
+      - image: mcr.microsoft.com/playwright:v1.40.0-focal
     environment:
       NODE_ENV: development
     steps:
