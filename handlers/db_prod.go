@@ -4,14 +4,12 @@ package handlers
 
 import (
 	"net/http"
-
-	"github.com/mtlynch/picoshare/v2/store"
 )
 
 func (s *Server) addDevRoutes() {
 	// no-op
 }
 
-func (s Server) getDB(*http.Request) store.Store {
+func (s Server) getDB(*http.Request) Store {
 	return s.store
 }
