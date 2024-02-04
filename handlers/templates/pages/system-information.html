@@ -16,6 +16,24 @@
 {{ end }}
 
 {{ define "script-tags" }}
+  <script type="module" nonce="{{ .CspNonce }}">
+    import { toggleShowElement, hideElement } from "/js/lib/bulma.js";
+
+    const sizeDeltaNotification = document.querySelector(".notification");
+
+    document
+      .getElementById("file-size-information")
+      .addEventListener("click", (evt) => {
+        toggleShowElement(sizeDeltaNotification);
+      });
+
+    document.querySelectorAll(".notification .delete").forEach((el) => {
+      el.addEventListener("click", (evt) => {
+        const notificationEl = evt.target.parentElement;
+        hideElement(notificationEl);
+      });
+    });
+  </script>
 {{ end }}
 
 {{ define "custom-elements" }}
@@ -48,6 +66,10 @@
           <strong>PicoShare files</strong>:
           {{ formatFileSize .DatabaseFileBytes }}
           ({{ percentage .DatabaseFileBytes .UsedBytes }})
+          <a id="file-size-information" href="#"
+            ><span class="icon has-text-info">
+              <i class="fas fa-info-circle"></i> </span
+          ></a>
         </li>
       </ul>
     </li>
@@ -55,7 +77,8 @@
     <li><strong>Total disk space</strong>: {{ formatFileSize .TotalBytes }}</li>
   </ul>
 
-  <div class="notification is-info is-light">
+  <div class="notification is-info is-light is-hidden">
+    <button class="delete"></button>
     <p>Your used space may be higher than the sum total of your files.</p>
     <p>
       When you delete files, PicoShare retains the space and reuses it to store
