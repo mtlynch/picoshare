@@ -17,10 +17,10 @@ type (
 	}
 
 	Usage struct {
-		DataSize         uint64
-		DatabaseFileSize uint64
-		UsedBytes        uint64
-		TotalBytes       uint64
+		DataSize             uint64
+		DatabaseFileSize     uint64
+		FileSystemUsedBytes  uint64
+		FileSystemTotalBytes uint64
 	}
 )
 
@@ -47,9 +47,9 @@ func (c Checker) Check() (Usage, error) {
 	}
 
 	return Usage{
-		DataSize:         dbTotalSize,
-		DatabaseFileSize: fsUsage.PicoShareDbFileSize,
-		UsedBytes:        fsUsage.UsedBytes,
-		TotalBytes:       fsUsage.TotalBytes,
+		DataSize:             dbTotalSize,
+		DatabaseFileSize:     fsUsage.PicoShareDbFileSize,
+		FileSystemUsedBytes:  fsUsage.UsedBytes,
+		FileSystemTotalBytes: fsUsage.TotalBytes,
 	}, nil
 }
