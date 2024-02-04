@@ -553,7 +553,7 @@ func (s Server) settingsGet() http.HandlerFunc {
 
 func (s Server) systemInformationGet() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		space, err := s.spaceChecker.Check()
+		spaceUsage, err := s.spaceChecker.Check()
 		if err != nil {
 			log.Printf("error checking available space: %v", err)
 			http.Error(w, fmt.Sprintf("failed to check available space: %v", err), http.StatusInternalServerError)
@@ -570,10 +570,10 @@ func (s Server) systemInformationGet() http.HandlerFunc {
 			Version           string
 		}{
 			commonProps:       makeCommonProps("PicoShare - System Information", r.Context()),
-			DataBytes:         space.DataSize,
-			DatabaseFileBytes: space.DatabaseFileSize,
-			UsedBytes:         space.FileSystemUsedBytes,
-			TotalBytes:        space.FileSystemTotalBytes,
+			DataBytes:         spaceUsage.DataSize,
+			DatabaseFileBytes: spaceUsage.DatabaseFileSize,
+			UsedBytes:         spaceUsage.FileSystemUsedBytes,
+			TotalBytes:        spaceUsage.FileSystemTotalBytes,
 			BuildTime:         build.Time(),
 			Version:           build.Version,
 		}, template.FuncMap{
