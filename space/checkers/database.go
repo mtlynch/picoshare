@@ -1,4 +1,4 @@
-package space
+package checkers
 
 import "github.com/mtlynch/picoshare/v2/picoshare"
 

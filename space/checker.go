@@ -1,6 +1,16 @@
 package space
 
+import "github.com/mtlynch/picoshare/v2/space/checkers"
+
 type (
+	FileSystemChecker interface {
+		MeasureUsage() (checkers.PicoShareUsage, error)
+	}
+
+	DatabaseChecker interface {
+		TotalSize() (uint64, error)
+	}
+
 	Checker struct {
 		fsChecker FileSystemChecker
 		dbChecker DatabaseChecker
@@ -14,8 +24,8 @@ type (
 	}
 )
 
-func NewChecker(dbPath string, dbReader DatabaseMetadataReader) Checker {
-	return NewCheckerFromCheckers(NewFileSystemChecker(dbPath), NewDatabaseChecker(dbReader))
+func NewChecker(dbPath string, dbReader checkers.DatabaseMetadataReader) Checker {
+	return NewCheckerFromCheckers(checkers.NewFileSystemChecker(dbPath), checkers.NewDatabaseChecker(dbReader))
 }
 
 func NewCheckerFromCheckers(fsChecker FileSystemChecker, dbChecker DatabaseChecker) Checker {

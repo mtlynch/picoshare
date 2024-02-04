@@ -1,4 +1,4 @@
-package space
+package checkers
 
 import (
 	"os"
@@ -75,8 +75,8 @@ func (fsc FileSystemChecker) measureDbFileUsage() (uint64, error) {
 		if err != nil {
 			return 0, err
 		}
-		// Check negative.
-		// Check overflow.
+		// TODO: Check negative.
+		// TODO: Check overflow.
 		totalSize += uint64(s.Size())
 	}
 
