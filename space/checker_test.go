@@ -35,7 +35,7 @@ func TestCheck(t *testing.T) {
 		fsErr         error
 		dbUsage       uint64
 		dbErr         error
-		usageExpected space.CheckResult
+		usageExpected space.Usage
 		errExpected   error
 	}{
 		{
@@ -50,7 +50,7 @@ func TestCheck(t *testing.T) {
 			fsErr:   nil,
 			dbUsage: 60,
 			dbErr:   nil,
-			usageExpected: space.CheckResult{
+			usageExpected: space.Usage{
 				DataSize:         60,
 				DatabaseFileSize: 65,
 				UsedBytes:        70,
@@ -64,7 +64,7 @@ func TestCheck(t *testing.T) {
 			fsErr:         dummyFileSystemErr,
 			dbUsage:       5,
 			dbErr:         nil,
-			usageExpected: space.CheckResult{},
+			usageExpected: space.Usage{},
 			errExpected:   dummyFileSystemErr,
 		},
 		{
@@ -79,7 +79,7 @@ func TestCheck(t *testing.T) {
 			fsErr:         nil,
 			dbUsage:       0,
 			dbErr:         dummyDatabaseErr,
-			usageExpected: space.CheckResult{},
+			usageExpected: space.Usage{},
 			errExpected:   dummyDatabaseErr,
 		},
 	} {
