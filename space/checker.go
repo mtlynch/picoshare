@@ -17,9 +17,16 @@ type (
 	}
 
 	Usage struct {
-		DataSize             uint64
-		DatabaseFileSize     uint64
-		FileSystemUsedBytes  uint64
+		DataSize uint64
+		// DatabaseFileSize represents the total number of bytes on the filesystem
+		// dedicated to storing PicoShare's SQLite database files.
+		DatabaseFileSize uint64
+		// FileSystemUsedBytes represents total bytes in use on the filesystem where
+		// PicoShare's database files are located. This represents the total of all
+		// used bytes on the filesystem, not just PicoShare.
+		FileSystemUsedBytes uint64
+		// FileSystemTotalBytes represents the total bytes available on the
+		// filesystem where PicoShare's database files are located.
 		FileSystemTotalBytes uint64
 	}
 )

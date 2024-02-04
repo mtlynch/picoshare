@@ -10,8 +10,23 @@ import (
 )
 
 type (
+	FileSystemStats struct {
+		FreeBlocks  uint64
+		TotalBlocks uint64
+		BlockSize   int64
+	}
+
+	FileSystemReader interface {
+		GetFileSystemStats(path string) (FileSystemStats, error)
+		GetFileStats(path string) (os.FileInfo, error)
+		Glob(pattern string) ([]string, error)
+	}
+
+	linuxFileSystemReader struct{}
+
 	FileSystemChecker struct {
-		dbPath string
+		dbPath   string
+		fsReader FileSystemReader
 	}
 
 	FileSystemUsage struct {
@@ -25,8 +40,32 @@ type (
 	}
 )
 
+func (r linuxFileSystemReader) GetFileSystemStats(path string) (FileSystemStats, error) {
+	var stat unix.Statfs_t
+	if err := unix.Statfs(path, &stat); err != nil {
+		return FileSystemStats{}, err
+	}
+
+	return FileSystemStats{
+		FreeBlocks:  stat.Bfree,
+		TotalBlocks: stat.Blocks,
+		BlockSize:   stat.Bsize,
+	}, nil
+}
+
+func (r linuxFileSystemReader) GetFileStats(path string) (os.FileInfo, error) {
+	return os.Stat(path)
+}
+
+func (r linuxFileSystemReader) Glob(pattern string) ([]string, error) {
+	return filepath.Glob(pattern)
+}
+
 func NewFileSystemChecker(dbPath string) FileSystemChecker {
-	return FileSystemChecker{dbPath}
+	return FileSystemChecker{
+		dbPath:   dbPath,
+		fsReader: linuxFileSystemReader{},
+	}
 }
 
 func (fsc FileSystemChecker) MeasureUsage() (PicoShareUsage, error) {
@@ -50,17 +89,17 @@ func (fsc FileSystemChecker) MeasureUsage() (PicoShareUsage, error) {
 }
 
 func (fsc FileSystemChecker) measureWholeFilesystem() (FileSystemUsage, error) {
-	var stat unix.Statfs_t
-	if err := unix.Statfs(fsc.dbPath, &stat); err != nil {
-		return FileSystemUsage{}, err
-	}
-
-	blockSize := big.NewInt(stat.Bsize)
-	freeBlocks, err := uint64ToBigInt(stat.Bfree)
+	fsStats, err := fsc.fsReader.GetFileSystemStats(fsc.dbPath)
 	if err != nil {
 		return FileSystemUsage{}, err
 	}
-	totalBlocks, err := uint64ToBigInt(stat.Blocks)
+
+	blockSize := big.NewInt(fsStats.BlockSize)
+	freeBlocks, err := uint64ToBigInt(fsStats.FreeBlocks)
+	if err != nil {
+		return FileSystemUsage{}, err
+	}
+	totalBlocks, err := uint64ToBigInt(fsStats.TotalBlocks)
 	if err != nil {
 		return FileSystemUsage{}, err
 	}
