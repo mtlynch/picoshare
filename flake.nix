@@ -7,6 +7,9 @@
     # 1.21.1 release
     go_dep.url = "github:NixOS/nixpkgs/78058d810644f5ed276804ce7ea9e82d92bee293";
 
+    # 3.44.2 release
+    sqlite_dep.url = "github:NixOS/nixpkgs/5ad9903c16126a7d949101687af0aa589b1d7d3d";
+
     # 20.6.1 release
     nodejs_dep.url = "github:NixOS/nixpkgs/78058d810644f5ed276804ce7ea9e82d92bee293";
 
@@ -26,10 +29,11 @@
     litestream_dep.url = "github:NixOS/nixpkgs/9d757ec498666cc1dcc6f2be26db4fd3e1e9ab37";
   };
 
-  outputs = { self, flake-utils, go_dep, nodejs_dep, shellcheck_dep, sqlfluff_dep, playwright_dep, flyctl_dep, litestream_dep }@inputs :
+  outputs = { self, flake-utils, go_dep, sqlite_dep, nodejs_dep, shellcheck_dep, sqlfluff_dep, playwright_dep, flyctl_dep, litestream_dep }@inputs :
     flake-utils.lib.eachDefaultSystem (system:
     let
       go_dep = inputs.go_dep.legacyPackages.${system};
+      sqlite_dep = inputs.sqlite_dep.legacyPackages.${system};
       nodejs_dep = inputs.nodejs_dep.legacyPackages.${system};
       shellcheck_dep = inputs.shellcheck_dep.legacyPackages.${system};
       sqlfluff_dep = inputs.sqlfluff_dep.legacyPackages.${system};
@@ -49,6 +53,7 @@
           go_dep.godef
           go_dep.golint
           go_dep.go_1_21
+          sqlite_dep.sqlite
           nodejs_dep.nodejs_20
           shellcheck_dep.shellcheck
           sqlfluff_dep.sqlfluff
@@ -70,6 +75,7 @@
           echo "litestream" "$(litestream version)"
           echo "node" "$(node --version)"
           echo "npm" "$(npm --version)"
+          echo "sqlite" "$(sqlite3 --version | cut -d ' ' -f 1-2)"
           go version
         '';
       };
