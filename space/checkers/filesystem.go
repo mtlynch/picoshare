@@ -1,6 +1,8 @@
 package checkers
 
 import (
+	"errors"
+	"math/big"
 	"os"
 	"path/filepath"
 
@@ -52,11 +54,33 @@ func (fsc FileSystemChecker) measureWholeFilesystem() (FileSystemUsage, error) {
 	if err := unix.Statfs(fsc.dbPath, &stat); err != nil {
 		return FileSystemUsage{}, err
 	}
-	availableBytes := stat.Bfree * uint64(stat.Bsize)
-	totalBytes := stat.Blocks * uint64(stat.Bsize)
+
+	blockSize := big.NewInt(stat.Bsize)
+	freeBlocks, err := uint64ToBigInt(stat.Bfree)
+	if err != nil {
+		return FileSystemUsage{}, err
+	}
+	totalBlocks, err := uint64ToBigInt(stat.Blocks)
+	if err != nil {
+		return FileSystemUsage{}, err
+	}
+
+	bAvailableBytes := big.NewInt(0).Mul(freeBlocks, blockSize)
+	bTotalBytes := big.NewInt(0).Mul(totalBlocks, blockSize)
+	bUsedBytes := big.NewInt(0).Sub(bTotalBytes, bAvailableBytes)
+
+	usedBytes, err := bigIntToUint64(bUsedBytes)
+	if err != nil {
+		return FileSystemUsage{}, err
+	}
+
+	totalBytes, err := bigIntToUint64(bTotalBytes)
+	if err != nil {
+		return FileSystemUsage{}, err
+	}
 
 	return FileSystemUsage{
-		UsedBytes:  totalBytes - availableBytes,
+		UsedBytes:  usedBytes,
 		TotalBytes: totalBytes,
 	}, nil
 }
@@ -69,16 +93,18 @@ func (fsc FileSystemChecker) measureDbFileUsage() (uint64, error) {
 		return 0, err
 	}
 
-	var totalSize uint64
+	totalSize := big.NewInt(0)
 	for _, f := range matches {
 		s, err := os.Stat(f)
 		if err != nil {
 			return 0, err
 		}
-		// TODO: Check negative.
-		// TODO: Check overflow.
-		totalSize += uint64(s.Size())
+		if s.Size() < 0 {
+			return 0, errors.New("file size can't be negative")
+		}
+		bs := big.NewInt(s.Size())
+		totalSize = totalSize.Add(totalSize, bs)
 	}
 
-	return totalSize, nil
+	return bigIntToUint64(totalSize)
 }
