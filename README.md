@@ -143,3 +143,16 @@ Due to time limitations, I keep PicoShare's scope limited to only the features t
 PicoShare is easy to deploy to cloud hosting platforms:
 
 - [fly.io](docs/deployment/fly.io.md)
+
+## Tips and tricks
+
+### Reclaiming reserved database space
+
+Some users find it surprising that when they delete files from PicoShare, they don't gain back free space on their filesystem.
+
+When you delete files, PicoShare reserves the space for future uploads. If you'd like to reduce PicoShare's usage of your filesystem, you can manually force PicoShare to give up the space by performing the following steps:
+
+1. Shut down PicoShare.
+1. Run `sqlite3 data/store.db 'VACUUM'` where `data/store.db` is the path to your PicoShare database.
+
+You should find that the `data/store.db` should shrink in file size, as it relinquishes the space dedicated to previously deleted files. If you start PicoShare again, the System Information screen will show the smaller size of PicoShare files.

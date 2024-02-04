@@ -560,8 +560,6 @@ func (s Server) systemInformationGet() http.HandlerFunc {
 			return
 		}
 
-		log.Printf("space=%+v", space) // DEBUG
-
 		if err := renderTemplate(w, "system-information.html", struct {
 			commonProps
 			DataBytes         uint64
