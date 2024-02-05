@@ -62,9 +62,13 @@ func (r linuxFileSystemReader) Glob(pattern string) ([]string, error) {
 }
 
 func NewFileSystemChecker(dbPath string) FileSystemChecker {
+	return NewFileSystemCheckerWithReader(dbPath, linuxFileSystemReader{})
+}
+
+func NewFileSystemCheckerWithReader(dbPath string, fsReader FileSystemReader) FileSystemChecker {
 	return FileSystemChecker{
 		dbPath:   dbPath,
-		fsReader: linuxFileSystemReader{},
+		fsReader: fsReader,
 	}
 }
 
