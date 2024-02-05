@@ -3,6 +3,7 @@ package checkers_test
 import (
 	"errors"
 	"log"
+	"math"
 	"path/filepath"
 	"testing"
 
@@ -121,6 +122,30 @@ func TestMeasureUsage(t *testing.T) {
 				},
 			},
 			errExpected: checkers.ErrNegativeFileSize,
+		},
+		{
+			description: "returns error when file sizes would cause integer overflow",
+			fsStats: checkers.FileSystemStats{
+				FreeBlocks:  10,
+				TotalBlocks: 30,
+				BlockSize:   5,
+			},
+			fsStatsErr: nil,
+			fs: mockFileSystem{
+				"/dummy/store.db":      mockFileSizer{math.MaxInt64},
+				"/dummy/store.db-shm":  mockFileSizer{3},
+				"/dummy/store.db-wal":  mockFileSizer{2},
+				"/dummy/other-file.db": mockFileSizer{200},
+			},
+			dbPath: "/dummy/store.db",
+			usageExpected: checkers.PicoShareUsage{
+				PicoShareDbFileSize: 55,
+				FileSystemUsage: checkers.FileSystemUsage{
+					UsedBytes:  100,
+					TotalBytes: 150,
+				},
+			},
+			errExpected: checkers.ErrSizeOverflow,
 		},
 	} {
 		t.Run(tt.description, func(t *testing.T) {
