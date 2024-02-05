@@ -98,6 +98,30 @@ func TestMeasureUsage(t *testing.T) {
 			usageExpected: checkers.PicoShareUsage{},
 			errExpected:   errDummyFsStats,
 		},
+		{
+			description: "returns error when filesystem claims files have negative sizes",
+			fsStats: checkers.FileSystemStats{
+				FreeBlocks:  10,
+				TotalBlocks: 30,
+				BlockSize:   5,
+			},
+			fsStatsErr: nil,
+			fs: mockFileSystem{
+				"/dummy/store.db":      mockFileSizer{50},
+				"/dummy/store.db-shm":  mockFileSizer{-3},
+				"/dummy/store.db-wal":  mockFileSizer{2},
+				"/dummy/other-file.db": mockFileSizer{200},
+			},
+			dbPath: "/dummy/store.db",
+			usageExpected: checkers.PicoShareUsage{
+				PicoShareDbFileSize: 55,
+				FileSystemUsage: checkers.FileSystemUsage{
+					UsedBytes:  100,
+					TotalBytes: 150,
+				},
+			},
+			errExpected: checkers.ErrNegativeFileSize,
+		},
 	} {
 		t.Run(tt.description, func(t *testing.T) {
 			r := mockFileSystemReader{
@@ -109,6 +133,9 @@ func TestMeasureUsage(t *testing.T) {
 			usage, err := checkers.NewFileSystemCheckerWithReader(tt.dbPath, r).MeasureUsage()
 			if got, want := err, tt.errExpected; got != want {
 				t.Fatalf("err=%v, want=%v", got, want)
+			}
+			if err != nil {
+				return
 			}
 
 			if got, want := usage, tt.usageExpected; got != want {

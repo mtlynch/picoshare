@@ -44,6 +44,8 @@ type (
 	}
 )
 
+var ErrNegativeFileSize = errors.New("file size can't be negative")
+
 func (r linuxFileSystemReader) GetFileSystemStats(path string) (FileSystemStats, error) {
 	var stat unix.Statfs_t
 	if err := unix.Statfs(path, &stat); err != nil {
@@ -147,7 +149,7 @@ func (fsc FileSystemChecker) measureDbFileUsage() (uint64, error) {
 			return 0, err
 		}
 		if s.Size() < 0 {
-			return 0, errors.New("file size can't be negative")
+			return 0, ErrNegativeFileSize
 		}
 		bs := big.NewInt(s.Size())
 		totalSize = totalSize.Add(totalSize, bs)
