@@ -113,15 +113,9 @@ func TestMeasureUsage(t *testing.T) {
 				"/dummy/store.db-wal":  mockFileSizer{2},
 				"/dummy/other-file.db": mockFileSizer{200},
 			},
-			dbPath: "/dummy/store.db",
-			usageExpected: checkers.PicoShareUsage{
-				PicoShareDbFileSize: 55,
-				FileSystemUsage: checkers.FileSystemUsage{
-					UsedBytes:  100,
-					TotalBytes: 150,
-				},
-			},
-			errExpected: checkers.ErrNegativeFileSize,
+			dbPath:        "/dummy/store.db",
+			usageExpected: checkers.PicoShareUsage{},
+			errExpected:   checkers.ErrNegativeFileSize,
 		},
 		{
 			description: "returns error when file sizes would cause integer overflow",
@@ -137,15 +131,9 @@ func TestMeasureUsage(t *testing.T) {
 				"/dummy/store.db-wal":  mockFileSizer{2},
 				"/dummy/other-file.db": mockFileSizer{200},
 			},
-			dbPath: "/dummy/store.db",
-			usageExpected: checkers.PicoShareUsage{
-				PicoShareDbFileSize: 55,
-				FileSystemUsage: checkers.FileSystemUsage{
-					UsedBytes:  100,
-					TotalBytes: 150,
-				},
-			},
-			errExpected: checkers.ErrSizeOverflow,
+			dbPath:        "/dummy/store.db",
+			usageExpected: checkers.PicoShareUsage{},
+			errExpected:   checkers.ErrSizeOverflow,
 		},
 	} {
 		t.Run(tt.description, func(t *testing.T) {
