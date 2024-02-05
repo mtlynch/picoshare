@@ -16,9 +16,13 @@ type (
 		BlockSize   int64
 	}
 
+	FileSizer interface {
+		Size() int64
+	}
+
 	FileSystemReader interface {
 		GetFileSystemStats(path string) (FileSystemStats, error)
-		GetFileStats(path string) (os.FileInfo, error)
+		FileSize(path string) (FileSizer, error)
 		Glob(pattern string) ([]string, error)
 	}
 
@@ -53,7 +57,7 @@ func (r linuxFileSystemReader) GetFileSystemStats(path string) (FileSystemStats,
 	}, nil
 }
 
-func (r linuxFileSystemReader) GetFileStats(path string) (os.FileInfo, error) {
+func (r linuxFileSystemReader) FileSize(path string) (FileSizer, error) {
 	return os.Stat(path)
 }
 
@@ -75,7 +79,7 @@ func NewFileSystemCheckerWithReader(dbPath string, fsReader FileSystemReader) Fi
 func (fsc FileSystemChecker) MeasureUsage() (PicoShareUsage, error) {
 	fsu, err := fsc.measureWholeFilesystem()
 	if err != nil {
-		return PicoShareUsage{}, nil
+		return PicoShareUsage{}, err
 	}
 
 	dbFilesSize, err := fsc.measureDbFileUsage()
@@ -131,14 +135,14 @@ func (fsc FileSystemChecker) measureWholeFilesystem() (FileSystemUsage, error) {
 func (fsc FileSystemChecker) measureDbFileUsage() (uint64, error) {
 	// SQLite includes the .db file as well .db-shm and .db-wal.
 	dbFilePattern := fsc.dbPath + "*"
-	matches, err := filepath.Glob(dbFilePattern)
+	matches, err := fsc.fsReader.Glob(dbFilePattern)
 	if err != nil {
 		return 0, err
 	}
 
 	totalSize := big.NewInt(0)
 	for _, f := range matches {
-		s, err := os.Stat(f)
+		s, err := fsc.fsReader.FileSize(f)
 		if err != nil {
 			return 0, err
 		}
