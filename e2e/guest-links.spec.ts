@@ -133,3 +133,23 @@ test("files uploaded through guest link remain accessible after guest link is de
 
   await expect(page.locator("body")).toHaveText("uploaded by a guest user");
 });
+
+test("invalid options on guest link generate error message", async ({
+  page,
+}) => {
+  await login(page);
+
+  await page.getByRole("menuitem", { name: "Guest Links" }).click();
+
+  await page.getByRole("button", { name: "Create new" }).click();
+
+  await expect(page).toHaveURL("/guest-links/new");
+  await page.locator("#label").fill("A".repeat(5000));
+  await page.getByRole("button", { name: "Create" }).click();
+
+  // We should still be on the same page.
+  await expect(page).toHaveURL("/guest-links/new");
+
+  // There should be an error message
+  await expect(page.getByText("Invalid request: label too long")).toBeVisible();
+});
