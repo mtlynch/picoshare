@@ -292,9 +292,7 @@ workflows:
             - check_whitespace
             - check_bash
             - check_frontend
-            - test_go
             - build_backend
-            - e2e
           filters:
             branches:
               only: live-demo2
