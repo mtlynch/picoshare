@@ -59,8 +59,8 @@
       <ul>
         <li>
           <strong>Upload data</strong>:
-          {{ formatFileSize .DataBytes }}
-          ({{ percentage .DataBytes .UsedBytes }})
+          {{ formatFileSize .TotalServingBytes }}
+          ({{ percentage .TotalServingBytes .UsedBytes }})
         </li>
         <li>
           <strong>PicoShare files</strong>:

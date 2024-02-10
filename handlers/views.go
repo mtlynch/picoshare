@@ -562,7 +562,7 @@ func (s Server) systemInformationGet() http.HandlerFunc {
 
 		if err := renderTemplate(w, "system-information.html", struct {
 			commonProps
-			DataBytes         uint64
+			TotalServingBytes uint64
 			DatabaseFileBytes uint64
 			UsedBytes         uint64
 			TotalBytes        uint64
@@ -570,7 +570,7 @@ func (s Server) systemInformationGet() http.HandlerFunc {
 			Version           string
 		}{
 			commonProps:       makeCommonProps("PicoShare - System Information", r.Context()),
-			DataBytes:         spaceUsage.DataSize,
+			TotalServingBytes: spaceUsage.DataSize,
 			DatabaseFileBytes: spaceUsage.DatabaseFileSize,
 			UsedBytes:         spaceUsage.FileSystemUsedBytes,
 			TotalBytes:        spaceUsage.FileSystemTotalBytes,
