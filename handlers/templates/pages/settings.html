@@ -92,10 +92,10 @@
           .catch((error) => {
             document.getElementById("error-message").innerText = error;
             showElement(errorContainer);
-            enableElement(saveBtn);
           })
           .finally(() => {
             hideElement(progressSpinner);
+            enableElement(saveBtn);
           });
       });
   </script>
