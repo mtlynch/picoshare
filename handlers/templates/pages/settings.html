@@ -98,6 +98,12 @@
             hideElement(progressSpinner);
           });
       });
+
+    document
+      .querySelector("#error .delete")
+      .addEventListener("click", (evt) => {
+        hideElement(errorContainer);
+      });
   </script>
 {{ end }}
 
