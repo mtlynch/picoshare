@@ -92,8 +92,8 @@ func TestEntryPost(t *testing.T) {
 		},
 	} {
 		t.Run(tt.description, func(t *testing.T) {
-			store := test_sqlite.New()
-			s := handlers.New(mockAuthenticator{}, &store, nilSpaceChecker, nilGarbageCollector)
+			dataStore := test_sqlite.New()
+			s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceChecker, nilGarbageCollector)
 
 			formData, contentType := createMultipartFormBody(tt.filename, tt.note, bytes.NewBuffer([]byte(tt.contents)))
 
@@ -121,7 +121,7 @@ func TestEntryPost(t *testing.T) {
 				t.Fatalf("response is not valid JSON: %v", w.Body.String())
 			}
 
-			entry, err := store.GetEntry(picoshare.EntryID(response.ID))
+			entry, err := dataStore.GetEntry(picoshare.EntryID(response.ID))
 			if err != nil {
 				t.Fatalf("failed to get expected entry %v from data store: %v", response.ID, err)
 			}
