@@ -17,6 +17,9 @@ type (
 	}
 
 	Usage struct {
+		// TotalServingBytes represents the sum total of the bytes of file data that
+		// PicoShare has of file uploads in the database. This is just file bytes
+		// and does not include PicoShare-specific metadata about the files.
 		TotalServingBytes uint64
 		// DatabaseFileSize represents the total number of bytes on the filesystem
 		// dedicated to storing PicoShare's SQLite database files.
