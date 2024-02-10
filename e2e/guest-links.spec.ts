@@ -133,3 +133,21 @@ test("files uploaded through guest link remain accessible after guest link is de
 
   await expect(page.locator("body")).toHaveText("uploaded by a guest user");
 });
+
+test("invalid options on guest link generate error message", async ({
+  page,
+}) => {
+  await login(page);
+
+  await page.getByRole("menuitem", { name: "Guest Links" }).click();
+
+  await page.getByRole("button", { name: "Create new" }).click();
+
+  await expect(page).toHaveURL("/guest-links/new");
+  await page.locator("#file-upload-limit").fill("99999999999999999999999999");
+  await page.getByRole("button", { name: "Create" }).click();
+
+  await expect(page).toHaveURL("/guest-links/new");
+
+  // TODO: Finish this.
+});
