@@ -144,10 +144,12 @@ test("invalid options on guest link generate error message", async ({
   await page.getByRole("button", { name: "Create new" }).click();
 
   await expect(page).toHaveURL("/guest-links/new");
-  await page.locator("#file-upload-limit").fill("99999999999999999999999999");
+  await page.locator("#label").fill("A".repeat(5000));
   await page.getByRole("button", { name: "Create" }).click();
 
+  // We should still be on the same page.
   await expect(page).toHaveURL("/guest-links/new");
 
-  // TODO: Finish this.
+  // There should be an error message
+  await expect(page.getByText("Invalid request: label too long")).toBeVisible();
 });

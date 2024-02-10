@@ -4,12 +4,19 @@
 {{ define "script-tags" }}
   <script type="module" nonce="{{ .CspNonce }}">
     import { guestLinkNew } from "/js/controllers/guestLinks.js";
+    import { showElement, hideElement } from "/js/lib/bulma.js";
+    import { enableElement, disableElement } from "/js/lib/html.js";
 
     const labelInput = document.getElementById("label");
     const expirationSelect = document.getElementById("expiration-select");
     const maxFileBytesInput = document.getElementById("max-file-size");
     const fileUploadLimitInput = document.getElementById("file-upload-limit");
     const createLinkForm = document.getElementById("create-guest-link-form");
+    const createBtn = document.querySelector(
+      "#create-guest-link-form .button[type='submit']"
+    );
+    const errorContainer = document.getElementById("error");
+    const progressSpinner = document.getElementById("progress-spinner");
 
     function megabytesToBytes(megabytes) {
       return megabytes * 1024 * 1024;
@@ -30,16 +37,38 @@
 
     createLinkForm.addEventListener("submit", (evt) => {
       evt.preventDefault();
+
+      disableElement(createBtn);
+      showElement(progressSpinner);
+      hideElement(errorContainer);
+
       const guestLink = guestLinkFromInputs();
       guestLinkNew(
         guestLink.label,
         guestLink.expirationTime,
         guestLink.maxFileBytes,
         guestLink.maxFileUploads
-      ).then(() => {
-        document.location = "/guest-links";
-      });
+      )
+        .then(() => {
+          document.location = "/guest-links";
+        })
+        .catch((error) => {
+          console.log("caught error!");
+          console.log(error);
+          document.getElementById("error-message").innerText = error;
+          showElement(errorContainer);
+        })
+        .finally(() => {
+          hideElement(progressSpinner);
+          enableElement(createBtn);
+        });
     });
+
+    document
+      .querySelector("#error .delete")
+      .addEventListener("click", (evt) => {
+        hideElement(errorContainer);
+      });
   </script>
 {{ end }}
 
@@ -127,6 +156,20 @@
       </div>
     </div>
   </form>
+
+  <div class="fa-3x is-hidden" id="progress-spinner">
+    <i class="fas fa-spinner fa-spin"></i>
+  </div>
+
+  <div id="error" class="is-hidden my-5">
+    <article class="message is-danger">
+      <div class="message-header">
+        Error
+        <button class="delete" aria-label="delete"></button>
+      </div>
+      <div id="error-message" class="message-body">Placeholder error.</div>
+    </article>
+  </div>
 {{ end }}
 
 {{ template "base.html" }}
