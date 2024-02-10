@@ -38,7 +38,6 @@ func (s Server) entryGet() http.HandlerFunc {
 		clientIp, err := clientIPFromRemoteAddr(r.RemoteAddr)
 		if err != nil {
 			log.Printf("failed to parse remote addr: %v -> %v", r.RemoteAddr, err)
-			http.Error(w, "unrecognized source IP format", http.StatusBadRequest)
 			http.Error(w, "Unrecognized source IP format", http.StatusBadRequest)
 			return
 		}
