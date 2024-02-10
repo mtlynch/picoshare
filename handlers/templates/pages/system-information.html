@@ -53,19 +53,21 @@
 
   <ul>
     <li>
-      <strong>Used space</strong>:
+      <strong>Server disk usage</strong>:
       {{ formatFileSize .UsedBytes }}
-      ({{ percentage .UsedBytes .TotalBytes }})
+      ({{ percentage .UsedBytes .TotalBytes }}) used of
+      {{ formatFileSize .TotalBytes }} total
+    </li>
+    <li>
+      <strong>PicoShare usage</strong>
       <ul>
         <li>
           <strong>Upload data</strong>:
           {{ formatFileSize .TotalServingBytes }}
-          ({{ percentage .TotalServingBytes .UsedBytes }})
         </li>
         <li>
-          <strong>PicoShare files</strong>:
+          <strong>Database files</strong>:
           {{ formatFileSize .DatabaseFileBytes }}
-          ({{ percentage .DatabaseFileBytes .UsedBytes }})
           <a id="file-size-information" href="#"
             ><span class="icon has-text-info">
               <i class="fas fa-info-circle"></i> </span
@@ -73,18 +75,18 @@
         </li>
       </ul>
     </li>
-
-    <li><strong>Total disk space</strong>: {{ formatFileSize .TotalBytes }}</li>
   </ul>
 
   <div class="notification is-info is-light is-hidden">
     <button class="delete"></button>
     <p>
-      PicoShare occupies more disk space than the sum total of its file uploads.
+      PicoShare's database files occupy more disk space than the sum total of
+      PicoShare's file uploads.
     </p>
     <p>
-      When you delete files from PicoShare, it retains the space and reuses it
-      to store future uploads. To manually reclaim reserved disk space, see the
+      After files are deleted, PicoShare retains the space and reuses it to
+      store future uploads. To manually shrink PicoShare's database files down
+      to the total size of the upload data, see the
       <a
         href="https://github.com/mtlynch/picoshare?tab=readme-ov-file#reclaiming-reserved-database-space"
         >README</a
