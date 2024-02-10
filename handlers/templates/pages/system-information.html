@@ -16,6 +16,24 @@
 {{ end }}
 
 {{ define "script-tags" }}
+  <script type="module" nonce="{{ .CspNonce }}">
+    import { toggleShowElement, hideElement } from "/js/lib/bulma.js";
+
+    const sizeDeltaNotification = document.querySelector(".notification");
+
+    document
+      .getElementById("file-size-information")
+      .addEventListener("click", (evt) => {
+        toggleShowElement(sizeDeltaNotification);
+      });
+
+    document.querySelectorAll(".notification .delete").forEach((el) => {
+      el.addEventListener("click", (evt) => {
+        const notificationEl = evt.target.parentElement;
+        hideElement(notificationEl);
+      });
+    });
+  </script>
 {{ end }}
 
 {{ define "custom-elements" }}
@@ -38,18 +56,39 @@
       <strong>Used space</strong>:
       {{ formatFileSize .UsedBytes }}
       ({{ percentage .UsedBytes .TotalBytes }})
+      <ul>
+        <li>
+          <strong>Upload data</strong>:
+          {{ formatFileSize .TotalServingBytes }}
+          ({{ percentage .TotalServingBytes .UsedBytes }})
+        </li>
+        <li>
+          <strong>PicoShare files</strong>:
+          {{ formatFileSize .DatabaseFileBytes }}
+          ({{ percentage .DatabaseFileBytes .UsedBytes }})
+          <a id="file-size-information" href="#"
+            ><span class="icon has-text-info">
+              <i class="fas fa-info-circle"></i> </span
+          ></a>
+        </li>
+      </ul>
     </li>
+
     <li><strong>Total disk space</strong>: {{ formatFileSize .TotalBytes }}</li>
   </ul>
 
-  <div class="notification is-info is-light">
+  <div class="notification is-info is-light is-hidden">
+    <button class="delete"></button>
     <p>
-      <strong>Note</strong>: Your used space may be higher than the sum total of
-      your files.
+      PicoShare occupies more disk space than the sum total of its file uploads.
     </p>
     <p>
-      When you delete files, PicoShare retains the space and reuses it to store
-      future uploads.
+      When you delete files from PicoShare, it retains the space and reuses it
+      to store future uploads. To manually reclaim reserved disk space, see the
+      <a
+        href="https://github.com/mtlynch/picoshare?tab=readme-ov-file#reclaiming-reserved-database-space"
+        >README</a
+      >.
     </p>
   </div>
 

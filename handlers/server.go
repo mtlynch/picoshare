@@ -10,7 +10,7 @@ import (
 
 type (
 	SpaceChecker interface {
-		Check() (space.CheckResult, error)
+		Check() (space.Usage, error)
 	}
 
 	Server struct {

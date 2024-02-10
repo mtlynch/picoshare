@@ -39,7 +39,7 @@ func main() {
 
 	store := sqlite.New(*dbPath, isLitestreamEnabled())
 
-	spaceChecker := space.NewChecker(dbDir)
+	spaceChecker := space.NewChecker(*dbPath, &store)
 
 	collector := garbagecollect.NewCollector(store)
 	gc := garbagecollect.NewScheduler(&collector, 7*time.Hour)
