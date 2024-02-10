@@ -42,7 +42,7 @@ func main() {
 	spaceChecker := space.NewChecker(*dbPath, &store)
 
 	collector := garbagecollect.NewCollector(store)
-	gc := garbagecollect.NewScheduler(&collector, 7*time.Hour)
+	gc := garbagecollect.NewScheduler(&collector, 1*time.Minute)
 	gc.StartAsync()
 
 	server := handlers.New(authenticator, &store, spaceChecker, &collector)

@@ -19,8 +19,8 @@ func Expiration(expirationRaw string) (picoshare.ExpirationTime, error) {
 		return picoshare.ExpirationTime{}, ErrExpirationUnrecognizedFormat
 	}
 
-	if time.Until(expiration) < (time.Hour * 1) {
-		return picoshare.ExpirationTime{}, ErrExpirationTooSoon
+	if time.Until(expiration) > (time.Minute * 6) {
+		return picoshare.ExpirationTime{}, errors.New("expire time must be less than five minutes")
 	}
 
 	return picoshare.ExpirationTime(expiration), nil

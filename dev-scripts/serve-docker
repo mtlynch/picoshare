@@ -22,7 +22,7 @@ set +x
 . .env.dev
 set -x
 
-PS_SHARED_SECRET=somepassword
+PS_SHARED_SECRET=demo
 
 docker rm -f picoshare || true
 

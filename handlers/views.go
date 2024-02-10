@@ -151,12 +151,27 @@ func (s Server) fileIndexGet() http.HandlerFunc {
 		sort.Slice(em, func(i, j int) bool {
 			return em[i].Uploaded.After(em[j].Uploaded)
 		})
+
+		// Only show uploads that match the client's IP.
+		clientIp, err := clientIPFromRemoteAddr(r.RemoteAddr)
+		if err != nil {
+			log.Printf("failed to parse remote addr: %v -> %v", r.RemoteAddr, err)
+			http.Error(w, "Unrecognized source IP format", http.StatusBadRequest)
+			return
+		}
+		emFiltered := []picoshare.UploadMetadata{}
+		for _, metadata := range em {
+			if metadata.UploaderIP.Equal(clientIp) {
+				emFiltered = append(emFiltered, metadata)
+			}
+		}
+
 		if err := renderTemplate(w, "file-index.html", struct {
 			commonProps
 			Files []picoshare.UploadMetadata
 		}{
 			commonProps: makeCommonProps("PicoShare - Files", r.Context()),
-			Files:       em,
+			Files:       emFiltered,
 		}, template.FuncMap{
 			"formatDate": func(t time.Time) string {
 				return t.Format("2006-01-02")
@@ -425,22 +440,9 @@ func (s Server) uploadGet() http.HandlerFunc {
 			Expiration   time.Time
 			IsDefault    bool
 		}
-		expirationOptions := []expirationOption{}
-		for _, lto := range lifetimeOptions {
-			friendlyName := lto.Lifetime.FriendlyName()
-			expiration := time.Now().Add(lto.Lifetime.Duration())
-			if lto.Lifetime.Equal(picoshare.FileLifetimeInfinite) {
-				friendlyName = "Never"
-				expiration = time.Time(picoshare.NeverExpire)
-			}
-			expirationOptions = append(expirationOptions, expirationOption{
-				FriendlyName: friendlyName,
-				Expiration:   expiration,
-				IsDefault:    lto.IsDefault,
-			})
+		expirationOptions := []expirationOption{
+			{"5 minutes", time.Now().Add(5 * time.Minute), false},
 		}
-
-		expirationOptions = append(expirationOptions, expirationOption{"Custom", time.Time{}, false})
 
 		if err := renderTemplate(w, "upload.html", struct {
 			commonProps

@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"io"
 	"log"
+	"net"
 
 	"github.com/mtlynch/picoshare/v2/picoshare"
 	"github.com/mtlynch/picoshare/v2/store"
@@ -20,6 +21,7 @@ func (s Store) GetEntriesMetadata() ([]picoshare.UploadMetadata, error) {
 		entries.content_type AS content_type,
 		entries.upload_time AS upload_time,
 		entries.expiration_time AS expiration_time,
+		entries.uploader_ip AS uploader_ip,
 		sizes.file_size AS file_size
 	FROM
 		entries
@@ -45,8 +47,9 @@ func (s Store) GetEntriesMetadata() ([]picoshare.UploadMetadata, error) {
 		var contentType string
 		var uploadTimeRaw string
 		var expirationTimeRaw string
+		var uploaderIP string
 		var fileSize uint64
-		if err = rows.Scan(&id, &filename, &note, &contentType, &uploadTimeRaw, &expirationTimeRaw, &fileSize); err != nil {
+		if err = rows.Scan(&id, &filename, &note, &contentType, &uploadTimeRaw, &expirationTimeRaw, &uploaderIP, &fileSize); err != nil {
 			return []picoshare.UploadMetadata{}, err
 		}
 
@@ -67,6 +70,7 @@ func (s Store) GetEntriesMetadata() ([]picoshare.UploadMetadata, error) {
 			ContentType: picoshare.ContentType(contentType),
 			Uploaded:    ut,
 			Expires:     picoshare.ExpirationTime(et),
+			UploaderIP:  net.ParseIP(uploaderIP),
 			Size:        fileSize,
 		})
 	}
@@ -97,6 +101,7 @@ func (s Store) GetEntryMetadata(id picoshare.EntryID) (picoshare.UploadMetadata,
 	var contentType string
 	var uploadTimeRaw string
 	var expirationTimeRaw string
+	var uploaderIP string
 	var fileSize uint64
 	var guestLinkID *picoshare.GuestLinkID
 	err := s.ctx.QueryRow(`
@@ -106,6 +111,7 @@ func (s Store) GetEntryMetadata(id picoshare.EntryID) (picoshare.UploadMetadata,
 		entries.content_type AS content_type,
 		entries.upload_time AS upload_time,
 		entries.expiration_time AS expiration_time,
+		entries.uploader_ip AS uploader_ip,
 		sizes.file_size AS file_size,
 		entries.guest_link_id AS guest_link_id
 	FROM
@@ -121,7 +127,7 @@ func (s Store) GetEntryMetadata(id picoshare.EntryID) (picoshare.UploadMetadata,
 				id
 		) sizes ON entries.id = sizes.id
 	WHERE
-		entries.id=?`, id).Scan(&filename, &note, &contentType, &uploadTimeRaw, &expirationTimeRaw, &fileSize, &guestLinkID)
+		entries.id=?`, id).Scan(&filename, &note, &contentType, &uploadTimeRaw, &expirationTimeRaw, &uploaderIP, &fileSize, &guestLinkID)
 	if err == sql.ErrNoRows {
 		return picoshare.UploadMetadata{}, store.EntryNotFoundError{ID: id}
 	} else if err != nil {
@@ -154,6 +160,7 @@ func (s Store) GetEntryMetadata(id picoshare.EntryID) (picoshare.UploadMetadata,
 		ContentType: picoshare.ContentType(contentType),
 		Uploaded:    ut,
 		Expires:     picoshare.ExpirationTime(et),
+		UploaderIP:  net.ParseIP(uploaderIP),
 		Size:        fileSize,
 	}, nil
 }
@@ -186,9 +193,10 @@ func (s Store) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) 
 		note,
 		content_type,
 		upload_time,
-		expiration_time
+		expiration_time,
+		uploader_ip
 	)
-	VALUES(?,?,?,?,?,?,?)`,
+	VALUES(?,?,?,?,?,?,?,?)`,
 		metadata.ID,
 		metadata.GuestLink.ID,
 		metadata.Filename,
@@ -196,6 +204,7 @@ func (s Store) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) 
 		metadata.ContentType,
 		formatTime(metadata.Uploaded),
 		formatExpirationTime(metadata.Expires),
+		metadata.UploaderIP.String(),
 	)
 	if err != nil {
 		log.Printf("insert into entries table failed, aborting transaction: %v", err)

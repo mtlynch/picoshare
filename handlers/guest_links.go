@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/mtlynch/picoshare/v2/handlers/parse"
@@ -28,22 +27,7 @@ var guestLinkIDCharacters = []rune("abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTU
 
 func (s Server) guestLinksPost() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		gl, err := guestLinkFromRequest(r)
-		if err != nil {
-			http.Error(w, fmt.Sprintf("Invalid request: %v", err), http.StatusBadRequest)
-			return
-		}
-
-		gl.ID = generateGuestLinkID()
-		gl.Created = time.Now()
-
-		if err := s.getDB(r).InsertGuestLink(gl); err != nil {
-			log.Printf("failed to save guest link: %v", err)
-			http.Error(w, fmt.Sprintf("Failed to save guest link: %v", err), http.StatusInternalServerError)
-			return
-		}
-
-		respondJSON(w, GuestLinkPostResponse{ID: string(gl.ID)})
+		http.Error(w, "Guest links are disabled in demo mode", http.StatusForbidden)
 	}
 }
 

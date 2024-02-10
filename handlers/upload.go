@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"time"
@@ -51,7 +52,7 @@ func (s Server) entryPost() http.HandlerFunc {
 		// We're intentionally not limiting the size of the request because we
 		// assume that the uploading user is trusted, so they can upload files of
 		// any size they want.
-		id, err := s.insertFileFromRequest(r, expiration, picoshare.GuestLinkID(""))
+		id, err := s.insertFileFromRequest(w, r, expiration, picoshare.GuestLinkID(""))
 		if err != nil {
 			var de *dbError
 			if errors.As(err, &de) {
@@ -132,7 +133,7 @@ func (s Server) guestEntryPost() http.HandlerFunc {
 			r.Body = http.MaxBytesReader(w, r.Body, int64(*gl.MaxFileBytes))
 		}
 
-		id, err := s.insertFileFromRequest(r, picoshare.NeverExpire, guestLinkID)
+		id, err := s.insertFileFromRequest(w, r, picoshare.NeverExpire, guestLinkID)
 		if err != nil {
 			var de *dbError
 			if errors.As(err, &de) {
@@ -217,7 +218,9 @@ func parseEntryID(s string) (picoshare.EntryID, error) {
 	return picoshare.EntryID(s), nil
 }
 
-func (s Server) insertFileFromRequest(r *http.Request, expiration picoshare.ExpirationTime, guestLinkID picoshare.GuestLinkID) (picoshare.EntryID, error) {
+func (s Server) insertFileFromRequest(w http.ResponseWriter, r *http.Request, expiration picoshare.ExpirationTime, guestLinkID picoshare.GuestLinkID) (picoshare.EntryID, error) {
+	demoUploadLimit := int64(10) * 1024 * 1024 // 10 MB
+	r.Body = http.MaxBytesReader(w, r.Body, demoUploadLimit)
 	// ParseMultipartForm can go above the limit we set, so set a conservative RAM
 	// limit to avoid exhausting RAM on servers with limited resources.
 	multipartMaxMemory := mibToBytes(1)
@@ -258,6 +261,12 @@ func (s Server) insertFileFromRequest(r *http.Request, expiration picoshare.Expi
 		return picoshare.EntryID(""), errors.New("guest uploads cannot have file notes")
 	}
 
+	clientIP, err := clientIPFromRemoteAddr(r.RemoteAddr)
+	if err != nil {
+		log.Printf("failed to parse remote addr: %v -> %v", r.RemoteAddr, err)
+		return picoshare.EntryID(""), errors.New("unrecognized source IP format")
+	}
+
 	id := generateEntryID()
 	err = s.getDB(r).InsertEntry(reader,
 		picoshare.UploadMetadata{
@@ -268,8 +277,9 @@ func (s Server) insertFileFromRequest(r *http.Request, expiration picoshare.Expi
 			GuestLink: picoshare.GuestLink{
 				ID: guestLinkID,
 			},
-			Uploaded: time.Now(),
-			Expires:  expiration,
+			Uploaded:   time.Now(),
+			Expires:    expiration,
+			UploaderIP: clientIP,
 		})
 	if err != nil {
 		log.Printf("failed to save entry: %v", err)
@@ -315,4 +325,19 @@ func baseURLFromRequest(r *http.Request) string {
 		scheme = "http"
 	}
 	return fmt.Sprintf("%s://%s", scheme, r.Host)
+}
+
+func clientIPFromRemoteAddr(remoteAddr string) (net.IP, error) {
+	ip, _, err := net.SplitHostPort(remoteAddr)
+	if err != nil {
+		// If this doesn't seem to be a host:port pair, try to parse it as a
+		// standalone IP.
+		ipAddr := net.ParseIP(remoteAddr)
+		if ipAddr == nil {
+			return net.ParseIP(""), err
+		}
+		return ipAddr, nil
+	}
+
+	return net.ParseIP(ip), nil
 }

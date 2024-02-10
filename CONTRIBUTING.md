@@ -45,7 +45,7 @@ To run PicoShare locally with hot-reloading, run:
 ./dev-scripts/serve-dev
 ```
 
-The default password is `somepassword`.
+The default password is `demo`.
 
 ## Code style conventions
 

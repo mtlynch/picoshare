@@ -2,6 +2,7 @@ package picoshare
 
 import (
 	"io"
+	"net"
 	"time"
 )
 
@@ -24,6 +25,7 @@ type (
 		Expires     ExpirationTime
 		Size        uint64
 		GuestLink   GuestLink
+		UploaderIP  net.IP
 	}
 
 	DownloadRecord struct {

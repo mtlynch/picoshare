@@ -35,6 +35,19 @@ func (s Server) entryGet() http.HandlerFunc {
 			return
 		}
 
+		clientIp, err := clientIPFromRemoteAddr(r.RemoteAddr)
+		if err != nil {
+			log.Printf("failed to parse remote addr: %v -> %v", r.RemoteAddr, err)
+			http.Error(w, "unrecognized source IP format", http.StatusBadRequest)
+			http.Error(w, "Unrecognized source IP format", http.StatusBadRequest)
+			return
+		}
+		if !clientIp.Equal(entry.UploaderIP) {
+			log.Printf("error retrieving entry with id %v: %v", id, err)
+			http.Error(w, "On demo instance, you can only download from the same IP as you uploaded", http.StatusForbidden)
+			return
+		}
+
 		if entry.Filename != "" {
 			w.Header().Set("Content-Disposition", fmt.Sprintf(`filename="%s"`, entry.Filename))
 		}

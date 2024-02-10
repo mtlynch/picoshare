@@ -297,6 +297,6 @@ workflows:
             - e2e
           filters:
             branches:
-              only: master
+              only: live-demo2
             tags:
               only: /.*/
