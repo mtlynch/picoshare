@@ -2,6 +2,7 @@ package checkers
 
 import (
 	"errors"
+	"fmt"
 	"math/big"
 	"os"
 	"path/filepath"
@@ -55,7 +56,9 @@ func (r linuxFileSystemReader) GetFileSystemStats(path string) (FileSystemStats,
 	return FileSystemStats{
 		FreeBlocks:  stat.Bfree,
 		TotalBlocks: stat.Blocks,
-		BlockSize:   stat.Bsize,
+		// On some architectures, stat.Bsize is an int32 and on others it's an
+		// int64, so we make sure that we're safely converting to int64.
+		BlockSize: intToInt64(stat.Bsize),
 	}, nil
 }
 
@@ -156,4 +159,14 @@ func (fsc FileSystemChecker) measureDbFileUsage() (uint64, error) {
 	}
 
 	return bigIntToUint64(totalSize)
+}
+
+func intToInt64(v interface{}) int64 {
+	if iv, ok := v.(int32); ok {
+		return int64(iv)
+	}
+	if iv, ok := v.(int64); ok {
+		return iv
+	}
+	panic(fmt.Sprintf("unexpected type of int: %#v", v))
 }
