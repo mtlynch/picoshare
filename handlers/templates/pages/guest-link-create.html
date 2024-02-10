@@ -53,8 +53,6 @@
           document.location = "/guest-links";
         })
         .catch((error) => {
-          console.log("caught error!");
-          console.log(error);
           document.getElementById("error-message").innerText = error;
           showElement(errorContainer);
         })
