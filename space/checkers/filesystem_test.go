@@ -2,7 +2,6 @@ package checkers_test
 
 import (
 	"errors"
-	"log"
 	"math"
 	"path/filepath"
 	"testing"
@@ -31,7 +30,6 @@ func (r mockFileSystemReader) GetFileSystemStats(path string) (checkers.FileSyst
 }
 
 func (r mockFileSystemReader) FileSize(path string) (checkers.FileSizer, error) {
-	log.Printf("getting file stats for %s", path) // DEBUG
 	s, ok := r.fs[path]
 	if !ok {
 		return nil, errors.New("mock file not found")
@@ -40,7 +38,6 @@ func (r mockFileSystemReader) FileSize(path string) (checkers.FileSizer, error) 
 }
 
 func (r mockFileSystemReader) Glob(pattern string) ([]string, error) {
-	log.Printf("searching glob patterns for %s", pattern) // DEBUG
 	matches := []string{}
 	for filename := range r.fs {
 		match, err := filepath.Match(pattern, filename)
@@ -51,7 +48,6 @@ func (r mockFileSystemReader) Glob(pattern string) ([]string, error) {
 			matches = append(matches, filename)
 		}
 	}
-	log.Printf("matches: %v", matches) // DEBUG
 	return matches, nil
 }
 
