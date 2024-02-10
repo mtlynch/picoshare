@@ -51,7 +51,7 @@ func TestCheck(t *testing.T) {
 			dbUsage: 60,
 			dbErr:   nil,
 			usageExpected: space.Usage{
-				DataSize:             60,
+				TotalServingBytes:    60,
 				DatabaseFileSize:     65,
 				FileSystemUsedBytes:  70,
 				FileSystemTotalBytes: 100,

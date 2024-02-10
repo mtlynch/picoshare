@@ -570,7 +570,7 @@ func (s Server) systemInformationGet() http.HandlerFunc {
 			Version           string
 		}{
 			commonProps:       makeCommonProps("PicoShare - System Information", r.Context()),
-			TotalServingBytes: spaceUsage.DataSize,
+			TotalServingBytes: spaceUsage.TotalServingBytes,
 			DatabaseFileBytes: spaceUsage.DatabaseFileSize,
 			UsedBytes:         spaceUsage.FileSystemUsedBytes,
 			TotalBytes:        spaceUsage.FileSystemTotalBytes,

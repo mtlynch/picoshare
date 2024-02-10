@@ -17,7 +17,7 @@ type (
 	}
 
 	Usage struct {
-		DataSize uint64
+		TotalServingBytes uint64
 		// DatabaseFileSize represents the total number of bytes on the filesystem
 		// dedicated to storing PicoShare's SQLite database files.
 		DatabaseFileSize uint64
@@ -54,7 +54,7 @@ func (c Checker) Check() (Usage, error) {
 	}
 
 	return Usage{
-		DataSize:             dbTotalSize,
+		TotalServingBytes:    dbTotalSize,
 		DatabaseFileSize:     fsUsage.PicoShareDbFileSize,
 		FileSystemUsedBytes:  fsUsage.UsedBytes,
 		FileSystemTotalBytes: fsUsage.TotalBytes,
