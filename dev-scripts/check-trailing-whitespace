@@ -2,8 +2,9 @@
 
 # Check for trailing whitespace
 
-# Exit on first failing command.
+# Exit on first failure.
 set -e
+
 # Exit on unset variable.
 set -u
 

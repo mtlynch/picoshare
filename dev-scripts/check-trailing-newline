@@ -2,8 +2,9 @@
 
 # Verify that all text files end in a trailing newline.
 
-# Exit on first failing command.
+# Exit on first failure.
 set -e
+
 # Exit on unset variable.
 set -u
 
@@ -11,7 +12,6 @@ set -u
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 readonly SCRIPT_DIR
 cd "${SCRIPT_DIR}/.."
-
 
 success=0
 
