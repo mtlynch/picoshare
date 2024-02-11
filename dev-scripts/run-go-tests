@@ -7,14 +7,18 @@
 #  --full   Include slower, more exhaustive tests and capture test coverage
 #           results (outputs to .coverage.html).
 
-# Exit build script on first failure.
+# Exit on first failure.
 set -e
 
-# Echo commands to stdout.
+# Echo commands before executing them, by default to stderr.
 set -x
 
+# Fail when piped commands fail.
+set -o pipefail
+
 full_test=""
-go_test_flags=()
+# Without netgo and osusergo, compilation fails under Nix.
+go_test_flags=("-tags=netgo,osusergo,sqlite_json")
 readonly COVERAGE_FILE_RAW=".coverage.out"
 readonly COVERAGE_FILE_HTML=".coverage.html"
 if [[ "$1" = "--full" ]]; then

@@ -11,6 +11,7 @@ set -u
 BASH_SCRIPTS=()
 
 while read -r filepath; do
+  # Check shebang for bash.
   if head -n 1 "${filepath}" | grep --quiet --regexp 'bash'; then
       BASH_SCRIPTS+=("${filepath}")
   fi
@@ -18,7 +19,7 @@ done < <(git ls-files)
 
 readonly BASH_SCRIPTS
 
-# Echo commands to stdout.
+# Echo commands before executing them, by default to stderr.
 set -x
 
 shellcheck "${BASH_SCRIPTS[@]}"
