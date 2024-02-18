@@ -27,7 +27,8 @@ export async function guestLinkNew(
     .catch((error) => {
       if (error.message) {
         return Promise.reject(
-          "Failed to communicate with server: " + error.message
+          "Failed to communicate with server" +
+            (error.message ? `: ${error.message}` : ".")
         );
       }
       return Promise.reject(error);
@@ -50,7 +51,8 @@ export async function guestLinkDelete(id) {
     .catch((error) => {
       if (error.message) {
         return Promise.reject(
-          "Failed to communicate with server: " + error.message
+          "Failed to communicate with server" +
+            (error.message ? `: ${error.message}` : ".")
         );
       }
       return Promise.reject(error);
