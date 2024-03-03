@@ -127,6 +127,7 @@ jobs:
               readonly BUILD_TARGETS='linux/amd64'
             fi
             docker buildx build \
+              --build-arg "PS_VERSION=$(git describe --tags)" \
               --platform "${BUILD_TARGETS}" \
               --target=artifact \
               --output "type=local,dest=$(pwd)/bin/" \
