@@ -25,9 +25,9 @@ func (s Store) GetGuestLink(id picoshare.GuestLinkID) (picoshare.GuestLink, erro
 		LEFT JOIN
 			entries ON guest_links.id = entries.guest_link_id
 		WHERE
-			guest_links.id=?
+			guest_links.id=:id
 		GROUP BY
-			guest_links.id`, id)
+			guest_links.id`, sql.Named("id", id))
 
 	return guestLinkFromRow(row)
 }
@@ -78,8 +78,13 @@ func (s *Store) InsertGuestLink(guestLink picoshare.GuestLink) error {
 			creation_time,
 			expiration_time
 		)
-		VALUES (?,?,?,?,?,?)
-	`, guestLink.ID, guestLink.Label, guestLink.MaxFileBytes, guestLink.MaxFileUploads, formatTime(time.Now()), formatExpirationTime(guestLink.Expires)); err != nil {
+		VALUES (:id, :label, :max_file_bytes, :max_file_uploads, :creation_time, :expiration_time)
+	`, sql.Named("id", guestLink.ID),
+		sql.Named("label", guestLink.Label),
+		sql.Named("max_file_bytes", guestLink.MaxFileBytes),
+		sql.Named("max_file_uploads", guestLink.MaxFileUploads),
+		sql.Named("creation_time", formatTime(time.Now())),
+		sql.Named("expiration_time", formatExpirationTime(guestLink.Expires))); err != nil {
 		return err
 	}
 
@@ -98,7 +103,7 @@ func (s Store) DeleteGuestLink(id picoshare.GuestLinkID) error {
 	DELETE FROM
 		guest_links
 	WHERE
-		id=?`, id); err != nil {
+		id=:id`, sql.Named("id", id)); err != nil {
 		log.Printf("deleting %s from guest_links table failed: %v", id, err)
 		return err
 	}
@@ -109,7 +114,7 @@ func (s Store) DeleteGuestLink(id picoshare.GuestLinkID) error {
 	SET
 		guest_link_id = NULL
 	WHERE
-		guest_link_id = ?`, id); err != nil {
+		guest_link_id = :id`, sql.Named("id", id)); err != nil {
 		log.Printf("removing references to guest link %s from entries table failed: %v", id, err)
 		return err
 	}

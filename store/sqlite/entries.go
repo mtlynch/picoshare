@@ -121,7 +121,7 @@ func (s Store) GetEntryMetadata(id picoshare.EntryID) (picoshare.UploadMetadata,
 				id
 		) sizes ON entries.id = sizes.id
 	WHERE
-		entries.id=?`, id).Scan(&filename, &note, &contentType, &uploadTimeRaw, &expirationTimeRaw, &fileSize, &guestLinkID)
+		entries.id = :entry_id`, sql.Named("entry_id", id)).Scan(&filename, &note, &contentType, &uploadTimeRaw, &expirationTimeRaw, &fileSize, &guestLinkID)
 	if err == sql.ErrNoRows {
 		return picoshare.UploadMetadata{}, store.EntryNotFoundError{ID: id}
 	} else if err != nil {
@@ -188,14 +188,14 @@ func (s Store) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) 
 		upload_time,
 		expiration_time
 	)
-	VALUES(?,?,?,?,?,?,?)`,
-		metadata.ID,
-		metadata.GuestLink.ID,
-		metadata.Filename,
-		metadata.Note.Value,
-		metadata.ContentType,
-		formatTime(metadata.Uploaded),
-		formatExpirationTime(metadata.Expires),
+	VALUES(:entry_id, :guest_link_id, :filename, :note, :content_type, :upload_time, :expiration_time)`,
+		sql.Named("entry_id", metadata.ID),
+		sql.Named("guest_link_id", metadata.GuestLink.ID),
+		sql.Named("filename", metadata.Filename),
+		sql.Named("note", metadata.Note.Value),
+		sql.Named("content_type", metadata.ContentType),
+		sql.Named("upload_time", formatTime(metadata.Uploaded)),
+		sql.Named("expiration_time", formatExpirationTime(metadata.Expires)),
 	)
 	if err != nil {
 		log.Printf("insert into entries table failed, aborting transaction: %v", err)
@@ -211,15 +211,15 @@ func (s Store) UpdateEntryMetadata(id picoshare.EntryID, metadata picoshare.Uplo
 	res, err := s.ctx.Exec(`
 	UPDATE entries
 	SET
-		filename = ?,
-		expiration_time = ?,
-		note = ?
+		filename = :filename,
+		expiration_time = :expiration_time,
+		note = :note
 	WHERE
-		id=?`,
-		metadata.Filename,
-		formatExpirationTime(metadata.Expires),
-		metadata.Note.Value,
-		id)
+		id = :entry_id`,
+		sql.Named("filename", metadata.Filename),
+		sql.Named("expiration_time", formatExpirationTime(metadata.Expires)),
+		sql.Named("note", metadata.Note.Value),
+		sql.Named("entry_id", id))
 	if err != nil {
 		return err
 	}
@@ -247,7 +247,7 @@ func (s Store) DeleteEntry(id picoshare.EntryID) error {
 	DELETE FROM
 		entries
 	WHERE
-		id=?`, id); err != nil {
+		id = :entry_id`, sql.Named("entry_id", id)); err != nil {
 		log.Printf("delete from entries table failed, aborting transaction: %v", err)
 		return err
 	}
@@ -256,7 +256,7 @@ func (s Store) DeleteEntry(id picoshare.EntryID) error {
 	DELETE FROM
 		entries_data
 	WHERE
-		id=?`, id); err != nil {
+		id = :entry_id`, sql.Named("entry_id", id)); err != nil {
 		log.Printf("delete from entries_data table failed, aborting transaction: %v", err)
 		return err
 	}
