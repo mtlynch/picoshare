@@ -7,6 +7,7 @@ import (
 	"github.com/mtlynch/picoshare/v2/picoshare"
 )
 
+// We only store one set of settings at a time, so we used a fixed row ID.
 const settingsRowID = 1
 
 func (s Store) ReadSettings() (picoshare.Settings, error) {

@@ -7,6 +7,7 @@ import (
 	"time"
 )
 
+// Purge deletes expired entries and clears orphaned rows from the database.
 func (s Store) Purge() error {
 	log.Printf("deleting expired entries and orphaned data from database")
 	if err := s.deleteExpiredEntries(); err != nil {
@@ -62,6 +63,8 @@ func (s Store) deleteExpiredEntries() error {
 func (s Store) deleteOrphanedRows() error {
 	log.Printf("purging orphaned rows from database")
 
+	// Delete rows from entries_data if they don't reference valid rows in
+	// entries. This can happen if the entry insertion fails partway through.
 	if _, err := s.ctx.Exec(`
    	DELETE FROM
    		entries_data

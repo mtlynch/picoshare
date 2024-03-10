@@ -79,7 +79,8 @@ func (s *Store) InsertGuestLink(guestLink picoshare.GuestLink) error {
 			expiration_time
 		)
 		VALUES (:id, :label, :max_file_bytes, :max_file_uploads, :creation_time, :expiration_time)
-	`, sql.Named("id", guestLink.ID),
+	`,
+		sql.Named("id", guestLink.ID),
 		sql.Named("label", guestLink.Label),
 		sql.Named("max_file_bytes", guestLink.MaxFileBytes),
 		sql.Named("max_file_uploads", guestLink.MaxFileUploads),
