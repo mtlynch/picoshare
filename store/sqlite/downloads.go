@@ -18,11 +18,11 @@ func (s Store) InsertEntryDownload(id picoshare.EntryID, r picoshare.DownloadRec
 		client_ip,
 		user_agent
 	)
-	VALUES(?,?,?,?)`,
-		id.String(),
-		formatTime(r.Time),
-		r.ClientIP,
-		r.UserAgent,
+	VALUES(:entry_id, :download_timestamp, :client_ip, :user_agent)`,
+		sql.Named("entry_id", id.String()),
+		sql.Named("download_timestamp", formatTime(r.Time)),
+		sql.Named("client_ip", r.ClientIP),
+		sql.Named("user_agent", r.UserAgent),
 	); err != nil {
 		log.Printf("insert into downloads table failed: %v", err)
 		return err
@@ -39,9 +39,9 @@ func (s Store) GetEntryDownloads(id picoshare.EntryID) ([]picoshare.DownloadReco
 	FROM
 		downloads
 	WHERE
-		entry_id=?
+		entry_id=:entry_id
 	ORDER BY
-		download_timestamp DESC`, id)
+		download_timestamp DESC`, sql.Named("entry_id", id))
 	if err == sql.ErrNoRows {
 		return []picoshare.DownloadRecord{}, nil
 	} else if err != nil {

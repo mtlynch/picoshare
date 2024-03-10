@@ -2,6 +2,7 @@ package sqlite
 
 import (
 	"context"
+	"database/sql"
 	"log"
 	"time"
 )
@@ -31,28 +32,28 @@ func (s Store) deleteExpiredEntries() error {
 	currentTime := formatTime(time.Now())
 
 	if _, err = tx.Exec(`
-	DELETE FROM
-		entries_data
-	WHERE
-		id IN (
-			SELECT
-				id
-			FROM
-				entries
-			WHERE
-				entries.expiration_time IS NOT NULL AND
-				entries.expiration_time < ?
-		);`, currentTime); err != nil {
+   DELETE FROM
+   	entries_data
+   WHERE
+   	id IN (
+   		SELECT
+   			id
+   		FROM
+   			entries
+   		WHERE
+   			entries.expiration_time IS NOT NULL AND
+   			entries.expiration_time < :current_time
+   	);`, sql.Named("current_time", currentTime)); err != nil {
 		return err
 	}
 
 	if _, err = tx.Exec(`
-	DELETE FROM
-		entries
-	WHERE
-		entries.expiration_time IS NOT NULL AND
-		entries.expiration_time < ?;
-	`, currentTime); err != nil {
+   DELETE FROM
+   	entries
+   WHERE
+   	entries.expiration_time IS NOT NULL AND
+   	entries.expiration_time < :current_time;
+   `, sql.Named("current_time", currentTime)); err != nil {
 		return err
 	}
 
@@ -65,19 +66,19 @@ func (s Store) deleteOrphanedRows() error {
 	// Delete rows from entries_data if they don't reference valid rows in
 	// entries. This can happen if the entry insertion fails partway through.
 	if _, err := s.ctx.Exec(`
-		DELETE FROM
-			entries_data
-		WHERE
-		id IN (
-			SELECT
-				DISTINCT entries_data.id AS entry_id
-			FROM
-				entries_data
-			LEFT JOIN
-				entries ON entries_data.id = entries.id
-			WHERE
-				entries.id IS NULL
-			)`); err != nil {
+   	DELETE FROM
+   		entries_data
+   	WHERE
+   	id IN (
+   		SELECT
+   			DISTINCT entries_data.id AS entry_id
+   		FROM
+   			entries_data
+   		LEFT JOIN
+   			entries ON entries_data.id = entries.id
+   		WHERE
+   			entries.id IS NULL
+   		)`); err != nil {
 		return err
 	}
 
