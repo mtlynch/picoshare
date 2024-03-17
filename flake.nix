@@ -25,8 +25,8 @@
     # 0.1.131 release
     flyctl_dep.url = "github:NixOS/nixpkgs/09dc04054ba2ff1f861357d0e7e76d021b273cd7";
 
-    # 0.3.9 release
-    litestream_dep.url = "github:NixOS/nixpkgs/9d757ec498666cc1dcc6f2be26db4fd3e1e9ab37";
+    # 0.3.13 release
+    litestream_dep.url = "github:NixOS/nixpkgs/a343533bccc62400e8a9560423486a3b6c11a23b";
   };
 
   outputs = { self, flake-utils, go_dep, sqlite_dep, nodejs_dep, shellcheck_dep, sqlfluff_dep, playwright_dep, flyctl_dep, litestream_dep }@inputs :
