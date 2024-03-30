@@ -2,6 +2,7 @@ import { test, expect } from "@playwright/test";
 import { login } from "./helpers/login.js";
 
 const browserColumn = 3;
+const downloadCountColumn = 4;
 
 test("upload a file and verify it has no download history", async ({
   page,
@@ -22,6 +23,12 @@ test("upload a file and verify it has no download history", async ({
   await page.getByRole("menuitem", { name: "Files" }).click();
 
   await expect(page).toHaveURL(/\/files$/);
+  const matchingRow = await page
+    .getByRole("row")
+    .filter({ hasText: "simple-upload.txt" });
+  await expect(
+    matchingRow.getByRole("cell").nth(downloadCountColumn)
+  ).toHaveText("0 times");
   await page
     .getByRole("row")
     .filter({ hasText: "simple-upload.txt" })
@@ -69,6 +76,12 @@ test("upload a file, download it, and verify it has a download history", async (
   await page.getByRole("menuitem", { name: "Files" }).click();
 
   await expect(page).toHaveURL(/\/files$/);
+  const matchingRow = await page
+    .getByRole("row")
+    .filter({ hasText: "simple-upload.txt" });
+  await expect(
+    matchingRow.getByRole("cell").nth(downloadCountColumn)
+  ).toHaveText("1 times");
   await page
     .getByRole("row")
     .filter({ hasText: "simple-upload.txt" })
