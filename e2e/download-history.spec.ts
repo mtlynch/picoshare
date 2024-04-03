@@ -28,7 +28,7 @@ test("upload a file and verify it has no download history", async ({
     .filter({ hasText: "simple-upload.txt" });
   await expect(
     matchingRow.getByRole("cell").nth(downloadCountColumn)
-  ).toHaveText("0 times");
+  ).toHaveText("0");
   await page
     .getByRole("row")
     .filter({ hasText: "simple-upload.txt" })
@@ -81,7 +81,7 @@ test("upload a file, download it, and verify it has a download history", async (
     .filter({ hasText: "simple-upload.txt" });
   await expect(
     matchingRow.getByRole("cell").nth(downloadCountColumn)
-  ).toHaveText("1 times");
+  ).toHaveText("1");
   await page
     .getByRole("row")
     .filter({ hasText: "simple-upload.txt" })
