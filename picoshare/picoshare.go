@@ -16,14 +16,15 @@ type (
 	}
 
 	UploadMetadata struct {
-		ID          EntryID
-		Filename    Filename
-		Note        FileNote
-		ContentType ContentType
-		Uploaded    time.Time
-		Expires     ExpirationTime
-		Size        uint64
-		GuestLink   GuestLink
+		ID            EntryID
+		Filename      Filename
+		Note          FileNote
+		ContentType   ContentType
+		Uploaded      time.Time
+		Expires       ExpirationTime
+		Size          uint64
+		GuestLink     GuestLink
+		DownloadCount uint64
 	}
 
 	DownloadRecord struct {

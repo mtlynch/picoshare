@@ -51,6 +51,10 @@ func TestInsertDeleteSingleEntry(t *testing.T) {
 		t.Fatalf("unexpected file size in entry metadata: got %v, want %v", meta[0].Size, len(expected))
 	}
 
+	if meta[0].DownloadCount != 0 {
+		t.Fatalf("unexpected download count in entry metadata: got %v, want %v", meta[0].DownloadCount, 0)
+	}
+
 	expectedFilename := picoshare.Filename("dummy-file.txt")
 	if meta[0].Filename != expectedFilename {
 		t.Fatalf("unexpected filename: got %v, want %v", meta[0].Filename, expectedFilename)
