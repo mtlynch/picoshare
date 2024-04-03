@@ -77,7 +77,7 @@
           <th>Note</th>
           <th>Size</th>
           <th>Uploaded</th>
-          <th>Downloaded</th>
+          <th>Downloads</th>
           <th>Expires</th>
           <th></th>
         </tr>
@@ -98,7 +98,7 @@
             </td>
             <td class="is-vcentered">{{ formatFileSize .Size }}</td>
             <td class="is-vcentered">{{ formatDate .Uploaded }}</td>
-            <td class="is-vcentered">{{ .DownloadCount }} times</td>
+            <td class="is-vcentered">{{ .DownloadCount }}</td>
             <td class="is-vcentered">
               {{- formatExpiration .Expires -}}
             </td>
