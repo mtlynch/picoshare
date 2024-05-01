@@ -2,8 +2,6 @@ module github.com/mtlynch/picoshare/v2
 
 go 1.21
 
-toolchain go1.21.1
-
 require (
 	github.com/gorilla/mux v1.8.0
 	github.com/mileusna/useragent v1.3.3
