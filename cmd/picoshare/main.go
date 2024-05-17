@@ -61,7 +61,7 @@ func main() {
 	httpSrv := http.Server{Addr: fmt.Sprintf(":%s", port), Handler: h}
 	go func() {
 		log.Printf("listening on %s", port)
-		log.Fatal(httpSrv.ListenAndServe())
+		log.Printf("http server exit: %s", httpSrv.ListenAndServe())
 	}()
 	<-stop
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
