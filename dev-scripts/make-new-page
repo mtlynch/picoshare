@@ -39,7 +39,7 @@ cat << EOF > "${page_path}"
 {{ define "content" }}
 {{ end }}
 
-{{ template "base.html" }}
+
 EOF
 
 echo "created boilerplate page at ${page_path}"
