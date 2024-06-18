@@ -1,6 +1,3 @@
-{{ define "style-tags" }}
-{{ end }}
-
 {{ define "script-tags" }}
   <script type="module" nonce="{{ .CspNonce }}">
     import { authenticate, logOut } from "/js/controllers/auth.js";
@@ -38,9 +35,6 @@
         });
     });
   </script>
-{{ end }}
-
-{{ define "custom-elements" }}
 {{ end }}
 
 {{ define "content" }}
