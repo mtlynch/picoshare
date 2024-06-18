@@ -1,6 +1,3 @@
-{{ define "style-tags" }}
-{{ end }}
-
 {{ define "script-tags" }}
   <script type="module" nonce="{{ .CspNonce }}">
     import { formatRfc3339Local, parseRfc3339 } from "/js/lib/time.js";
@@ -15,9 +12,6 @@
       });
     });
   </script>
-{{ end }}
-
-{{ define "custom-elements" }}
 {{ end }}
 
 {{ define "content" }}
