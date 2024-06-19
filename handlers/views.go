@@ -22,12 +22,6 @@ import (
 //go:embed templates
 var templatesFS embed.FS
 
-var baseTemplates = []string{
-	"templates/layouts/base.html",
-	"templates/partials/navbar.html",
-	"templates/custom-elements/snackbar-notifications.html",
-}
-
 type commonProps struct {
 	Title           string
 	IsAuthenticated bool
@@ -35,11 +29,7 @@ type commonProps struct {
 }
 
 func (s Server) indexGet() http.HandlerFunc {
-	t := template.Must(
-		template.New("base.html").
-			ParseFS(
-				templatesFS,
-				append(baseTemplates, "templates/pages/index.html")...))
+	t := parseTemplates("templates/pages/index.html")
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		if isAuthenticated(r.Context()) {
@@ -102,12 +92,7 @@ func (s Server) guestLinkIndexGet() http.HandlerFunc {
 		},
 	}
 
-	t := template.Must(
-		template.New("base.html").
-			Funcs(fns).
-			ParseFS(
-				templatesFS,
-				append(baseTemplates, "templates/pages/guest-link-index.html")...))
+	t := parseTemplatesWithFuncs(fns, "templates/pages/guest-link-index.html")
 	return func(w http.ResponseWriter, r *http.Request) {
 		links, err := s.getDB(r).GetGuestLinks()
 		if err != nil {
@@ -140,12 +125,7 @@ func (s Server) guestLinksNewGet() http.HandlerFunc {
 		},
 	}
 
-	t := template.Must(
-		template.New("base.html").
-			Funcs(fns).
-			ParseFS(
-				templatesFS,
-				append(baseTemplates, "templates/pages/guest-link-create.html")...))
+	t := parseTemplatesWithFuncs(fns, "templates/pages/guest-link-create.html")
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		type expirationOption struct {
@@ -188,12 +168,7 @@ func (s Server) fileIndexGet() http.HandlerFunc {
 		"formatFileSize": humanReadableFileSize,
 	}
 
-	t := template.Must(
-		template.New("base.html").
-			Funcs(fns).
-			ParseFS(
-				templatesFS,
-				append(baseTemplates, "templates/pages/file-index.html")...))
+	t := parseTemplatesWithFuncs(fns, "templates/pages/file-index.html")
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		em, err := s.getDB(r).GetEntriesMetadata()
@@ -231,15 +206,9 @@ func (s Server) fileEditGet() http.HandlerFunc {
 		},
 	}
 
-	t := template.Must(
-		template.New("base.html").
-			Funcs(fns).
-			ParseFS(
-				templatesFS,
-				append(
-					baseTemplates,
-					"templates/custom-elements/expiration-picker.html",
-					"templates/pages/file-edit.html")...))
+	t := parseTemplatesWithFuncs(fns,
+		"templates/custom-elements/expiration-picker.html",
+		"templates/pages/file-edit.html")
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		id, err := parseEntryID(mux.Vars(r)["id"])
@@ -288,16 +257,11 @@ func (s Server) fileInfoGet() http.HandlerFunc {
 		"formatFileSize": humanReadableFileSize,
 	}
 
-	t := template.Must(
-		template.New("base.html").
-			Funcs(fns).
-			ParseFS(
-				templatesFS,
-				append(
-					baseTemplates,
-					"templates/custom-elements/upload-link-box.html",
-					"templates/custom-elements/upload-links.html",
-					"templates/pages/file-info.html")...))
+	t := parseTemplatesWithFuncs(
+		fns,
+		"templates/custom-elements/upload-link-box.html",
+		"templates/custom-elements/upload-links.html",
+		"templates/pages/file-info.html")
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		id, err := parseEntryID(mux.Vars(r)["id"])
@@ -348,13 +312,7 @@ func (s Server) fileDownloadsGet() http.HandlerFunc {
 			return t.Format(time.RFC3339)
 		},
 	}
-
-	t := template.Must(
-		template.New("base.html").
-			Funcs(fns).
-			ParseFS(
-				templatesFS,
-				append(baseTemplates, "templates/pages/file-downloads.html")...))
+	t := parseTemplatesWithFuncs(fns, "templates/pages/file-downloads.html")
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		id, err := parseEntryID(mux.Vars(r)["id"])
@@ -417,11 +375,7 @@ func (s Server) fileDownloadsGet() http.HandlerFunc {
 }
 
 func (s Server) fileConfirmDeleteGet() http.HandlerFunc {
-	t := template.Must(
-		template.New("base.html").
-			ParseFS(
-				templatesFS,
-				append(baseTemplates, "templates/pages/file-delete.html")...))
+	t := parseTemplates("templates/pages/file-delete.html")
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		id, err := parseEntryID(mux.Vars(r)["id"])
@@ -454,11 +408,7 @@ func (s Server) fileConfirmDeleteGet() http.HandlerFunc {
 }
 
 func (s Server) authGet() http.HandlerFunc {
-	t := template.Must(
-		template.New("base.html").
-			ParseFS(
-				templatesFS,
-				append(baseTemplates, "templates/pages/auth.html")...))
+	t := parseTemplates("templates/pages/auth.html")
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		if err := t.Execute(w, struct {
@@ -482,17 +432,12 @@ func (s Server) uploadGet() http.HandlerFunc {
 		},
 	}
 
-	t := template.Must(
-		template.New("base.html").
-			Funcs(fns).
-			ParseFS(
-				templatesFS,
-				append(
-					baseTemplates,
-					"templates/custom-elements/expiration-picker.html",
-					"templates/custom-elements/upload-link-box.html",
-					"templates/custom-elements/upload-links.html",
-					"templates/pages/upload.html")...))
+	t := parseTemplatesWithFuncs(
+		fns,
+		"templates/custom-elements/expiration-picker.html",
+		"templates/custom-elements/upload-link-box.html",
+		"templates/custom-elements/upload-links.html",
+		"templates/pages/upload.html")
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		settings, err := s.getDB(r).ReadSettings()
@@ -572,12 +517,7 @@ func (s Server) guestUploadGet() http.HandlerFunc {
 			return t.Format(time.RFC3339)
 		}}
 
-	t := template.Must(
-		template.New("base.html").
-			Funcs(fns).
-			ParseFS(
-				templatesFS,
-				append(baseTemplates, "templates/pages/upload.html")...))
+	t := parseTemplatesWithFuncs(fns, "templates/pages/upload.html")
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		guestLinkID, err := parseGuestLinkID(mux.Vars(r)["guestLinkID"])
@@ -624,11 +564,7 @@ func (s Server) guestUploadGet() http.HandlerFunc {
 }
 
 func (s Server) settingsGet() http.HandlerFunc {
-	t := template.Must(
-		template.New("base.html").
-			ParseFS(
-				templatesFS,
-				append(baseTemplates, "templates/pages/settings.html")...))
+	t := parseTemplates("templates/pages/settings.html")
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		settings, err := s.getDB(r).ReadSettings()
@@ -675,13 +611,7 @@ func (s Server) systemInformationGet() http.HandlerFunc {
 			return fmt.Sprintf("%.0f%%", 100.0*(float64(part)/float64(total)))
 		},
 	}
-
-	t := template.Must(
-		template.New("base.html").
-			Funcs(fns).
-			ParseFS(
-				templatesFS,
-				append(baseTemplates, "templates/pages/system-information.html")...))
+	t := parseTemplatesWithFuncs(fns, "templates/pages/system-information.html")
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		spaceUsage, err := s.spaceChecker.Check()
@@ -734,4 +664,23 @@ func makeCommonProps(title string, ctx context.Context) commonProps {
 		IsAuthenticated: isAuthenticated(ctx),
 		CspNonce:        cspNonce(ctx),
 	}
+}
+
+func parseTemplates(templatePaths ...string) *template.Template {
+	return parseTemplatesWithFuncs(template.FuncMap{}, templatePaths...)
+}
+
+func parseTemplatesWithFuncs(fns template.FuncMap, templatePaths ...string) *template.Template {
+	return template.Must(
+		template.New("base.html").
+			Funcs(fns).
+			ParseFS(
+				templatesFS,
+				append(
+					[]string{
+						"templates/layouts/base.html",
+						"templates/partials/navbar.html",
+						"templates/custom-elements/snackbar-notifications.html",
+					},
+					templatePaths...)...))
 }
