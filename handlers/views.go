@@ -517,7 +517,12 @@ func (s Server) guestUploadGet() http.HandlerFunc {
 			return t.Format(time.RFC3339)
 		}}
 
-	t := parseTemplatesWithFuncs(fns, "templates/pages/upload.html")
+	t := parseTemplatesWithFuncs(
+		fns,
+		"templates/custom-elements/expiration-picker.html",
+		"templates/custom-elements/upload-link-box.html",
+		"templates/custom-elements/upload-links.html",
+		"templates/pages/upload.html")
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		guestLinkID, err := parseGuestLinkID(mux.Vars(r)["guestLinkID"])
