@@ -34,9 +34,10 @@
           </tr>
         </thead>
         <tbody>
+          {{ $total := len .Downloads }}
           {{ range $i, $v := .Downloads }}
             <tr>
-              <td>{{ formatDownloadIndex $i }}</td>
+              <td>{{ formatDownloadIndex $i $total }}</td>
               {{ with $v }}
                 <td class="download-time">{{ formatDownloadTime .Time }}</td>
                 <td>{{ .ClientIP }}</td>

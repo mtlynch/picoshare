@@ -8,7 +8,6 @@ import (
 	"log"
 	"math"
 	"net/http"
-	"path"
 	"sort"
 	"time"
 
@@ -237,7 +236,10 @@ func (s Server) fileEditGet() http.HandlerFunc {
 			Funcs(fns).
 			ParseFS(
 				templatesFS,
-				append(baseTemplates, "templates/pages/file-edit.html")...))
+				append(
+					baseTemplates,
+					"templates/custom-elements/expiration-picker.html",
+					"templates/pages/file-edit.html")...))
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		id, err := parseEntryID(mux.Vars(r)["id"])
@@ -271,6 +273,32 @@ func (s Server) fileEditGet() http.HandlerFunc {
 }
 
 func (s Server) fileInfoGet() http.HandlerFunc {
+	fns := template.FuncMap{
+		"formatExpiration": func(et picoshare.ExpirationTime) string {
+			if et == picoshare.NeverExpire {
+				return "Never"
+			}
+			t := time.Time(et)
+			delta := time.Until(t)
+			return fmt.Sprintf("%s (%.0f days)", t.Format("2006-01-02"), delta.Hours()/24)
+		},
+		"formatTimestamp": func(t time.Time) string {
+			return t.Format(time.RFC3339)
+		},
+		"formatFileSize": humanReadableFileSize,
+	}
+
+	t := template.Must(
+		template.New("base.html").
+			Funcs(fns).
+			ParseFS(
+				templatesFS,
+				append(
+					baseTemplates,
+					"templates/custom-elements/upload-link-box.html",
+					"templates/custom-elements/upload-links.html",
+					"templates/pages/file-info.html")...))
+
 	return func(w http.ResponseWriter, r *http.Request) {
 		id, err := parseEntryID(mux.Vars(r)["id"])
 		if err != nil {
@@ -296,7 +324,7 @@ func (s Server) fileInfoGet() http.HandlerFunc {
 			return
 		}
 
-		if err := renderTemplate(w, "file-info.html", struct {
+		if err := t.Execute(w, struct {
 			commonProps
 			Metadata      picoshare.UploadMetadata
 			DownloadCount int
@@ -304,19 +332,6 @@ func (s Server) fileInfoGet() http.HandlerFunc {
 			commonProps:   makeCommonProps("PicoShare - File Information", r.Context()),
 			Metadata:      metadata,
 			DownloadCount: len(downloads),
-		}, template.FuncMap{
-			"formatExpiration": func(et picoshare.ExpirationTime) string {
-				if et == picoshare.NeverExpire {
-					return "Never"
-				}
-				t := time.Time(et)
-				delta := time.Until(t)
-				return fmt.Sprintf("%s (%.0f days)", t.Format("2006-01-02"), delta.Hours()/24)
-			},
-			"formatTimestamp": func(t time.Time) string {
-				return t.Format(time.RFC3339)
-			},
-			"formatFileSize": humanReadableFileSize,
 		}); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -325,6 +340,22 @@ func (s Server) fileInfoGet() http.HandlerFunc {
 }
 
 func (s Server) fileDownloadsGet() http.HandlerFunc {
+	fns := template.FuncMap{
+		"formatDownloadIndex": func(i, total int) int {
+			return total - i
+		},
+		"formatDownloadTime": func(t time.Time) string {
+			return t.Format(time.RFC3339)
+		},
+	}
+
+	t := template.Must(
+		template.New("base.html").
+			Funcs(fns).
+			ParseFS(
+				templatesFS,
+				append(baseTemplates, "templates/pages/file-downloads.html")...))
+
 	return func(w http.ResponseWriter, r *http.Request) {
 		id, err := parseEntryID(mux.Vars(r)["id"])
 		if err != nil {
@@ -370,7 +401,7 @@ func (s Server) fileDownloadsGet() http.HandlerFunc {
 			}
 		}
 
-		if err := renderTemplate(w, "file-downloads.html", struct {
+		if err := t.Execute(w, struct {
 			commonProps
 			Metadata  picoshare.UploadMetadata
 			Downloads []downloadRecord
@@ -378,13 +409,6 @@ func (s Server) fileDownloadsGet() http.HandlerFunc {
 			commonProps: makeCommonProps("PicoShare - Downloads", r.Context()),
 			Metadata:    metadata,
 			Downloads:   records,
-		}, template.FuncMap{
-			"formatDownloadIndex": func(i int) int {
-				return len(downloads) - i
-			},
-			"formatDownloadTime": func(t time.Time) string {
-				return t.Format(time.RFC3339)
-			},
 		}); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -393,6 +417,12 @@ func (s Server) fileDownloadsGet() http.HandlerFunc {
 }
 
 func (s Server) fileConfirmDeleteGet() http.HandlerFunc {
+	t := template.Must(
+		template.New("base.html").
+			ParseFS(
+				templatesFS,
+				append(baseTemplates, "templates/pages/file-delete.html")...))
+
 	return func(w http.ResponseWriter, r *http.Request) {
 		id, err := parseEntryID(mux.Vars(r)["id"])
 		if err != nil {
@@ -410,13 +440,13 @@ func (s Server) fileConfirmDeleteGet() http.HandlerFunc {
 			http.Error(w, "failed to retrieve entry", http.StatusInternalServerError)
 			return
 		}
-		if err := renderTemplate(w, "file-delete.html", struct {
+		if err := t.Execute(w, struct {
 			commonProps
 			Metadata picoshare.UploadMetadata
 		}{
 			commonProps: makeCommonProps("PicoShare - Delete", r.Context()),
 			Metadata:    metadata,
-		}, template.FuncMap{}); err != nil {
+		}); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -424,12 +454,18 @@ func (s Server) fileConfirmDeleteGet() http.HandlerFunc {
 }
 
 func (s Server) authGet() http.HandlerFunc {
+	t := template.Must(
+		template.New("base.html").
+			ParseFS(
+				templatesFS,
+				append(baseTemplates, "templates/pages/auth.html")...))
+
 	return func(w http.ResponseWriter, r *http.Request) {
-		if err := renderTemplate(w, "auth.html", struct {
+		if err := t.Execute(w, struct {
 			commonProps
 		}{
 			commonProps: makeCommonProps("PicoShare - Log in", r.Context()),
-		}, template.FuncMap{}); err != nil {
+		}); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -437,6 +473,27 @@ func (s Server) authGet() http.HandlerFunc {
 }
 
 func (s Server) uploadGet() http.HandlerFunc {
+	fns := template.FuncMap{
+		"formatExpiration": func(t time.Time) string {
+			if t.IsZero() {
+				return ""
+			}
+			return t.Format(time.RFC3339)
+		},
+	}
+
+	t := template.Must(
+		template.New("base.html").
+			Funcs(fns).
+			ParseFS(
+				templatesFS,
+				append(
+					baseTemplates,
+					"templates/custom-elements/expiration-picker.html",
+					"templates/custom-elements/upload-link-box.html",
+					"templates/custom-elements/upload-links.html",
+					"templates/pages/upload.html")...))
+
 	return func(w http.ResponseWriter, r *http.Request) {
 		settings, err := s.getDB(r).ReadSettings()
 		if err != nil {
@@ -493,7 +550,7 @@ func (s Server) uploadGet() http.HandlerFunc {
 
 		expirationOptions = append(expirationOptions, expirationOption{"Custom", time.Time{}, false})
 
-		if err := renderTemplate(w, "upload.html", struct {
+		if err := t.Execute(w, struct {
 			commonProps
 			ExpirationOptions []expirationOption
 			MaxNoteLength     int
@@ -502,13 +559,7 @@ func (s Server) uploadGet() http.HandlerFunc {
 			commonProps:       makeCommonProps("PicoShare - Upload", r.Context()),
 			MaxNoteLength:     parse.MaxFileNoteBytes,
 			ExpirationOptions: expirationOptions,
-		}, template.FuncMap{
-			"formatExpiration": func(t time.Time) string {
-				if t.IsZero() {
-					return ""
-				}
-				return t.Format(time.RFC3339)
-			}}); err != nil {
+		}); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -516,6 +567,18 @@ func (s Server) uploadGet() http.HandlerFunc {
 }
 
 func (s Server) guestUploadGet() http.HandlerFunc {
+	fns := template.FuncMap{
+		"formatExpiration": func(t time.Time) string {
+			return t.Format(time.RFC3339)
+		}}
+
+	t := template.Must(
+		template.New("base.html").
+			Funcs(fns).
+			ParseFS(
+				templatesFS,
+				append(baseTemplates, "templates/pages/upload.html")...))
+
 	return func(w http.ResponseWriter, r *http.Request) {
 		guestLinkID, err := parseGuestLinkID(mux.Vars(r)["guestLinkID"])
 		if err != nil {
@@ -535,28 +598,25 @@ func (s Server) guestUploadGet() http.HandlerFunc {
 		}
 
 		if !gl.IsActive() {
-			if err := renderTemplate(w, "guest-link-inactive.html", struct {
+			if err := t.Execute(w, struct {
 				commonProps
 			}{
 				commonProps: makeCommonProps("PicoShare - Guest Link Inactive", r.Context()),
-			}, template.FuncMap{}); err != nil {
+			}); err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
 			return
 		}
 
-		if err := renderTemplate(w, "upload.html", struct {
+		if err := t.Execute(w, struct {
 			commonProps
 			ExpirationOptions []interface{}
 			GuestLinkMetadata picoshare.GuestLink
 		}{
 			commonProps:       makeCommonProps("PicoShare - Upload", r.Context()),
 			GuestLinkMetadata: gl,
-		}, template.FuncMap{
-			"formatExpiration": func(t time.Time) string {
-				return t.Format(time.RFC3339)
-			}}); err != nil {
+		}); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -564,6 +624,12 @@ func (s Server) guestUploadGet() http.HandlerFunc {
 }
 
 func (s Server) settingsGet() http.HandlerFunc {
+	t := template.Must(
+		template.New("base.html").
+			ParseFS(
+				templatesFS,
+				append(baseTemplates, "templates/pages/settings.html")...))
+
 	return func(w http.ResponseWriter, r *http.Request) {
 		settings, err := s.getDB(r).ReadSettings()
 		if err != nil {
@@ -585,7 +651,7 @@ func (s Server) settingsGet() http.HandlerFunc {
 			}
 		}
 
-		if err := renderTemplate(w, "settings.html", struct {
+		if err := t.Execute(w, struct {
 			commonProps
 			DefaultExpiration  uint16
 			ExpirationTimeUnit string
@@ -595,7 +661,7 @@ func (s Server) settingsGet() http.HandlerFunc {
 			DefaultExpiration:  defaultExpiration,
 			ExpirationTimeUnit: expirationTimeUnit,
 			DefaultNeverExpire: defaultNeverExpire,
-		}, template.FuncMap{}); err != nil {
+		}); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -603,6 +669,20 @@ func (s Server) settingsGet() http.HandlerFunc {
 }
 
 func (s Server) systemInformationGet() http.HandlerFunc {
+	fns := template.FuncMap{
+		"formatFileSize": humanReadableFileSize,
+		"percentage": func(part, total uint64) string {
+			return fmt.Sprintf("%.0f%%", 100.0*(float64(part)/float64(total)))
+		},
+	}
+
+	t := template.Must(
+		template.New("base.html").
+			Funcs(fns).
+			ParseFS(
+				templatesFS,
+				append(baseTemplates, "templates/pages/system-information.html")...))
+
 	return func(w http.ResponseWriter, r *http.Request) {
 		spaceUsage, err := s.spaceChecker.Check()
 		if err != nil {
@@ -611,7 +691,7 @@ func (s Server) systemInformationGet() http.HandlerFunc {
 			return
 		}
 
-		if err := renderTemplate(w, "system-information.html", struct {
+		if err := t.Execute(w, struct {
 			commonProps
 			TotalServingBytes uint64
 			DatabaseFileBytes uint64
@@ -627,11 +707,6 @@ func (s Server) systemInformationGet() http.HandlerFunc {
 			TotalBytes:        spaceUsage.FileSystemTotalBytes,
 			BuildTime:         build.Time(),
 			Version:           build.Version,
-		}, template.FuncMap{
-			"formatFileSize": humanReadableFileSize,
-			"percentage": func(part, total uint64) string {
-				return fmt.Sprintf("%.0f%%", 100.0*(float64(part)/float64(total)))
-			},
 		}); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -659,16 +734,4 @@ func makeCommonProps(title string, ctx context.Context) commonProps {
 		IsAuthenticated: isAuthenticated(ctx),
 		CspNonce:        cspNonce(ctx),
 	}
-}
-
-func renderTemplate(w http.ResponseWriter, templateFilename string, templateVars interface{}, funcMap template.FuncMap) error {
-	t := template.New("base.html").Funcs(funcMap)
-	t = template.Must(
-		t.ParseFS(
-			templatesFS,
-			"templates/layouts/base.html",
-			"templates/partials/*.html",
-			"templates/custom-elements/*.html",
-			path.Join("templates/pages", templateFilename)))
-	return t.Execute(w, templateVars)
 }
