@@ -12,9 +12,9 @@
     />
     <link href="/third-party/fontawesome6/css/all.min.css" rel="stylesheet" />
     <link rel="stylesheet" type="text/css" href="/css/style.css" />
-    {{ template "style-tags" . }}
+    {{ block "style-tags" . }}{{ end }}
     <script type="module" src="/js/navbar.js"></script>
-    {{ template "script-tags" . }}
+    {{ block "script-tags" . }}{{ end }}
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
@@ -25,7 +25,7 @@
   </head>
 
   <body>
-    {{ template "custom-elements" . }}
+    {{ block "custom-elements" . }}{{ end }}
     {{ template "snackbar-notifications.html" . }}
 
     {{ template "navbar" . }}
@@ -38,12 +38,3 @@
     <snackbar-notifications></snackbar-notifications>
   </body>
 </html>
-
-{{ define "style-tags" }}
-{{ end }}
-
-{{ define "script-tags" }}
-{{ end }}
-
-{{ define "custom-elements" }}
-{{ end }}
