@@ -524,6 +524,8 @@ func (s Server) guestUploadGet() http.HandlerFunc {
 		"templates/custom-elements/upload-links.html",
 		"templates/pages/upload.html")
 
+	tInactive := parseTemplates("templates/pages/guest-link-inactive.html")
+
 	return func(w http.ResponseWriter, r *http.Request) {
 		guestLinkID, err := parseGuestLinkID(mux.Vars(r)["guestLinkID"])
 		if err != nil {
@@ -543,7 +545,7 @@ func (s Server) guestUploadGet() http.HandlerFunc {
 		}
 
 		if !gl.IsActive() {
-			if err := t.Execute(w, struct {
+			if err := tInactive.Execute(w, struct {
 				commonProps
 			}{
 				commonProps: makeCommonProps("PicoShare - Guest Link Inactive", r.Context()),
