@@ -22,7 +22,7 @@ import (
 )
 
 func main() {
-	log.SetFlags(log.LstdFlags | log.Lshortfile)
+	log.SetFlags(log.LstdFlags | log.Llongfile)
 	log.Print("starting picoshare server")
 
 	dbPath := flag.String("db", "data/store.db", "path to database")
