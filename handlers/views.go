@@ -50,7 +50,7 @@ func (s Server) indexGet() http.HandlerFunc {
 func (s Server) guestLinkIndexGet() http.HandlerFunc {
 	fns := template.FuncMap{
 		"formatDate": func(t time.Time) string {
-			return t.Format("2006-01-02")
+			return t.Format(time.DateOnly)
 		},
 		"formatSizeLimit": func(limit picoshare.GuestUploadMaxFileBytes) string {
 			if limit == picoshare.GuestUploadUnlimitedFileSize {
@@ -85,7 +85,7 @@ func (s Server) guestLinkIndexGet() http.HandlerFunc {
 			if delta.Seconds() < 0 {
 				suffix = " ago"
 			}
-			return fmt.Sprintf("%s (%.0f days%s)", t.Format("2006-01-02"), math.Abs(delta.Hours())/24, suffix)
+			return fmt.Sprintf("%s (%.0f days%s)", t.Format(time.DateOnly), math.Abs(delta.Hours())/24, suffix)
 		},
 		"isActive": func(gl picoshare.GuestLink) bool {
 			return gl.IsActive()
@@ -155,7 +155,7 @@ func (s Server) guestLinksNewGet() http.HandlerFunc {
 func (s Server) fileIndexGet() http.HandlerFunc {
 	fns := template.FuncMap{
 		"formatDate": func(t time.Time) string {
-			return t.Format("2006-01-02")
+			return t.Format(time.DateOnly)
 		},
 		"formatExpiration": func(et picoshare.ExpirationTime) string {
 			if et == picoshare.NeverExpire {
@@ -163,7 +163,7 @@ func (s Server) fileIndexGet() http.HandlerFunc {
 			}
 			t := time.Time(et)
 			delta := time.Until(t)
-			return fmt.Sprintf("%s (%.0f days)", t.Format("2006-01-02"), delta.Hours()/24)
+			return fmt.Sprintf("%s (%.0f days)", t.Format(time.DateOnly), delta.Hours()/24)
 		},
 		"formatFileSize": humanReadableFileSize,
 	}
@@ -249,7 +249,7 @@ func (s Server) fileInfoGet() http.HandlerFunc {
 			}
 			t := time.Time(et)
 			delta := time.Until(t)
-			return fmt.Sprintf("%s (%.0f days)", t.Format("2006-01-02"), delta.Hours()/24)
+			return fmt.Sprintf("%s (%.0f days)", t.Format(time.DateOnly), delta.Hours()/24)
 		},
 		"formatTimestamp": func(t time.Time) string {
 			return t.Format(time.RFC3339)
