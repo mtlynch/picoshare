@@ -6,6 +6,8 @@ import (
 	"io"
 	"log"
 
+	"github.com/ncruces/go-sqlite3"
+
 	"github.com/mtlynch/picoshare/v2/picoshare"
 	"github.com/mtlynch/picoshare/v2/store"
 	"github.com/mtlynch/picoshare/v2/store/sqlite/file"
@@ -174,37 +176,24 @@ func (s Store) GetEntryMetadata(id picoshare.EntryID) (picoshare.UploadMetadata,
 func (s Store) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) error {
 	log.Printf("saving new entry %s", metadata.ID)
 
-	// Note: We deliberately don't use a transaction here, as it bloats memory, so
-	// we can end up in a state with orphaned entries data. We clean it up in
-	// Purge().
-	// See: https://github.com/mtlynch/picoshare/issues/284
-
-	w := file.NewWriter(s.ctx, metadata.ID, s.chunkSize)
-	if _, err := io.Copy(w, reader); err != nil {
-		return err
-	}
-
-	// Close() flushes the buffer, and it can fail.
-	if err := w.Close(); err != nil {
-		return err
-	}
-
-	_, err := s.ctx.Exec(`
+	result, err := s.ctx.Exec(`
 	INSERT INTO
 		entries
 	(
 		id,
 		guest_link_id,
 		filename,
+		contents,
 		note,
 		content_type,
 		upload_time,
 		expiration_time
 	)
-	VALUES(:entry_id, :guest_link_id, :filename, :note, :content_type, :upload_time, :expiration_time)`,
+	VALUES(:entry_id, :guest_link_id, :filename, :contents, :note, :content_type, :upload_time, :expiration_time)`,
 		sql.Named("entry_id", metadata.ID),
 		sql.Named("guest_link_id", nil),
 		sql.Named("filename", metadata.Filename),
+		sql.Named("contents", sqlite3.ZeroBlob(metadata.Size)),
 		sql.Named("note", metadata.Note.Value),
 		sql.Named("content_type", metadata.ContentType),
 		sql.Named("upload_time", formatTime(metadata.Uploaded)),
@@ -212,6 +201,25 @@ func (s Store) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) 
 	)
 	if err != nil {
 		log.Printf("insert into entries table failed, aborting transaction: %v", err)
+		return err
+	}
+
+	rowID, err := result.LastInsertId()
+	if err != nil {
+		log.Printf("failed to get last insert ID: %v", err)
+		return err
+	}
+
+	blob, err := s.sqliteDB.OpenBlob("main", "entries", "contents", rowID, true)
+	if err != nil {
+		log.Printf("failed to open blob: %v", err)
+		return err
+	}
+	defer blob.Close()
+
+	_, err = blob.ReadFrom(reader)
+	if err != nil {
+		log.Printf("failed to read from file upload: %v", err)
 		return err
 	}
 

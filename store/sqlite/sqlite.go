@@ -5,6 +5,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/ncruces/go-sqlite3"
 	_ "github.com/ncruces/go-sqlite3/driver"
 	_ "github.com/ncruces/go-sqlite3/embed"
 
@@ -20,6 +21,7 @@ const (
 type (
 	Store struct {
 		ctx       *sql.DB
+		sqliteDB  *sqlite3.Conn
 		chunkSize int
 	}
 
@@ -36,7 +38,13 @@ func New(path string, optimizeForLitestream bool) Store {
 // chunk size for writing files. Most callers should just use New().
 func NewWithChunkSize(path string, chunkSize int, optimizeForLitestream bool) Store {
 	log.Printf("reading DB from %s", path)
+	// TODO: Only use one?
 	ctx, err := sql.Open("sqlite3", path)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	sqliteDB, err := sqlite3.Open(path)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -63,6 +71,7 @@ func NewWithChunkSize(path string, chunkSize int, optimizeForLitestream bool) St
 
 	return Store{
 		ctx:       ctx,
+		sqliteDB:  sqliteDB,
 		chunkSize: chunkSize,
 	}
 }

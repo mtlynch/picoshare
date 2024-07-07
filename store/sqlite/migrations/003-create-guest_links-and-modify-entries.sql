@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS guest_links (
 CREATE TABLE IF NOT EXISTS entries (
     id TEXT PRIMARY KEY,
     filename TEXT NOT NULL,
+    contents BLOB,
     content_type TEXT NOT NULL,
     upload_time TEXT NOT NULL,
     expiration_time TEXT,
