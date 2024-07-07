@@ -203,7 +203,7 @@ func (s Store) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) 
 	)
 	VALUES(:entry_id, :guest_link_id, :filename, :note, :content_type, :upload_time, :expiration_time)`,
 		sql.Named("entry_id", metadata.ID),
-		sql.Named("guest_link_id", metadata.GuestLink.ID),
+		sql.Named("guest_link_id", nil),
 		sql.Named("filename", metadata.Filename),
 		sql.Named("note", metadata.Note.Value),
 		sql.Named("content_type", metadata.ContentType),

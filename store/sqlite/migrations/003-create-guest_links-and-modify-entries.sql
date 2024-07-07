@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS guest_links (
     expiration_time TEXT
 );
 
-ALTER TABLE entries RENAME TO old_entries;
+-- ALTER TABLE entries RENAME TO old_entries;
 
 CREATE TABLE IF NOT EXISTS entries (
     id TEXT PRIMARY KEY,
@@ -19,15 +19,15 @@ CREATE TABLE IF NOT EXISTS entries (
     FOREIGN KEY(guest_link_id) REFERENCES guest_links(id)
 );
 
-INSERT INTO entries
-SELECT
-    id,
-    filename,
-    content_type,
-    upload_time,
-    expiration_time,
-    NULL AS guest_link_id
-FROM
-    old_entries;
+-- INSERT INTO entries
+-- SELECT
+--     id,
+--     filename,
+--     content_type,
+--     upload_time,
+--     expiration_time,
+--     NULL AS guest_link_id
+-- FROM
+--     old_entries;
 
-DROP TABLE old_entries;
+-- DROP TABLE old_entries;
