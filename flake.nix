@@ -51,7 +51,7 @@
           go_dep.gocode-gomod
           go_dep.godef
           go_dep.golint
-          go_dep.go_1_21
+          go_dep.go
           sqlite_dep.sqlite
           nodejs_dep.nodejs_20
           shellcheck_dep.shellcheck
