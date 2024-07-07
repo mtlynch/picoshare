@@ -1,4 +1,4 @@
-FROM golang:1.21.1 AS builder
+FROM golang:1.22.3 AS builder
 
 ARG TARGETPLATFORM
 ARG PS_VERSION
