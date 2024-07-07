@@ -1,8 +1,14 @@
 version: 2.1
+executors:
+  base:
+    docker:
+      - image: cimg/base:stable
+  go:
+    docker:
+      - image: cimg/go:1.22.3
 jobs:
   check_whitespace:
-    docker:
-      - image: cimg/base:2021.04
+    executor: base
     resource_class: small
     steps:
       - checkout
@@ -48,8 +54,7 @@ jobs:
           name: Run frontend checks
           command: ./dev-scripts/build-frontend
   test_go:
-    docker:
-      - image: cimg/go:1.21.1
+    executor: go
     resource_class: medium
     steps:
       - checkout
@@ -71,8 +76,7 @@ jobs:
           paths:
             - ~/go/pkg/mod
   build_backend:
-    docker:
-      - image: cimg/go:1.21.1
+    executor: go
     steps:
       - checkout
       - attach_workspace:
@@ -106,8 +110,7 @@ jobs:
       - store_artifacts:
           path: e2e/playwright-report
   package_release:
-    docker:
-      - image: cimg/base:stable
+    executor: base
     steps:
       - checkout
       - setup_remote_docker:
@@ -178,8 +181,7 @@ jobs:
               -replace "${VERSION}" \
               ./dist/
   publish_docker_images:
-    docker:
-      - image: cimg/base:stable
+    executor: base
     environment:
       BUILD_TARGETS: "linux/arm/v7,linux/arm64,linux/amd64"
     steps:
@@ -206,8 +208,7 @@ jobs:
               --build-arg "PS_VERSION=$(git describe --tags)" \
               .
   deploy:
-    docker:
-      - image: cimg/base:stable
+    executor: base
     resource_class: small
     environment:
       # The flyctl changes too much to use a specific version, so use the latest for the
