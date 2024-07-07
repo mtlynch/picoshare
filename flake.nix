@@ -47,7 +47,6 @@
           go_dep.gotools
           go_dep.gopls
           go_dep.go-outline
-          go_dep.gocode
           go_dep.gopkgs
           go_dep.gocode-gomod
           go_dep.godef
