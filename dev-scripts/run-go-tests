@@ -19,6 +19,7 @@ set -o pipefail
 full_test=""
 # Without netgo and osusergo, compilation fails under Nix.
 go_test_flags=("-tags=netgo,osusergo,sqlite_json")
+go_test_flags+=("-fullpath")
 readonly COVERAGE_FILE_RAW=".coverage.out"
 readonly COVERAGE_FILE_HTML=".coverage.html"
 if [[ "$1" = "--full" ]]; then

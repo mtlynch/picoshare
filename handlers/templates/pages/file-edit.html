@@ -1,6 +1,3 @@
-{{ define "style-tags" }}
-{{ end }}
-
 {{ define "script-tags" }}
   <script type="module" nonce="{{ .CspNonce }}">
     import { editFile } from "/js/controllers/files.js";
@@ -156,5 +153,3 @@
     </div>
   {{ end }}
 {{ end }}
-
-{{ template "base.html" }}

@@ -1,6 +1,3 @@
-{{ define "style-tags" }}
-{{ end }}
-
 {{ define "script-tags" }}
   <script type="module" nonce="{{ .CspNonce }}">
     import { formatRfc3339Local, parseRfc3339 } from "/js/lib/time.js";
@@ -15,9 +12,6 @@
       });
     });
   </script>
-{{ end }}
-
-{{ define "custom-elements" }}
 {{ end }}
 
 {{ define "content" }}
@@ -40,9 +34,10 @@
           </tr>
         </thead>
         <tbody>
+          {{ $total := len .Downloads }}
           {{ range $i, $v := .Downloads }}
             <tr>
-              <td>{{ formatDownloadIndex $i }}</td>
+              <td>{{ formatDownloadIndex $i $total }}</td>
               {{ with $v }}
                 <td class="download-time">{{ formatDownloadTime .Time }}</td>
                 <td>{{ .ClientIP }}</td>
@@ -65,5 +60,3 @@
     </div>
   </div>
 {{ end }}
-
-{{ template "base.html" }}

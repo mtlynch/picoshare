@@ -18,6 +18,10 @@ function uploadFormData(url, formData, progressFn) {
       if (xhr.status >= 200 && xhr.status < 300) {
         resolve(xhr.response);
       } else {
+        if (xhr.responseText) {
+          reject(xhr.responseText);
+          return;
+        }
         reject(xhr.statusText);
       }
     });
