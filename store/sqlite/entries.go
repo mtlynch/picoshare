@@ -217,9 +217,9 @@ func (s Store) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) 
 	}
 	defer blob.Close()
 
-	_, err = blob.ReadFrom(reader)
+	_, err = io.Copy(blob, reader)
 	if err != nil {
-		log.Printf("failed to read from file upload: %v", err)
+		log.Printf("failed to write file upload to blob storage: %v", err)
 		return err
 	}
 

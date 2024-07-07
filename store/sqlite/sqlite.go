@@ -20,9 +20,8 @@ const (
 
 type (
 	Store struct {
-		ctx       *sql.DB
-		sqliteDB  *sqlite3.Conn
-		chunkSize int
+		ctx      *sql.DB
+		sqliteDB *sqlite3.Conn
 	}
 
 	rowScanner interface {
@@ -31,12 +30,6 @@ type (
 )
 
 func New(path string, optimizeForLitestream bool) Store {
-	return NewWithChunkSize(path, defaultChunkSize, optimizeForLitestream)
-}
-
-// NewWithChunkSize creates a SQLite-based datastore with the user-specified
-// chunk size for writing files. Most callers should just use New().
-func NewWithChunkSize(path string, chunkSize int, optimizeForLitestream bool) Store {
 	log.Printf("reading DB from %s", path)
 	// TODO: Only use one?
 	ctx, err := sql.Open("sqlite3", path)
@@ -70,9 +63,8 @@ func NewWithChunkSize(path string, chunkSize int, optimizeForLitestream bool) St
 	applyMigrations(ctx)
 
 	return Store{
-		ctx:       ctx,
-		sqliteDB:  sqliteDB,
-		chunkSize: chunkSize,
+		ctx:      ctx,
+		sqliteDB: sqliteDB,
 	}
 }
 
