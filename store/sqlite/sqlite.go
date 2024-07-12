@@ -5,7 +5,9 @@ import (
 	"log"
 	"time"
 
-	_ "github.com/mattn/go-sqlite3"
+	"github.com/ncruces/go-sqlite3"
+	_ "github.com/ncruces/go-sqlite3/driver"
+	_ "github.com/ncruces/go-sqlite3/embed"
 
 	"github.com/mtlynch/picoshare/v2/picoshare"
 )
@@ -18,8 +20,8 @@ const (
 
 type (
 	Store struct {
-		ctx       *sql.DB
-		chunkSize int
+		ctx      *sql.DB
+		sqliteDB *sqlite3.Conn
 	}
 
 	rowScanner interface {
@@ -28,14 +30,14 @@ type (
 )
 
 func New(path string, optimizeForLitestream bool) Store {
-	return NewWithChunkSize(path, defaultChunkSize, optimizeForLitestream)
-}
-
-// NewWithChunkSize creates a SQLite-based datastore with the user-specified
-// chunk size for writing files. Most callers should just use New().
-func NewWithChunkSize(path string, chunkSize int, optimizeForLitestream bool) Store {
 	log.Printf("reading DB from %s", path)
+	// TODO: Only use one?
 	ctx, err := sql.Open("sqlite3", path)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	sqliteDB, err := sqlite3.Open(path)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -58,11 +60,23 @@ func NewWithChunkSize(path string, chunkSize int, optimizeForLitestream bool) St
 		}
 	}
 
+	// DEBUG
+	/*sqliteDB.Exec(`CREATE TABLE IF NOT EXISTS entries (
+	    id TEXT PRIMARY KEY,
+	    filename TEXT NOT NULL,
+	    contents, -- TODO: Do a proper migration of previous table.
+	    content_type TEXT NOT NULL,
+	    upload_time TEXT NOT NULL,
+	    expiration_time TEXT,
+	    guest_link_id TEXT,
+	    FOREIGN KEY(guest_link_id) REFERENCES guest_links(id)
+	);`)*/
+
 	applyMigrations(ctx)
 
 	return Store{
-		ctx:       ctx,
-		chunkSize: chunkSize,
+		ctx:      ctx,
+		sqliteDB: sqliteDB,
 	}
 }
 

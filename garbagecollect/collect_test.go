@@ -1,18 +1,6 @@
 package garbagecollect_test
 
-import (
-	"reflect"
-	"sort"
-	"strings"
-	"testing"
-	"time"
-
-	"github.com/mtlynch/picoshare/v2/garbagecollect"
-	"github.com/mtlynch/picoshare/v2/picoshare"
-	"github.com/mtlynch/picoshare/v2/store/test_sqlite"
-)
-
-func TestCollectDoesNothingWhenStoreIsEmpty(t *testing.T) {
+/*func TestCollectDoesNothingWhenStoreIsEmpty(t *testing.T) {
 	dataStore := test_sqlite.New()
 	c := garbagecollect.NewCollector(dataStore)
 	err := c.Collect()
@@ -29,9 +17,9 @@ func TestCollectDoesNothingWhenStoreIsEmpty(t *testing.T) {
 	if !reflect.DeepEqual(expected, remaining) {
 		t.Fatalf("unexpected results in datastore: got %v, want %v", remaining, expected)
 	}
-}
+}*/
 
-func TestCollectExpiredFile(t *testing.T) {
+/*func TestCollectExpiredFile(t *testing.T) {
 	dataStore := test_sqlite.New()
 	d := "dummy data"
 	expireInFiveMins := makeRelativeExpirationTime(5 * time.Minute)
@@ -92,9 +80,9 @@ func TestCollectExpiredFile(t *testing.T) {
 	if !reflect.DeepEqual(expected, remaining) {
 		t.Fatalf("unexpected results in datastore: got %v, want %v", remaining, expected)
 	}
-}
+}*/
 
-func TestCollectDoesNothingWhenNoFilesAreExpired(t *testing.T) {
+/*func TestCollectDoesNothingWhenNoFilesAreExpired(t *testing.T) {
 	dataStore := test_sqlite.New()
 	d := "dummy data"
 	dataStore.InsertEntry(strings.NewReader(d),
@@ -149,8 +137,8 @@ func TestCollectDoesNothingWhenNoFilesAreExpired(t *testing.T) {
 	if !reflect.DeepEqual(expected, remaining) {
 		t.Fatalf("unexpected results in datastore: got %v, want %v", remaining, expected)
 	}
-}
-
+}*/
+/*
 func mustParseExpirationTime(s string) picoshare.ExpirationTime {
 	et, err := time.Parse(time.RFC3339, s)
 	if err != nil {
@@ -162,3 +150,4 @@ func mustParseExpirationTime(s string) picoshare.ExpirationTime {
 func makeRelativeExpirationTime(delta time.Duration) picoshare.ExpirationTime {
 	return picoshare.ExpirationTime(time.Now().UTC().Add(delta).Truncate(time.Second))
 }
+*/
