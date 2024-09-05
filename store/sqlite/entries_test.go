@@ -14,9 +14,12 @@ import (
 func TestInsertDeleteSingleEntry(t *testing.T) {
 	db := test_sqlite.New()
 
-	if err := db.InsertEntry(bytes.NewBufferString("hello, world!"), picoshare.UploadMetadata{
+	inputContents := "hello, world!"
+
+	if err := db.InsertEntry(bytes.NewBufferString(inputContents), picoshare.UploadMetadata{
 		ID:       picoshare.EntryID("dummy-id"),
 		Filename: "dummy-file.txt",
+		Size:     uint64(len(inputContents)),
 		Expires:  mustParseExpirationTime("2040-01-01T00:00:00Z"),
 	}); err != nil {
 		t.Fatalf("failed to insert file into sqlite: %v", err)

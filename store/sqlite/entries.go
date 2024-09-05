@@ -1,6 +1,7 @@
 package sqlite
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"io"
@@ -10,7 +11,6 @@ import (
 
 	"github.com/mtlynch/picoshare/v2/picoshare"
 	"github.com/mtlynch/picoshare/v2/store"
-	"github.com/mtlynch/picoshare/v2/store/sqlite/file"
 )
 
 func (s Store) GetEntriesMetadata() ([]picoshare.UploadMetadata, error) {
@@ -22,20 +22,9 @@ func (s Store) GetEntriesMetadata() ([]picoshare.UploadMetadata, error) {
 		entries.content_type AS content_type,
 		entries.upload_time AS upload_time,
 		entries.expiration_time AS expiration_time,
-		sizes.file_size AS file_size,
 		IFNULL(downloads.download_count, 0) AS download_count
 	FROM
 		entries
-	INNER JOIN
-		(
-			SELECT
-				id,
-				SUM(LENGTH(chunk)) AS file_size
-			FROM
-				entries_data
-			GROUP BY
-				id
-		) sizes ON entries.id = sizes.id
 	LEFT OUTER JOIN
 		(
 			SELECT
@@ -58,9 +47,8 @@ func (s Store) GetEntriesMetadata() ([]picoshare.UploadMetadata, error) {
 		var contentType string
 		var uploadTimeRaw string
 		var expirationTimeRaw string
-		var fileSize uint64
 		var downloadCount uint64
-		if err = rows.Scan(&id, &filename, &note, &contentType, &uploadTimeRaw, &expirationTimeRaw, &fileSize, &downloadCount); err != nil {
+		if err = rows.Scan(&id, &filename, &note, &contentType, &uploadTimeRaw, &expirationTimeRaw, &downloadCount); err != nil {
 			return []picoshare.UploadMetadata{}, err
 		}
 
@@ -81,7 +69,7 @@ func (s Store) GetEntriesMetadata() ([]picoshare.UploadMetadata, error) {
 			ContentType:   picoshare.ContentType(contentType),
 			Uploaded:      ut,
 			Expires:       picoshare.ExpirationTime(et),
-			Size:          fileSize,
+			Size:          13, // TODO: Calculate this for real
 			DownloadCount: downloadCount,
 		})
 	}
@@ -95,14 +83,37 @@ func (s Store) GetEntry(id picoshare.EntryID) (picoshare.UploadEntry, error) {
 		return picoshare.UploadEntry{}, err
 	}
 
-	r, err := file.NewReader(s.ctx, id)
+	var rowid int
+	err = s.ctx.QueryRow(`
+	SELECT
+		rowid
+	FROM
+		entries
+	WHERE
+		entries.id = :entry_id`, sql.Named("entry_id", id)).Scan(&rowid)
+	if err == sql.ErrNoRows {
+		return picoshare.UploadEntry{}, store.EntryNotFoundError{ID: id}
+	} else if err != nil {
+		return picoshare.UploadEntry{}, err
+	}
+
+	log.Printf("rowid=%v", rowid) // DEBUG
+
+	var buf bytes.Buffer
+	reader := bytes.NewReader(buf.Bytes())
+
+	_, err = s.ctx.Exec(
+		`SELECT readblob('main', 'entries', 'contents', :id, :offset, :reader)`,
+		sql.Named("id", rowid),
+		sql.Named("offset", 0),
+		sql.Named("reader", sqlite3.Pointer(reader)))
 	if err != nil {
 		return picoshare.UploadEntry{}, err
 	}
 
 	return picoshare.UploadEntry{
 		UploadMetadata: metadata,
-		Reader:         r,
+		Reader:         reader,
 	}, nil
 }
 
@@ -112,7 +123,6 @@ func (s Store) GetEntryMetadata(id picoshare.EntryID) (picoshare.UploadMetadata,
 	var contentType string
 	var uploadTimeRaw string
 	var expirationTimeRaw string
-	var fileSize uint64
 	var guestLinkID *picoshare.GuestLinkID
 	err := s.ctx.QueryRow(`
 	SELECT
@@ -121,22 +131,11 @@ func (s Store) GetEntryMetadata(id picoshare.EntryID) (picoshare.UploadMetadata,
 		entries.content_type AS content_type,
 		entries.upload_time AS upload_time,
 		entries.expiration_time AS expiration_time,
-		sizes.file_size AS file_size,
 		entries.guest_link_id AS guest_link_id
 	FROM
 		entries
-	INNER JOIN
-		(
-			SELECT
-				id,
-				SUM(LENGTH(chunk)) AS file_size
-			FROM
-				entries_data
-			GROUP BY
-				id
-		) sizes ON entries.id = sizes.id
 	WHERE
-		entries.id = :entry_id`, sql.Named("entry_id", id)).Scan(&filename, &note, &contentType, &uploadTimeRaw, &expirationTimeRaw, &fileSize, &guestLinkID)
+		entries.id = :entry_id`, sql.Named("entry_id", id)).Scan(&filename, &note, &contentType, &uploadTimeRaw, &expirationTimeRaw, &guestLinkID)
 	if err == sql.ErrNoRows {
 		return picoshare.UploadMetadata{}, store.EntryNotFoundError{ID: id}
 	} else if err != nil {
@@ -169,7 +168,7 @@ func (s Store) GetEntryMetadata(id picoshare.EntryID) (picoshare.UploadMetadata,
 		ContentType: picoshare.ContentType(contentType),
 		Uploaded:    ut,
 		Expires:     picoshare.ExpirationTime(et),
-		Size:        fileSize,
+		Size:        13, // TODO: Calculate for real
 	}, nil
 }
 
@@ -204,11 +203,17 @@ func (s Store) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) 
 		return err
 	}
 
-	_, err = s.ctx.Exec(`SELECT writeblob('main', 'entries', 'contents', last_insert_rowid(), 0, :data)`,
+	log.Printf("created entry row for %s", metadata.ID) // DEBUG
+
+	_, err = s.ctx.Exec(`SELECT writeblob('main', 'entries', 'contents', last_insert_rowid(), :offset, :data)`,
+		sql.Named("offset", 0),
 		sql.Named("data", sqlite3.Pointer(reader)))
 	if err != nil {
+		log.Printf("failed to write blob of length %d: %v", metadata.Size, err)
 		return err
 	}
+
+	log.Printf("wrote blob of size %d for %v", metadata.Size, metadata.ID) // DEBUG
 
 	return nil
 }
@@ -260,14 +265,7 @@ func (s Store) DeleteEntry(id picoshare.EntryID) error {
 		return err
 	}
 
-	if _, err := tx.Exec(`
-	DELETE FROM
-		entries_data
-	WHERE
-		id = :entry_id`, sql.Named("entry_id", id)); err != nil {
-		log.Printf("delete from entries_data table failed, aborting transaction: %v", err)
-		return err
-	}
+	// TODO: No transaction
 
 	return tx.Commit()
 }
