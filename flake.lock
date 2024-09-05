@@ -18,7 +18,7 @@
         "type": "github"
       }
     },
-    "flyctl_dep": {
+    "flyctl-nixpkgs": {
       "locked": {
         "lastModified": 1701998057,
         "narHash": "sha256-gAJGhcTO9cso7XDfAScXUlPcva427AUT2q02qrmXPdo=",
@@ -34,7 +34,7 @@
         "type": "github"
       }
     },
-    "go_dep": {
+    "go-nixpkgs": {
       "locked": {
         "lastModified": 1718225733,
         "narHash": "sha256-aTIpfLT+hQr0H1d7QA2k5a5rWrkL+M8ECN2tI9ClpSg=",
@@ -50,7 +50,7 @@
         "type": "github"
       }
     },
-    "litestream_dep": {
+    "litestream-nixpkgs": {
       "locked": {
         "lastModified": 1709905912,
         "narHash": "sha256-TofHtnlrOBCxtSZ9nnlsTybDnQXUmQrlIleXF1RQAwQ=",
@@ -66,7 +66,7 @@
         "type": "github"
       }
     },
-    "nodejs_dep": {
+    "nodejs-nixpkgs": {
       "locked": {
         "lastModified": 1694343207,
         "narHash": "sha256-jWi7OwFxU5Owi4k2JmiL1sa/OuBCQtpaAesuj5LXC8w=",
@@ -82,7 +82,7 @@
         "type": "github"
       }
     },
-    "playwright_dep": {
+    "playwright-nixpkgs": {
       "locked": {
         "lastModified": 1701336116,
         "narHash": "sha256-kEmpezCR/FpITc6yMbAh4WrOCiT2zg5pSjnKrq51h5Y=",
@@ -101,17 +101,17 @@
     "root": {
       "inputs": {
         "flake-utils": "flake-utils",
-        "flyctl_dep": "flyctl_dep",
-        "go_dep": "go_dep",
-        "litestream_dep": "litestream_dep",
-        "nodejs_dep": "nodejs_dep",
-        "playwright_dep": "playwright_dep",
-        "shellcheck_dep": "shellcheck_dep",
-        "sqlfluff_dep": "sqlfluff_dep",
-        "sqlite_dep": "sqlite_dep"
+        "flyctl-nixpkgs": "flyctl-nixpkgs",
+        "go-nixpkgs": "go-nixpkgs",
+        "litestream-nixpkgs": "litestream-nixpkgs",
+        "nodejs-nixpkgs": "nodejs-nixpkgs",
+        "playwright-nixpkgs": "playwright-nixpkgs",
+        "shellcheck-nixpkgs": "shellcheck-nixpkgs",
+        "sqlfluff-nixpkgs": "sqlfluff-nixpkgs",
+        "sqlite-nixpkgs": "sqlite-nixpkgs"
       }
     },
-    "shellcheck_dep": {
+    "shellcheck-nixpkgs": {
       "locked": {
         "lastModified": 1695132891,
         "narHash": "sha256-cJR9AFHmt816cW/C9necLJyOg/gsnkvEeFAfxgeM1hc=",
@@ -127,7 +127,7 @@
         "type": "github"
       }
     },
-    "sqlfluff_dep": {
+    "sqlfluff-nixpkgs": {
       "locked": {
         "lastModified": 1660687964,
         "narHash": "sha256-8dJ8u/SUlJoHJVPFnFqoo7ugLH4RxyuyQTeuE6/EynE=",
@@ -143,7 +143,7 @@
         "type": "github"
       }
     },
-    "sqlite_dep": {
+    "sqlite-nixpkgs": {
       "locked": {
         "lastModified": 1706683685,
         "narHash": "sha256-FtPPshEpxH/ewBOsdKBNhlsL2MLEFv1hEnQ19f/bFsQ=",
