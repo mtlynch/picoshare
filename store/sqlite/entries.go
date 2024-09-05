@@ -176,7 +176,7 @@ func (s Store) GetEntryMetadata(id picoshare.EntryID) (picoshare.UploadMetadata,
 func (s Store) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) error {
 	log.Printf("saving new entry %s", metadata.ID)
 
-	result, err := s.ctx.Exec(`
+	_, err := s.ctx.Exec(`
 	INSERT INTO
 		entries
 	(
@@ -204,22 +204,9 @@ func (s Store) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) 
 		return err
 	}
 
-	rowID, err := result.LastInsertId()
+	_, err = s.ctx.Exec(`SELECT writeblob('main', 'entries', 'contents', last_insert_rowid(), 0, :data)`,
+		sql.Named("data", sqlite3.Pointer(reader)))
 	if err != nil {
-		log.Printf("failed to get last insert ID: %v", err)
-		return err
-	}
-
-	blob, err := s.sqliteDB.OpenBlob("main", "entries", "contents", rowID, true)
-	if err != nil {
-		log.Printf("failed to open blob: %v", err)
-		return err
-	}
-	defer blob.Close()
-
-	_, err = io.Copy(blob, reader)
-	if err != nil {
-		log.Printf("failed to write file upload to blob storage: %v", err)
 		return err
 	}
 
