@@ -12,7 +12,6 @@ ALTER TABLE entries RENAME TO old_entries;
 CREATE TABLE IF NOT EXISTS entries (
     id TEXT PRIMARY KEY,
     filename TEXT NOT NULL,
-    contents,
     content_type TEXT NOT NULL,
     upload_time TEXT NOT NULL,
     expiration_time TEXT,
