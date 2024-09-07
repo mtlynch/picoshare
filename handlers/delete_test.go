@@ -37,7 +37,7 @@ func TestDeleteExistingFile(t *testing.T) {
 			status, http.StatusOK)
 	}
 
-	_, err = dataStore.GetEntry(picoshare.EntryID("hR87apiUCj"))
+	_, err = dataStore.GetEntryMetadata(picoshare.EntryID("hR87apiUCj"))
 	if _, ok := err.(store.EntryNotFoundError); !ok {
 		t.Fatalf("expected entry %v to be deleted", picoshare.EntryID("hR87apiUCj"))
 	}

@@ -1,13 +1,14 @@
 package sqlite
 
 import (
-	"bytes"
 	"context"
 	"database/sql"
+	"fmt"
 	"io"
 	"log"
 
 	"github.com/ncruces/go-sqlite3"
+	"github.com/ncruces/go-sqlite3/ext/blobio"
 
 	"github.com/mtlynch/picoshare/v2/picoshare"
 	"github.com/mtlynch/picoshare/v2/store"
@@ -77,44 +78,29 @@ func (s Store) GetEntriesMetadata() ([]picoshare.UploadMetadata, error) {
 	return ee, nil
 }
 
-func (s Store) GetEntry(id picoshare.EntryID) (picoshare.UploadEntry, error) {
-	metadata, err := s.GetEntryMetadata(id)
+func (s Store) ReadEntryFile(id picoshare.EntryID, processFile func(io.ReadSeeker)) error {
+	_, err := s.ctx.Exec(`
+			SELECT
+				openblob('main', 'entries', 'contents', rowid, :writeMode, :callback)
+			FROM
+				entries
+			WHERE
+				entries.id = :entry_id,
+	`,
+		sql.Named("writeMode", false),
+		sql.Named("callback",
+			sqlite3.Pointer[blobio.OpenCallback](func(blob *sqlite3.Blob, _ ...sqlite3.Value) error {
+				log.Printf("start callback") // DEBUG
+				processFile(blob)
+				log.Printf("end callback") // DEBUG
+				return nil
+			})),
+		sql.Named("entry_id", id))
 	if err != nil {
-		return picoshare.UploadEntry{}, err
+		return fmt.Errorf("error opening blob for id %s: %w", id, err)
 	}
 
-	var rowid int
-	err = s.ctx.QueryRow(`
-	SELECT
-		rowid
-	FROM
-		entries
-	WHERE
-		entries.id = :entry_id`, sql.Named("entry_id", id)).Scan(&rowid)
-	if err == sql.ErrNoRows {
-		return picoshare.UploadEntry{}, store.EntryNotFoundError{ID: id}
-	} else if err != nil {
-		return picoshare.UploadEntry{}, err
-	}
-
-	log.Printf("rowid=%v", rowid) // DEBUG
-
-	var buf bytes.Buffer
-	reader := bytes.NewReader(buf.Bytes())
-
-	_, err = s.ctx.Exec(
-		`SELECT readblob('main', 'entries', 'contents', :id, :offset, :reader)`,
-		sql.Named("id", rowid),
-		sql.Named("offset", 0),
-		sql.Named("reader", sqlite3.Pointer(reader)))
-	if err != nil {
-		return picoshare.UploadEntry{}, err
-	}
-
-	return picoshare.UploadEntry{
-		UploadMetadata: metadata,
-		Reader:         reader,
-	}, nil
+	return nil
 }
 
 func (s Store) GetEntryMetadata(id picoshare.EntryID) (picoshare.UploadMetadata, error) {
