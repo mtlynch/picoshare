@@ -79,13 +79,14 @@ func (s Store) GetEntriesMetadata() ([]picoshare.UploadMetadata, error) {
 }
 
 func (s Store) ReadEntryFile(id picoshare.EntryID, processFile func(io.ReadSeeker)) error {
+	log.Printf("attempting to read entry %s", id.String()) // DEBUG
 	_, err := s.ctx.Exec(`
 			SELECT
 				openblob('main', 'entries', 'contents', rowid, :writeMode, :callback)
 			FROM
 				entries
 			WHERE
-				entries.id = :entry_id,
+				entries.id = :entry_id
 	`,
 		sql.Named("writeMode", false),
 		sql.Named("callback",
@@ -97,8 +98,11 @@ func (s Store) ReadEntryFile(id picoshare.EntryID, processFile func(io.ReadSeeke
 			})),
 		sql.Named("entry_id", id))
 	if err != nil {
+		log.Printf("failed to open blob for %v: %v", id.String(), err) // DEBUG
 		return fmt.Errorf("error opening blob for id %s: %w", id, err)
 	}
+
+	log.Printf("finished reading entry %v", id.String()) // DEBUG
 
 	return nil
 }

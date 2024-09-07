@@ -48,9 +48,12 @@ func (s Server) entryGet() http.HandlerFunc {
 		}
 		w.Header().Set("Content-Type", string(contentType))
 
-		s.store.ReadEntryFile(id, func(reader io.ReadSeeker) {
+		if err := s.store.ReadEntryFile(id, func(reader io.ReadSeeker) {
 			http.ServeContent(w, r, string(entry.Filename), entry.Uploaded, reader)
-		})
+		}); err != nil {
+			log.Printf("error reading entry data with id %v: %v", id, err)
+			http.Error(w, "failed to retrieve entry", http.StatusInternalServerError)
+		}
 
 		if err := recordDownload(s.getDB(r), entry.ID, r.RemoteAddr, r.Header.Get("User-Agent")); err != nil {
 			log.Printf("failed to record download of file %s: %v", id.String(), err)
