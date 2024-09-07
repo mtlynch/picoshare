@@ -18,9 +18,11 @@ var nilGarbageCollector *garbagecollect.Collector
 
 func TestDeleteExistingFile(t *testing.T) {
 	dataStore := test_sqlite.New()
-	dataStore.InsertEntry(strings.NewReader("dummy data"),
+	fileContents := "dummy data"
+	dataStore.InsertEntry(strings.NewReader(fileContents),
 		picoshare.UploadMetadata{
-			ID: picoshare.EntryID("hR87apiUCj"),
+			ID:   picoshare.EntryID("hR87apiUCj"),
+			Size: uint64(len(fileContents)),
 		})
 	s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceChecker, nilGarbageCollector)
 
