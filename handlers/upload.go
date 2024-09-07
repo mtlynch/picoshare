@@ -263,6 +263,7 @@ func (s Server) insertFileFromRequest(r *http.Request, expiration picoshare.Expi
 		picoshare.UploadMetadata{
 			ID:          id,
 			Filename:    filename,
+			Size:        uint64(metadata.Size),
 			ContentType: contentType,
 			Note:        note,
 			GuestLink: picoshare.GuestLink{
