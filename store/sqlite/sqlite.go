@@ -53,22 +53,6 @@ func New(path string, optimizeForLitestream bool) Store {
 		}
 	}
 
-	// DEBUG
-	_, err = ctx.Exec(`
-	CREATE TABLE IF NOT EXISTS entries (
-	    id TEXT PRIMARY KEY,
-	    filename TEXT NOT NULL,
-	    contents, -- TODO: Do a proper migration of previous table.
-	    content_type TEXT NOT NULL,
-	    upload_time TEXT NOT NULL,
-	    expiration_time TEXT,
-	    guest_link_id TEXT,
-	    FOREIGN KEY(guest_link_id) REFERENCES guest_links(id)
-	);`)
-	if err != nil {
-		log.Fatalf("failed to create debug table: %v", err)
-	}
-
 	applyMigrations(ctx)
 
 	return Store{
