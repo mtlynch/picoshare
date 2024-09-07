@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS entries_temp (
     filename TEXT NOT NULL,
     contents BLOB,
     content_type TEXT NOT NULL,
+    note TEXT,
     upload_time TEXT NOT NULL,
     expiration_time TEXT,
     guest_link_id TEXT,
@@ -14,12 +15,14 @@ INSERT INTO entries_temp (
     id,
     filename,
     content_type,
+    note,
     upload_time,
     expiration_time)
 SELECT
     id,
     filename,
     content_type,
+    note,
     upload_time,
     expiration_time
 FROM entries;
