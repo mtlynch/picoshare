@@ -2,7 +2,7 @@
 -- tables in this migration.
 PRAGMA defer_foreign_keys = ON;
 
-CREATE TABLE IF entries_temp (
+CREATE TABLE entries_temp (
     id TEXT PRIMARY KEY,
     filename TEXT NOT NULL,
     contents BLOB,
