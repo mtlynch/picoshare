@@ -484,14 +484,6 @@ func mustParseExpirationTime(s string) picoshare.ExpirationTime {
 	return picoshare.ExpirationTime(mustParseTime(s))
 }
 
-func mustReadAll(r io.Reader) []byte {
-	d, err := io.ReadAll(r)
-	if err != nil {
-		panic(err)
-	}
-	return d
-}
-
 func makeNote(s string) picoshare.FileNote {
 	return picoshare.FileNote{Value: &s}
 }
