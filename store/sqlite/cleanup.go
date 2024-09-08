@@ -26,7 +26,7 @@ func (s Store) deleteExpiredEntries() error {
    	entries
    WHERE
    	entries.expiration_time IS NOT NULL AND
-   	entries.expiration_time < :current_time;
+   	entries.expiration_time < :current_time
    `, sql.Named("current_time", currentTime)); err != nil {
 		return err
 	}
