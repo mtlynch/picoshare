@@ -30,10 +30,10 @@ FROM entries;
 -- Combine and insert data from entries_data.
 UPDATE entries_temp
 SET contents = (
-    SELECT GROUP_CONCAT(entries_data.chunk, '')
+    SELECT
+        GROUP_CONCAT(entries_data.chunk, '' ORDER BY entries_data.chunk_index)
     FROM entries_data
     WHERE entries_data.id = entries_temp.id
-    ORDER BY entries_data.chunk_index
 );
 
 DROP TABLE entries;
