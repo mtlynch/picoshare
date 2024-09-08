@@ -1,4 +1,8 @@
-CREATE TABLE IF NOT EXISTS entries_temp (
+-- Temporarily disable foreign key constraint checks while we delete and rebuild
+-- tables in this migration.
+PRAGMA defer_foreign_keys = ON;
+
+CREATE TABLE IF entries_temp (
     id TEXT PRIMARY KEY,
     filename TEXT NOT NULL,
     contents BLOB,
