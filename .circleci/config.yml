@@ -31,7 +31,7 @@ jobs:
           command: ./dev-scripts/check-bash
   lint_sql:
     docker:
-      - image: sqlfluff/sqlfluff:1.2.1
+      - image: sqlfluff/sqlfluff:3.1.1
         user: root
     steps:
       - checkout
