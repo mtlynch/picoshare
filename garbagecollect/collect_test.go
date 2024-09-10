@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-test/deep"
+
 	"github.com/mtlynch/picoshare/v2/garbagecollect"
 	"github.com/mtlynch/picoshare/v2/picoshare"
 	"github.com/mtlynch/picoshare/v2/store/test_sqlite"
@@ -39,26 +41,31 @@ func TestCollectExpiredFile(t *testing.T) {
 		picoshare.UploadMetadata{
 			ID:      picoshare.EntryID("AAAAAAAAAAAA"),
 			Expires: mustParseExpirationTime("2000-01-01T00:00:00Z"),
+			Size:    uint64(len(d)),
 		})
 	dataStore.InsertEntry(strings.NewReader(d),
 		picoshare.UploadMetadata{
 			ID:      picoshare.EntryID("BBBBBBBBBBBB"),
 			Expires: mustParseExpirationTime("3000-01-01T00:00:00Z"),
+			Size:    uint64(len(d)),
 		})
 	dataStore.InsertEntry(strings.NewReader(d),
 		picoshare.UploadMetadata{
 			ID:      picoshare.EntryID("CCCCCCCCCCCC"),
 			Expires: picoshare.NeverExpire,
+			Size:    uint64(len(d)),
 		})
 	dataStore.InsertEntry(strings.NewReader(d),
 		picoshare.UploadMetadata{
 			ID:      picoshare.EntryID("DDDDDDDDDDDD"),
 			Expires: makeRelativeExpirationTime(-1 * time.Second),
+			Size:    uint64(len(d)),
 		})
 	dataStore.InsertEntry(strings.NewReader(d),
 		picoshare.UploadMetadata{
 			ID:      picoshare.EntryID("EEEEEEEEEEEE"),
 			Expires: expireInFiveMins,
+			Size:    uint64(len(d)),
 		})
 
 	c := garbagecollect.NewCollector(dataStore)
@@ -89,8 +96,12 @@ func TestCollectExpiredFile(t *testing.T) {
 			Size:    uint64(len(d)),
 		},
 	}
-	if !reflect.DeepEqual(expected, remaining) {
-		t.Fatalf("unexpected results in datastore: got %v, want %v", remaining, expected)
+	if diff := deep.Equal(expected, remaining); diff != nil {
+		t.Errorf("unexpected results in datastore: got %v, want %v, diff = %v", remaining, expected, diff)
+		t.Errorf("got=%+v", remaining)
+		t.Errorf("want=%+v", expected)
+		t.Errorf("diff = %+v", diff)
+		t.FailNow()
 	}
 }
 
@@ -101,16 +112,19 @@ func TestCollectDoesNothingWhenNoFilesAreExpired(t *testing.T) {
 		picoshare.UploadMetadata{
 			ID:      picoshare.EntryID("AAAAAAAAAAAA"),
 			Expires: mustParseExpirationTime("4000-01-01T00:00:00Z"),
+			Size:    uint64(len(d)),
 		})
 	dataStore.InsertEntry(strings.NewReader(d),
 		picoshare.UploadMetadata{
 			ID:      picoshare.EntryID("BBBBBBBBBBBB"),
 			Expires: mustParseExpirationTime("3000-01-01T00:00:00Z"),
+			Size:    uint64(len(d)),
 		})
 	dataStore.InsertEntry(strings.NewReader(d),
 		picoshare.UploadMetadata{
 			ID:      picoshare.EntryID("CCCCCCCCCCCC"),
 			Expires: picoshare.NeverExpire,
+			Size:    uint64(len(d)),
 		})
 
 	c := garbagecollect.NewCollector(dataStore)
