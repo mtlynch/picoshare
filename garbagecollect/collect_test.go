@@ -27,7 +27,7 @@ func TestCollectDoesNothingWhenStoreIsEmpty(t *testing.T) {
 
 	expected := []picoshare.UploadMetadata{}
 	if !reflect.DeepEqual(expected, remaining) {
-		t.Fatalf("unexpected results in datastore: got %v, want %v", remaining, expected)
+		t.Fatalf("unexpected results in datastore: got %+v, want %+v", remaining, expected)
 	}
 }
 
@@ -147,7 +147,7 @@ func TestCollectDoesNothingWhenNoFilesAreExpired(t *testing.T) {
 		},
 	}
 	if !reflect.DeepEqual(expected, remaining) {
-		t.Fatalf("unexpected results in datastore: got %v, want %v", remaining, expected)
+		t.Fatalf("unexpected results in datastore: got %+v, want %+v", remaining, expected)
 	}
 }
 
