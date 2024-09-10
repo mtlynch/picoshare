@@ -5,23 +5,20 @@ import (
 	"log"
 	"time"
 
-	"github.com/ncruces/go-sqlite3"
-	_ "github.com/ncruces/go-sqlite3/driver"
+	"github.com/ncruces/go-sqlite3/driver"
 	_ "github.com/ncruces/go-sqlite3/embed"
+	"github.com/ncruces/go-sqlite3/ext/blobio"
 
 	"github.com/mtlynch/picoshare/v2/picoshare"
 )
 
 const (
 	timeFormat = time.RFC3339
-	// I think Chrome reads in 32768 chunks, but I haven't checked rigorously.
-	defaultChunkSize = 32768 * 10
 )
 
 type (
 	Store struct {
-		ctx      *sql.DB
-		sqliteDB *sqlite3.Conn
+		ctx *sql.DB
 	}
 
 	rowScanner interface {
@@ -31,13 +28,7 @@ type (
 
 func New(path string, optimizeForLitestream bool) Store {
 	log.Printf("reading DB from %s", path)
-	// TODO: Only use one?
-	ctx, err := sql.Open("sqlite3", path)
-	if err != nil {
-		log.Fatalln(err)
-	}
-
-	sqliteDB, err := sqlite3.Open(path)
+	ctx, err := driver.Open(path, blobio.Register)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -60,23 +51,10 @@ func New(path string, optimizeForLitestream bool) Store {
 		}
 	}
 
-	// DEBUG
-	/*sqliteDB.Exec(`CREATE TABLE IF NOT EXISTS entries (
-	    id TEXT PRIMARY KEY,
-	    filename TEXT NOT NULL,
-	    contents, -- TODO: Do a proper migration of previous table.
-	    content_type TEXT NOT NULL,
-	    upload_time TEXT NOT NULL,
-	    expiration_time TEXT,
-	    guest_link_id TEXT,
-	    FOREIGN KEY(guest_link_id) REFERENCES guest_links(id)
-	);`)*/
-
 	applyMigrations(ctx)
 
 	return Store{
-		ctx:      ctx,
-		sqliteDB: sqliteDB,
+		ctx: ctx,
 	}
 }
 

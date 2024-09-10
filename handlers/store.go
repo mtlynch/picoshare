@@ -8,8 +8,8 @@ import (
 
 type Store interface {
 	GetEntriesMetadata() ([]picoshare.UploadMetadata, error)
-	GetEntry(id picoshare.EntryID) (picoshare.UploadEntry, error)
 	GetEntryMetadata(id picoshare.EntryID) (picoshare.UploadMetadata, error)
+	ReadEntryFile(picoshare.EntryID, func(io.ReadSeeker)) error
 	InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) error
 	UpdateEntryMetadata(id picoshare.EntryID, metadata picoshare.UploadMetadata) error
 	DeleteEntry(id picoshare.EntryID) error

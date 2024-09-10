@@ -3,14 +3,15 @@ package sqlite
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"io"
 	"log"
 
 	"github.com/ncruces/go-sqlite3"
+	"github.com/ncruces/go-sqlite3/ext/blobio"
 
 	"github.com/mtlynch/picoshare/v2/picoshare"
 	"github.com/mtlynch/picoshare/v2/store"
-	"github.com/mtlynch/picoshare/v2/store/sqlite/file"
 )
 
 func (s Store) GetEntriesMetadata() ([]picoshare.UploadMetadata, error) {
@@ -22,20 +23,9 @@ func (s Store) GetEntriesMetadata() ([]picoshare.UploadMetadata, error) {
 		entries.content_type AS content_type,
 		entries.upload_time AS upload_time,
 		entries.expiration_time AS expiration_time,
-		sizes.file_size AS file_size,
 		IFNULL(downloads.download_count, 0) AS download_count
 	FROM
 		entries
-	INNER JOIN
-		(
-			SELECT
-				id,
-				SUM(LENGTH(chunk)) AS file_size
-			FROM
-				entries_data
-			GROUP BY
-				id
-		) sizes ON entries.id = sizes.id
 	LEFT OUTER JOIN
 		(
 			SELECT
@@ -58,9 +48,8 @@ func (s Store) GetEntriesMetadata() ([]picoshare.UploadMetadata, error) {
 		var contentType string
 		var uploadTimeRaw string
 		var expirationTimeRaw string
-		var fileSize uint64
 		var downloadCount uint64
-		if err = rows.Scan(&id, &filename, &note, &contentType, &uploadTimeRaw, &expirationTimeRaw, &fileSize, &downloadCount); err != nil {
+		if err = rows.Scan(&id, &filename, &note, &contentType, &uploadTimeRaw, &expirationTimeRaw, &downloadCount); err != nil {
 			return []picoshare.UploadMetadata{}, err
 		}
 
@@ -81,7 +70,7 @@ func (s Store) GetEntriesMetadata() ([]picoshare.UploadMetadata, error) {
 			ContentType:   picoshare.ContentType(contentType),
 			Uploaded:      ut,
 			Expires:       picoshare.ExpirationTime(et),
-			Size:          fileSize,
+			Size:          13, // TODO: Calculate this for real
 			DownloadCount: downloadCount,
 		})
 	}
@@ -89,21 +78,33 @@ func (s Store) GetEntriesMetadata() ([]picoshare.UploadMetadata, error) {
 	return ee, nil
 }
 
-func (s Store) GetEntry(id picoshare.EntryID) (picoshare.UploadEntry, error) {
-	metadata, err := s.GetEntryMetadata(id)
+func (s Store) ReadEntryFile(id picoshare.EntryID, processFile func(io.ReadSeeker)) error {
+	log.Printf("attempting to read entry %s", id.String()) // DEBUG
+	_, err := s.ctx.Exec(`
+			SELECT
+				openblob('main', 'entries', 'contents', rowid, :writeMode, :callback)
+			FROM
+				entries
+			WHERE
+				entries.id = :entry_id
+	`,
+		sql.Named("writeMode", false),
+		sql.Named("callback",
+			sqlite3.Pointer[blobio.OpenCallback](func(blob *sqlite3.Blob, _ ...sqlite3.Value) error {
+				log.Printf("start callback") // DEBUG
+				processFile(blob)
+				log.Printf("end callback") // DEBUG
+				return nil
+			})),
+		sql.Named("entry_id", id))
 	if err != nil {
-		return picoshare.UploadEntry{}, err
+		log.Printf("failed to open blob for %v: %v", id.String(), err) // DEBUG
+		return fmt.Errorf("error opening blob for id %s: %w", id, err)
 	}
 
-	r, err := file.NewReader(s.ctx, id)
-	if err != nil {
-		return picoshare.UploadEntry{}, err
-	}
+	log.Printf("finished reading entry %v", id.String()) // DEBUG
 
-	return picoshare.UploadEntry{
-		UploadMetadata: metadata,
-		Reader:         r,
-	}, nil
+	return nil
 }
 
 func (s Store) GetEntryMetadata(id picoshare.EntryID) (picoshare.UploadMetadata, error) {
@@ -112,7 +113,6 @@ func (s Store) GetEntryMetadata(id picoshare.EntryID) (picoshare.UploadMetadata,
 	var contentType string
 	var uploadTimeRaw string
 	var expirationTimeRaw string
-	var fileSize uint64
 	var guestLinkID *picoshare.GuestLinkID
 	err := s.ctx.QueryRow(`
 	SELECT
@@ -121,22 +121,11 @@ func (s Store) GetEntryMetadata(id picoshare.EntryID) (picoshare.UploadMetadata,
 		entries.content_type AS content_type,
 		entries.upload_time AS upload_time,
 		entries.expiration_time AS expiration_time,
-		sizes.file_size AS file_size,
 		entries.guest_link_id AS guest_link_id
 	FROM
 		entries
-	INNER JOIN
-		(
-			SELECT
-				id,
-				SUM(LENGTH(chunk)) AS file_size
-			FROM
-				entries_data
-			GROUP BY
-				id
-		) sizes ON entries.id = sizes.id
 	WHERE
-		entries.id = :entry_id`, sql.Named("entry_id", id)).Scan(&filename, &note, &contentType, &uploadTimeRaw, &expirationTimeRaw, &fileSize, &guestLinkID)
+		entries.id = :entry_id`, sql.Named("entry_id", id)).Scan(&filename, &note, &contentType, &uploadTimeRaw, &expirationTimeRaw, &guestLinkID)
 	if err == sql.ErrNoRows {
 		return picoshare.UploadMetadata{}, store.EntryNotFoundError{ID: id}
 	} else if err != nil {
@@ -169,14 +158,14 @@ func (s Store) GetEntryMetadata(id picoshare.EntryID) (picoshare.UploadMetadata,
 		ContentType: picoshare.ContentType(contentType),
 		Uploaded:    ut,
 		Expires:     picoshare.ExpirationTime(et),
-		Size:        fileSize,
+		Size:        13, // TODO: Calculate for real
 	}, nil
 }
 
 func (s Store) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) error {
 	log.Printf("saving new entry %s", metadata.ID)
 
-	result, err := s.ctx.Exec(`
+	_, err := s.ctx.Exec(`
 	INSERT INTO
 		entries
 	(
@@ -204,24 +193,17 @@ func (s Store) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) 
 		return err
 	}
 
-	rowID, err := result.LastInsertId()
+	log.Printf("created entry row for %s", metadata.ID) // DEBUG
+
+	_, err = s.ctx.Exec(`SELECT writeblob('main', 'entries', 'contents', last_insert_rowid(), :offset, :data)`,
+		sql.Named("offset", 0),
+		sql.Named("data", sqlite3.Pointer(reader)))
 	if err != nil {
-		log.Printf("failed to get last insert ID: %v", err)
+		log.Printf("failed to write blob of length %d: %v", metadata.Size, err)
 		return err
 	}
 
-	blob, err := s.sqliteDB.OpenBlob("main", "entries", "contents", rowID, true)
-	if err != nil {
-		log.Printf("failed to open blob: %v", err)
-		return err
-	}
-	defer blob.Close()
-
-	_, err = io.Copy(blob, reader)
-	if err != nil {
-		log.Printf("failed to write file upload to blob storage: %v", err)
-		return err
-	}
+	log.Printf("wrote blob of size %d for %v", metadata.Size, metadata.ID) // DEBUG
 
 	return nil
 }
@@ -273,14 +255,7 @@ func (s Store) DeleteEntry(id picoshare.EntryID) error {
 		return err
 	}
 
-	if _, err := tx.Exec(`
-	DELETE FROM
-		entries_data
-	WHERE
-		id = :entry_id`, sql.Named("entry_id", id)); err != nil {
-		log.Printf("delete from entries_data table failed, aborting transaction: %v", err)
-		return err
-	}
+	// TODO: No transaction
 
 	return tx.Commit()
 }
