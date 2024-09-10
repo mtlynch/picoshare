@@ -11,7 +11,7 @@ CREATE TABLE entries_temp (
     upload_time TEXT NOT NULL,
     expiration_time TEXT,
     guest_link_id TEXT,
-    FOREIGN KEY(guest_link_id) REFERENCES guest_links(id)
+    FOREIGN KEY (guest_link_id) REFERENCES guest_links (id)
 );
 
 -- Copy data from the existing entries table.
@@ -21,7 +21,8 @@ INSERT INTO entries_temp (
     content_type,
     note,
     upload_time,
-    expiration_time)
+    expiration_time
+)
 SELECT
     id,
     filename,
@@ -34,8 +35,9 @@ FROM entries;
 -- Combine and insert data from entries_data.
 UPDATE entries_temp
 SET contents = (
-    SELECT
+    SELECT (
         GROUP_CONCAT(entries_data.chunk, '' ORDER BY entries_data.chunk_index)
+    )
     FROM entries_data
     WHERE entries_data.id = entries_temp.id
 );
