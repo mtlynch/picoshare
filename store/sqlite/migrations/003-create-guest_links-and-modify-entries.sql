@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS entries (
     upload_time TEXT NOT NULL,
     expiration_time TEXT,
     guest_link_id TEXT,
-    FOREIGN KEY(guest_link_id) REFERENCES guest_links(id)
+    FOREIGN KEY (guest_link_id) REFERENCES guest_links (id)
 );
 
 INSERT INTO entries

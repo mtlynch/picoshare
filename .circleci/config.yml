@@ -37,11 +37,7 @@ jobs:
       - checkout
       - run:
           name: Lint SQL files
-          command: |
-            sqlfluff lint \
-              --disable_progress_bar \
-              --dialect sqlite \
-              store/sqlite/migrations
+          command: ./dev-scripts/lint-sql
   check_frontend:
     docker:
       - image: cimg/node:20.6.1
