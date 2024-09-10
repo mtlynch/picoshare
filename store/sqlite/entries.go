@@ -1,7 +1,6 @@
 package sqlite
 
 import (
-	"context"
 	"database/sql"
 	"fmt"
 	"io"
@@ -241,21 +240,13 @@ func (s Store) UpdateEntryMetadata(id picoshare.EntryID, metadata picoshare.Uplo
 func (s Store) DeleteEntry(id picoshare.EntryID) error {
 	log.Printf("deleting entry %v", id)
 
-	tx, err := s.ctx.BeginTx(context.Background(), nil)
-	if err != nil {
-		return err
-	}
-
-	if _, err := tx.Exec(`
+	if _, err := s.ctx.Exec(`
 	DELETE FROM
 		entries
 	WHERE
 		id = :entry_id`, sql.Named("entry_id", id)); err != nil {
-		log.Printf("delete from entries table failed, aborting transaction: %v", err)
 		return err
 	}
 
-	// TODO: No transaction
-
-	return tx.Commit()
+	return nil
 }
