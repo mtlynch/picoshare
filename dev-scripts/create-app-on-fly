@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+
+# Exit on first failing command.
+set -e
+
+# Exit on unset variable.
+set -u
+
+# Echo commands
+set -x
+
+# Change directory to repository root.
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+readonly SCRIPT_DIR
+cd "${SCRIPT_DIR}/.."
+
+readonly APP_NAME='picoshare-ncruces'
+
+fly apps create --name "${APP_NAME}" --org personal
+
+flyctl secrets set PS_SHARED_SECRET='mypass'
+
+fly deploy --ha=false
