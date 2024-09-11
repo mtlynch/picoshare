@@ -13,10 +13,6 @@ func New() sqlite.Store {
 	return sqlite.New(ephemeralDbURI(), optimizeForLitestream)
 }
 
-func NewWithChunkSize(chunkSize int) sqlite.Store {
-	return sqlite.NewWithChunkSize(ephemeralDbURI(), chunkSize, optimizeForLitestream)
-}
-
 func ephemeralDbURI() string {
 	name := random.String(
 		10,
