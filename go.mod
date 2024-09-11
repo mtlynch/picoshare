@@ -3,6 +3,7 @@ module github.com/mtlynch/picoshare/v2
 go 1.21
 
 require (
+	github.com/go-test/deep v1.1.1
 	github.com/gorilla/mux v1.8.0
 	github.com/mattn/go-sqlite3 v1.14.22
 	github.com/mileusna/useragent v1.3.3
