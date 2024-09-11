@@ -100,7 +100,7 @@ func TestCollectExpiredFile(t *testing.T) {
 		t.Errorf("unexpected results in datastore: got %v, want %v, diff = %v", remaining, expected, diff)
 		t.Errorf("got=%+v", remaining)
 		t.Errorf("want=%+v", expected)
-		t.Errorf("diff = %+v", diff)
+		t.Errorf("diff=%+v", diff)
 		t.FailNow()
 	}
 }
@@ -160,8 +160,13 @@ func TestCollectDoesNothingWhenNoFilesAreExpired(t *testing.T) {
 			Size:    uint64(len(d)),
 		},
 	}
-	if !reflect.DeepEqual(expected, remaining) {
-		t.Fatalf("unexpected results in datastore: got %+v, want %+v", remaining, expected)
+
+	if diff := deep.Equal(expected, remaining); diff != nil {
+		t.Errorf("unexpected results in datastore: got %v, want %v, diff = %v", remaining, expected, diff)
+		t.Errorf("got=%+v", remaining)
+		t.Errorf("want=%+v", expected)
+		t.Errorf("diff=%+v", diff)
+		t.FailNow()
 	}
 }
 
