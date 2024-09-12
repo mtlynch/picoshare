@@ -56,6 +56,7 @@ func New(path string, optimizeForLitestream bool) Store {
 	// Try to prevent memory exhaustion.
 	// https://github.com/ncruces/go-sqlite3/issues/148#issuecomment-2344857749
 	sqlite3.RuntimeConfig = wazero.NewRuntimeConfig().WithMemoryLimitPages(512)
+	ctx.SetMaxOpenConns(1)
 
 	applyMigrations(ctx)
 
