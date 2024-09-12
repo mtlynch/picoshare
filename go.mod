@@ -7,7 +7,7 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/mileusna/useragent v1.3.3
 	github.com/mtlynch/gorilla-handlers v1.5.2
-	github.com/ncruces/go-sqlite3 v0.18.3-0.20240910104819-6a2827f989b6
+	github.com/ncruces/go-sqlite3 v0.18.3-0.20240912150531-fdfaaa8cec75
 	golang.org/x/crypto v0.27.0
 	golang.org/x/sys v0.25.0
 )

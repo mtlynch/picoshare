@@ -10,6 +10,8 @@ github.com/mtlynch/gorilla-handlers v1.5.2 h1:CnOI7baYzjgdumJMc7Dh192JFxqGsNgRew
 github.com/mtlynch/gorilla-handlers v1.5.2/go.mod h1:qZmXSCK7pPjN71Pl9ARbQX2ec1t11FI/j8bDS+ZVbmQ=
 github.com/ncruces/go-sqlite3 v0.18.3-0.20240910104819-6a2827f989b6 h1:dDBN0tx10dirHjxL7g5BF2r+HJqPJM6zu7NS+fJ5JqE=
 github.com/ncruces/go-sqlite3 v0.18.3-0.20240910104819-6a2827f989b6/go.mod h1:HAwOtA+cyEX3iN6YmkpQwfT4vMMgCB7rQRFUdOgEFik=
+github.com/ncruces/go-sqlite3 v0.18.3-0.20240912150531-fdfaaa8cec75 h1:YJSeQ408oPVjJ+eq7pKusLSB6X23pCQ47WLn1lw07gg=
+github.com/ncruces/go-sqlite3 v0.18.3-0.20240912150531-fdfaaa8cec75/go.mod h1:HAwOtA+cyEX3iN6YmkpQwfT4vMMgCB7rQRFUdOgEFik=
 github.com/ncruces/julianday v1.0.0 h1:fH0OKwa7NWvniGQtxdJRxAgkBMolni2BjDHaWTxqt7M=
 github.com/ncruces/julianday v1.0.0/go.mod h1:Dusn2KvZrrovOMJuOt0TNXL6tB7U2E8kvza5fFc9G7g=
 github.com/tetratelabs/wazero v1.8.0 h1:iEKu0d4c2Pd+QSRieYbnQC9yiFlMS9D+Jr0LsRmcF4g=
