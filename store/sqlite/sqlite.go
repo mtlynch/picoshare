@@ -5,9 +5,11 @@ import (
 	"log"
 	"time"
 
+	"github.com/ncruces/go-sqlite3"
 	"github.com/ncruces/go-sqlite3/driver"
 	_ "github.com/ncruces/go-sqlite3/embed"
 	"github.com/ncruces/go-sqlite3/ext/blobio"
+	"github.com/tetratelabs/wazero"
 
 	"github.com/mtlynch/picoshare/v2/picoshare"
 )
@@ -50,6 +52,10 @@ func New(path string, optimizeForLitestream bool) Store {
 			log.Fatalf("failed to set Litestream compatibility pragmas: %v", err)
 		}
 	}
+
+	// Try to prevent memory exhaustion.
+	// https://github.com/ncruces/go-sqlite3/issues/148#issuecomment-2344857749
+	sqlite3.RuntimeConfig = wazero.NewRuntimeConfig().WithMemoryLimitPages(512)
 
 	applyMigrations(ctx)
 
