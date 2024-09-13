@@ -38,6 +38,12 @@ func New(path string, optimizeForLitestream bool) Store {
 	if _, err := ctx.Exec(`
 		PRAGMA temp_store = FILE;
 		PRAGMA journal_mode = WAL;
+		PRAGMA soft_heap_limit = 104857600;  -- 100 MB in bytes
+		PRAGMA cache_size = -50000;          -- Approximately 50 MB (in 1KB pages)
+		PRAGMA cache_spill = 1;              -- Enable cache spilling to disk
+		PRAGMA temp_store = 2;               -- Store temp tables and indices in memory
+		PRAGMA mmap_size = 0;                -- Disable memory-mapped I/O
+		PRAGMA page_size = 4096;             -- Set page size to 4 KB
 		`); err != nil {
 		log.Fatalf("failed to set pragmas: %v", err)
 	}
