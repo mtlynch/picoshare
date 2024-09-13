@@ -31,5 +31,6 @@ docker run \
   --env "PS_SHARED_SECRET=${PS_SHARED_SECRET}" \
   --publish "0.0.0.0:4002:4002" \
   --memory 256m \
+  --env "GOMEMLIMIT=134217728" \
   --name picoshare \
   picoshare
