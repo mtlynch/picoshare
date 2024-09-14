@@ -35,7 +35,7 @@ func main() {
 			-- Apply Litestream recommendations: https://litestream.io/tips/
 			--PRAGMA busy_timeout = 5000; -- Crashes with no output
 			--PRAGMA synchronous = NORMAL; -- Crashes with no output
-			--PRAGMA wal_autocheckpoint = 0; -- Crashes with OOM log`)
+			PRAGMA wal_autocheckpoint = 0; -- Crashes with OOM log`)
 	if err != nil {
 		log.Panic(err)
 	}
