@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+
+set -eux
+
+rm test.db* || true
+
+readonly BINARY_DIR='bin'
+mkdir -p "${BINARY_DIR}"
+
+readonly BINARY_NAME="${BINARY_DIR}/test-ncruces"
+
+go build \
+  -tags netgo \
+  -o "${BINARY_NAME}" \
+  main.go
+
+TEST_FILE="$(mktemp)"
+readonly TEST_FILE
+dd if=/dev/urandom of="${TEST_FILE}" bs=1M count=512
+
+du -h "${TEST_FILE}"
+
+"./${BINARY_NAME}" "${TEST_FILE}"
