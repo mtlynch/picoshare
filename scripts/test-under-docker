@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+
+set -eux
+
+readonly IMAGE_NAME='test-ncruces'
+
+DOCKER_BUILDKIT=1 \
+  docker build -t "${IMAGE_NAME}" .
+
+docker rm -f "${IMAGE_NAME}" || true
+
+readonly CONTAINER_NAME="${IMAGE_NAME}"
+
+TEST_FILE="$(./scripts/make-data-file)"
+readonly TEST_FILE
+
+
+docker run \
+  -v "${TEST_FILE}:/data/test-file" \
+  --memory 128M \
+  --name "${IMAGE_NAME}" \
+  "${CONTAINER_NAME}" \
+  /data/test-file

@@ -16,7 +16,7 @@ import (
 func main() {
 	log.Printf("starting up!")
 
-	sqlite3.RuntimeConfig = wazero.NewRuntimeConfig().WithMemoryLimitPages(64)
+	sqlite3.RuntimeConfig = wazero.NewRuntimeConfig().WithMemoryLimitPages(128)
 	sqlite3.AutoExtension(blobio.Register)
 
 	var err error
@@ -62,6 +62,8 @@ func main() {
 			if err != nil {
 				log.Panic(err)
 			}
+
+			log.Printf("wrote %s to db", info.Name())
 		}()
 	}
 }

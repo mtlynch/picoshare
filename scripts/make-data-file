@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+set -eux
+
+TEST_FILE="$(mktemp)"
+readonly TEST_FILE
+dd if=/dev/urandom of="${TEST_FILE}" bs=1M count=952
+
+echo "${TEST_FILE}"

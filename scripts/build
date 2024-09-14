@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+set -eux
+
+readonly BINARY_DIR='bin'
+mkdir -p "${BINARY_DIR}"
+
+readonly BINARY_NAME="${BINARY_DIR}/test-ncruces"
+
+go build \
+  -tags netgo \
+  -o "${BINARY_NAME}" \
+  main.go
+
+echo "${BINARY_NAME}"
