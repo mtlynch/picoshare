@@ -110,7 +110,7 @@ jobs:
     steps:
       - checkout
       - setup_remote_docker:
-          version: 20.10.24
+          version: docker24
           docker_layer_caching: true
       - run:
           name: Enable multiarch builds with QEMU
@@ -183,7 +183,7 @@ jobs:
     steps:
       - checkout
       - setup_remote_docker:
-          version: 20.10.24
+          version: docker24
           docker_layer_caching: true
       - run:
           name: Authenticate to Docker Hub
