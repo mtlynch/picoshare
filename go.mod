@@ -1,6 +1,6 @@
 module github.com/mtlynch/picoshare/v2
 
-go 1.21
+go 1.23
 
 require (
 	github.com/go-test/deep v1.1.1
