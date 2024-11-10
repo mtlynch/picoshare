@@ -5,7 +5,7 @@ executors:
       - image: cimg/base:stable
   go:
     docker:
-      - image: cimg/go:1.22.3
+      - image: cimg/go:1.23.2
 jobs:
   check_whitespace:
     executor: base
