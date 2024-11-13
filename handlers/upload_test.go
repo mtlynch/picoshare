@@ -103,22 +103,28 @@ func TestEntryPost(t *testing.T) {
 			}
 			req.Header.Add("Content-Type", contentType)
 
-			w := httptest.NewRecorder()
-			s.Router().ServeHTTP(w, req)
+			rec := httptest.NewRecorder()
+			s.Router().ServeHTTP(rec, req)
+			res := rec.Result()
 
-			if got, want := w.Code, tt.status; got != want {
+			if got, want := res.StatusCode, tt.status; got != want {
 				t.Errorf("status=%d, want=%d", got, want)
 			}
 
 			// Only check the response if the request succeeded.
-			if w.Code != http.StatusOK {
+			if res.StatusCode != http.StatusOK {
 				return
 			}
 
-			var response handlers.EntryPostResponse
-			err = json.Unmarshal(w.Body.Bytes(), &response)
+			body, err := io.ReadAll(res.Body)
 			if err != nil {
-				t.Fatalf("response is not valid JSON: %v", w.Body.String())
+				t.Fatalf("failed to read response body")
+			}
+
+			var response handlers.EntryPostResponse
+			err = json.Unmarshal(body, &response)
+			if err != nil {
+				t.Fatalf("response is not valid JSON: %v", body)
 			}
 
 			entry, err := dataStore.GetEntry(picoshare.EntryID(response.ID))
@@ -233,10 +239,11 @@ func TestEntryPut(t *testing.T) {
 			}
 			req.Header.Add("Content-Type", "text/json")
 
-			w := httptest.NewRecorder()
-			s.Router().ServeHTTP(w, req)
+			rec := httptest.NewRecorder()
+			s.Router().ServeHTTP(rec, req)
+			res := rec.Result()
 
-			if got, want := w.Code, tt.status; got != want {
+			if got, want := res.StatusCode, tt.status; got != want {
 				t.Fatalf("status=%d, want=%d", got, want)
 			}
 
@@ -396,22 +403,28 @@ func TestGuestUpload(t *testing.T) {
 			req.Header.Add("Content-Type", contentType)
 			req.Header.Add("Accept", "application/json")
 
-			w := httptest.NewRecorder()
-			s.Router().ServeHTTP(w, req)
+			rec := httptest.NewRecorder()
+			s.Router().ServeHTTP(rec, req)
+			res := rec.Result()
 
-			if got, want := w.Code, tt.status; got != want {
+			if got, want := res.StatusCode, tt.status; got != want {
 				t.Fatalf("status=%d, want=%d", got, want)
 			}
 
 			// Only check the response if the request succeeded.
-			if w.Code != http.StatusOK {
+			if res.StatusCode != http.StatusOK {
 				return
 			}
 
-			var response handlers.EntryPostResponse
-			err = json.Unmarshal(w.Body.Bytes(), &response)
+			body, err := io.ReadAll(res.Body)
 			if err != nil {
-				t.Fatalf("response is not valid JSON: %v", w.Body.String())
+				t.Fatalf("failed to read response body")
+			}
+
+			var response handlers.EntryPostResponse
+			err = json.Unmarshal(body, &response)
+			if err != nil {
+				t.Fatalf("response is not valid JSON: %v", body)
 			}
 
 			entry, err := store.GetEntry(picoshare.EntryID(response.ID))
