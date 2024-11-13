@@ -3,6 +3,7 @@ package handlers_test
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
@@ -63,18 +64,24 @@ func TestGuestLinksPostAcceptsValidRequest(t *testing.T) {
 			}
 			req.Header.Add("Content-Type", "text/json")
 
-			w := httptest.NewRecorder()
-			s.Router().ServeHTTP(w, req)
+			rec := httptest.NewRecorder()
+			s.Router().ServeHTTP(rec, req)
+			res := rec.Result()
 
-			if status := w.Code; status != http.StatusOK {
+			if status := res.StatusCode; status != http.StatusOK {
 				t.Fatalf("%s: handler returned wrong status code: got %v want %v",
 					tt.description, status, http.StatusOK)
 			}
 
-			var response handlers.GuestLinkPostResponse
-			err = json.Unmarshal(w.Body.Bytes(), &response)
+			body, err := io.ReadAll(res.Body)
 			if err != nil {
-				t.Fatalf("response is not valid JSON: %v", w.Body.String())
+				t.Fatalf("failed to read response body")
+			}
+
+			var response handlers.GuestLinkPostResponse
+			err = json.Unmarshal(body, &response)
+			if err != nil {
+				t.Fatalf("response is not valid JSON: %v", body)
 			}
 
 			gl, err := dataStore.GetGuestLink(picoshare.GuestLinkID(response.ID))
@@ -215,10 +222,11 @@ func TestGuestLinksPostRejectsInvalidRequest(t *testing.T) {
 			}
 			req.Header.Add("Content-Type", "text/json")
 
-			w := httptest.NewRecorder()
-			s.Router().ServeHTTP(w, req)
+			rec := httptest.NewRecorder()
+			s.Router().ServeHTTP(rec, req)
+			res := rec.Result()
 
-			if status := w.Code; status != http.StatusBadRequest {
+			if status := res.StatusCode; status != http.StatusBadRequest {
 				t.Fatalf("%s: handler returned wrong status code: got %v want %v",
 					tt.description, status, http.StatusBadRequest)
 			}
@@ -249,10 +257,11 @@ func TestDeleteExistingGuestLink(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	w := httptest.NewRecorder()
-	s.Router().ServeHTTP(w, req)
+	rec := httptest.NewRecorder()
+	s.Router().ServeHTTP(rec, req)
+	res := rec.Result()
 
-	if status := w.Code; status != http.StatusOK {
+	if status := res.StatusCode; status != http.StatusOK {
 		t.Fatalf("DELETE returned wrong status code: got %v want %v", status, http.StatusOK)
 	}
 
@@ -271,11 +280,12 @@ func TestDeleteNonExistentGuestLink(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	w := httptest.NewRecorder()
-	s.Router().ServeHTTP(w, req)
+	rec := httptest.NewRecorder()
+	s.Router().ServeHTTP(rec, req)
+	res := rec.Result()
 
 	// File doesn't exist, but there's no error for deleting a non-existent file.
-	if status := w.Code; status != http.StatusOK {
+	if status := res.StatusCode; status != http.StatusOK {
 		t.Fatalf("DELETE returned wrong status code: got %v want %v",
 			status, http.StatusOK)
 	}
@@ -290,10 +300,11 @@ func TestDeleteInvalidGuestLink(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	w := httptest.NewRecorder()
-	s.Router().ServeHTTP(w, req)
+	rec := httptest.NewRecorder()
+	s.Router().ServeHTTP(rec, req)
+	res := rec.Result()
 
-	if status := w.Code; status != http.StatusBadRequest {
+	if status := res.StatusCode; status != http.StatusBadRequest {
 		t.Fatalf("DELETE returned wrong status code: got %v want %v", status, http.StatusBadRequest)
 	}
 }
