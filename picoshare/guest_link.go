@@ -14,7 +14,8 @@ type (
 		ID             GuestLinkID
 		Label          GuestLinkLabel
 		Created        time.Time
-		Expires        ExpirationTime
+		UrlExpires     ExpirationTime
+		FileExpires    ExpirationTime
 		MaxFileBytes   GuestUploadMaxFileBytes
 		MaxFileUploads GuestUploadCountLimit
 		FilesUploaded  int
@@ -46,10 +47,10 @@ func (gl GuestLink) CanAcceptMoreFiles() bool {
 }
 
 func (gl GuestLink) IsExpired() bool {
-	if gl.Expires == NeverExpire {
+	if gl.UrlExpires == NeverExpire {
 		return false
 	}
-	return time.Now().After(time.Time(gl.Expires))
+	return time.Now().After(time.Time(gl.UrlExpires))
 }
 
 func (gl GuestLink) IsActive() bool {

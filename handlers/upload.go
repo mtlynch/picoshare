@@ -132,7 +132,7 @@ func (s Server) guestEntryPost() http.HandlerFunc {
 			r.Body = http.MaxBytesReader(w, r.Body, int64(*gl.MaxFileBytes))
 		}
 
-		id, err := s.insertFileFromRequest(r, picoshare.NeverExpire, guestLinkID)
+		id, err := s.insertFileFromRequest(r, gl.FileExpires, guestLinkID)
 		if err != nil {
 			var de *dbError
 			if errors.As(err, &de) {

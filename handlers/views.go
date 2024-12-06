@@ -87,6 +87,18 @@ func (s Server) guestLinkIndexGet() http.HandlerFunc {
 			}
 			return fmt.Sprintf("%s (%.0f days%s)", t.Format(time.DateOnly), math.Abs(delta.Hours())/24, suffix)
 		},
+		"formatFileExpiration": func(et picoshare.ExpirationTime) string {
+			if et == picoshare.NeverExpire {
+				return "Never"
+			}
+			t := time.Time(et)
+			letterS := "s"
+			delta := time.Until(t)
+			if delta.Hours() < 25 {
+				letterS = ""
+			}
+			return fmt.Sprintf("After %.0f day%s", math.Abs(delta.Hours())/24, letterS)
+		},
 		"isActive": func(gl picoshare.GuestLink) bool {
 			return gl.IsActive()
 		},
@@ -121,6 +133,9 @@ func (s Server) guestLinkIndexGet() http.HandlerFunc {
 func (s Server) guestLinksNewGet() http.HandlerFunc {
 	fns := template.FuncMap{
 		"formatExpiration": func(t time.Time) string {
+			return t.Format(time.RFC3339)
+		},
+		"formatFileExpiration": func(t time.Time) string {
 			return t.Format(time.RFC3339)
 		},
 	}

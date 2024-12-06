@@ -67,7 +67,8 @@ func (s Server) guestLinksDelete() http.HandlerFunc {
 func guestLinkFromRequest(r *http.Request) (picoshare.GuestLink, error) {
 	var payload struct {
 		Label          string  `json:"label"`
-		Expiration     string  `json:"expirationTime"`
+		UrlExpiration  string  `json:"urlExpirationTime"`
+		FileExpiration string  `json:"fileExpirationTime"`
 		MaxFileBytes   *uint64 `json:"maxFileBytes"`
 		MaxFileUploads *int    `json:"maxFileUploads"`
 	}
@@ -82,7 +83,12 @@ func guestLinkFromRequest(r *http.Request) (picoshare.GuestLink, error) {
 		return picoshare.GuestLink{}, err
 	}
 
-	expiration, err := parse.Expiration(payload.Expiration)
+	urlExpiration, err := parse.Expiration(payload.UrlExpiration)
+	if err != nil {
+		return picoshare.GuestLink{}, err
+	}
+
+	fileExpiration, err := parse.Expiration(payload.FileExpiration)
 	if err != nil {
 		return picoshare.GuestLink{}, err
 	}
@@ -99,7 +105,8 @@ func guestLinkFromRequest(r *http.Request) (picoshare.GuestLink, error) {
 
 	return picoshare.GuestLink{
 		Label:          label,
-		Expires:        expiration,
+		UrlExpires:     urlExpiration,
+		FileExpires:    fileExpiration,
 		MaxFileBytes:   maxFileBytes,
 		MaxFileUploads: maxFileUploads,
 	}, nil

@@ -27,13 +27,15 @@ func TestGuestLinksPostAcceptsValidRequest(t *testing.T) {
 			description: "minimally populated request",
 			payload: `{
 					"label": null,
-					"expirationTime":"2030-01-02T03:04:25Z",
+					"urlExpirationTime":"2030-01-02T03:04:25Z",
+					"fileExpirationTime":"2030-01-02T03:04:25Z",
 					"maxFileBytes": null,
 					"maxFileUploads": null
 				}`,
 			expected: picoshare.GuestLink{
 				Label:          picoshare.GuestLinkLabel(""),
-				Expires:        mustParseExpirationTime("2030-01-02T03:04:25Z"),
+				UrlExpires:     mustParseExpirationTime("2030-01-02T03:04:25Z"),
+				FileExpires:    mustParseExpirationTime("2030-01-02T03:04:25Z"),
 				MaxFileBytes:   picoshare.GuestUploadUnlimitedFileSize,
 				MaxFileUploads: picoshare.GuestUploadUnlimitedFileUploads,
 			},
@@ -42,13 +44,15 @@ func TestGuestLinksPostAcceptsValidRequest(t *testing.T) {
 			description: "fully populated request",
 			payload: `{
 					"label": "For my good pal, Maurice",
-					"expirationTime":"2030-01-02T03:04:25Z",
+					"urlExpirationTime":"2030-01-02T03:04:25Z",
+					"fileExpirationTime":"2030-01-02T03:04:25Z",
 					"maxFileBytes": 1048576,
 					"maxFileUploads": 1
 				}`,
 			expected: picoshare.GuestLink{
 				Label:          picoshare.GuestLinkLabel("For my good pal, Maurice"),
-				Expires:        mustParseExpirationTime("2030-01-02T03:04:25Z"),
+				UrlExpires:     mustParseExpirationTime("2030-01-02T03:04:25Z"),
+				FileExpires:    mustParseExpirationTime("2030-01-02T03:04:25Z"),
 				MaxFileBytes:   makeGuestUploadMaxFileBytes(1048576),
 				MaxFileUploads: makeGuestUploadCountLimit(1),
 			},
@@ -117,7 +121,7 @@ func TestGuestLinksPostRejectsInvalidRequest(t *testing.T) {
 			description: "invalid label field (non-string)",
 			payload: `{
 					"label": 5,
-					"expirationTime":"2025-01-01T00:00:00Z",
+					"urlExpirationTime":"2025-01-01T00:00:00Z",
 					"maxFileBytes": null,
 					"maxFileUploads": null
 				}`,
@@ -126,13 +130,13 @@ func TestGuestLinksPostRejectsInvalidRequest(t *testing.T) {
 			description: "invalid label field (too long)",
 			payload: fmt.Sprintf(`{
 					"label": "%s",
-					"expirationTime":"2025-01-01T00:00:00Z",
+					"urlExpirationTime":"2025-01-01T00:00:00Z",
 					"maxFileBytes": null,
 					"maxFileUploads": null
 				}`, strings.Repeat("A", 201)),
 		},
 		{
-			description: "missing expirationTime field",
+			description: "missing urlExpirationTime field",
 			payload: `{
 					"label": null,
 					"maxFileBytes": null,
@@ -143,7 +147,7 @@ func TestGuestLinksPostRejectsInvalidRequest(t *testing.T) {
 			description: "invalid expirationTime field",
 			payload: `{
 					"label": null,
-					"expirationTime": 25,
+					"urlExpirationTime": 25,
 					"maxFileBytes": null,
 					"maxFileUploads": null
 				}`,
@@ -152,7 +156,7 @@ func TestGuestLinksPostRejectsInvalidRequest(t *testing.T) {
 			description: "negative maxFileBytes field",
 			payload: `{
 					"label": null,
-					"expirationTime":"2025-01-01T00:00:00Z",
+					"urlExpirationTime":"2025-01-01T00:00:00Z",
 					"maxFileBytes": -5,
 					"maxFileUploads": null
 				}`,
@@ -161,7 +165,7 @@ func TestGuestLinksPostRejectsInvalidRequest(t *testing.T) {
 			description: "decimal maxFileBytes field",
 			payload: `{
 					"label": null,
-					"expirationTime":"2025-01-01T00:00:00Z",
+					"urlExpirationTime":"2025-01-01T00:00:00Z",
 					"maxFileBytes": 1.5,
 					"maxFileUploads": null
 				}`,
@@ -170,7 +174,7 @@ func TestGuestLinksPostRejectsInvalidRequest(t *testing.T) {
 			description: "too low a maxFileBytes field",
 			payload: `{
 					"label": null,
-					"expirationTime":"2025-01-01T00:00:00Z",
+					"urlExpirationTime":"2025-01-01T00:00:00Z",
 					"maxFileBytes": 1,
 					"maxFileUploads": null
 				}`,
@@ -179,7 +183,7 @@ func TestGuestLinksPostRejectsInvalidRequest(t *testing.T) {
 			description: "zero maxFileBytes field",
 			payload: `{
 					"label": null,
-					"expirationTime":"2025-01-01T00:00:00Z",
+					"urlExpirationTime":"2025-01-01T00:00:00Z",
 					"maxFileBytes": 0,
 					"maxFileUploads": null
 				}`,
@@ -188,7 +192,7 @@ func TestGuestLinksPostRejectsInvalidRequest(t *testing.T) {
 			description: "negative maxFileUploads field",
 			payload: `{
 					"label": null,
-					"expirationTime":"2025-01-01T00:00:00Z",
+					"urlExpirationTime":"2025-01-01T00:00:00Z",
 					"maxFileBytes": null,
 					"maxFileUploads": -5
 				}`,
@@ -197,7 +201,7 @@ func TestGuestLinksPostRejectsInvalidRequest(t *testing.T) {
 			description: "decimal maxFileUploads field",
 			payload: `{
 					"label": null,
-					"expirationTime":"2025-01-01T00:00:00Z",
+					"urlExpirationTime":"2025-01-01T00:00:00Z",
 					"maxFileBytes": null,
 					"maxFileUploads": 1.5
 				}`,
@@ -206,7 +210,7 @@ func TestGuestLinksPostRejectsInvalidRequest(t *testing.T) {
 			description: "zero maxFileUploads field",
 			payload: `{
 					"label": null,
-					"expirationTime":"2025-01-01T00:00:00Z",
+					"urlExpirationTime":"2025-01-01T00:00:00Z",
 					"maxFileBytes": null,
 					"maxFileUploads": 0
 				}`,
@@ -245,9 +249,9 @@ func makeGuestUploadCountLimit(i int) picoshare.GuestUploadCountLimit {
 func TestDeleteExistingGuestLink(t *testing.T) {
 	dataStore := test_sqlite.New()
 	dataStore.InsertGuestLink(picoshare.GuestLink{
-		ID:      picoshare.GuestLinkID("abcdefgh23456789"),
-		Created: time.Now(),
-		Expires: mustParseExpirationTime("2030-01-02T03:04:25Z"),
+		ID:         picoshare.GuestLinkID("abcdefgh23456789"),
+		Created:    time.Now(),
+		UrlExpires: mustParseExpirationTime("2030-01-02T03:04:25Z"),
 	})
 
 	s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceChecker, nilGarbageCollector)
