@@ -88,11 +88,6 @@ func guestLinkFromRequest(r *http.Request) (picoshare.GuestLink, error) {
 		return picoshare.GuestLink{}, err
 	}
 
-	fileExpiration, err := parse.Expiration(payload.FileExpiration)
-	if err != nil {
-		return picoshare.GuestLink{}, err
-	}
-
 	maxFileBytes, err := parseMaxFileBytes(payload.MaxFileBytes)
 	if err != nil {
 		return picoshare.GuestLink{}, err
@@ -106,7 +101,7 @@ func guestLinkFromRequest(r *http.Request) (picoshare.GuestLink, error) {
 	return picoshare.GuestLink{
 		Label:          label,
 		UrlExpires:     urlExpiration,
-		FileExpires:    fileExpiration,
+		FileExpires:    payload.FileExpiration,
 		MaxFileBytes:   maxFileBytes,
 		MaxFileUploads: maxFileUploads,
 	}, nil
