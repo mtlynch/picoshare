@@ -6,6 +6,7 @@
 
     const labelInput = document.getElementById("label");
     const expirationSelect = document.getElementById("expiration-select");
+    const expirationSelectFile = document.getElementById("expiration-select-file");
     const maxFileBytesInput = document.getElementById("max-file-size");
     const fileUploadLimitInput = document.getElementById("file-upload-limit");
     const createLinkForm = document.getElementById("create-guest-link-form");
@@ -22,7 +23,8 @@
     function guestLinkFromInputs() {
       return {
         label: labelInput.value || null,
-        expirationTime: expirationSelect.value,
+        urlExpirationTime: expirationSelect.value,
+        fileExpirationTime: expirationSelectFile.value,
         maxFileBytes: maxFileBytesInput.valueAsNumber
           ? megabytesToBytes(maxFileBytesInput.valueAsNumber)
           : null,
@@ -42,7 +44,8 @@
       const guestLink = guestLinkFromInputs();
       guestLinkNew(
         guestLink.label,
-        guestLink.expirationTime,
+        guestLink.urlExpirationTime,
+        guestLink.fileExpirationTime,
         guestLink.maxFileBytes,
         guestLink.maxFileUploads
       )
@@ -89,6 +92,24 @@
       <div class="control">
         <div class="select">
           <select id="expiration-select">
+            {{ range .ExpirationOptions }}
+              <option
+                value="{{ formatExpiration .Expiration }}"
+                {{ if .IsDefault }}selected{{ end }}
+              >
+                {{ .FriendlyName }}
+              </option>
+            {{ end }}
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="field my-5">
+      <label class="label">Guest Files Expire</label>
+      <div class="control">
+        <div class="select">
+          <select id="expiration-select-file">
             {{ range .ExpirationOptions }}
               <option
                 value="{{ formatExpiration .Expiration }}"

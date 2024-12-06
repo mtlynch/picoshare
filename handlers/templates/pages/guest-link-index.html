@@ -120,7 +120,8 @@
         <tr>
           <th>Label</th>
           <th>Created</th>
-          <th>Expiration</th>
+          <th>URL Expiration</th>
+          <th>File Expiration</th>
           <th>Max Upload Size</th>
           <th>Uploads</th>
           <th class="has-text-right">Actions</th>
@@ -140,7 +141,10 @@
             </td>
             <td class="is-vcentered">{{ formatDate .Created }}</td>
             <td class="is-vcentered expiration">
-              {{ formatExpiration .Expires }}
+              {{ formatExpiration .UrlExpires }}
+            </td>
+            <td class="is-vcentered expiration">
+              {{ formatFileExpiration .FileExpires }}
             </td>
             <td class="is-vcentered">
               {{ formatSizeLimit .MaxFileBytes }}
