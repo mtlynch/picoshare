@@ -135,9 +135,6 @@ func (s Server) guestLinksNewGet() http.HandlerFunc {
 		"formatExpiration": func(t time.Time) string {
 			return t.Format(time.RFC3339)
 		},
-		"formatFileExpiration": func(t time.Time) string {
-			return t.Format(time.RFC3339)
-		},
 	}
 
 	t := parseTemplatesWithFuncs(fns, "templates/pages/guest-link-create.html")
