@@ -26,7 +26,7 @@ func GuestLinkLabel(label string) (picoshare.GuestLinkLabel, error) {
 }
 
 func GuestFileLifeTime(fileLifeTimeRaw string) (picoshare.FileLifetime, error) {
-	t, err := time.Parse(expirationTimeFormat, fileLifeTimeRaw) //do the error handling
+	t, err := time.Parse(expirationTimeFormat, fileLifeTimeRaw)
 	if err != nil {
 		return picoshare.FileLifetime{}, ErrExpirationUnrecognizedFormat
 	}

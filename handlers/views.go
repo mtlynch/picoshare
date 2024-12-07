@@ -92,7 +92,11 @@ func (s Server) guestLinkIndexGet() http.HandlerFunc {
 				return "Never"
 			}
 
-			return fmt.Sprintf("After %.0f hours", flt.Duration().Hours())
+			letterS := "s"
+			if flt.Duration().Hours() < 25 {
+				letterS = ""
+			}
+			return fmt.Sprintf("After %.0f day%s", math.Abs(flt.Duration().Hours()/24), letterS)
 		},
 		"isActive": func(gl picoshare.GuestLink) bool {
 			return gl.IsActive()
