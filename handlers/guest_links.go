@@ -88,7 +88,7 @@ func guestLinkFromRequest(r *http.Request) (picoshare.GuestLink, error) {
 		return picoshare.GuestLink{}, err
 	}
 
-	fileExpiration, err := parse.Expiration(payload.FileExpiration)
+	fileExpiration, err := parse.GuestFileLifeTime(payload.FileExpiration)
 	if err != nil {
 		return picoshare.GuestLink{}, err
 	}

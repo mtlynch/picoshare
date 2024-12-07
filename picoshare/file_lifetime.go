@@ -19,6 +19,12 @@ type FileLifetime struct {
 // not expire, effectively.
 var FileLifetimeInfinite = NewFileLifetimeInYears(100)
 
+func NewFileLifetimeFromDuration(duration time.Duration) FileLifetime {
+	return FileLifetime{
+		d: duration,
+	}
+}
+
 func NewFileLifetimeInDays(days uint16) FileLifetime {
 	return FileLifetime{
 		d: hoursPerDay * time.Hour * time.Duration(days),
