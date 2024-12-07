@@ -132,22 +132,7 @@ func (s Server) guestEntryPost() http.HandlerFunc {
 			r.Body = http.MaxBytesReader(w, r.Body, int64(*gl.MaxFileBytes))
 		}
 
-		m := map[string]time.Time{
-			"1 day":   time.Now().AddDate(0, 0, 1),
-			"7 days":  time.Now().AddDate(0, 0, 7),
-			"30 days": time.Now().AddDate(0, 0, 30),
-			"1 year":  time.Now().AddDate(1, 0, 0),
-			"Never":   time.Time(picoshare.NeverExpire),
-		}
-
-		fileExpiry, err := parse.Expiration(m[gl.FileExpires].Format(time.RFC3339))
-		if err != nil {
-			log.Printf("error calculating file expiration for guest upload %v: %v", guestLinkID, err)
-			http.Error(w, "Failed to calculate file expiration", http.StatusInternalServerError)
-			return
-		}
-
-		id, err := s.insertFileFromRequest(r, fileExpiry, guestLinkID)
+		id, err := s.insertFileFromRequest(r, gl.FileExpires, guestLinkID)
 		if err != nil {
 			var de *dbError
 			if errors.As(err, &de) {

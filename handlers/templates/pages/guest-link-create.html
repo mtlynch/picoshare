@@ -6,9 +6,7 @@
 
     const labelInput = document.getElementById("label");
     const expirationSelect = document.getElementById("expiration-select");
-    const expirationSelectFile = document.getElementById(
-      "expiration-select-file"
-    );
+    const expirationSelectFile = document.getElementById("expiration-select-file");
     const maxFileBytesInput = document.getElementById("max-file-size");
     const fileUploadLimitInput = document.getElementById("file-upload-limit");
     const createLinkForm = document.getElementById("create-guest-link-form");
@@ -114,7 +112,7 @@
           <select id="expiration-select-file">
             {{ range .ExpirationOptions }}
               <option
-                value="{{ .FriendlyName }}"
+                value="{{ formatExpiration .Expiration }}"
                 {{ if .IsDefault }}selected{{ end }}
               >
                 {{ .FriendlyName }}

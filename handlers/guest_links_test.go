@@ -28,14 +28,14 @@ func TestGuestLinksPostAcceptsValidRequest(t *testing.T) {
 			payload: `{
 					"label": null,
 					"urlExpirationTime":"2030-01-02T03:04:25Z",
-					"fileExpirationTime":"Never",
+					"fileExpirationTime":"2030-01-02T03:04:25Z",
 					"maxFileBytes": null,
 					"maxFileUploads": null
 				}`,
 			expected: picoshare.GuestLink{
 				Label:          picoshare.GuestLinkLabel(""),
 				UrlExpires:     mustParseExpirationTime("2030-01-02T03:04:25Z"),
-				FileExpires:    "Never",
+				FileExpires:    mustParseExpirationTime("2030-01-02T03:04:25Z"),
 				MaxFileBytes:   picoshare.GuestUploadUnlimitedFileSize,
 				MaxFileUploads: picoshare.GuestUploadUnlimitedFileUploads,
 			},
@@ -45,14 +45,14 @@ func TestGuestLinksPostAcceptsValidRequest(t *testing.T) {
 			payload: `{
 					"label": "For my good pal, Maurice",
 					"urlExpirationTime":"2030-01-02T03:04:25Z",
-					"fileExpirationTime":"Never",
+					"fileExpirationTime":"2030-01-02T03:04:25Z",
 					"maxFileBytes": 1048576,
 					"maxFileUploads": 1
 				}`,
 			expected: picoshare.GuestLink{
 				Label:          picoshare.GuestLinkLabel("For my good pal, Maurice"),
 				UrlExpires:     mustParseExpirationTime("2030-01-02T03:04:25Z"),
-				FileExpires:    "Never",
+				FileExpires:    mustParseExpirationTime("2030-01-02T03:04:25Z"),
 				MaxFileBytes:   makeGuestUploadMaxFileBytes(1048576),
 				MaxFileUploads: makeGuestUploadCountLimit(1),
 			},
