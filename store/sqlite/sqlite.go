@@ -2,7 +2,9 @@ package sqlite
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
+	"math"
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -66,12 +68,35 @@ func NewWithChunkSize(path string, chunkSize int, optimizeForLitestream bool) St
 	}
 }
 
+func formatFileExpirationTime(et picoshare.ExpirationTime) string {
+	delta := time.Until(time.Time(et))
+	return fmt.Sprintf("%.0f", math.Abs(delta.Hours())/24)
+}
+
 func formatExpirationTime(et picoshare.ExpirationTime) string {
 	return formatTime(time.Time(et))
 }
 
 func formatTime(t time.Time) string {
 	return t.UTC().Format(timeFormat)
+}
+
+func parseFileDatetime(s string) time.Time {
+	t := time.Now()
+	switch s {
+	case "1":
+		t = t.AddDate(0, 0, 1)
+	case "7":
+		t = t.AddDate(0, 0, 7)
+	case "30":
+		t = t.AddDate(0, 0, 30)
+	case "365":
+		t = t.AddDate(1, 0, 0)
+	default:
+		t = time.Time(picoshare.NeverExpire)
+	}
+
+	return t
 }
 
 func parseDatetime(s string) (time.Time, error) {
