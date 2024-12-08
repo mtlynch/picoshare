@@ -53,6 +53,9 @@ func (lt FileLifetime) IsYearBoundary() bool {
 }
 
 func (lt FileLifetime) FriendlyName() string {
+	if lt == FileLifetimeInfinite {
+		return "Never"
+	}
 	value := lt.Days()
 	unit := "day"
 	if lt.IsYearBoundary() {

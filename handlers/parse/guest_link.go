@@ -3,7 +3,6 @@ package parse
 import (
 	"errors"
 	"fmt"
-	"math"
 	"time"
 
 	"github.com/mtlynch/picoshare/v2/picoshare"
@@ -15,7 +14,7 @@ const validTimeUnits = "1ns, 1us (or 1µs), 1ms, 1s, 1m, 1h"
 
 var ErrGuestLinkLabelTooLong = fmt.Errorf("label too long - limit %d characters", MaxGuestLinkLabelLength)
 var ErrFileLifeTimeUnrecognizedFormat = fmt.Errorf("unrecognized format for file life time, must be in %s format", validTimeUnits)
-var ErrFileLifeTimeTooSoon = errors.New("file life time must be at least one hour in the future")
+var ErrFileLifeTimeTooShort = errors.New("file life time must be at least one hour in the future")
 
 func GuestLinkLabel(label string) (picoshare.GuestLinkLabel, error) {
 	if len(label) > MaxGuestLinkLabelLength {
@@ -26,25 +25,18 @@ func GuestLinkLabel(label string) (picoshare.GuestLinkLabel, error) {
 }
 
 func GuestFileLifeTime(fileLifetimeRaw string) (picoshare.FileLifetime, error) {
-	t, err := time.Parse(expirationTimeFormat, fileLifetimeRaw)
-	if err != nil {
-		return picoshare.FileLifetime{}, ErrExpirationUnrecognizedFormat
-	}
-
-	if picoshare.ExpirationTime(t) == picoshare.NeverExpire {
-		return picoshare.FileLifetimeInfinite, nil
-	}
-
-	delta := time.Until(time.Time(t))
-	fileLifetime := fmt.Sprintf("%.0fh", math.Round(delta.Hours()))
-	expiration, err := time.ParseDuration(fileLifetime)
+	dur, err := time.ParseDuration(fileLifetimeRaw)
 	if err != nil {
 		return picoshare.FileLifetime{}, ErrFileLifeTimeUnrecognizedFormat
 	}
 
-	if expiration < (time.Hour * 1) {
-		return picoshare.FileLifetime{}, ErrFileLifeTimeTooSoon
+	if picoshare.NewFileLifetimeFromDuration(dur) == picoshare.FileLifetimeInfinite {
+		return picoshare.FileLifetimeInfinite, nil
 	}
 
-	return picoshare.NewFileLifetimeFromDuration(expiration), nil
+	if dur < (time.Hour * 1) {
+		return picoshare.FileLifetime{}, ErrFileLifeTimeTooShort
+	}
+
+	return picoshare.NewFileLifetimeFromDuration(dur), nil
 }

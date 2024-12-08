@@ -28,7 +28,7 @@ func TestGuestLinksPostAcceptsValidRequest(t *testing.T) {
 			payload: `{
 					"label": null,
 					"urlExpirationTime":"2030-01-02T03:04:25Z",
-					"fileLifetime":"2999-12-31T00:00:00Z",
+					"fileLifetime":"876000h0m0s",
 					"maxFileBytes": null,
 					"maxFileUploads": null
 				}`,
@@ -45,7 +45,7 @@ func TestGuestLinksPostAcceptsValidRequest(t *testing.T) {
 			payload: `{
 					"label": "For my good pal, Maurice",
 					"urlExpirationTime":"2030-01-02T03:04:25Z",
-					"fileLifetime":"2999-12-31T00:00:00Z",
+					"fileLifetime":"876000h0m0s",
 					"maxFileBytes": 1048576,
 					"maxFileUploads": 1
 				}`,
