@@ -2,7 +2,8 @@
 
 export async function guestLinkNew(
   label,
-  expirationTime,
+  urlExpirationTime,
+  fileLifetime,
   maxFileBytes,
   maxFileUploads
 ) {
@@ -11,7 +12,8 @@ export async function guestLinkNew(
     credentials: "include",
     body: JSON.stringify({
       label,
-      expirationTime,
+      urlExpirationTime,
+      fileLifetime,
       maxFileBytes,
       maxFileUploads,
     }),

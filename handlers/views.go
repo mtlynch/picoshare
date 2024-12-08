@@ -123,6 +123,9 @@ func (s Server) guestLinksNewGet() http.HandlerFunc {
 		"formatExpiration": func(t time.Time) string {
 			return t.Format(time.RFC3339)
 		},
+		"formatLifetime": func(flt picoshare.FileLifetime) string {
+			return flt.Duration().String()
+		},
 	}
 
 	t := parseTemplatesWithFuncs(fns, "templates/pages/guest-link-create.html")
@@ -133,9 +136,14 @@ func (s Server) guestLinksNewGet() http.HandlerFunc {
 			Expiration   time.Time
 			IsDefault    bool
 		}
+		type fileLifetimeOption struct {
+			FileLifetime picoshare.FileLifetime
+			IsDefault    bool
+		}
 		if err := t.Execute(w, struct {
 			commonProps
-			ExpirationOptions []expirationOption
+			ExpirationOptions   []expirationOption
+			FileLifetimeOptions []fileLifetimeOption
 		}{
 			commonProps: makeCommonProps("PicoShare - New Guest Link", r.Context()),
 			ExpirationOptions: []expirationOption{
@@ -144,6 +152,13 @@ func (s Server) guestLinksNewGet() http.HandlerFunc {
 				{"30 days", time.Now().AddDate(0, 0, 30), false},
 				{"1 year", time.Now().AddDate(1, 0, 0), false},
 				{"Never", time.Time(picoshare.NeverExpire), true},
+			},
+			FileLifetimeOptions: []fileLifetimeOption{
+				{picoshare.NewFileLifetimeInDays(1), false},
+				{picoshare.NewFileLifetimeInDays(7), false},
+				{picoshare.NewFileLifetimeInDays(30), false},
+				{picoshare.NewFileLifetimeInYears(1), false},
+				{picoshare.FileLifetimeInfinite, true},
 			},
 		}); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -483,7 +498,6 @@ func (s Server) uploadGet() http.HandlerFunc {
 			friendlyName := lto.Lifetime.FriendlyName()
 			expiration := time.Now().Add(lto.Lifetime.Duration())
 			if lto.Lifetime.Equal(picoshare.FileLifetimeInfinite) {
-				friendlyName = "Never"
 				expiration = time.Time(picoshare.NeverExpire)
 			}
 			expirationOptions = append(expirationOptions, expirationOption{

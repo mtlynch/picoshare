@@ -2,6 +2,7 @@ package sqlite
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 	"time"
 
@@ -72,6 +73,10 @@ func formatExpirationTime(et picoshare.ExpirationTime) string {
 
 func formatTime(t time.Time) string {
 	return t.UTC().Format(timeFormat)
+}
+
+func parseFileDatetime(s string) (time.Duration, error) {
+	return time.ParseDuration(fmt.Sprintf("%sh", s))
 }
 
 func parseDatetime(s string) (time.Time, error) {

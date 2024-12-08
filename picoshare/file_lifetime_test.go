@@ -56,6 +56,11 @@ func TestFileLifetime(t *testing.T) {
 			isOnYearBoundary: false,
 			friendlyName:     "10 years",
 		},
+		{
+			lifetime:         picoshare.FileLifetimeInfinite,
+			isOnYearBoundary: false,
+			friendlyName:     "Never",
+		},
 	} {
 		t.Run(tt.friendlyName, func(t *testing.T) {
 			if got, want := tt.lifetime.FriendlyName(), tt.friendlyName; got != want {
