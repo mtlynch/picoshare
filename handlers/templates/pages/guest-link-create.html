@@ -26,7 +26,7 @@
       return {
         label: labelInput.value || null,
         urlExpirationTime: expirationSelect.value,
-        fileExpirationTime: expirationSelectFile.value,
+        fileLifetime: expirationSelectFile.value,
         maxFileBytes: maxFileBytesInput.valueAsNumber
           ? megabytesToBytes(maxFileBytesInput.valueAsNumber)
           : null,
@@ -47,7 +47,7 @@
       guestLinkNew(
         guestLink.label,
         guestLink.urlExpirationTime,
-        guestLink.fileExpirationTime,
+        guestLink.fileLifetime,
         guestLink.maxFileBytes,
         guestLink.maxFileUploads
       )

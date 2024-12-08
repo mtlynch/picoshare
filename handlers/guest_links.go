@@ -68,7 +68,7 @@ func guestLinkFromRequest(r *http.Request) (picoshare.GuestLink, error) {
 	var payload struct {
 		Label          string  `json:"label"`
 		UrlExpiration  string  `json:"urlExpirationTime"`
-		FileExpiration string  `json:"fileExpirationTime"`
+		FileExpiration string  `json:"fileLifetime"`
 		MaxFileBytes   *uint64 `json:"maxFileBytes"`
 		MaxFileUploads *int    `json:"maxFileUploads"`
 	}
