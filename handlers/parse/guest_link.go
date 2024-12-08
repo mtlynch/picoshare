@@ -25,8 +25,8 @@ func GuestLinkLabel(label string) (picoshare.GuestLinkLabel, error) {
 	return picoshare.GuestLinkLabel(label), nil
 }
 
-func GuestFileLifeTime(fileLifeTimeRaw string) (picoshare.FileLifetime, error) {
-	t, err := time.Parse(expirationTimeFormat, fileLifeTimeRaw)
+func GuestFileLifeTime(fileLifetimeRaw string) (picoshare.FileLifetime, error) {
+	t, err := time.Parse(expirationTimeFormat, fileLifetimeRaw)
 	if err != nil {
 		return picoshare.FileLifetime{}, ErrExpirationUnrecognizedFormat
 	}
@@ -36,8 +36,8 @@ func GuestFileLifeTime(fileLifeTimeRaw string) (picoshare.FileLifetime, error) {
 	}
 
 	delta := time.Until(time.Time(t))
-	fileLifeTime := fmt.Sprintf("%.0fh", math.Round(delta.Hours()))
-	expiration, err := time.ParseDuration(fileLifeTime)
+	fileLifetime := fmt.Sprintf("%.0fh", math.Round(delta.Hours()))
+	expiration, err := time.ParseDuration(fileLifetime)
 	if err != nil {
 		return picoshare.FileLifetime{}, ErrFileLifeTimeUnrecognizedFormat
 	}

@@ -15,7 +15,7 @@ type (
 		Label          GuestLinkLabel
 		Created        time.Time
 		UrlExpires     ExpirationTime
-		FileExpires    FileLifetime
+		FileLifetime   FileLifetime
 		MaxFileBytes   GuestUploadMaxFileBytes
 		MaxFileUploads GuestUploadCountLimit
 		FilesUploaded  int

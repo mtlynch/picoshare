@@ -106,7 +106,7 @@ func guestLinkFromRequest(r *http.Request) (picoshare.GuestLink, error) {
 	return picoshare.GuestLink{
 		Label:          label,
 		UrlExpires:     urlExpiration,
-		FileExpires:    fileExpiration,
+		FileLifetime:   fileExpiration,
 		MaxFileBytes:   maxFileBytes,
 		MaxFileUploads: maxFileUploads,
 	}, nil
