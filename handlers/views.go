@@ -87,17 +87,6 @@ func (s Server) guestLinkIndexGet() http.HandlerFunc {
 			}
 			return fmt.Sprintf("%s (%.0f days%s)", t.Format(time.DateOnly), math.Abs(delta.Hours())/24, suffix)
 		},
-		"formatFileExpiration": func(flt picoshare.FileLifetime) string {
-			if flt == picoshare.FileLifetimeInfinite {
-				return "Never"
-			}
-
-			letterS := "s"
-			if flt.Duration().Hours() < 25 {
-				letterS = ""
-			}
-			return fmt.Sprintf("After %.0f day%s", math.Abs(flt.Duration().Hours()/24), letterS)
-		},
 		"isActive": func(gl picoshare.GuestLink) bool {
 			return gl.IsActive()
 		},

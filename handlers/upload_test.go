@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
+	"math"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
@@ -280,9 +281,10 @@ func TestGuestUpload(t *testing.T) {
 		{
 			description: "valid upload to guest link",
 			guestLinkInStore: picoshare.GuestLink{
-				ID:         picoshare.GuestLinkID("abcdefgh23456789"),
-				Created:    mustParseTime("2022-01-01T00:00:00Z"),
-				UrlExpires: mustParseExpirationTime("2030-01-02T03:04:25Z"),
+				ID:           picoshare.GuestLinkID("abcdefgh23456789"),
+				Created:      mustParseTime("2022-01-01T00:00:00Z"),
+				UrlExpires:   mustParseExpirationTime("2030-01-02T03:04:25Z"),
+				FileLifetime: picoshare.FileLifetimeInfinite,
 			},
 			guestLinkID: "abcdefgh23456789",
 			status:      http.StatusOK,
@@ -378,6 +380,28 @@ func TestGuestUpload(t *testing.T) {
 			guestLinkID: "abcdefgh23456789",
 			status:      http.StatusBadRequest,
 		},
+		{
+			description: "guest file expires in 1 day",
+			guestLinkInStore: picoshare.GuestLink{
+				ID:           picoshare.GuestLinkID("abcdefgh23456789"),
+				Created:      mustParseTime("2022-01-01T00:00:00Z"),
+				UrlExpires:   mustParseExpirationTime("2030-01-02T03:04:25Z"),
+				FileLifetime: picoshare.NewFileLifetimeInDays(1),
+			},
+			guestLinkID: "abcdefgh23456789",
+			status:      http.StatusOK,
+		},
+		{
+			description: "guest file expires in 365 day",
+			guestLinkInStore: picoshare.GuestLink{
+				ID:           picoshare.GuestLinkID("abcdefgh23456789"),
+				Created:      mustParseTime("2022-01-01T00:00:00Z"),
+				UrlExpires:   mustParseExpirationTime("2030-01-02T03:04:25Z"),
+				FileLifetime: picoshare.NewFileLifetimeInDays(365),
+			},
+			guestLinkID: "abcdefgh23456789",
+			status:      http.StatusOK,
+		},
 	} {
 		t.Run(tt.description, func(t *testing.T) {
 			store := test_sqlite.New()
@@ -440,12 +464,19 @@ func TestGuestUpload(t *testing.T) {
 				t.Errorf("filename=%v, want=%v", got, want)
 			}
 
-			// Guest uploads never expire.
-			// if got, want := entry.Expires, picoshare.NeverExpire; got != want {
-			// 	t.Errorf("expiration=%v, want=%v", got, want)
-			// }
+			if got, want := convertExpirationTimeToFileLifetime(entry.Expires), tt.guestLinkInStore.FileLifetime; got != want {
+				t.Errorf("expiration=%v, want=%v", got, want)
+			}
 		})
 	}
+}
+
+func convertExpirationTimeToFileLifetime(et picoshare.ExpirationTime) picoshare.FileLifetime {
+	if et == picoshare.NeverExpire {
+		return picoshare.FileLifetimeInfinite
+	}
+	delta := math.Round(time.Until(time.Time(et)).Hours() / 24)
+	return picoshare.NewFileLifetimeInDays(uint16(delta))
 }
 
 func createMultipartFormBody(filename, note string, r io.Reader) (io.Reader, string) {

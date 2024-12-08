@@ -57,6 +57,40 @@ func TestGuestLinksPostAcceptsValidRequest(t *testing.T) {
 				MaxFileUploads: makeGuestUploadCountLimit(1),
 			},
 		},
+		{
+			description: "guest file expires in 1 day",
+			payload: `{
+					"label": "For my good pal, Maurice",
+					"urlExpirationTime":"2030-01-02T03:04:25Z",
+					"fileLifetime":"24h0m0s",
+					"maxFileBytes": 1048576,
+					"maxFileUploads": 1
+				}`,
+			expected: picoshare.GuestLink{
+				Label:          picoshare.GuestLinkLabel("For my good pal, Maurice"),
+				UrlExpires:     mustParseExpirationTime("2030-01-02T03:04:25Z"),
+				FileLifetime:   picoshare.NewFileLifetimeInDays(1),
+				MaxFileBytes:   makeGuestUploadMaxFileBytes(1048576),
+				MaxFileUploads: makeGuestUploadCountLimit(1),
+			},
+		},
+		{
+			description: "guest file expires in 30 day",
+			payload: `{
+					"label": "For my good pal, Maurice",
+					"urlExpirationTime":"2030-01-02T03:04:25Z",
+					"fileLifetime":"720h0m0s",
+					"maxFileBytes": 1048576,
+					"maxFileUploads": 1
+				}`,
+			expected: picoshare.GuestLink{
+				Label:          picoshare.GuestLinkLabel("For my good pal, Maurice"),
+				UrlExpires:     mustParseExpirationTime("2030-01-02T03:04:25Z"),
+				FileLifetime:   picoshare.NewFileLifetimeInDays(30),
+				MaxFileBytes:   makeGuestUploadMaxFileBytes(1048576),
+				MaxFileUploads: makeGuestUploadCountLimit(1),
+			},
+		},
 	} {
 		t.Run(tt.description, func(t *testing.T) {
 			dataStore := test_sqlite.New()

@@ -144,7 +144,7 @@
               {{ formatExpiration .UrlExpires }}
             </td>
             <td class="is-vcentered expiration">
-              {{ formatFileExpiration .FileLifetime }}
+              {{ .FileLifetime.FriendlyName }}
             </td>
             <td class="is-vcentered">
               {{ formatSizeLimit .MaxFileBytes }}
