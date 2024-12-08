@@ -76,9 +76,6 @@ func formatTime(t time.Time) string {
 }
 
 func parseFileDatetime(s string) (time.Duration, error) {
-	if s == "NULL" {
-		return picoshare.FileLifetimeInfinite.Duration(), nil
-	}
 	return time.ParseDuration(fmt.Sprintf("%sh", s))
 }
 

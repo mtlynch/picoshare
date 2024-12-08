@@ -19,7 +19,7 @@ func (s Store) GetGuestLink(id picoshare.GuestLinkID) (picoshare.GuestLink, erro
 			guest_links.max_file_uploads AS max_file_uploads,
 			guest_links.creation_time AS creation_time,
 			guest_links.url_expiration_time AS url_expiration_time,
-			CASE WHEN guest_links.file_expiration_time IS NULL THEN 'NULL' ELSE guest_links.file_expiration_time END AS file_expiration_time,
+			guest_links.file_expiration_time AS file_expiration_time,
 			SUM(CASE WHEN entries.id IS NOT NULL THEN 1 ELSE 0 END) AS entry_count
 		FROM
 			guest_links
@@ -42,7 +42,7 @@ func (s Store) GetGuestLinks() ([]picoshare.GuestLink, error) {
 			guest_links.max_file_uploads AS max_file_uploads,
 			guest_links.creation_time AS creation_time,
 			guest_links.url_expiration_time AS url_expiration_time,
-			CASE WHEN guest_links.file_expiration_time IS NULL THEN 'NULL' ELSE guest_links.file_expiration_time END AS file_expiration_time,
+			guest_links.file_expiration_time AS file_expiration_time,
 			SUM(CASE WHEN entries.id IS NOT NULL THEN 1 ELSE 0 END) AS entry_count
 		FROM
 			guest_links
@@ -134,10 +134,10 @@ func guestLinkFromRow(row rowScanner) (picoshare.GuestLink, error) {
 	var maxFileUploads picoshare.GuestUploadCountLimit
 	var creationTimeRaw string
 	var urlExpirationTimeRaw string
-	var fileExpirationTimeRaw string
+	var fileLifetimeRaw *string
 	var filesUploaded int
 
-	err := row.Scan(&id, &label, &maxFileBytes, &maxFileUploads, &creationTimeRaw, &urlExpirationTimeRaw, &fileExpirationTimeRaw, &filesUploaded)
+	err := row.Scan(&id, &label, &maxFileBytes, &maxFileUploads, &creationTimeRaw, &urlExpirationTimeRaw, &fileLifetimeRaw, &filesUploaded)
 	if err == sql.ErrNoRows {
 		return picoshare.GuestLink{}, store.GuestLinkNotFoundError{ID: id}
 	} else if err != nil {
@@ -154,9 +154,15 @@ func guestLinkFromRow(row rowScanner) (picoshare.GuestLink, error) {
 		return picoshare.GuestLink{}, err
 	}
 
-	fet, err := parseFileDatetime(fileExpirationTimeRaw)
-	if err != nil {
-		return picoshare.GuestLink{}, err
+	var fileLifetime picoshare.FileLifetime
+	if fileLifetimeRaw == nil {
+		fileLifetime = picoshare.FileLifetimeInfinite
+	} else {
+		dur, err := parseFileDatetime(*fileLifetimeRaw)
+		if err != nil {
+			return picoshare.GuestLink{}, err
+		}
+		fileLifetime = picoshare.NewFileLifetimeFromDuration(dur)
 	}
 
 	return picoshare.GuestLink{
@@ -167,6 +173,6 @@ func guestLinkFromRow(row rowScanner) (picoshare.GuestLink, error) {
 		FilesUploaded:  filesUploaded,
 		Created:        ct,
 		UrlExpires:     picoshare.ExpirationTime(uet),
-		FileLifetime:   picoshare.NewFileLifetimeFromDuration(fet),
+		FileLifetime:   fileLifetime,
 	}, nil
 }
