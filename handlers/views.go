@@ -124,7 +124,7 @@ func (s Server) guestLinksNewGet() http.HandlerFunc {
 			return t.Format(time.RFC3339)
 		},
 		"formatLifetime": func(flt picoshare.FileLifetime) string {
-			return flt.Duration().String()
+			return flt.String()
 		},
 	}
 
@@ -484,7 +484,7 @@ func (s Server) uploadGet() http.HandlerFunc {
 		if !defaultIsBuiltIn {
 			lifetimeOptions = append(lifetimeOptions, lifetimeOption{settings.DefaultFileLifetime, true})
 			sort.Slice(lifetimeOptions, func(i, j int) bool {
-				return lifetimeOptions[i].Lifetime.Duration() < lifetimeOptions[j].Lifetime.Duration()
+				return lifetimeOptions[i].Lifetime.LessThan(lifetimeOptions[j].Lifetime)
 			})
 		}
 
@@ -496,13 +496,13 @@ func (s Server) uploadGet() http.HandlerFunc {
 		expirationOptions := []expirationOption{}
 		for _, lto := range lifetimeOptions {
 			friendlyName := lto.Lifetime.FriendlyName()
-			expiration := time.Now().Add(lto.Lifetime.Duration())
+			expiration := lto.Lifetime.ExpirationFromTime(time.Now())
 			if lto.Lifetime.Equal(picoshare.FileLifetimeInfinite) {
-				expiration = time.Time(picoshare.NeverExpire)
+				expiration = picoshare.NeverExpire
 			}
 			expirationOptions = append(expirationOptions, expirationOption{
 				FriendlyName: friendlyName,
-				Expiration:   expiration,
+				Expiration:   expiration.Time(),
 				IsDefault:    lto.IsDefault,
 			})
 		}
