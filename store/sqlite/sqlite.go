@@ -75,7 +75,7 @@ func formatTime(t time.Time) string {
 }
 
 func formatFileLifetime(lt picoshare.FileLifetime) string {
-	return lt.Duration().String()
+	return lt.String()
 }
 
 func parseDatetime(s string) (time.Time, error) {

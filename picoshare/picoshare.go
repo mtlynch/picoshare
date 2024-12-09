@@ -51,7 +51,11 @@ func (f Filename) String() string {
 }
 
 func (et ExpirationTime) String() string {
-	return (time.Time(et)).String()
+	return et.Time().String()
+}
+
+func (et ExpirationTime) Time() time.Time {
+	return time.Time(et)
 }
 
 func (n FileNote) String() string {

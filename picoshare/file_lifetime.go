@@ -39,10 +39,6 @@ func NewFileLifetimeInYears(years uint16) FileLifetime {
 	return NewFileLifetimeInDays(years * daysPerYear)
 }
 
-func (lt FileLifetime) Duration() time.Duration {
-	return lt.d
-}
-
 func (lt FileLifetime) Days() uint16 {
 	hoursPerDay := uint16(24)
 	return uint16(lt.d.Hours() / float64(hoursPerDay))
@@ -54,6 +50,10 @@ func (lt FileLifetime) Years() uint16 {
 
 func (lt FileLifetime) IsYearBoundary() bool {
 	return lt.Days()%daysPerYear == 0
+}
+
+func (lt FileLifetime) String() string {
+	return lt.d.String()
 }
 
 func (lt FileLifetime) FriendlyName() string {
@@ -70,6 +70,10 @@ func (lt FileLifetime) FriendlyName() string {
 		unit += "s"
 	}
 	return fmt.Sprintf("%d %s", value, unit)
+}
+
+func (lt FileLifetime) LessThan(o FileLifetime) bool {
+	return lt.d == o.d
 }
 
 func (lt FileLifetime) Equal(o FileLifetime) bool {
