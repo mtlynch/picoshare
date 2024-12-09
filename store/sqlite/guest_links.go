@@ -89,7 +89,7 @@ func (s *Store) InsertGuestLink(guestLink picoshare.GuestLink) error {
 		sql.Named("max_file_uploads", guestLink.MaxFileUploads),
 		sql.Named("creation_time", formatTime(time.Now())),
 		sql.Named("url_expiration_time", formatExpirationTime(guestLink.UrlExpires)),
-		sql.Named("file_expiration_time", guestLink.FileLifetime.Duration().Hours())); err != nil {
+		sql.Named("file_expiration_time", formatFileLifetime(guestLink.FileLifetime))); err != nil {
 		return err
 	}
 
@@ -158,11 +158,10 @@ func guestLinkFromRow(row rowScanner) (picoshare.GuestLink, error) {
 	if fileLifetimeRaw == nil {
 		fileLifetime = picoshare.FileLifetimeInfinite
 	} else {
-		dur, err := parseFileDatetime(*fileLifetimeRaw)
+		fileLifetime, err = parseFileLifetime(*fileLifetimeRaw)
 		if err != nil {
 			return picoshare.GuestLink{}, err
 		}
-		fileLifetime = picoshare.NewFileLifetimeFromDuration(dur)
 	}
 
 	return picoshare.GuestLink{

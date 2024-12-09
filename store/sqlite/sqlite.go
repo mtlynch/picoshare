@@ -2,7 +2,6 @@ package sqlite
 
 import (
 	"database/sql"
-	"fmt"
 	"log"
 	"time"
 
@@ -75,10 +74,18 @@ func formatTime(t time.Time) string {
 	return t.UTC().Format(timeFormat)
 }
 
-func parseFileDatetime(s string) (time.Duration, error) {
-	return time.ParseDuration(fmt.Sprintf("%sh", s))
+func formatFileLifetime(lt picoshare.FileLifetime) string {
+	return lt.Duration().String()
 }
 
 func parseDatetime(s string) (time.Time, error) {
 	return time.Parse(timeFormat, s)
+}
+
+func parseFileLifetime(s string) (picoshare.FileLifetime, error) {
+	d, err := time.ParseDuration(s)
+	if err != nil {
+		return picoshare.FileLifetime{}, err
+	}
+	return picoshare.NewFileLifetimeFromDuration(d)
 }

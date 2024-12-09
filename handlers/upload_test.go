@@ -292,9 +292,10 @@ func TestGuestUpload(t *testing.T) {
 		{
 			description: "expired guest link",
 			guestLinkInStore: picoshare.GuestLink{
-				ID:         picoshare.GuestLinkID("abcdefgh23456789"),
-				Created:    mustParseTime("2000-01-01T00:00:00Z"),
-				UrlExpires: mustParseExpirationTime("2000-01-02T03:04:25Z"),
+				ID:           picoshare.GuestLinkID("abcdefgh23456789"),
+				Created:      mustParseTime("2000-01-01T00:00:00Z"),
+				UrlExpires:   mustParseExpirationTime("2000-01-02T03:04:25Z"),
+				FileLifetime: picoshare.FileLifetimeInfinite,
 			},
 			guestLinkID: "abcdefgh23456789",
 			status:      http.StatusUnauthorized,
@@ -332,9 +333,10 @@ func TestGuestUpload(t *testing.T) {
 		{
 			description: "reject upload that includes a note",
 			guestLinkInStore: picoshare.GuestLink{
-				ID:         picoshare.GuestLinkID("abcdefgh23456789"),
-				Created:    mustParseTime("2022-01-01T00:00:00Z"),
-				UrlExpires: mustParseExpirationTime("2030-01-02T03:04:25Z"),
+				ID:           picoshare.GuestLinkID("abcdefgh23456789"),
+				Created:      mustParseTime("2022-01-01T00:00:00Z"),
+				UrlExpires:   mustParseExpirationTime("2030-01-02T03:04:25Z"),
+				FileLifetime: picoshare.FileLifetimeInfinite,
 			},
 			guestLinkID: "abcdefgh23456789",
 			note:        "I'm a disallowed note",
@@ -347,6 +349,7 @@ func TestGuestUpload(t *testing.T) {
 				Created:        mustParseTime("2000-01-01T00:00:00Z"),
 				UrlExpires:     mustParseExpirationTime("2030-01-02T03:04:25Z"),
 				MaxFileUploads: makeGuestUploadCountLimit(2),
+				FileLifetime:   picoshare.FileLifetimeInfinite,
 			},
 			entriesInStore: []picoshare.UploadEntry{
 				{
@@ -376,6 +379,7 @@ func TestGuestUpload(t *testing.T) {
 				Created:      mustParseTime("2000-01-01T00:00:00Z"),
 				UrlExpires:   mustParseExpirationTime("2030-01-02T03:04:25Z"),
 				MaxFileBytes: makeGuestUploadMaxFileBytes(1),
+				FileLifetime: picoshare.FileLifetimeInfinite,
 			},
 			guestLinkID: "abcdefgh23456789",
 			status:      http.StatusBadRequest,
