@@ -74,6 +74,18 @@ func formatTime(t time.Time) string {
 	return t.UTC().Format(timeFormat)
 }
 
+func formatFileLifetime(lt picoshare.FileLifetime) string {
+	return lt.Duration().String()
+}
+
 func parseDatetime(s string) (time.Time, error) {
 	return time.Parse(timeFormat, s)
+}
+
+func parseFileLifetime(s string) (picoshare.FileLifetime, error) {
+	d, err := time.ParseDuration(s)
+	if err != nil {
+		return picoshare.FileLifetime{}, err
+	}
+	return picoshare.NewFileLifetimeFromDuration(d)
 }
