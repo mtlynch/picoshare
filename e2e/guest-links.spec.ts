@@ -26,6 +26,7 @@ test("creates a guest link and uploads a file as a guest", async ({
     .filter({ hasText: "For e2e testing" });
   await expect(guestLinkRow).toBeVisible();
 
+  // Save the route to the guest link URL so that we can return to it later.
   const guestLinkRouteValue = await guestLinkRow
     .getByRole("cell")
     .nth(labelColumn)
