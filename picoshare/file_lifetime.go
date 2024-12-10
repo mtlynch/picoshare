@@ -81,5 +81,8 @@ func (lt FileLifetime) Equal(o FileLifetime) bool {
 }
 
 func (lt FileLifetime) ExpirationFromTime(t time.Time) ExpirationTime {
+	if lt.Equal(FileLifetimeInfinite) {
+		return NeverExpire
+	}
 	return ExpirationTime(t.Add(lt.d))
 }
