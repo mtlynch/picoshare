@@ -116,7 +116,7 @@ func TestEntryGet(t *testing.T) {
 				}
 			}
 
-			s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceChecker, nilGarbageCollector)
+			s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceChecker, nilGarbageCollector, handlers.NewClock())
 
 			req, err := http.NewRequest("GET", tt.requestRoute, nil)
 			if err != nil {

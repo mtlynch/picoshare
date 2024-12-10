@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/mtlynch/picoshare/v2/handlers/parse"
@@ -35,7 +34,7 @@ func (s Server) guestLinksPost() http.HandlerFunc {
 		}
 
 		gl.ID = generateGuestLinkID()
-		gl.Created = time.Now()
+		gl.Created = s.clock.Now()
 
 		if err := s.getDB(r).InsertGuestLink(gl); err != nil {
 			log.Printf("failed to save guest link: %v", err)

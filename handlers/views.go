@@ -147,10 +147,10 @@ func (s Server) guestLinksNewGet() http.HandlerFunc {
 		}{
 			commonProps: makeCommonProps("PicoShare - New Guest Link", r.Context()),
 			ExpirationOptions: []expirationOption{
-				{"1 day", time.Now().AddDate(0, 0, 1), false},
-				{"7 days", time.Now().AddDate(0, 0, 7), false},
-				{"30 days", time.Now().AddDate(0, 0, 30), false},
-				{"1 year", time.Now().AddDate(1, 0, 0), false},
+				{"1 day", s.clock.Now().AddDate(0, 0, 1), false},
+				{"7 days", s.clock.Now().AddDate(0, 0, 7), false},
+				{"30 days", s.clock.Now().AddDate(0, 0, 30), false},
+				{"1 year", s.clock.Now().AddDate(1, 0, 0), false},
 				{"Never", time.Time(picoshare.NeverExpire), true},
 			},
 			FileLifetimeOptions: []fileLifetimeOption{
@@ -496,7 +496,7 @@ func (s Server) uploadGet() http.HandlerFunc {
 		expirationOptions := []expirationOption{}
 		for _, lto := range lifetimeOptions {
 			friendlyName := lto.Lifetime.FriendlyName()
-			expiration := lto.Lifetime.ExpirationFromTime(time.Now())
+			expiration := lto.Lifetime.ExpirationFromTime(s.clock.Now())
 			if lto.Lifetime.Equal(picoshare.FileLifetimeInfinite) {
 				expiration = picoshare.NeverExpire
 			}
