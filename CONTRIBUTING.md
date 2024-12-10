@@ -58,7 +58,7 @@ pushd e2e && \
   popd
 ```
 
-After installing Playwright, run
+After installing Playwright, to run the e2e tests, run the following script:
 
 ```bash
 ./dev-scripts/run-e2e-tests
