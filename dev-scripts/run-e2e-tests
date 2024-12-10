@@ -7,11 +7,28 @@ set -e
 set -x
 
 REBUILD="true"
-if [[ "$1" = "--skip-build" ]]; then
-  REBUILD="false"
-  shift
-fi
+USE_DOCKER="false"
+
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    --skip-build)
+      REBUILD="false"
+      shift
+      ;;
+    --docker)
+      USE_DOCKER="true"
+      REBUILD="false"
+      shift
+      ;;
+    *)
+      EXTRA_ARGS="$@"
+      break
+      ;;
+  esac
+done
+
 readonly REBUILD
+readonly USE_DOCKER
 
 # Exit on unset variable.
 set -u
@@ -26,4 +43,16 @@ if [[ "${REBUILD}" == "true" ]]; then
 fi
 
 cd e2e
-npx playwright test "$@"
+
+readonly PLAYWRIGHT_VERSION="$(node -e "console.log(require('./package.json').devDependencies['@playwright/test'])")"
+
+if [[ "${USE_DOCKER}" == "true" ]]; then
+  docker run --rm \
+    -v "${PWD}:/app/e2e" \
+    -v "${PWD}/../bin/picoshare-dev:/app/bin/picoshare-dev" \
+    -w /app/e2e \
+    "mcr.microsoft.com/playwright:v${PLAYWRIGHT_VERSION}-focal" \
+    bash -c "chmod +x /app/bin/picoshare-dev && npm install && npm install -g playwright@${PLAYWRIGHT_VERSION} && npx playwright test ${EXTRA_ARGS:-}"
+else
+  npx playwright test ${EXTRA_ARGS:-}
+fi
