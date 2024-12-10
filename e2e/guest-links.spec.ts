@@ -72,6 +72,8 @@ test("creates a guest link and uploads a file as a guest", async ({
     await expect(guestPage.locator("h1")).toContainText("Guest Link Inactive");
     await expect(guestPage.locator(".file-input")).toHaveCount(0);
   }
+  await page.getByRole("menuitem", { name: "Files" }).click();
+  await expect(page.locator("[test-data-filename]").nth(0).locator("td").nth(5)).toHaveText("Never");
 });
 
 test("files uploaded through guest link remain accessible after guest link is deleted", async ({
