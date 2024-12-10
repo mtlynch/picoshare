@@ -10,12 +10,12 @@ The steps below show you how to quickly set up a development environment for Pic
 
 ### Requirements
 
-- Golang 1.17 or higher
-- Node.js 16.x or higher
+- Golang 1.23 or higher
+- Node.js 20.x or higher
 
-### Install prettier
+### Install frontend dev dependencies
 
-PicoShare uses the Prettier npm package to verify consistent formatting.
+PicoShare uses the several Node.js packages to format and perform static analysis of the code. To install those dependencies, run:
 
 ```bash
 npm install
@@ -46,6 +46,23 @@ To run PicoShare locally with hot-reloading, run:
 ```
 
 The default password is `somepassword`.
+
+## Run e2e tests
+
+To run the e2e tests, first install the dependencies for Playwright:
+
+```bash
+pushd e2e && \
+  npm install && \
+  npx playwright install --with-deps chromium firefox && \
+  popd
+```
+
+After installing Playwright, run
+
+```bash
+./dev-scripts/run-e2e-tests
+```
 
 ## Code style conventions
 
