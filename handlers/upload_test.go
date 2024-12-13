@@ -270,6 +270,7 @@ func TestEntryPut(t *testing.T) {
 		})
 	}
 }
+
 func TestGuestUpload(t *testing.T) {
 	authenticator, err := shared_secret.New("dummypass")
 	if err != nil {
