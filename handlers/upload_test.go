@@ -426,17 +426,17 @@ func TestGuestUpload(t *testing.T) {
 			fileExpirationTimeExpected: mustParseExpirationTime("2024-01-02T00:00:00Z"),
 		},
 		{
-			description: "guest file expires in 365 day",
+			description: "guest file expires in 365 days",
 			guestLinkInStore: picoshare.GuestLink{
 				ID:           picoshare.GuestLinkID("abcdefgh23456789"),
 				Created:      mustParseTime("2022-01-01T00:00:00Z"),
 				UrlExpires:   mustParseExpirationTime("2030-01-02T03:04:25Z"),
 				FileLifetime: picoshare.NewFileLifetimeInDays(365),
 			},
-			currentTime:                mustParseTime("2024-01-01T00:00:00Z"),
+			currentTime:                mustParseTime("2023-01-01T00:00:00Z"),
 			guestLinkID:                "abcdefgh23456789",
 			status:                     http.StatusOK,
-			fileExpirationTimeExpected: mustParseExpirationTime("2024-12-31T00:00:00Z"),
+			fileExpirationTimeExpected: mustParseExpirationTime("2024-01-01T00:00:00Z"),
 		},
 	} {
 		t.Run(tt.description, func(t *testing.T) {
