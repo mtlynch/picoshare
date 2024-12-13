@@ -3,6 +3,7 @@ import { login } from "./helpers/login.js";
 import { readDbTokenCookie } from "./helpers/db.js";
 
 const labelColumn = 0;
+const expiresColumn = 5;
 
 test("creates a guest link and uploads a file as a guest", async ({
   page,
@@ -72,6 +73,14 @@ test("creates a guest link and uploads a file as a guest", async ({
     await expect(guestPage.locator("h1")).toContainText("Guest Link Inactive");
     await expect(guestPage.locator(".file-input")).toHaveCount(0);
   }
+  await page.getByRole("menuitem", { name: "Files" }).click();
+  await expect(
+    page
+      .getByRole("row")
+      .filter({ hasText: "guest-link-upload.txt" })
+      .getByRole("cell")
+      .nth(expiresColumn)
+  ).toHaveText("Never");
 });
 
 test("files uploaded through guest link remain accessible after guest link is deleted", async ({
