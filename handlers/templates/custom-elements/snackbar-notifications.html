@@ -1,75 +1,82 @@
 <template id="snackbar-notifications-template">
-  <style nonce="{{ .CspNonce }}">
-    #notifications {
-      position: fixed;
-      bottom: 0px;
-      left: 50%;
-      transform: translate(-50%, 0);
-    }
-
-    .notification {
-      background-color: #3488ce;
-      font-weight: 600;
-      margin-bottom: 0.5rem;
-      color: #fff;
-      text-align: center;
-      border-radius: 2px;
-      padding: 1rem;
-      animation: fadein 0.5s, fadeout 0.5s 2.5s;
-    }
-
-    @keyframes fadein {
-      from {
-        bottom: 0;
-        opacity: 0;
-      }
-      to {
-        bottom: 30px;
-        opacity: 1;
-      }
-    }
-
-    @keyframes fadeout {
-      from {
-        bottom: 30px;
-        opacity: 1;
-      }
-      to {
-        bottom: 0;
-        opacity: 0;
-      }
-    }
-  </style>
-  <div id="notifications"></div>
+  <div id="notifications" popover="manual">
+    <div class="notification"></div>
+  </div>
 </template>
+
+<style nonce="{{ .CspNonce }}">
+  #notifications {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    transform: none;
+  }
+
+  #notifications[showing] {
+    animation: fadein 0.5s;
+  }
+
+  #notifications[hiding] {
+    animation: fadeout 0.5s;
+  }
+
+  .notification {
+    background-color: #3488ce;
+    font-weight: 600;
+    color: #fff;
+    text-align: center;
+    border-radius: 2px;
+    padding: 1rem;
+  }
+
+  @keyframes fadein {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes fadeout {
+    from {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    to {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+  }
+</style>
 
 <script type="module" nonce="{{ .CspNonce }}">
   (function () {
     const template = document.querySelector("#snackbar-notifications-template");
-
-    customElements.define(
-      "snackbar-notifications",
-      class extends HTMLElement {
-        connectedCallback() {
-          this.attachShadow({ mode: "open" }).appendChild(
-            template.content.cloneNode(true)
-          );
-        }
-
-        addInfoMessage(message) {
-          const notificationEl = document.createElement("div");
-
-          this.shadowRoot
-            .getElementById("notifications")
-            .append(notificationEl);
-          notificationEl.innerText = message;
-          notificationEl.classList.add("notification");
-
-          setTimeout(() => {
-            notificationEl.remove();
-          }, 3000);
-        }
+    customElements.define('snackbar-notifications', class extends HTMLElement {
+      connectedCallback() {
+        this.attachShadow({ mode: "open" }).appendChild(
+          template.content.cloneNode(true)
+        );
       }
-    );
+
+      addInfoMessage(message) {
+        const notifications = this.shadowRoot.getElementById("notifications");
+        notifications.querySelector('.notification').textContent = message;
+        notifications.setAttribute('showing', '');
+        notifications.showPopover();
+
+        setTimeout(() => {
+          notifications.setAttribute('hiding', '');
+          notifications.addEventListener('animationend', () => {
+            notifications.hidePopover();
+            notifications.removeAttribute('showing');
+            notifications.removeAttribute('hiding');
+          }, { once: true });
+        }, 2500);
+      }
+    });
   })();
 </script>
