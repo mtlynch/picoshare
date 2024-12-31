@@ -135,13 +135,17 @@ func TestEntryPost(t *testing.T) {
 				t.Fatalf("response is not valid JSON: %v", body)
 			}
 
-			entry, err := dataStore.ReadEntryFile(picoshare.EntryID(response.ID))
-			if err != nil {
+			if err := dataStore.ReadEntryFile(picoshare.EntryID(response.ID), func(reader io.ReadSeeker) {
+				if got, want := mustReadAll(reader), []byte(tt.contents); !reflect.DeepEqual(got, want) {
+					t.Errorf("stored contents= %v, want=%v", got, want)
+				}
+			}); err != nil {
 				t.Fatalf("failed to get expected entry %v from data store: %v", response.ID, err)
 			}
 
-			if got, want := mustReadAll(entry.Reader), []byte(tt.contents); !reflect.DeepEqual(got, want) {
-				t.Errorf("stored contents= %v, want=%v", got, want)
+			entry, err := dataStore.GetEntryMetadata(picoshare.EntryID(response.ID))
+			if err != nil {
+				t.Fatalf("failed to get expected entry %v from data store: %v", response.ID, err)
 			}
 
 			if got, want := entry.Filename, picoshare.Filename(tt.filename); got != want {
@@ -255,7 +259,7 @@ func TestEntryPut(t *testing.T) {
 				t.Fatalf("status=%d, want=%d", got, want)
 			}
 
-			entry, err := store.ReadEntryFile(picoshare.EntryID(originalEntry.ID))
+			entry, err := store.GetEntryMetadata(picoshare.EntryID(originalEntry.ID))
 			if err != nil {
 				t.Fatalf("failed to get expected entry %v from data store: %v", originalEntry.ID, err)
 			}
@@ -488,13 +492,17 @@ func TestGuestUpload(t *testing.T) {
 				t.Fatalf("response is not valid JSON: %v", body)
 			}
 
-			entry, err := store.ReadEntryFile(picoshare.EntryID(response.ID))
-			if err != nil {
+			if err := store.ReadEntryFile(picoshare.EntryID(response.ID), func(reader io.ReadSeeker) {
+				if got, want := mustReadAll(reader), []byte(contents); !reflect.DeepEqual(got, want) {
+					t.Errorf("stored contents= %v, want=%v", got, want)
+				}
+			}); err != nil {
 				t.Fatalf("failed to get expected entry %v from data store: %v", response.ID, err)
 			}
 
-			if got, want := mustReadAll(entry.Reader), []byte(contents); !reflect.DeepEqual(got, want) {
-				t.Errorf("stored contents= %v, want=%v", got, want)
+			entry, err := store.GetEntryMetadata(picoshare.EntryID(response.ID))
+			if err != nil {
+				t.Errorf("failed to retrieve entry metadata: %v", err)
 			}
 
 			if got, want := entry.Filename, picoshare.Filename(filename); got != want {
