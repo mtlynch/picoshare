@@ -118,17 +118,18 @@ func TestEntryGet(t *testing.T) {
 				}
 			}
 
-			s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceChecker, nilGarbageCollector)
+			s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceChecker, nilGarbageCollector, handlers.NewClock())
 
 			req, err := http.NewRequest("GET", tt.requestRoute, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			w := httptest.NewRecorder()
-			s.Router().ServeHTTP(w, req)
+			rec := httptest.NewRecorder()
+			s.Router().ServeHTTP(rec, req)
+			res := rec.Result()
 
-			if got, want := w.Code, tt.expectedStatus; got != want {
+			if got, want := res.StatusCode, tt.expectedStatus; got != want {
 				t.Fatalf("%s returned wrong status code: got %v want %v",
 					tt.requestRoute, got, want)
 			}
@@ -137,11 +138,11 @@ func TestEntryGet(t *testing.T) {
 				return
 			}
 
-			if got, want := w.Header().Get("Content-Disposition"), tt.expectedContentDisposition; got != want {
+			if got, want := res.Header.Get("Content-Disposition"), tt.expectedContentDisposition; got != want {
 				t.Errorf("Content-Disposition=%s, want=%s", got, want)
 			}
 
-			if got, want := w.Header().Get("Content-Type"), tt.expectedContentType; got != want {
+			if got, want := res.Header.Get("Content-Type"), tt.expectedContentType; got != want {
 				t.Errorf("Content-Type=%s, want=%s", got, want)
 			}
 		})

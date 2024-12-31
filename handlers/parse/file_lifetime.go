@@ -2,6 +2,7 @@ package parse
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/mtlynch/picoshare/v2/picoshare"
 )
@@ -14,8 +15,9 @@ const maxFileLifetimeInYears = 10
 const daysPerYear = 365
 
 var (
-	ErrFileLifetimeTooShort = fmt.Errorf("file lifetime must be at least %d days", minFileLifetimeInDays)
-	ErrFileLifetimeTooLong  = fmt.Errorf("file lifetime must be at most %d years", maxFileLifetimeInYears)
+	ErrFileLifetimeTooShort           = fmt.Errorf("file lifetime must be at least %d days", minFileLifetimeInDays)
+	ErrFileLifetimeTooLong            = fmt.Errorf("file lifetime must be at most %d years", maxFileLifetimeInYears)
+	ErrFileLifetimeUnrecognizedFormat = fmt.Errorf("unrecognized format for file life time, must be in 1ns, 1us (or 1µs), 1ms, 1s, 1m, 1h format")
 )
 
 func FileLifetime(lifetimeInDays uint16) (picoshare.FileLifetime, error) {
@@ -26,4 +28,17 @@ func FileLifetime(lifetimeInDays uint16) (picoshare.FileLifetime, error) {
 		return picoshare.FileLifetime{}, ErrFileLifetimeTooLong
 	}
 	return picoshare.NewFileLifetimeInDays(lifetimeInDays), nil
+}
+
+func FileLifetimeFromString(fileLifetimeRaw string) (picoshare.FileLifetime, error) {
+	dur, err := time.ParseDuration(fileLifetimeRaw)
+	if err != nil {
+		return picoshare.FileLifetime{}, ErrFileLifetimeUnrecognizedFormat
+	}
+
+	if flt, _ := picoshare.NewFileLifetimeFromDuration(dur); flt == picoshare.FileLifetimeInfinite {
+		return picoshare.FileLifetimeInfinite, nil
+	}
+
+	return picoshare.NewFileLifetimeFromDuration(dur)
 }

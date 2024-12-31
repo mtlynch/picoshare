@@ -5,7 +5,7 @@ executors:
       - image: cimg/base:stable
   go:
     docker:
-      - image: cimg/go:1.22.3
+      - image: cimg/go:1.23.3
 jobs:
   check_whitespace:
     executor: base
@@ -110,7 +110,7 @@ jobs:
     steps:
       - checkout
       - setup_remote_docker:
-          version: 20.10.24
+          version: docker24
           docker_layer_caching: true
       - run:
           name: Enable multiarch builds with QEMU
@@ -161,21 +161,23 @@ jobs:
           paths:
             - ./dist
   publish_release:
-    docker:
-      - image: cibuilds/github:0.13.0
+    executor: base
     steps:
       - attach_workspace:
           at: ./
       - run:
-          name: Publish release on GitHub
+          name: Install GitHub CLI
           command: |
-            ghr \
-              -token "${GITHUB_TOKEN}" \
-              -username "${CIRCLE_PROJECT_USERNAME}" \
-              -repository "${CIRCLE_PROJECT_REPONAME}" \
-              -commitish "${CIRCLE_SHA1}" \
-              -replace "${VERSION}" \
-              ./dist/
+            curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+            sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg
+            echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+            sudo apt update
+            sudo apt install gh
+      - run:
+          name: Upload binaries to GitHub release
+          command: |
+            gh release upload "${CIRCLE_TAG}" ./dist/* \
+              --repo "${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}"
   publish_docker_images:
     executor: base
     environment:
@@ -183,7 +185,7 @@ jobs:
     steps:
       - checkout
       - setup_remote_docker:
-          version: 20.10.24
+          version: docker24
           docker_layer_caching: true
       - run:
           name: Authenticate to Docker Hub

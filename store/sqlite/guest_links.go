@@ -18,7 +18,8 @@ func (s Store) GetGuestLink(id picoshare.GuestLinkID) (picoshare.GuestLink, erro
 			guest_links.max_file_bytes AS max_file_bytes,
 			guest_links.max_file_uploads AS max_file_uploads,
 			guest_links.creation_time AS creation_time,
-			guest_links.expiration_time AS expiration_time,
+			guest_links.url_expiration_time AS url_expiration_time,
+			guest_links.file_expiration_time AS file_expiration_time,
 			SUM(CASE WHEN entries.id IS NOT NULL THEN 1 ELSE 0 END) AS entry_count
 		FROM
 			guest_links
@@ -40,7 +41,8 @@ func (s Store) GetGuestLinks() ([]picoshare.GuestLink, error) {
 			guest_links.max_file_bytes AS max_file_bytes,
 			guest_links.max_file_uploads AS max_file_uploads,
 			guest_links.creation_time AS creation_time,
-			guest_links.expiration_time AS expiration_time,
+			guest_links.url_expiration_time AS url_expiration_time,
+			guest_links.file_expiration_time AS file_expiration_time,
 			SUM(CASE WHEN entries.id IS NOT NULL THEN 1 ELSE 0 END) AS entry_count
 		FROM
 			guest_links
@@ -76,16 +78,18 @@ func (s *Store) InsertGuestLink(guestLink picoshare.GuestLink) error {
 			max_file_bytes,
 			max_file_uploads,
 			creation_time,
-			expiration_time
+			url_expiration_time,
+			file_expiration_time
 		)
-		VALUES (:id, :label, :max_file_bytes, :max_file_uploads, :creation_time, :expiration_time)
+		VALUES (:id, :label, :max_file_bytes, :max_file_uploads, :creation_time, :url_expiration_time, :file_expiration_time)
 	`,
 		sql.Named("id", guestLink.ID),
 		sql.Named("label", guestLink.Label),
 		sql.Named("max_file_bytes", guestLink.MaxFileBytes),
 		sql.Named("max_file_uploads", guestLink.MaxFileUploads),
 		sql.Named("creation_time", formatTime(time.Now())),
-		sql.Named("expiration_time", formatExpirationTime(guestLink.Expires))); err != nil {
+		sql.Named("url_expiration_time", formatExpirationTime(guestLink.UrlExpires)),
+		sql.Named("file_expiration_time", formatFileLifetime(guestLink.FileLifetime))); err != nil {
 		return err
 	}
 
@@ -129,10 +133,11 @@ func guestLinkFromRow(row rowScanner) (picoshare.GuestLink, error) {
 	var maxFileBytes picoshare.GuestUploadMaxFileBytes
 	var maxFileUploads picoshare.GuestUploadCountLimit
 	var creationTimeRaw string
-	var expirationTimeRaw string
+	var urlExpirationTimeRaw string
+	var fileLifetimeRaw *string
 	var filesUploaded int
 
-	err := row.Scan(&id, &label, &maxFileBytes, &maxFileUploads, &creationTimeRaw, &expirationTimeRaw, &filesUploaded)
+	err := row.Scan(&id, &label, &maxFileBytes, &maxFileUploads, &creationTimeRaw, &urlExpirationTimeRaw, &fileLifetimeRaw, &filesUploaded)
 	if err == sql.ErrNoRows {
 		return picoshare.GuestLink{}, store.GuestLinkNotFoundError{ID: id}
 	} else if err != nil {
@@ -144,9 +149,19 @@ func guestLinkFromRow(row rowScanner) (picoshare.GuestLink, error) {
 		return picoshare.GuestLink{}, err
 	}
 
-	et, err := parseDatetime(expirationTimeRaw)
+	uet, err := parseDatetime(urlExpirationTimeRaw)
 	if err != nil {
 		return picoshare.GuestLink{}, err
+	}
+
+	var fileLifetime picoshare.FileLifetime
+	if fileLifetimeRaw == nil {
+		fileLifetime = picoshare.FileLifetimeInfinite
+	} else {
+		fileLifetime, err = parseFileLifetime(*fileLifetimeRaw)
+		if err != nil {
+			return picoshare.GuestLink{}, err
+		}
 	}
 
 	return picoshare.GuestLink{
@@ -156,6 +171,7 @@ func guestLinkFromRow(row rowScanner) (picoshare.GuestLink, error) {
 		MaxFileUploads: maxFileUploads,
 		FilesUploaded:  filesUploaded,
 		Created:        ct,
-		Expires:        picoshare.ExpirationTime(et),
+		UrlExpires:     picoshare.ExpirationTime(uet),
+		FileLifetime:   fileLifetime,
 	}, nil
 }

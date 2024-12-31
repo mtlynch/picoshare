@@ -66,7 +66,7 @@ func TestSettingsPut(t *testing.T) {
 	} {
 		t.Run(tt.description, func(t *testing.T) {
 			dataStore := test_sqlite.New()
-			s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceChecker, nilGarbageCollector)
+			s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceChecker, nilGarbageCollector, handlers.NewClock())
 
 			req, err := http.NewRequest("PUT", "/api/settings", strings.NewReader(tt.payload))
 			if err != nil {
@@ -74,10 +74,11 @@ func TestSettingsPut(t *testing.T) {
 			}
 			req.Header.Add("Content-Type", "text/json")
 
-			w := httptest.NewRecorder()
-			s.Router().ServeHTTP(w, req)
+			rec := httptest.NewRecorder()
+			s.Router().ServeHTTP(rec, req)
+			res := rec.Result()
 
-			if got, want := w.Code, tt.status; got != want {
+			if got, want := res.StatusCode, tt.status; got != want {
 				t.Fatalf("/api/settings returned wrong status code: got %v want %v",
 					got, want)
 			}

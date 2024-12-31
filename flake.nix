@@ -4,8 +4,11 @@
   inputs = {
     flake-utils.url = "github:numtide/flake-utils";
 
-    # 1.22.3 release
-    go-nixpkgs.url = "github:NixOS/nixpkgs/a9858885e197f984d92d7fe64e9fff6b2e488d40";
+    # 1.23.2 release
+    # We temporarily mismatch the version in Docker (1.23.3) because Nix doesn't
+    # have the latest version yet, but we need to fix:
+    # https://github.com/golang/go/issues/68976
+    go-nixpkgs.url = "github:NixOS/nixpkgs/4ae2e647537bcdbb82265469442713d066675275";
 
     # 3.44.2 release
     sqlite-nixpkgs.url = "github:NixOS/nixpkgs/5ad9903c16126a7d949101687af0aa589b1d7d3d";

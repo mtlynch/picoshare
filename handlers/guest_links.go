@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/mtlynch/picoshare/v2/handlers/parse"
@@ -35,7 +34,7 @@ func (s Server) guestLinksPost() http.HandlerFunc {
 		}
 
 		gl.ID = generateGuestLinkID()
-		gl.Created = time.Now()
+		gl.Created = s.clock.Now()
 
 		if err := s.getDB(r).InsertGuestLink(gl); err != nil {
 			log.Printf("failed to save guest link: %v", err)
@@ -67,7 +66,8 @@ func (s Server) guestLinksDelete() http.HandlerFunc {
 func guestLinkFromRequest(r *http.Request) (picoshare.GuestLink, error) {
 	var payload struct {
 		Label          string  `json:"label"`
-		Expiration     string  `json:"expirationTime"`
+		UrlExpiration  string  `json:"urlExpirationTime"`
+		FileExpiration string  `json:"fileLifetime"`
 		MaxFileBytes   *uint64 `json:"maxFileBytes"`
 		MaxFileUploads *int    `json:"maxFileUploads"`
 	}
@@ -82,7 +82,12 @@ func guestLinkFromRequest(r *http.Request) (picoshare.GuestLink, error) {
 		return picoshare.GuestLink{}, err
 	}
 
-	expiration, err := parse.Expiration(payload.Expiration)
+	urlExpiration, err := parse.Expiration(payload.UrlExpiration)
+	if err != nil {
+		return picoshare.GuestLink{}, err
+	}
+
+	fileExpiration, err := parse.FileLifetimeFromString(payload.FileExpiration)
 	if err != nil {
 		return picoshare.GuestLink{}, err
 	}
@@ -99,7 +104,8 @@ func guestLinkFromRequest(r *http.Request) (picoshare.GuestLink, error) {
 
 	return picoshare.GuestLink{
 		Label:          label,
-		Expires:        expiration,
+		UrlExpires:     urlExpiration,
+		FileLifetime:   fileExpiration,
 		MaxFileBytes:   maxFileBytes,
 		MaxFileUploads: maxFileUploads,
 	}, nil

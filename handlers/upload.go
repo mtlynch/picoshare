@@ -7,7 +7,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/mtlynch/picoshare/v2/handlers/parse"
@@ -132,7 +131,7 @@ func (s Server) guestEntryPost() http.HandlerFunc {
 			r.Body = http.MaxBytesReader(w, r.Body, int64(*gl.MaxFileBytes))
 		}
 
-		id, err := s.insertFileFromRequest(r, picoshare.NeverExpire, guestLinkID)
+		id, err := s.insertFileFromRequest(r, gl.FileLifetime.ExpirationFromTime(s.clock.Now()), guestLinkID)
 		if err != nil {
 			var de *dbError
 			if errors.As(err, &de) {
@@ -269,7 +268,7 @@ func (s Server) insertFileFromRequest(r *http.Request, expiration picoshare.Expi
 			GuestLink: picoshare.GuestLink{
 				ID: guestLinkID,
 			},
-			Uploaded: time.Now(),
+			Uploaded: s.clock.Now(),
 			Expires:  expiration,
 		})
 	if err != nil {

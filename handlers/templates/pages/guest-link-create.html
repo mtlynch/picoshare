@@ -6,6 +6,9 @@
 
     const labelInput = document.getElementById("label");
     const expirationSelect = document.getElementById("expiration-select");
+    const fileExpirationSelect = document.getElementById(
+      "file-expiration-select"
+    );
     const maxFileBytesInput = document.getElementById("max-file-size");
     const fileUploadLimitInput = document.getElementById("file-upload-limit");
     const createLinkForm = document.getElementById("create-guest-link-form");
@@ -22,7 +25,8 @@
     function guestLinkFromInputs() {
       return {
         label: labelInput.value || null,
-        expirationTime: expirationSelect.value,
+        urlExpirationTime: expirationSelect.value,
+        fileLifetime: fileExpirationSelect.value,
         maxFileBytes: maxFileBytesInput.valueAsNumber
           ? megabytesToBytes(maxFileBytesInput.valueAsNumber)
           : null,
@@ -42,7 +46,8 @@
       const guestLink = guestLinkFromInputs();
       guestLinkNew(
         guestLink.label,
-        guestLink.expirationTime,
+        guestLink.urlExpirationTime,
+        guestLink.fileLifetime,
         guestLink.maxFileBytes,
         guestLink.maxFileUploads
       )
@@ -95,6 +100,24 @@
                 {{ if .IsDefault }}selected{{ end }}
               >
                 {{ .FriendlyName }}
+              </option>
+            {{ end }}
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="field my-5">
+      <label class="label">Guest Files Expire</label>
+      <div class="control">
+        <div class="select">
+          <select id="file-expiration-select">
+            {{ range .FileLifetimeOptions }}
+              <option
+                value="{{ formatLifetime .FileLifetime }}"
+                {{ if .IsDefault }}selected{{ end }}
+              >
+                {{ .FileLifetime.FriendlyName }}
               </option>
             {{ end }}
           </select>

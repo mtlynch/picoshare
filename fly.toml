@@ -14,7 +14,7 @@ kill_timeout = "5s"
   PS_BEHIND_PROXY = "yes"
 
 [[mounts]]
-  source = "pico_data"
+  source = "pico_data2"
   destination = "/data"
   processes = ["app"]
 
