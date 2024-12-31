@@ -33,7 +33,8 @@ func TestInsertDeleteSingleEntry(t *testing.T) {
 		t.Fatalf("failed to read entry contents: %v", err)
 	}
 
-	if got, want := string(contents), "hello, world!"; got != want {
+	expected := "hello, world!"
+	if got, want := string(contents), expected; got != want {
 		log.Fatalf("unexpected file contents: got %v, want %v", got, want)
 	}
 
