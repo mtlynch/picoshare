@@ -23,7 +23,7 @@ func TestInsertDeleteSingleEntry(t *testing.T) {
 		t.Fatalf("failed to insert file into sqlite: %v", err)
 	}
 
-	entry, err := db.GetEntry(picoshare.EntryID("dummy-id"))
+	entry, err := db.ReadEntryFile(picoshare.EntryID("dummy-id"))
 	if err != nil {
 		t.Fatalf("failed to get entry from DB: %v", err)
 	}
@@ -87,7 +87,7 @@ func TestReadLastByteOfEntry(t *testing.T) {
 		t.Fatalf("failed to insert file into sqlite: %v", err)
 	}
 
-	entry, err := db.GetEntry(picoshare.EntryID("dummy-id"))
+	entry, err := db.ReadEntryFile(picoshare.EntryID("dummy-id"))
 	if err != nil {
 		t.Fatalf("failed to get entry from DB: %v", err)
 	}

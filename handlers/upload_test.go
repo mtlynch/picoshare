@@ -135,7 +135,7 @@ func TestEntryPost(t *testing.T) {
 				t.Fatalf("response is not valid JSON: %v", body)
 			}
 
-			entry, err := dataStore.GetEntry(picoshare.EntryID(response.ID))
+			entry, err := dataStore.ReadEntryFile(picoshare.EntryID(response.ID))
 			if err != nil {
 				t.Fatalf("failed to get expected entry %v from data store: %v", response.ID, err)
 			}
@@ -255,7 +255,7 @@ func TestEntryPut(t *testing.T) {
 				t.Fatalf("status=%d, want=%d", got, want)
 			}
 
-			entry, err := store.GetEntry(picoshare.EntryID(originalEntry.ID))
+			entry, err := store.ReadEntryFile(picoshare.EntryID(originalEntry.ID))
 			if err != nil {
 				t.Fatalf("failed to get expected entry %v from data store: %v", originalEntry.ID, err)
 			}
@@ -488,7 +488,7 @@ func TestGuestUpload(t *testing.T) {
 				t.Fatalf("response is not valid JSON: %v", body)
 			}
 
-			entry, err := store.GetEntry(picoshare.EntryID(response.ID))
+			entry, err := store.ReadEntryFile(picoshare.EntryID(response.ID))
 			if err != nil {
 				t.Fatalf("failed to get expected entry %v from data store: %v", response.ID, err)
 			}

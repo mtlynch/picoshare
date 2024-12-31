@@ -87,21 +87,15 @@ func (s Store) GetEntriesMetadata() ([]picoshare.UploadMetadata, error) {
 	return ee, nil
 }
 
-func (s Store) GetEntry(id picoshare.EntryID) (picoshare.UploadEntry, error) {
-	metadata, err := s.GetEntryMetadata(id)
-	if err != nil {
-		return picoshare.UploadEntry{}, err
-	}
-
+func (s Store) ReadEntryFile(id picoshare.EntryID, readFile func(io.ReadSeeker)) error {
 	r, err := file.NewReader(s.ctx, id)
 	if err != nil {
-		return picoshare.UploadEntry{}, err
+		return err
 	}
 
-	return picoshare.UploadEntry{
-		UploadMetadata: metadata,
-		Reader:         r,
-	}, nil
+	readFile(r)
+
+	return nil
 }
 
 func (s Store) GetEntryMetadata(id picoshare.EntryID) (picoshare.UploadMetadata, error) {
