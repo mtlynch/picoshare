@@ -34,8 +34,8 @@ func TestInsertDeleteSingleEntry(t *testing.T) {
 	}
 
 	expected := "hello, world!"
-	if string(contents) != expected {
-		log.Fatalf("unexpected file contents: got %v, want %v", string(contents), expected)
+	if got, want := string(contents), expected; got != want {
+		log.Fatalf("unexpected file contents: got %v, want %v", got, want)
 	}
 
 	meta, err := db.GetEntriesMetadata()
@@ -107,9 +107,8 @@ func TestReadLastByteOfEntry(t *testing.T) {
 		t.Fatalf("failed to read entry contents: %v", err)
 	}
 
-	expected := "!"
-	if string(contents) != expected {
-		log.Fatalf("unexpected file contents: got %v, want %v", string(contents), expected)
+	if got, want := string(contents), "!"; got != want {
+		log.Fatalf("unexpected file contents: got %v, want %v", got, want)
 	}
 }
 

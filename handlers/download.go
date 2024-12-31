@@ -46,7 +46,7 @@ func (s Server) entryGet() http.HandlerFunc {
 				contentType = inferred
 			}
 		}
-		w.Header().Set("Content-Type", string(contentType))
+		w.Header().Set("Content-Type", contentType.String())
 
 		if err := s.getDB(r).ReadEntryFile(id, func(entryFile io.ReadSeeker) {
 			http.ServeContent(w, r, entry.Filename.String(), entry.Uploaded, entryFile)

@@ -50,6 +50,10 @@ func (f Filename) String() string {
 	return string(f)
 }
 
+func (ct ContentType) String() string {
+	return string(ct)
+}
+
 func (et ExpirationTime) String() string {
 	return et.Time().String()
 }
