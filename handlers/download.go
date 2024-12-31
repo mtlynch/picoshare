@@ -45,9 +45,9 @@ func (s Server) entryGet() http.HandlerFunc {
 				contentType = inferred
 			}
 		}
-		w.Header().Set("Content-Type", string(contentType))
+		w.Header().Set("Content-Type", contentType.String())
 
-		http.ServeContent(w, r, string(entry.Filename), entry.Uploaded, entry.Reader)
+		http.ServeContent(w, r, entry.Filename.String(), entry.Uploaded, entry.Reader)
 
 		if err := recordDownload(s.getDB(r), entry.ID, s.clock.Now(), r.RemoteAddr, r.Header.Get("User-Agent")); err != nil {
 			log.Printf("failed to record download of file %s: %v", id.String(), err)

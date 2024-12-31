@@ -42,7 +42,7 @@ func (s Server) guestLinksPost() http.HandlerFunc {
 			return
 		}
 
-		respondJSON(w, GuestLinkPostResponse{ID: string(gl.ID)})
+		respondJSON(w, GuestLinkPostResponse{ID: gl.ID.String()})
 	}
 }
 
