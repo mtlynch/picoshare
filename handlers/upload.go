@@ -63,7 +63,7 @@ func (s Server) entryPost() http.HandlerFunc {
 			return
 		}
 
-		respondJSON(w, EntryPostResponse{ID: string(id)})
+		respondJSON(w, EntryPostResponse{ID: id.String()})
 	}
 }
 
@@ -145,10 +145,10 @@ func (s Server) guestEntryPost() http.HandlerFunc {
 		}
 
 		if clientAcceptsJson(r) {
-			respondJSON(w, EntryPostResponse{ID: string(id)})
+			respondJSON(w, EntryPostResponse{ID: id.String()})
 		} else {
 			w.Header().Set("Content-Type", "text/plain")
-			if _, err := fmt.Fprintf(w, "%s/-%s\r\n", baseURLFromRequest(r), string(id)); err != nil {
+			if _, err := fmt.Fprintf(w, "%s/-%s\r\n", baseURLFromRequest(r), id.String()); err != nil {
 				log.Fatalf("failed to write HTTP response: %v", err)
 			}
 		}
