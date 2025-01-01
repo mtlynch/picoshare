@@ -25,17 +25,18 @@ func TestInsertDeleteSingleEntry(t *testing.T) {
 		t.Fatalf("failed to insert file into sqlite: %v", err)
 	}
 
-	if err := db.ReadEntryFile("dummy-id", func(reader io.ReadSeeker) {
-		contents, err := io.ReadAll(reader)
-		if err != nil {
-			t.Fatalf("failed to read entry contents: %v", err)
-		}
-
-		if got, want := string(contents), input; got != want {
-			log.Fatalf("unexpected file contents: got %v, want %v", got, want)
-		}
-	}); err != nil {
+	entryFile, err := db.ReadEntryFile("dummy-id")
+	if err != nil {
 		t.Fatalf("failed to get entry from DB: %v", err)
+	}
+
+	contents, err := io.ReadAll(entryFile)
+	if err != nil {
+		t.Fatalf("failed to read entry contents: %v", err)
+	}
+
+	if got, want := string(contents), input; got != want {
+		log.Fatalf("unexpected file contents: got %v, want %v", got, want)
 	}
 
 	meta, err := db.GetEntriesMetadata()
@@ -89,27 +90,28 @@ func TestReadLastByteOfEntry(t *testing.T) {
 		t.Fatalf("failed to insert file into sqlite: %v", err)
 	}
 
-	if err := db.ReadEntryFile(picoshare.EntryID("dummy-id"), func(reader io.ReadSeeker) {
-		pos, err := reader.Seek(1, io.SeekEnd)
-		if err != nil {
-			t.Fatalf("failed to seek file reader: %v", err)
-		}
+	entryFile, err := db.ReadEntryFile(picoshare.EntryID("dummy-id"))
+	if err != nil {
+		t.Fatalf("failed to read entry: %v", err)
+	}
 
-		expectedPos := int64(12)
-		if pos != expectedPos {
-			t.Fatalf("unexpected file position: got %d, want %d", pos, expectedPos)
-		}
+	pos, err := entryFile.Seek(1, io.SeekEnd)
+	if err != nil {
+		t.Fatalf("failed to seek file reader: %v", err)
+	}
 
-		contents, err := io.ReadAll(reader)
-		if err != nil {
-			t.Fatalf("failed to read entry contents: %v", err)
-		}
+	expectedPos := int64(12)
+	if pos != expectedPos {
+		t.Fatalf("unexpected file position: got %d, want %d", pos, expectedPos)
+	}
 
-		if got, want := string(contents), "!"; got != want {
-			log.Fatalf("unexpected file contents: got %v, want %v", got, want)
-		}
-	}); err != nil {
-		t.Fatalf("failed to get entry from DB: %v", err)
+	contents, err := io.ReadAll(entryFile)
+	if err != nil {
+		t.Fatalf("failed to read entry contents: %v", err)
+	}
+
+	if got, want := string(contents), "!"; got != want {
+		log.Fatalf("unexpected file contents: got %v, want %v", got, want)
 	}
 }
 

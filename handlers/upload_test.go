@@ -135,14 +135,6 @@ func TestEntryPost(t *testing.T) {
 				t.Fatalf("response is not valid JSON: %v", body)
 			}
 
-			if err := dataStore.ReadEntryFile(picoshare.EntryID(response.ID), func(reader io.ReadSeeker) {
-				if got, want := mustReadAll(reader), []byte(tt.contents); !reflect.DeepEqual(got, want) {
-					t.Errorf("stored contents= %v, want=%v", got, want)
-				}
-			}); err != nil {
-				t.Fatalf("failed to get expected entry %v from data store: %v", response.ID, err)
-			}
-
 			entry, err := dataStore.GetEntryMetadata(picoshare.EntryID(response.ID))
 			if err != nil {
 				t.Fatalf("failed to get expected entry %v from data store: %v", response.ID, err)
@@ -155,6 +147,15 @@ func TestEntryPost(t *testing.T) {
 			if got, want := entry.Expires, mustParseExpirationTime(tt.expiration); got != want {
 				t.Errorf("expiration=%v, want=%v", got, want)
 			}
+
+			entryFile, err := dataStore.ReadEntryFile(entry.ID)
+			if err != nil {
+				t.Fatalf("failed to read file for entry %v: %v", entry.ID, err)
+			}
+			if got, want := mustReadAll(entryFile), []byte(tt.contents); !reflect.DeepEqual(got, want) {
+				t.Errorf("stored contents= %v, want=%v", got, want)
+			}
+
 		})
 	}
 }
@@ -497,17 +498,9 @@ func TestGuestUpload(t *testing.T) {
 				t.Fatalf("response is not valid JSON: %v", body)
 			}
 
-			if err := store.ReadEntryFile(picoshare.EntryID(response.ID), func(reader io.ReadSeeker) {
-				if got, want := mustReadAll(reader), []byte(contents); !reflect.DeepEqual(got, want) {
-					t.Errorf("stored contents= %v, want=%v", got, want)
-				}
-			}); err != nil {
-				t.Fatalf("failed to get expected entry %v from data store: %v", response.ID, err)
-			}
-
 			entry, err := store.GetEntryMetadata(picoshare.EntryID(response.ID))
 			if err != nil {
-				t.Errorf("failed to retrieve entry metadata: %v", err)
+				t.Fatalf("failed to get expected entry %v from data store: %v", response.ID, err)
 			}
 
 			if got, want := entry.Filename, picoshare.Filename(filename); got != want {
@@ -516,6 +509,14 @@ func TestGuestUpload(t *testing.T) {
 
 			if got, want := entry.Expires, tt.fileExpirationTimeExpected; got != want {
 				t.Errorf("file expiration=%v, want=%v", got, want)
+			}
+
+			entryFile, err := store.ReadEntryFile(entry.ID)
+			if err != nil {
+				t.Fatalf("failed to read entry file for %v: %v", entry.ID, err)
+			}
+			if got, want := mustReadAll(entryFile), []byte(contents); !reflect.DeepEqual(got, want) {
+				t.Errorf("stored contents= %v, want=%v", got, want)
 			}
 		})
 	}
