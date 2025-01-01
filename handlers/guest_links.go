@@ -27,7 +27,7 @@ var guestLinkIDCharacters = []rune("abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTU
 
 func (s Server) guestLinksPost() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		gl, err := guestLinkFromRequest(r)
+		gl, err := s.guestLinkFromRequest(r)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Invalid request: %v", err), http.StatusBadRequest)
 			return
@@ -63,7 +63,7 @@ func (s Server) guestLinksDelete() http.HandlerFunc {
 	}
 }
 
-func guestLinkFromRequest(r *http.Request) (picoshare.GuestLink, error) {
+func (s Server) guestLinkFromRequest(r *http.Request) (picoshare.GuestLink, error) {
 	var payload struct {
 		Label          string  `json:"label"`
 		UrlExpiration  string  `json:"urlExpirationTime"`
@@ -82,7 +82,7 @@ func guestLinkFromRequest(r *http.Request) (picoshare.GuestLink, error) {
 		return picoshare.GuestLink{}, err
 	}
 
-	urlExpiration, err := parse.Expiration(payload.UrlExpiration)
+	urlExpiration, err := parse.Expiration(payload.UrlExpiration, s.clock.Now())
 	if err != nil {
 		return picoshare.GuestLink{}, err
 	}
