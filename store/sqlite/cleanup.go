@@ -65,7 +65,7 @@ func (s Store) deleteOrphanedRows() error {
 
 	// Delete rows from entries_data if they don't reference valid rows in
 	// entries. This can happen if the entry insertion fails partway through.
-	if _, err := s.ctx.Exec(`
+	rows, err := s.ctx.Exec(`
    	DELETE FROM
    		entries_data
    	WHERE
@@ -78,11 +78,17 @@ func (s Store) deleteOrphanedRows() error {
    			entries ON entries_data.id = entries.id
    		WHERE
    			entries.id IS NULL
-   		)`); err != nil {
+   		)`)
+	if err != nil {
 		return err
 	}
 
-	log.Printf("purge completed successfully")
+	ra, err := rows.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	log.Printf("purge completed successfully (%d rows affected)", ra)
 
 	return nil
 }
