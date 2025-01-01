@@ -28,6 +28,13 @@ func NewWriter(ctx wrapped.SqlDB, id picoshare.EntryID, chunkSize uint64) io.Wri
 func (w *writer) Write(p []byte) (int, error) {
 	n := 0
 
+	min := func(a, b int) int {
+		if a < b {
+			return a
+		}
+		return b
+	}
+
 	for {
 		if n == len(p) {
 			break
