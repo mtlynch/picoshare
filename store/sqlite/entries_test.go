@@ -25,12 +25,12 @@ func TestInsertDeleteSingleEntry(t *testing.T) {
 		t.Fatalf("failed to insert file into sqlite: %v", err)
 	}
 
-	entry, err := db.GetEntry(picoshare.EntryID("dummy-id"))
+	entryFile, err := db.ReadEntryFile("dummy-id")
 	if err != nil {
 		t.Fatalf("failed to get entry from DB: %v", err)
 	}
 
-	contents, err := io.ReadAll(entry.Reader)
+	contents, err := io.ReadAll(entryFile)
 	if err != nil {
 		t.Fatalf("failed to read entry contents: %v", err)
 	}
@@ -90,12 +90,12 @@ func TestReadLastByteOfEntry(t *testing.T) {
 		t.Fatalf("failed to insert file into sqlite: %v", err)
 	}
 
-	entry, err := db.GetEntry(picoshare.EntryID("dummy-id"))
+	entryFile, err := db.ReadEntryFile(picoshare.EntryID("dummy-id"))
 	if err != nil {
-		t.Fatalf("failed to get entry from DB: %v", err)
+		t.Fatalf("failed to read entry: %v", err)
 	}
 
-	pos, err := entry.Reader.Seek(1, io.SeekEnd)
+	pos, err := entryFile.Seek(1, io.SeekEnd)
 	if err != nil {
 		t.Fatalf("failed to seek file reader: %v", err)
 	}
@@ -105,7 +105,7 @@ func TestReadLastByteOfEntry(t *testing.T) {
 		t.Fatalf("unexpected file position: got %d, want %d", pos, expectedPos)
 	}
 
-	contents, err := io.ReadAll(entry.Reader)
+	contents, err := io.ReadAll(entryFile)
 	if err != nil {
 		t.Fatalf("failed to read entry contents: %v", err)
 	}
