@@ -13,7 +13,7 @@ func New() sqlite.Store {
 	return sqlite.New(ephemeralDbURI(), optimizeForLitestream)
 }
 
-func NewWithChunkSize(chunkSize int) sqlite.Store {
+func NewWithChunkSize(chunkSize uint64) sqlite.Store {
 	return sqlite.NewWithChunkSize(ephemeralDbURI(), chunkSize, optimizeForLitestream)
 }
 

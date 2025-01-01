@@ -269,6 +269,7 @@ func (s Server) insertFileFromRequest(r *http.Request, expiration picoshare.Expi
 			},
 			Uploaded: s.clock.Now(),
 			Expires:  expiration,
+			Size:     uint64(metadata.Size),
 		})
 	if err != nil {
 		log.Printf("failed to save entry: %v", err)

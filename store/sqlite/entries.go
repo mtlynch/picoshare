@@ -1,7 +1,6 @@
 package sqlite
 
 import (
-	"bytes"
 	"context"
 	"database/sql"
 	"fmt"
@@ -168,7 +167,6 @@ func (s Store) GetEntryMetadata(id picoshare.EntryID) (picoshare.UploadMetadata,
 		Size:        fileSize,
 	}, nil
 }
-
 func (s Store) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) error {
 	log.Printf("saving new entry %s", metadata.ID)
 
@@ -177,18 +175,9 @@ func (s Store) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) 
 		return err
 	}
 
+	// Insert entry metadata
 	_, err = tx.Exec(`
-	INSERT INTO
-		entries
-	(
-		id,
-		guest_link_id,
-		filename,
-		note,
-		content_type,
-		upload_time,
-		expiration_time
-	)
+	INSERT INTO entries (id, guest_link_id, filename, note, content_type, upload_time, expiration_time)
 	VALUES(:entry_id, NULLIF(:guest_link_id, ''), :filename, :note, :content_type, :upload_time, :expiration_time)`,
 		sql.Named("entry_id", metadata.ID),
 		sql.Named("guest_link_id", metadata.GuestLink.ID),
@@ -196,50 +185,35 @@ func (s Store) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) 
 		sql.Named("note", metadata.Note.Value),
 		sql.Named("content_type", metadata.ContentType),
 		sql.Named("upload_time", formatTime(metadata.Uploaded)),
-		sql.Named("expiration_time", formatExpirationTime(metadata.Expires)),
-	)
+		sql.Named("expiration_time", formatExpirationTime(metadata.Expires)))
 	if err != nil {
-		log.Printf("insert into entries table failed, aborting transaction: %v", err)
-		return err
+		return fmt.Errorf("insert into entries table failed: %v", err)
 	}
 
-	log.Printf("created entry row for %s", metadata.ID) // DEBUG
-
+	// Drop index before bulk insert
 	_, err = tx.Exec(`DROP INDEX IF EXISTS idx_entries_data_length`)
 	if err != nil {
 		return fmt.Errorf("failed to drop index: %v", err)
 	}
 
-	idx := 0
-	for {
-		// Create a limited reader for this chunk
-		chunkReader := io.LimitReader(reader, int64(defaultChunkSize))
+	// Calculate number of chunks needed
+	numChunks := (metadata.Size + defaultChunkSize - 1) / defaultChunkSize
 
-		// Read the chunk into a buffer to determine its actual size
-		buf := new(bytes.Buffer)
-		actualSize, err := io.Copy(buf, chunkReader)
-		if err != nil {
-			return err
-		}
-		if actualSize == 0 {
-			break // No more data to read
+	for idx := uint64(0); idx < numChunks; idx++ {
+		chunkSize := defaultChunkSize
+		if idx == numChunks-1 {
+			chunkSize = metadata.Size - (idx * defaultChunkSize)
 		}
 
+		// Initialize chunk with zeroblob
 		res, err := tx.Exec(`
-    INSERT INTO
-        entries_data
-    (
-        id,
-        chunk_index,
-        chunk
-    )
-    VALUES(:id, :chunk_index, :chunk)`,
+			INSERT INTO entries_data (id, chunk_index, chunk)
+			VALUES(:id, :chunk_index, :chunk)`,
 			sql.Named("id", metadata.ID),
 			sql.Named("chunk_index", idx),
-			sql.Named("chunk", sqlite3.ZeroBlob(int(actualSize))))
+			sql.Named("chunk", sqlite3.ZeroBlob(int(chunkSize))))
 		if err != nil {
-			log.Printf("failed to initialize chunk %d: %v", idx, err)
-			return err
+			return fmt.Errorf("failed to initialize chunk %d: %v", idx, err)
 		}
 
 		rowid, err := res.LastInsertId()
@@ -247,21 +221,22 @@ func (s Store) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) 
 			return err
 		}
 
-		_, err = tx.Exec(`SELECT writeblob('main', 'entries_data', 'chunk', :id, :offset, :data)`,
-			sql.Named("id", rowid),
-			sql.Named("offset", 0),
-			sql.Named("data", buf.Bytes()))
-		if err != nil {
-			log.Printf("failed to write blob chunk %d: %v", idx, err)
-			return err
+		// Read and write chunk
+		buf := make([]byte, chunkSize)
+		if _, err := io.ReadFull(reader, buf); err != nil {
+			return fmt.Errorf("failed to read chunk %d: %v", idx, err)
 		}
 
-		idx++
+		_, err = tx.Exec(`SELECT writeblob('main', 'entries_data', 'chunk', :rowid, :offset, :data)`,
+			sql.Named("rowid", rowid),
+			sql.Named("offset", 0),
+			sql.Named("data", buf))
+		if err != nil {
+			return fmt.Errorf("failed to write chunk %d: %v", idx, err)
+		}
 	}
 
-	log.Printf("wrote blob  for %v", metadata.ID) // DEBUG
-
-	// TODO: Just store the chunk length.
+	// Recreate index
 	_, err = tx.Exec(`CREATE INDEX idx_entries_data_length ON entries_data (id, LENGTH(chunk))`)
 	if err != nil {
 		return fmt.Errorf("failed to recreate index: %v", err)
