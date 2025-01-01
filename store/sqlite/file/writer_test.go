@@ -42,7 +42,7 @@ func TestWriteFile(t *testing.T) {
 		explanation  string
 		id           picoshare.EntryID
 		data         []byte
-		chunkSize    int
+		chunkSize    uint64
 		sqlExecErr   error
 		errExpected  error
 		rowsExpected []mockChunkRow

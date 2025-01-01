@@ -12,7 +12,7 @@ import (
 )
 
 func TestInsertDeleteSingleEntry(t *testing.T) {
-	chunkSize := 5
+	chunkSize := uint64(5)
 	db := test_sqlite.NewWithChunkSize(chunkSize)
 
 	if err := db.InsertEntry(bytes.NewBufferString("hello, world!"), picoshare.UploadMetadata{
@@ -76,7 +76,7 @@ func TestInsertDeleteSingleEntry(t *testing.T) {
 }
 
 func TestReadLastByteOfEntry(t *testing.T) {
-	chunkSize := 5
+	chunkSize := uint64(5)
 	db := test_sqlite.NewWithChunkSize(chunkSize)
 
 	if err := db.InsertEntry(bytes.NewBufferString("hello, world!"), picoshare.UploadMetadata{

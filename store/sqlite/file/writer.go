@@ -16,7 +16,7 @@ type writer struct {
 
 // Create a new writer for the entry ID using the given SqlTx and splitting the
 // file into separate rows in the DB of at most chunkSize bytes.
-func NewWriter(ctx wrapped.SqlDB, id picoshare.EntryID, chunkSize int) io.WriteCloser {
+func NewWriter(ctx wrapped.SqlDB, id picoshare.EntryID, chunkSize uint64) io.WriteCloser {
 	return &writer{
 		ctx:     ctx,
 		entryID: id,
