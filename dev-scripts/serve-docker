@@ -17,10 +17,12 @@ cd "${SCRIPT_DIR}/.."
 DOCKER_BUILDKIT=1 \
   docker build -t picoshare .
 
-set +x
-# shellcheck disable=SC1091
-. .env.dev
-set -x
+if [[ -f .env.dev ]]; then
+  set +x
+  # shellcheck disable=SC1091
+  . .env.dev
+  set -x
+fi
 
 PS_SHARED_SECRET=somepassword
 
@@ -29,10 +31,7 @@ docker rm -f picoshare || true
 docker run \
   --env "PORT=4002" \
   --env "PS_SHARED_SECRET=${PS_SHARED_SECRET}" \
-  --env "LITESTREAM_BUCKET=${LITESTREAM_BUCKET}" \
-  --env "LITESTREAM_ENDPOINT=${LITESTREAM_ENDPOINT}" \
-  --env "LITESTREAM_ACCESS_KEY_ID=${LITESTREAM_ACCESS_KEY_ID}" \
-  --env "LITESTREAM_SECRET_ACCESS_KEY=${LITESTREAM_SECRET_ACCESS_KEY}" \
   --publish "0.0.0.0:4002:4002" \
   --name picoshare \
+  --memory 256m \
   picoshare

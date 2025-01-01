@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
+	"fmt"
 	"io"
 	"log"
 
@@ -204,6 +205,11 @@ func (s Store) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) 
 
 	log.Printf("created entry row for %s", metadata.ID) // DEBUG
 
+	_, err = tx.Exec(`DROP INDEX IF EXISTS idx_entries_data_length`)
+	if err != nil {
+		return fmt.Errorf("failed to drop index: %v", err)
+	}
+
 	idx := 0
 	for {
 		// Create a limited reader for this chunk
@@ -253,7 +259,13 @@ func (s Store) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) 
 		idx++
 	}
 
-	log.Printf("wrote blob of size %d for %v", metadata.Size, metadata.ID) // DEBUG
+	log.Printf("wrote blob  for %v", metadata.ID) // DEBUG
+
+	// TODO: Just store the chunk length.
+	_, err = tx.Exec(`CREATE INDEX idx_entries_data_length ON entries_data (id, LENGTH(chunk))`)
+	if err != nil {
+		return fmt.Errorf("failed to recreate index: %v", err)
+	}
 
 	return tx.Commit()
 }
