@@ -236,15 +236,12 @@ func (s Store) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) 
 			return err
 		}
 
-		buf := make([]byte, chunkSize)
-		if _, err := io.ReadFull(reader, buf); err != nil {
-			return fmt.Errorf("failed to read chunk %d: %v", idx, err)
-		}
+		limitedReader := io.LimitReader(reader, int64(chunkSize))
 
 		_, err = tx.Exec(`SELECT writeblob('main', 'entries_data', 'chunk', :rowid, :offset, :data)`,
 			sql.Named("rowid", rowid),
 			sql.Named("offset", 0),
-			sql.Named("data", buf))
+			sql.Named("data", sqlite3.Pointer(limitedReader)))
 		if err != nil {
 			return fmt.Errorf("failed to write chunk %d: %v", idx, err)
 		}
