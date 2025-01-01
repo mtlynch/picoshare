@@ -1,6 +1,7 @@
 package sqlite
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"fmt"
@@ -180,24 +181,27 @@ func (s Store) GetEntryMetadata(id picoshare.EntryID) (picoshare.UploadMetadata,
 func (s Store) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) error {
 	log.Printf("saving new entry %s", metadata.ID)
 
-	r, err := s.ctx.Exec(`
+	tx, err := s.ctx.BeginTx(context.Background(), nil)
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.Exec(`
 	INSERT INTO
 		entries
 	(
 		id,
 		guest_link_id,
 		filename,
-		contents,
 		note,
 		content_type,
 		upload_time,
 		expiration_time
 	)
-	VALUES(:entry_id, NULLIF(:guest_link_id, ''), :filename, :contents, :note, :content_type, :upload_time, :expiration_time)`,
+	VALUES(:entry_id, NULLIF(:guest_link_id, ''), :filename, :note, :content_type, :upload_time, :expiration_time)`,
 		sql.Named("entry_id", metadata.ID),
 		sql.Named("guest_link_id", metadata.GuestLink.ID),
 		sql.Named("filename", metadata.Filename),
-		sql.Named("contents", sqlite3.ZeroBlob(metadata.Size)),
 		sql.Named("note", metadata.Note.Value),
 		sql.Named("content_type", metadata.ContentType),
 		sql.Named("upload_time", formatTime(metadata.Uploaded)),
@@ -210,24 +214,65 @@ func (s Store) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) 
 
 	log.Printf("created entry row for %s", metadata.ID) // DEBUG
 
-	rowID, err := r.LastInsertId()
-	if err != nil {
-		log.Printf("failed to retrieve insert ID of entry %v: %v", metadata.ID, err)
-		return err
+	idx := 0
+	for {
+		// Create a limited reader for this chunk
+		chunkReader := io.LimitReader(reader, int64(defaultChunkSize))
+
+		// Read the chunk into a buffer to determine its actual size
+		buf := new(bytes.Buffer)
+		actualSize, err := io.Copy(buf, chunkReader)
+		if actualSize == 0 {
+			break // No more data to read
+		}
+
+		// Initialize the blob
+		_, err = tx.Exec(`
+    INSERT INTO
+        entries_data
+    (
+        id,
+        chunk_index,
+        chunk
+    )
+    VALUES(:id, :chunk_index, :chunk)`,
+			sql.Named("id", metadata.ID),
+			sql.Named("chunk_index", idx),
+			sql.Named("chunk", sqlite3.ZeroBlob(int(actualSize))))
+		if err != nil {
+			log.Printf("failed to initialize chunk %d: %v", idx, err)
+			return err
+		}
+
+		tmpReader := bytes.NewReader(buf.Bytes())
+
+		// Write the chunk
+		_, err = tx.Exec(`SELECT writeblob('main', 'entries_data', 'chunk', :id, :offset, :data)`,
+			sql.Named("id", metadata.ID),
+			sql.Named("offset", 0),
+			sql.Named("data", sqlite3.Pointer(tmpReader)))
+		if err != nil {
+			log.Printf("failed to write blob chunk %d: %v", idx, err)
+			return err
+		}
+
+		idx++
 	}
 
-	_, err = s.ctx.Exec(`SELECT writeblob('main', 'entries', 'contents', :id, :offset, :data)`,
-		sql.Named("id", rowID),
-		sql.Named("offset", 0),
-		sql.Named("data", sqlite3.Pointer(reader)))
-	if err != nil {
-		log.Printf("failed to write blob of length %d: %v", metadata.Size, err)
-		return err
-	}
+	/*
+			INSERT INTO
+			entries_data
+		(
+			id,
+			chunk_index,
+			chunk
+		)
+		VALUES(?,?,?)`, w.entryID, idx, w.buf[0:n])
+	*/
 
 	log.Printf("wrote blob of size %d for %v", metadata.Size, metadata.ID) // DEBUG
 
-	return nil
+	return tx.Commit()
 }
 
 func (s Store) UpdateEntryMetadata(id picoshare.EntryID, metadata picoshare.UploadMetadata) error {
