@@ -15,15 +15,15 @@ func TestInsertDeleteSingleEntry(t *testing.T) {
 	chunkSize := uint64(5)
 	db := test_sqlite.NewWithChunkSize(chunkSize)
 
-	if err := db.InsertEntry(bytes.NewBufferString("hello, world!"), picoshare.UploadMetadata{
+	input := "hello, world!"
+	if err := db.InsertEntry(bytes.NewBufferString(input), picoshare.UploadMetadata{
 		ID:       picoshare.EntryID("dummy-id"),
 		Filename: "dummy-file.txt",
 		Expires:  mustParseExpirationTime("2040-01-01T00:00:00Z"),
+		Size:     mustParseFileSize(len(input)),
 	}); err != nil {
 		t.Fatalf("failed to insert file into sqlite: %v", err)
 	}
-
-	expected := "hello, world!"
 
 	if err := db.ReadEntryFile("dummy-id", func(reader io.ReadSeeker) {
 		contents, err := io.ReadAll(reader)
@@ -31,7 +31,7 @@ func TestInsertDeleteSingleEntry(t *testing.T) {
 			t.Fatalf("failed to read entry contents: %v", err)
 		}
 
-		if got, want := string(contents), expected; got != want {
+		if got, want := string(contents), input; got != want {
 			log.Fatalf("unexpected file contents: got %v, want %v", got, want)
 		}
 	}); err != nil {
@@ -47,8 +47,8 @@ func TestInsertDeleteSingleEntry(t *testing.T) {
 		t.Fatalf("unexpected metadata size: got %v, want %v", len(meta), 1)
 	}
 
-	if meta[0].Size != uint64(len(expected)) {
-		t.Fatalf("unexpected file size in entry metadata: got %v, want %v", meta[0].Size, len(expected))
+	if got, want := meta[0].Size, mustParseFileSize(len(input)); !got.Equal(want) {
+		t.Fatalf("unexpected file size in entry metadata: got %v, want %v", got, want)
 	}
 
 	if meta[0].DownloadCount != 0 {
@@ -79,10 +79,12 @@ func TestReadLastByteOfEntry(t *testing.T) {
 	chunkSize := uint64(5)
 	db := test_sqlite.NewWithChunkSize(chunkSize)
 
-	if err := db.InsertEntry(bytes.NewBufferString("hello, world!"), picoshare.UploadMetadata{
+	input := "hello, world!"
+	if err := db.InsertEntry(bytes.NewBufferString(input), picoshare.UploadMetadata{
 		ID:       picoshare.EntryID("dummy-id"),
 		Filename: "dummy-file.txt",
 		Expires:  mustParseExpirationTime("2040-01-01T00:00:00Z"),
+		Size:     mustParseFileSize(len(input)),
 	}); err != nil {
 		t.Fatalf("failed to insert file into sqlite: %v", err)
 	}
@@ -117,4 +119,13 @@ func mustParseExpirationTime(s string) picoshare.ExpirationTime {
 		panic(err)
 	}
 	return picoshare.ExpirationTime(et)
+}
+
+func mustParseFileSize(val int) picoshare.FileSize {
+	fileSize, err := picoshare.FileSizeFromInt(val)
+	if err != nil {
+		panic(err)
+	}
+
+	return fileSize
 }
