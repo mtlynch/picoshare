@@ -105,15 +105,6 @@ func (s Store) DeleteGuestLink(id picoshare.GuestLinkID) error {
 	}
 
 	if _, err = tx.Exec(`
-	DELETE FROM
-		guest_links
-	WHERE
-		id=:id`, sql.Named("id", id)); err != nil {
-		log.Printf("deleting %s from guest_links table failed: %v", id, err)
-		return err
-	}
-
-	if _, err = tx.Exec(`
 	UPDATE
 		entries
 	SET
@@ -121,6 +112,15 @@ func (s Store) DeleteGuestLink(id picoshare.GuestLinkID) error {
 	WHERE
 		guest_link_id = :id`, sql.Named("id", id)); err != nil {
 		log.Printf("removing references to guest link %s from entries table failed: %v", id, err)
+		return err
+	}
+
+	if _, err = tx.Exec(`
+	DELETE FROM
+		guest_links
+	WHERE
+		id=:id`, sql.Named("id", id)); err != nil {
+		log.Printf("deleting %s from guest_links table failed: %v", id, err)
 		return err
 	}
 
