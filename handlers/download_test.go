@@ -103,13 +103,15 @@ func TestEntryGet(t *testing.T) {
 				dummyVideoEntry,
 				dummyVideoEntryWithGenericContentType,
 			} {
+				data := "dummy data"
 				entry := picoshare.UploadEntry{
 					UploadMetadata: picoshare.UploadMetadata{
 						ID:          mockEntry.ID,
 						Filename:    mockEntry.Filename,
 						ContentType: mockEntry.ContentType,
+						Size:        uint64(len(data)),
 					},
-					Reader: strings.NewReader("dummy data"),
+					Reader: strings.NewReader(data),
 				}
 				if err := dataStore.InsertEntry(entry.Reader, entry.UploadMetadata); err != nil {
 					panic(err)

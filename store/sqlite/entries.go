@@ -175,9 +175,18 @@ func (s Store) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) 
 		return err
 	}
 
-	// Insert entry metadata
 	_, err = tx.Exec(`
-	INSERT INTO entries (id, guest_link_id, filename, note, content_type, upload_time, expiration_time)
+	INSERT INTO
+		entries
+	(
+		id,
+		guest_link_id,
+		filename,
+		note,
+		content_type,
+		upload_time,
+		expiration_time
+	)
 	VALUES(:entry_id, NULLIF(:guest_link_id, ''), :filename, :note, :content_type, :upload_time, :expiration_time)`,
 		sql.Named("entry_id", metadata.ID),
 		sql.Named("guest_link_id", metadata.GuestLink.ID),
@@ -185,10 +194,14 @@ func (s Store) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) 
 		sql.Named("note", metadata.Note.Value),
 		sql.Named("content_type", metadata.ContentType),
 		sql.Named("upload_time", formatTime(metadata.Uploaded)),
-		sql.Named("expiration_time", formatExpirationTime(metadata.Expires)))
+		sql.Named("expiration_time", formatExpirationTime(metadata.Expires)),
+	)
 	if err != nil {
-		return fmt.Errorf("insert into entries table failed: %v", err)
+		log.Printf("insert into entries table failed, aborting transaction: %v", err)
+		return err
 	}
+
+	log.Printf("saved metadata for %v", metadata.ID) // DEBUG
 
 	// Drop index before bulk insert
 	_, err = tx.Exec(`DROP INDEX IF EXISTS idx_entries_data_length`)
@@ -198,6 +211,8 @@ func (s Store) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) 
 
 	// Calculate number of chunks needed
 	numChunks := (metadata.Size + defaultChunkSize - 1) / defaultChunkSize
+
+	log.Printf("numChunks=%d", numChunks) // DEBUG
 
 	for idx := uint64(0); idx < numChunks; idx++ {
 		chunkSize := defaultChunkSize
@@ -221,7 +236,6 @@ func (s Store) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) 
 			return err
 		}
 
-		// Read and write chunk
 		buf := make([]byte, chunkSize)
 		if _, err := io.ReadFull(reader, buf); err != nil {
 			return fmt.Errorf("failed to read chunk %d: %v", idx, err)

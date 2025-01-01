@@ -242,7 +242,10 @@ func TestEntryPut(t *testing.T) {
 	} {
 		t.Run(tt.description, func(t *testing.T) {
 			store := test_sqlite.New()
-			store.InsertEntry(strings.NewReader(("dummy data")), originalEntry)
+			originalData := "dummy original data"
+			metadata := originalEntry
+			metadata.Size = uint64(len(originalData))
+			store.InsertEntry(strings.NewReader((originalData)), metadata)
 			s := handlers.New(mockAuthenticator{}, &store, nilSpaceChecker, nilGarbageCollector, handlers.NewClock())
 
 			req, err := http.NewRequest("PUT", "/api/entry/"+tt.targetID, strings.NewReader(tt.payload))
