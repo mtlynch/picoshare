@@ -258,7 +258,7 @@ func TestEntryPut(t *testing.T) {
 				t.Fatalf("status=%d, want=%d", got, want)
 			}
 
-			entry, err := store.GetEntryMetadata(picoshare.EntryID(originalEntry.ID))
+			entry, err := store.GetEntry(picoshare.EntryID(originalEntry.ID))
 			if err != nil {
 				t.Fatalf("failed to get expected entry %v from data store: %v", originalEntry.ID, err)
 			}
@@ -491,17 +491,13 @@ func TestGuestUpload(t *testing.T) {
 				t.Fatalf("response is not valid JSON: %v", body)
 			}
 
-			if err := store.ReadEntryFile(picoshare.EntryID(response.ID), func(reader io.ReadSeeker) {
-				if got, want := mustReadAll(reader), []byte(contents); !reflect.DeepEqual(got, want) {
-					t.Errorf("stored contents= %v, want=%v", got, want)
-				}
-			}); err != nil {
+			entry, err := store.GetEntry(picoshare.EntryID(response.ID))
+			if err != nil {
 				t.Fatalf("failed to get expected entry %v from data store: %v", response.ID, err)
 			}
 
-			entry, err := store.GetEntryMetadata(picoshare.EntryID(response.ID))
-			if err != nil {
-				t.Errorf("failed to retrieve entry metadata: %v", err)
+			if got, want := mustReadAll(entry.Reader), []byte(contents); !reflect.DeepEqual(got, want) {
+				t.Errorf("stored contents= %v, want=%v", got, want)
 			}
 
 			if got, want := entry.Filename, picoshare.Filename(filename); got != want {
