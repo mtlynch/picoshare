@@ -48,6 +48,7 @@ func (dbs *dbSettings) SetIsolateBySession(isolate bool) {
 var (
 	sharedDBSettings dbSettings
 	tokenToDB        map[dbToken]Store = map[dbToken]Store{}
+	tokenToDBMutex   sync.RWMutex
 )
 
 func (s Server) getDB(r *http.Request) Store {
@@ -58,6 +59,9 @@ func (s Server) getDB(r *http.Request) Store {
 	if err != nil {
 		panic(err)
 	}
+
+	tokenToDBMutex.RLock()
+	defer tokenToDBMutex.RUnlock()
 	return tokenToDB[dbToken(c.Value)]
 }
 
@@ -90,7 +94,9 @@ func assignSessionDB(h http.Handler) http.Handler {
 				log.Printf("provisioning a new private database with token %s", token)
 				createDBCookie(token, w)
 				testDb := test_sqlite.New()
+				tokenToDBMutex.Lock()
 				tokenToDB[token] = &testDb
+				tokenToDBMutex.Unlock()
 			}
 		}
 		h.ServeHTTP(w, r)
