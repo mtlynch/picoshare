@@ -92,15 +92,13 @@ func (s Store) GetEntriesMetadata() ([]picoshare.UploadMetadata, error) {
 	return ee, nil
 }
 
-func (s Store) ReadEntryFile(id picoshare.EntryID, readFile func(io.ReadSeeker)) error {
+func (s Store) ReadEntryFile(id picoshare.EntryID) (io.ReadSeeker, error) {
 	r, err := file.NewReader(s.ctx, id)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	readFile(r)
-
-	return nil
+	return r, nil
 }
 
 func (s Store) GetEntryMetadata(id picoshare.EntryID) (picoshare.UploadMetadata, error) {

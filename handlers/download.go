@@ -3,7 +3,6 @@ package handlers
 import (
 	"errors"
 	"fmt"
-	"io"
 	"log"
 	"mime"
 	"net"
@@ -48,13 +47,14 @@ func (s Server) entryGet() http.HandlerFunc {
 		}
 		w.Header().Set("Content-Type", contentType.String())
 
-		if err := s.getDB(r).ReadEntryFile(id, func(entryFile io.ReadSeeker) {
-			http.ServeContent(w, r, entry.Filename.String(), entry.Uploaded, entryFile)
-		}); err != nil {
+		entryFile, err := s.getDB(r).ReadEntryFile(id)
+		if err != nil {
 			log.Printf("error retrieving entry data with id %v: %v", id, err)
 			http.Error(w, "failed to retrieve entry", http.StatusInternalServerError)
 			return
 		}
+
+		http.ServeContent(w, r, entry.Filename.String(), entry.Uploaded, entryFile)
 
 		if err := recordDownload(s.getDB(r), entry.ID, s.clock.Now(), r.RemoteAddr, r.Header.Get("User-Agent")); err != nil {
 			log.Printf("failed to record download of file %s: %v", id.String(), err)
