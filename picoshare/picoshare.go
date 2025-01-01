@@ -22,7 +22,7 @@ type (
 		ContentType   ContentType
 		Uploaded      time.Time
 		Expires       ExpirationTime
-		Size          uint64
+		Size          FileSize
 		GuestLink     GuestLink
 		DownloadCount uint64
 	}

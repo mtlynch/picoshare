@@ -3,7 +3,6 @@ package sqlite
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"io"
 	"log"
 
@@ -57,9 +56,9 @@ func (s Store) GetEntriesMetadata() ([]picoshare.UploadMetadata, error) {
 		var contentType string
 		var uploadTimeRaw string
 		var expirationTimeRaw string
-		var fileSize uint64
+		var fileSizeRaw uint64
 		var downloadCount uint64
-		if err = rows.Scan(&id, &filename, &note, &contentType, &uploadTimeRaw, &expirationTimeRaw, &fileSize, &downloadCount); err != nil {
+		if err = rows.Scan(&id, &filename, &note, &contentType, &uploadTimeRaw, &expirationTimeRaw, &fileSizeRaw, &downloadCount); err != nil {
 			return []picoshare.UploadMetadata{}, err
 		}
 
@@ -69,6 +68,11 @@ func (s Store) GetEntriesMetadata() ([]picoshare.UploadMetadata, error) {
 		}
 
 		et, err := parseDatetime(expirationTimeRaw)
+		if err != nil {
+			return []picoshare.UploadMetadata{}, err
+		}
+
+		fileSize, err := picoshare.FileSizeFromUint64(fileSizeRaw)
 		if err != nil {
 			return []picoshare.UploadMetadata{}, err
 		}
@@ -111,7 +115,7 @@ func (s Store) GetEntryMetadata(id picoshare.EntryID) (picoshare.UploadMetadata,
 	var contentType string
 	var uploadTimeRaw string
 	var expirationTimeRaw string
-	var fileSize uint64
+	var fileSizeRaw uint64
 	var guestLinkID *picoshare.GuestLinkID
 	err := s.ctx.QueryRow(`
 	SELECT
@@ -135,7 +139,7 @@ func (s Store) GetEntryMetadata(id picoshare.EntryID) (picoshare.UploadMetadata,
 				id
 		) sizes ON entries.id = sizes.id
 	WHERE
-		entries.id = :entry_id`, sql.Named("entry_id", id)).Scan(&filename, &note, &contentType, &uploadTimeRaw, &expirationTimeRaw, &fileSize, &guestLinkID)
+		entries.id = :entry_id`, sql.Named("entry_id", id)).Scan(&filename, &note, &contentType, &uploadTimeRaw, &expirationTimeRaw, &fileSizeRaw, &guestLinkID)
 	if err == sql.ErrNoRows {
 		return picoshare.UploadMetadata{}, store.EntryNotFoundError{ID: id}
 	} else if err != nil {
@@ -160,6 +164,11 @@ func (s Store) GetEntryMetadata(id picoshare.EntryID) (picoshare.UploadMetadata,
 		return picoshare.UploadMetadata{}, err
 	}
 
+	fileSize, err := picoshare.FileSizeFromUint64(fileSizeRaw)
+	if err != nil {
+		return picoshare.UploadMetadata{}, err
+	}
+
 	return picoshare.UploadMetadata{
 		ID:          id,
 		Filename:    picoshare.Filename(filename),
@@ -175,15 +184,10 @@ func (s Store) GetEntryMetadata(id picoshare.EntryID) (picoshare.UploadMetadata,
 func (s Store) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) error {
 	log.Printf("saving new entry %s", metadata.ID)
 
-	if metadata.Size == 0 {
-		return errors.New("can't insert empty file")
-	}
-
 	// Note: We deliberately don't use a transaction here, as it bloats memory, so
 	// we can end up in a state with orphaned entries data. We clean it up in
 	// Purge().
 	// See: https://github.com/mtlynch/picoshare/issues/284
-
 	w := file.NewWriter(s.ctx, metadata.ID, s.chunkSize)
 	if _, err := io.Copy(w, reader); err != nil {
 		return err
