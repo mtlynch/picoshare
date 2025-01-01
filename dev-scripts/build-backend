@@ -59,6 +59,6 @@ readonly BUILD_TAGS_JOINED
 
 go build \
   -tags "${BUILD_TAGS_JOINED}" \
-  -ldflags "-w -extldflags '-static' -X 'github.com/mtlynch/picoshare/v2/build.Version=${PS_VERSION}' -X 'github.com/mtlynch/picoshare/v2/build.unixTime=$(date +%s)'" \
+  -ldflags "-X 'github.com/mtlynch/picoshare/v2/build.Version=${PS_VERSION}' -X 'github.com/mtlynch/picoshare/v2/build.unixTime=$(date +%s)'" \
   -o "${BINARY}" \
   cmd/picoshare/main.go
