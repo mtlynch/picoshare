@@ -88,7 +88,6 @@ func TestReadLastByteOfEntry(t *testing.T) {
 	}); err != nil {
 		t.Fatalf("failed to insert file into sqlite: %v", err)
 	}
-	log.Printf("inserted entry") // DEBUG
 
 	if err := db.ReadEntryFile(picoshare.EntryID("dummy-id"), func(reader io.ReadSeeker) {
 		pos, err := reader.Seek(1, io.SeekEnd)
