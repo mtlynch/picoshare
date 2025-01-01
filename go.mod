@@ -5,7 +5,6 @@ go 1.23
 require (
 	github.com/go-test/deep v1.1.1
 	github.com/gorilla/mux v1.8.0
-	github.com/mattn/go-sqlite3 v1.14.24
 	github.com/mileusna/useragent v1.3.3
 	github.com/mtlynch/gorilla-handlers v1.5.2
 	github.com/ncruces/go-sqlite3 v0.21.3

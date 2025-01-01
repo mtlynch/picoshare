@@ -4,15 +4,14 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
-	"fmt"
 	"io"
 	"log"
 
 	"github.com/ncruces/go-sqlite3"
-	"github.com/ncruces/go-sqlite3/ext/blobio"
 
 	"github.com/mtlynch/picoshare/v2/picoshare"
 	"github.com/mtlynch/picoshare/v2/store"
+	"github.com/mtlynch/picoshare/v2/store/sqlite/file"
 )
 
 func (s Store) GetEntriesMetadata() ([]picoshare.UploadMetadata, error) {
@@ -91,31 +90,13 @@ func (s Store) GetEntriesMetadata() ([]picoshare.UploadMetadata, error) {
 	return ee, nil
 }
 
-func (s Store) ReadEntryFile(id picoshare.EntryID, processFile func(io.ReadSeeker)) error {
-	log.Printf("attempting to read entry %s", id.String()) // DEBUG
-	_, err := s.ctx.Exec(`
-			SELECT
-				openblob('main', 'entries', 'contents', rowid, :writeMode, :callback)
-			FROM
-				entries
-			WHERE
-				entries.id = :entry_id
-	`,
-		sql.Named("writeMode", false),
-		sql.Named("callback",
-			sqlite3.Pointer[blobio.OpenCallback](func(blob *sqlite3.Blob, _ ...sqlite3.Value) error {
-				log.Printf("start callback") // DEBUG
-				processFile(blob)
-				log.Printf("end callback") // DEBUG
-				return nil
-			})),
-		sql.Named("entry_id", id))
+func (s Store) ReadEntryFile(id picoshare.EntryID, readFile func(io.ReadSeeker)) error {
+	r, err := file.NewReader(s.ctx, id)
 	if err != nil {
-		log.Printf("failed to open blob for %v: %v", id.String(), err) // DEBUG
-		return fmt.Errorf("error opening blob for id %s: %w", id, err)
+		return err
 	}
 
-	log.Printf("finished reading entry %v", id.String()) // DEBUG
+	readFile(r)
 
 	return nil
 }
@@ -130,18 +111,27 @@ func (s Store) GetEntryMetadata(id picoshare.EntryID) (picoshare.UploadMetadata,
 	var guestLinkID *picoshare.GuestLinkID
 	err := s.ctx.QueryRow(`
 	SELECT
-		filename AS filename,
-		note AS note,
-		content_type AS content_type,
-		upload_time AS upload_time,
-		expiration_time AS expiration_time,
-		LENGTH(contents) AS file_size,
-		guest_link_id AS guest_link_id
+		entries.filename AS filename,
+		entries.note AS note,
+		entries.content_type AS content_type,
+		entries.upload_time AS upload_time,
+		entries.expiration_time AS expiration_time,
+		sizes.file_size AS file_size,
+		entries.guest_link_id AS guest_link_id
 	FROM
 		entries
+	INNER JOIN
+		(
+			SELECT
+				id,
+				SUM(LENGTH(chunk)) AS file_size
+			FROM
+				entries_data
+			GROUP BY
+				id
+		) sizes ON entries.id = sizes.id
 	WHERE
-		id = :entry_id`,
-		sql.Named("entry_id", id)).Scan(&filename, &note, &contentType, &uploadTimeRaw, &expirationTimeRaw, &fileSize, &guestLinkID)
+		entries.id = :entry_id`, sql.Named("entry_id", id)).Scan(&filename, &note, &contentType, &uploadTimeRaw, &expirationTimeRaw, &fileSize, &guestLinkID)
 	if err == sql.ErrNoRows {
 		return picoshare.UploadMetadata{}, store.EntryNotFoundError{ID: id}
 	} else if err != nil {
@@ -222,12 +212,14 @@ func (s Store) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) 
 		// Read the chunk into a buffer to determine its actual size
 		buf := new(bytes.Buffer)
 		actualSize, err := io.Copy(buf, chunkReader)
+		if err != nil {
+			return err
+		}
 		if actualSize == 0 {
 			break // No more data to read
 		}
 
-		// Initialize the blob
-		_, err = tx.Exec(`
+		res, err := tx.Exec(`
     INSERT INTO
         entries_data
     (
@@ -244,13 +236,15 @@ func (s Store) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) 
 			return err
 		}
 
-		tmpReader := bytes.NewReader(buf.Bytes())
+		rowid, err := res.LastInsertId()
+		if err != nil {
+			return err
+		}
 
-		// Write the chunk
 		_, err = tx.Exec(`SELECT writeblob('main', 'entries_data', 'chunk', :id, :offset, :data)`,
-			sql.Named("id", metadata.ID),
+			sql.Named("id", rowid),
 			sql.Named("offset", 0),
-			sql.Named("data", sqlite3.Pointer(tmpReader)))
+			sql.Named("data", buf.Bytes()))
 		if err != nil {
 			log.Printf("failed to write blob chunk %d: %v", idx, err)
 			return err
@@ -258,17 +252,6 @@ func (s Store) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) 
 
 		idx++
 	}
-
-	/*
-			INSERT INTO
-			entries_data
-		(
-			id,
-			chunk_index,
-			chunk
-		)
-		VALUES(?,?,?)`, w.entryID, idx, w.buf[0:n])
-	*/
 
 	log.Printf("wrote blob of size %d for %v", metadata.Size, metadata.ID) // DEBUG
 

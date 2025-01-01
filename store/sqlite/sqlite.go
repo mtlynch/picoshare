@@ -5,7 +5,9 @@ import (
 	"log"
 	"time"
 
-	_ "github.com/mattn/go-sqlite3"
+	"github.com/ncruces/go-sqlite3/driver"
+	_ "github.com/ncruces/go-sqlite3/embed"
+	"github.com/ncruces/go-sqlite3/ext/blobio"
 
 	"github.com/mtlynch/picoshare/v2/picoshare"
 )
@@ -35,7 +37,7 @@ func New(path string, optimizeForLitestream bool) Store {
 // chunk size for writing files. Most callers should just use New().
 func NewWithChunkSize(path string, chunkSize int, optimizeForLitestream bool) Store {
 	log.Printf("reading DB from %s", path)
-	ctx, err := sql.Open("sqlite3", path)
+	ctx, err := driver.Open(path, blobio.Register)
 	if err != nil {
 		log.Fatalln(err)
 	}
