@@ -448,7 +448,9 @@ func TestGuestUpload(t *testing.T) {
 				t.Fatalf("failed to insert dummy guest link: %v", err)
 			}
 			for _, entry := range tt.entriesInStore {
-				if err := store.InsertEntry(strings.NewReader("dummy data"), entry.UploadMetadata); err != nil {
+				data := "dummy data"
+				entry.UploadMetadata.Size = uint64(len(data))
+				if err := store.InsertEntry(strings.NewReader(data), entry.UploadMetadata); err != nil {
 					t.Fatalf("failed to insert dummy entry: %v", err)
 				}
 			}

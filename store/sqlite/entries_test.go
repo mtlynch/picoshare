@@ -15,10 +15,12 @@ func TestInsertDeleteSingleEntry(t *testing.T) {
 	chunkSize := uint64(5)
 	db := test_sqlite.NewWithChunkSize(chunkSize)
 
-	if err := db.InsertEntry(bytes.NewBufferString("hello, world!"), picoshare.UploadMetadata{
+	input := "hello, world!"
+	if err := db.InsertEntry(bytes.NewBufferString(input), picoshare.UploadMetadata{
 		ID:       picoshare.EntryID("dummy-id"),
 		Filename: "dummy-file.txt",
 		Expires:  mustParseExpirationTime("2040-01-01T00:00:00Z"),
+		Size:     uint64(len(input)),
 	}); err != nil {
 		t.Fatalf("failed to insert file into sqlite: %v", err)
 	}
@@ -33,8 +35,7 @@ func TestInsertDeleteSingleEntry(t *testing.T) {
 		t.Fatalf("failed to read entry contents: %v", err)
 	}
 
-	expected := "hello, world!"
-	if got, want := string(contents), expected; got != want {
+	if got, want := string(contents), input; got != want {
 		log.Fatalf("unexpected file contents: got %v, want %v", got, want)
 	}
 
@@ -109,12 +110,8 @@ func TestReadLastByteOfEntry(t *testing.T) {
 		t.Fatalf("failed to read entry contents: %v", err)
 	}
 
-
-		if got, want := string(contents), "!"; got != want {
-			log.Fatalf("unexpected file contents: got %v, want %v", got, want)
-		}
-	}); err != nil {
-		t.Fatalf("failed to get entry from DB: %v", err)
+	if got, want := string(contents), "!"; got != want {
+		log.Fatalf("unexpected file contents: got %v, want %v", got, want)
 	}
 }
 
