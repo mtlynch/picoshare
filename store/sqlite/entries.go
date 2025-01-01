@@ -298,19 +298,19 @@ func (s Store) DeleteEntry(id picoshare.EntryID) error {
 
 	if _, err := tx.Exec(`
 	DELETE FROM
-		entries
+		entries_data
 	WHERE
 		id = :entry_id`, sql.Named("entry_id", id)); err != nil {
-		log.Printf("delete from entries table failed, aborting transaction: %v", err)
+		log.Printf("delete from entries_data table failed, aborting transaction: %v", err)
 		return err
 	}
 
 	if _, err := tx.Exec(`
 	DELETE FROM
-		entries_data
+		entries
 	WHERE
 		id = :entry_id`, sql.Named("entry_id", id)); err != nil {
-		log.Printf("delete from entries_data table failed, aborting transaction: %v", err)
+		log.Printf("delete from entries table failed, aborting transaction: %v", err)
 		return err
 	}
 
