@@ -3,6 +3,7 @@ package sqlite
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"io"
 	"log"
 
@@ -173,6 +174,10 @@ func (s Store) GetEntryMetadata(id picoshare.EntryID) (picoshare.UploadMetadata,
 
 func (s Store) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) error {
 	log.Printf("saving new entry %s", metadata.ID)
+
+	if metadata.Size == 0 {
+		return errors.New("can't insert empty file")
+	}
 
 	// Note: We deliberately don't use a transaction here, as it bloats memory, so
 	// we can end up in a state with orphaned entries data. We clean it up in

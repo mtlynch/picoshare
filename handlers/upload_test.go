@@ -238,7 +238,10 @@ func TestEntryPut(t *testing.T) {
 	} {
 		t.Run(tt.description, func(t *testing.T) {
 			store := test_sqlite.New()
-			store.InsertEntry(strings.NewReader(("dummy data")), originalEntry)
+			originalData := "dummy original data"
+			metadata := originalEntry
+			metadata.Size = uint64(len(originalData))
+			store.InsertEntry(strings.NewReader((originalData)), metadata)
 			s := handlers.New(mockAuthenticator{}, &store, nilSpaceChecker, nilGarbageCollector, handlers.NewClock())
 
 			req, err := http.NewRequest("PUT", "/api/entry/"+tt.targetID, strings.NewReader(tt.payload))
@@ -255,7 +258,7 @@ func TestEntryPut(t *testing.T) {
 				t.Fatalf("status=%d, want=%d", got, want)
 			}
 
-			entry, err := store.GetEntry(picoshare.EntryID(originalEntry.ID))
+			entry, err := store.GetEntryMetadata(picoshare.EntryID(originalEntry.ID))
 			if err != nil {
 				t.Fatalf("failed to get expected entry %v from data store: %v", originalEntry.ID, err)
 			}
@@ -488,13 +491,17 @@ func TestGuestUpload(t *testing.T) {
 				t.Fatalf("response is not valid JSON: %v", body)
 			}
 
-			entry, err := store.GetEntry(picoshare.EntryID(response.ID))
-			if err != nil {
+			if err := store.ReadEntryFile(picoshare.EntryID(response.ID), func(reader io.ReadSeeker) {
+				if got, want := mustReadAll(reader), []byte(contents); !reflect.DeepEqual(got, want) {
+					t.Errorf("stored contents= %v, want=%v", got, want)
+				}
+			}); err != nil {
 				t.Fatalf("failed to get expected entry %v from data store: %v", response.ID, err)
 			}
 
-			if got, want := mustReadAll(entry.Reader), []byte(contents); !reflect.DeepEqual(got, want) {
-				t.Errorf("stored contents= %v, want=%v", got, want)
+			entry, err := store.GetEntryMetadata(picoshare.EntryID(response.ID))
+			if err != nil {
+				t.Errorf("failed to retrieve entry metadata: %v", err)
 			}
 
 			if got, want := entry.Filename, picoshare.Filename(filename); got != want {
