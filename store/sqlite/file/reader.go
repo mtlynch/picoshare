@@ -134,6 +134,9 @@ func getFileLength(db *sql.DB, id picoshare.EntryID, chunkSize int64) (int64, er
 	return (chunkSize * chunkIndex) + chunkLen, nil
 }
 
+// getChunkSize determines the chunk size that PicoShare used to save the given
+// entry in SQLite. Even though the chunk size is theoretically a constant, it
+// might change in different versions of PicoShare.
 func getChunkSize(db *sql.DB, id picoshare.EntryID) (int64, error) {
 	var chunkSize int64
 	if err := db.QueryRow(`
@@ -142,11 +145,13 @@ func getChunkSize(db *sql.DB, id picoshare.EntryID) (int64, error) {
 	FROM
 		entries_data
 	WHERE
-		id=?
+		id=:id
 	ORDER BY
 		chunk_index ASC
 	LIMIT 1
-	`, id).Scan(&chunkSize); err != nil {
+	`,
+		sql.Named("id", id),
+	).Scan(&chunkSize); err != nil {
 		return 0, err
 	}
 

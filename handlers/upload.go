@@ -236,7 +236,10 @@ func (s Server) insertFileFromRequest(r *http.Request, expiration picoshare.Expi
 
 	if metadata.Size == 0 {
 		return picoshare.EntryID(""), errors.New("file is empty")
+	} else if metadata.Size < 0 {
+		return picoshare.EntryID(""), errors.New("file size must be positive")
 	}
+	fileSize := uint64(metadata.Size)
 
 	filename, err := parse.Filename(metadata.Filename)
 	if err != nil {
@@ -269,7 +272,7 @@ func (s Server) insertFileFromRequest(r *http.Request, expiration picoshare.Expi
 			},
 			Uploaded: s.clock.Now(),
 			Expires:  expiration,
-			Size:     uint64(metadata.Size),
+			Size:     fileSize,
 		})
 	if err != nil {
 		log.Printf("failed to save entry: %v", err)
