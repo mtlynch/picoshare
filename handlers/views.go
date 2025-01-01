@@ -665,9 +665,10 @@ func (s Server) systemInformationGet() http.HandlerFunc {
 	}
 }
 
-func humanReadableFileSize(b uint64) string {
+func humanReadableFileSize(fileSize picoshare.FileSize) string {
 	const unit = 1024
 
+	b := fileSize.UInt64()
 	if b < unit {
 		return fmt.Sprintf("%d B", b)
 	}
