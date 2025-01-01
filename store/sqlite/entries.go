@@ -59,9 +59,9 @@ func (s Store) GetEntriesMetadata() ([]picoshare.UploadMetadata, error) {
 		var contentType string
 		var uploadTimeRaw string
 		var expirationTimeRaw string
-		var fileSize uint64
+		var fileSizeRaw uint64
 		var downloadCount uint64
-		if err = rows.Scan(&id, &filename, &note, &contentType, &uploadTimeRaw, &expirationTimeRaw, &fileSize, &downloadCount); err != nil {
+		if err = rows.Scan(&id, &filename, &note, &contentType, &uploadTimeRaw, &expirationTimeRaw, &fileSizeRaw, &downloadCount); err != nil {
 			return []picoshare.UploadMetadata{}, err
 		}
 
@@ -71,6 +71,11 @@ func (s Store) GetEntriesMetadata() ([]picoshare.UploadMetadata, error) {
 		}
 
 		et, err := parseDatetime(expirationTimeRaw)
+		if err != nil {
+			return []picoshare.UploadMetadata{}, err
+		}
+
+		fileSize, err := picoshare.FileSizeFromUint64(fileSizeRaw)
 		if err != nil {
 			return []picoshare.UploadMetadata{}, err
 		}
@@ -107,7 +112,7 @@ func (s Store) GetEntryMetadata(id picoshare.EntryID) (picoshare.UploadMetadata,
 	var contentType string
 	var uploadTimeRaw string
 	var expirationTimeRaw string
-	var fileSize uint64
+	var fileSizeRaw uint64
 	var guestLinkID *picoshare.GuestLinkID
 	err := s.ctx.QueryRow(`
 	SELECT
@@ -131,7 +136,7 @@ func (s Store) GetEntryMetadata(id picoshare.EntryID) (picoshare.UploadMetadata,
 				id
 		) sizes ON entries.id = sizes.id
 	WHERE
-		entries.id = :entry_id`, sql.Named("entry_id", id)).Scan(&filename, &note, &contentType, &uploadTimeRaw, &expirationTimeRaw, &fileSize, &guestLinkID)
+		entries.id = :entry_id`, sql.Named("entry_id", id)).Scan(&filename, &note, &contentType, &uploadTimeRaw, &expirationTimeRaw, &fileSizeRaw, &guestLinkID)
 	if err == sql.ErrNoRows {
 		return picoshare.UploadMetadata{}, store.EntryNotFoundError{ID: id}
 	} else if err != nil {
@@ -152,6 +157,11 @@ func (s Store) GetEntryMetadata(id picoshare.EntryID) (picoshare.UploadMetadata,
 	}
 
 	et, err := parseDatetime(expirationTimeRaw)
+	if err != nil {
+		return picoshare.UploadMetadata{}, err
+	}
+
+	fileSize, err := picoshare.FileSizeFromUint64(fileSizeRaw)
 	if err != nil {
 		return picoshare.UploadMetadata{}, err
 	}
@@ -211,14 +221,14 @@ func (s Store) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) 
 	}
 
 	// Calculate number of chunks needed
-	numChunks := (metadata.Size + defaultChunkSize - 1) / defaultChunkSize
+	numChunks := (metadata.Size.UInt64() + defaultChunkSize - 1) / defaultChunkSize
 
 	log.Printf("numChunks=%d", numChunks) // DEBUG
 
 	for idx := uint64(0); idx < numChunks; idx++ {
 		chunkSize := defaultChunkSize
 		if idx == numChunks-1 {
-			chunkSize = metadata.Size - (idx * defaultChunkSize)
+			chunkSize = metadata.Size.UInt64() - (idx * defaultChunkSize)
 		}
 
 		// Initialize chunk with zeroblob

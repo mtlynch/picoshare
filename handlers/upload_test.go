@@ -244,7 +244,7 @@ func TestEntryPut(t *testing.T) {
 			store := test_sqlite.New()
 			originalData := "dummy original data"
 			metadata := originalEntry
-			metadata.Size = uint64(len(originalData))
+			metadata.Size = mustParseFileSize(len(originalData))
 			store.InsertEntry(strings.NewReader((originalData)), metadata)
 			s := handlers.New(mockAuthenticator{}, &store, nilSpaceChecker, nilGarbageCollector, handlers.NewClock())
 
@@ -452,7 +452,9 @@ func TestGuestUpload(t *testing.T) {
 				t.Fatalf("failed to insert dummy guest link: %v", err)
 			}
 			for _, entry := range tt.entriesInStore {
-				if err := store.InsertEntry(strings.NewReader("dummy data"), entry.UploadMetadata); err != nil {
+				data := "dummy data"
+				entry.UploadMetadata.Size = mustParseFileSize(len(data))
+				if err := store.InsertEntry(strings.NewReader(data), entry.UploadMetadata); err != nil {
 					t.Fatalf("failed to insert dummy entry: %v", err)
 				}
 			}
@@ -564,4 +566,13 @@ func mustReadAll(r io.Reader) []byte {
 
 func makeNote(s string) picoshare.FileNote {
 	return picoshare.FileNote{Value: &s}
+}
+
+func mustParseFileSize(val int) picoshare.FileSize {
+	fileSize, err := picoshare.FileSizeFromInt(val)
+	if err != nil {
+		panic(err)
+	}
+
+	return fileSize
 }

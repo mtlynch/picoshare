@@ -22,7 +22,7 @@ func TestDeleteExistingFile(t *testing.T) {
 	dataStore.InsertEntry(strings.NewReader(fileContents),
 		picoshare.UploadMetadata{
 			ID:   picoshare.EntryID("hR87apiUCj"),
-			Size: uint64(len(fileContents)),
+			Size: mustParseFileSize(len(fileContents)),
 		})
 	s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceChecker, nilGarbageCollector, handlers.NewClock())
 

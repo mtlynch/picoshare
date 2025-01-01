@@ -31,13 +31,13 @@ func TestTotalSize(t *testing.T) {
 			description: "returns the sum of the database entries",
 			dbEntries: []picoshare.UploadMetadata{
 				{
-					Size: 5,
+					Size: mustParseFileSize(5),
 				},
 				{
-					Size: 3,
+					Size: mustParseFileSize(3),
 				},
 				{
-					Size: 1,
+					Size: mustParseFileSize(1),
 				},
 			},
 			dbErr:         nil,
@@ -48,10 +48,10 @@ func TestTotalSize(t *testing.T) {
 			description: "returns an error if the database sizes overflow int64",
 			dbEntries: []picoshare.UploadMetadata{
 				{
-					Size: math.MaxUint64,
+					Size: mustParseFileSize(math.MaxUint64),
 				},
 				{
-					Size: 1,
+					Size: mustParseFileSize(1),
 				},
 			},
 			dbErr:         nil,
@@ -82,4 +82,13 @@ func TestTotalSize(t *testing.T) {
 			}
 		})
 	}
+}
+
+func mustParseFileSize(val uint64) picoshare.FileSize {
+	fileSize, err := picoshare.FileSizeFromUint64(val)
+	if err != nil {
+		panic(err)
+	}
+
+	return fileSize
 }
