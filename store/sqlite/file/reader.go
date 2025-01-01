@@ -152,10 +152,3 @@ func getChunkSize(db *sql.DB, id picoshare.EntryID) (int64, error) {
 
 	return chunkSize, nil
 }
-
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
