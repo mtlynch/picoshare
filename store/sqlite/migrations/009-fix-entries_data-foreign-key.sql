@@ -8,7 +8,10 @@ CREATE TABLE new_entries_data (
 
 -- Copy all data from old table to new table
 INSERT INTO new_entries_data
-SELECT id, chunk_index, chunk
+SELECT
+    id,
+    chunk_index,
+    chunk
 FROM entries_data;
 
 -- Drop old table
