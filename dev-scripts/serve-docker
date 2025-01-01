@@ -37,5 +37,4 @@ docker run \
   --env "LITESTREAM_SECRET_ACCESS_KEY=${LITESTREAM_SECRET_ACCESS_KEY:-}" \
   --publish "0.0.0.0:4002:4002" \
   --name picoshare \
-  --memory 256m \
   picoshare
