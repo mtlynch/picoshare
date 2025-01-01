@@ -3,12 +3,15 @@ package sqlite
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"io"
 	"log"
 
+	"github.com/ncruces/go-sqlite3"
+	"github.com/ncruces/go-sqlite3/ext/blobio"
+
 	"github.com/mtlynch/picoshare/v2/picoshare"
 	"github.com/mtlynch/picoshare/v2/store"
-	"github.com/mtlynch/picoshare/v2/store/sqlite/file"
 )
 
 func (s Store) GetEntriesMetadata() ([]picoshare.UploadMetadata, error) {
@@ -87,13 +90,31 @@ func (s Store) GetEntriesMetadata() ([]picoshare.UploadMetadata, error) {
 	return ee, nil
 }
 
-func (s Store) ReadEntryFile(id picoshare.EntryID, readFile func(io.ReadSeeker)) error {
-	r, err := file.NewReader(s.ctx, id)
+func (s Store) ReadEntryFile(id picoshare.EntryID, processFile func(io.ReadSeeker)) error {
+	log.Printf("attempting to read entry %s", id.String()) // DEBUG
+	_, err := s.ctx.Exec(`
+			SELECT
+				openblob('main', 'entries', 'contents', rowid, :writeMode, :callback)
+			FROM
+				entries
+			WHERE
+				entries.id = :entry_id
+	`,
+		sql.Named("writeMode", false),
+		sql.Named("callback",
+			sqlite3.Pointer[blobio.OpenCallback](func(blob *sqlite3.Blob, _ ...sqlite3.Value) error {
+				log.Printf("start callback") // DEBUG
+				processFile(blob)
+				log.Printf("end callback") // DEBUG
+				return nil
+			})),
+		sql.Named("entry_id", id))
 	if err != nil {
-		return err
+		log.Printf("failed to open blob for %v: %v", id.String(), err) // DEBUG
+		return fmt.Errorf("error opening blob for id %s: %w", id, err)
 	}
 
-	readFile(r)
+	log.Printf("finished reading entry %v", id.String()) // DEBUG
 
 	return nil
 }
@@ -108,27 +129,18 @@ func (s Store) GetEntryMetadata(id picoshare.EntryID) (picoshare.UploadMetadata,
 	var guestLinkID *picoshare.GuestLinkID
 	err := s.ctx.QueryRow(`
 	SELECT
-		entries.filename AS filename,
-		entries.note AS note,
-		entries.content_type AS content_type,
-		entries.upload_time AS upload_time,
-		entries.expiration_time AS expiration_time,
-		sizes.file_size AS file_size,
-		entries.guest_link_id AS guest_link_id
+		filename AS filename,
+		note AS note,
+		content_type AS content_type,
+		upload_time AS upload_time,
+		expiration_time AS expiration_time,
+		LENGTH(contents) AS file_size,
+		guest_link_id AS guest_link_id
 	FROM
 		entries
-	INNER JOIN
-		(
-			SELECT
-				id,
-				SUM(LENGTH(chunk)) AS file_size
-			FROM
-				entries_data
-			GROUP BY
-				id
-		) sizes ON entries.id = sizes.id
 	WHERE
-		entries.id = :entry_id`, sql.Named("entry_id", id)).Scan(&filename, &note, &contentType, &uploadTimeRaw, &expirationTimeRaw, &fileSize, &guestLinkID)
+		id = :entry_id`,
+		sql.Named("entry_id", id)).Scan(&filename, &note, &contentType, &uploadTimeRaw, &expirationTimeRaw, &fileSize, &guestLinkID)
 	if err == sql.ErrNoRows {
 		return picoshare.UploadMetadata{}, store.EntryNotFoundError{ID: id}
 	} else if err != nil {
@@ -168,37 +180,24 @@ func (s Store) GetEntryMetadata(id picoshare.EntryID) (picoshare.UploadMetadata,
 func (s Store) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) error {
 	log.Printf("saving new entry %s", metadata.ID)
 
-	// Note: We deliberately don't use a transaction here, as it bloats memory, so
-	// we can end up in a state with orphaned entries data. We clean it up in
-	// Purge().
-	// See: https://github.com/mtlynch/picoshare/issues/284
-
-	w := file.NewWriter(s.ctx, metadata.ID, s.chunkSize)
-	if _, err := io.Copy(w, reader); err != nil {
-		return err
-	}
-
-	// Close() flushes the buffer, and it can fail.
-	if err := w.Close(); err != nil {
-		return err
-	}
-
-	_, err := s.ctx.Exec(`
+	r, err := s.ctx.Exec(`
 	INSERT INTO
 		entries
 	(
 		id,
 		guest_link_id,
 		filename,
+		contents,
 		note,
 		content_type,
 		upload_time,
 		expiration_time
 	)
-	VALUES(:entry_id, :guest_link_id, :filename, :note, :content_type, :upload_time, :expiration_time)`,
+	VALUES(:entry_id, NULLIF(:guest_link_id, ''), :filename, :contents, :note, :content_type, :upload_time, :expiration_time)`,
 		sql.Named("entry_id", metadata.ID),
 		sql.Named("guest_link_id", metadata.GuestLink.ID),
 		sql.Named("filename", metadata.Filename),
+		sql.Named("contents", sqlite3.ZeroBlob(metadata.Size)),
 		sql.Named("note", metadata.Note.Value),
 		sql.Named("content_type", metadata.ContentType),
 		sql.Named("upload_time", formatTime(metadata.Uploaded)),
@@ -208,6 +207,25 @@ func (s Store) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) 
 		log.Printf("insert into entries table failed, aborting transaction: %v", err)
 		return err
 	}
+
+	log.Printf("created entry row for %s", metadata.ID) // DEBUG
+
+	rowID, err := r.LastInsertId()
+	if err != nil {
+		log.Printf("failed to retrieve insert ID of entry %v: %v", metadata.ID, err)
+		return err
+	}
+
+	_, err = s.ctx.Exec(`SELECT writeblob('main', 'entries', 'contents', :id, :offset, :data)`,
+		sql.Named("id", rowID),
+		sql.Named("offset", 0),
+		sql.Named("data", sqlite3.Pointer(reader)))
+	if err != nil {
+		log.Printf("failed to write blob of length %d: %v", metadata.Size, err)
+		return err
+	}
+
+	log.Printf("wrote blob of size %d for %v", metadata.Size, metadata.ID) // DEBUG
 
 	return nil
 }

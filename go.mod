@@ -5,11 +5,16 @@ go 1.23
 require (
 	github.com/go-test/deep v1.1.1
 	github.com/gorilla/mux v1.8.0
-	github.com/mattn/go-sqlite3 v1.14.22
+	github.com/mattn/go-sqlite3 v1.14.24
 	github.com/mileusna/useragent v1.3.3
 	github.com/mtlynch/gorilla-handlers v1.5.2
-	golang.org/x/crypto v0.0.0-20220331220935-ae2d96664a29
-	golang.org/x/sys v0.0.0-20210615035016-665e8c7367d1
+	github.com/ncruces/go-sqlite3 v0.21.3
+	golang.org/x/crypto v0.31.0
+	golang.org/x/sys v0.28.0
 )
 
-require github.com/felixge/httpsnoop v1.0.1 // indirect
+require (
+	github.com/felixge/httpsnoop v1.0.1 // indirect
+	github.com/ncruces/julianday v1.0.0 // indirect
+	github.com/tetratelabs/wazero v1.8.2 // indirect
+)
