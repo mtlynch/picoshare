@@ -57,6 +57,8 @@ done
 BUILD_TAGS_JOINED="${BUILD_TAGS_JOINED# }"
 readonly BUILD_TAGS_JOINED
 
+export CGO_ENABLED=0
+
 go build \
   -tags "${BUILD_TAGS_JOINED}" \
   -ldflags "-X 'github.com/mtlynch/picoshare/v2/build.Version=${PS_VERSION}' -X 'github.com/mtlynch/picoshare/v2/build.unixTime=$(date +%s)'" \
