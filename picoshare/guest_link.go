@@ -26,6 +26,7 @@ type (
 var (
 	GuestUploadUnlimitedFileSize    = GuestUploadMaxFileBytes(nil)
 	GuestUploadUnlimitedFileUploads = GuestUploadCountLimit(nil)
+	GuestLinkDisabled               = GuestUploadDisabled(nil)
 )
 
 func (glid GuestLinkID) Empty() bool {
@@ -54,8 +55,12 @@ func (gl GuestLink) IsExpired() bool {
 	return time.Now().After(time.Time(gl.UrlExpires))
 }
 
+func (gl GuestLink) IsDisabled() bool {
+	return gl.Disabled != GuestLinkDisabled && *gl.Disabled == 1
+}
+
 func (gl GuestLink) IsActive() bool {
-	return !gl.IsExpired() && gl.CanAcceptMoreFiles()
+	return !gl.IsExpired() && gl.CanAcceptMoreFiles() && !gl.IsDisabled()
 }
 
 func (label GuestLinkLabel) Empty() bool {
