@@ -63,6 +63,40 @@ func (s Server) guestLinksDelete() http.HandlerFunc {
 	}
 }
 
+func (s *Server) guestLinksDisable() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id, err := parseGuestLinkID(mux.Vars(r)["id"])
+		if err != nil {
+			log.Printf("failed to parse guest link ID %s: %v", mux.Vars(r)["id"], err)
+			http.Error(w, fmt.Sprintf("Invalid guest link ID: %v", err), http.StatusBadRequest)
+			return
+		}
+
+		if err := s.getDB(r).DisableGuestLink(id); err != nil {
+			log.Printf("failed to delete guest link: %v", err)
+			http.Error(w, fmt.Sprintf("Failed to delete guest link: %v", err), http.StatusInternalServerError)
+			return
+		}
+	}
+}
+
+func (s *Server) guestLinksEnable() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id, err := parseGuestLinkID(mux.Vars(r)["id"])
+		if err != nil {
+			log.Printf("failed to parse guest link ID %s: %v", mux.Vars(r)["id"], err)
+			http.Error(w, fmt.Sprintf("Invalid guest link ID: %v", err), http.StatusBadRequest)
+			return
+		}
+
+		if err := s.getDB(r).EnableGuestLink(id); err != nil {
+			log.Printf("failed to delete guest link: %v", err)
+			http.Error(w, fmt.Sprintf("Failed to delete guest link: %v", err), http.StatusInternalServerError)
+			return
+		}
+	}
+}
+
 func (s Server) guestLinkFromRequest(r *http.Request) (picoshare.GuestLink, error) {
 	var payload struct {
 		Label          string  `json:"label"`

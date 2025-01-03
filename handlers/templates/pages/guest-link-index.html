@@ -29,7 +29,7 @@
 
 {{ define "script-tags" }}
   <script type="module" nonce="{{ .CspNonce }}">
-    import { guestLinkDelete } from "/js/controllers/guestLinks.js";
+    import { guestLinkDelete, guestLinkEnable, guestLinkDisable } from "/js/controllers/guestLinks.js";
     import { showElement, hideElement } from "/js/lib/bulma.js";
     import { copyToClipboard } from "/js/lib/clipboard.js";
 
@@ -82,6 +82,50 @@
           });
       });
     });
+
+    document
+      .querySelectorAll('[aria-label="Enable"], [aria-label="Disable"]')
+      .forEach((toggleBtn) => {
+        toggleBtn.addEventListener("click", () => {
+          const id = toggleBtn.getAttribute("pico-link-id");
+          // switch enable/disable
+          if (toggleBtn.getAttribute("aria-label") === "Enable") {
+            guestLinkEnable(id)
+              .then(() => {
+                const button = toggleBtn;
+                button.classList.remove("is-danger");
+                button.classList.add("is-success");
+                button.setAttribute("aria-label", "Disable");
+                button.innerHTML =
+                  '<i class="fas fa-check-square" aria-hidden="true"></i>';
+                document
+                  .querySelector("snackbar-notifications")
+                  .addInfoMessage("Successfully disabled the guest link.");
+              })
+              .catch((error) => {
+                document.getElementById("error-message").innerText = error;
+                showElement(errorContainer);
+              });
+          } else if (toggleBtn.getAttribute("aria-label") === "Disable") {
+            guestLinkDisable(id)
+              .then(() => {
+                const button = toggleBtn;
+                button.classList.remove("is-success");
+                button.classList.add("is-danger");
+                button.setAttribute("aria-label", "Enable");
+                button.innerHTML =
+                  '<i class="fas fa-ban" aria-hidden="true"></i>';
+                document
+                  .querySelector("snackbar-notifications")
+                  .addInfoMessage("Guest link enabled successfully.");
+              })
+              .catch((error) => {
+                document.getElementById("error-message").innerText = error;
+                showElement(errorContainer);
+              });
+          }
+        });
+      });
   </script>
 {{ end }}
 
@@ -181,7 +225,7 @@
                 <p class="control">
                   <button
                     class="button is-danger"
-                    aria-label=""
+                    aria-label="Enable"
                     pico-link-id="{{ .ID }}"
                   >
                     <i class="fas fa-ban" aria-hidden="true"></i>
@@ -191,7 +235,7 @@
                 <p class="control">
                   <button
                     class="button is-success"
-                    aria-label=""
+                    aria-label="Disable"
                     pico-link-id="{{ .ID }}"
                   >
                     <i class="fas fa-check-square" aria-hidden="true"></i>

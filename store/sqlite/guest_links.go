@@ -128,6 +128,50 @@ func (s Store) DeleteGuestLink(id picoshare.GuestLinkID) error {
 	return tx.Commit()
 }
 
+func (s Store) DisableGuestLink(id picoshare.GuestLinkID) error {
+	log.Printf("Disable guest link %s", id)
+
+	tx, err := s.ctx.BeginTx(context.Background(), nil)
+	if err != nil {
+		return err
+	}
+
+	if _, err = tx.Exec(`
+	UPDATE
+		guest_links
+	SET
+		disabled = 1
+	WHERE
+		id = :id`, sql.Named("id", id)); err != nil {
+		log.Printf("Disabling guest link %s failed: %v", id, err)
+		return err
+	}
+
+	return tx.Commit()
+}
+
+func (s Store) EnableGuestLink(id picoshare.GuestLinkID) error {
+	log.Printf("Disable guest link %s", id)
+
+	tx, err := s.ctx.BeginTx(context.Background(), nil)
+	if err != nil {
+		return err
+	}
+
+	if _, err = tx.Exec(`
+	UPDATE
+		guest_links
+	SET
+		disabled = NULL
+	WHERE
+		id = :id`, sql.Named("id", id)); err != nil {
+		log.Printf("Disabling guest link %s failed: %v", id, err)
+		return err
+	}
+
+	return tx.Commit()
+}
+
 func guestLinkFromRow(row rowScanner) (picoshare.GuestLink, error) {
 	var id picoshare.GuestLinkID
 	var label picoshare.GuestLinkLabel
