@@ -14,6 +14,7 @@ func (s Store) GetGuestLink(id picoshare.GuestLinkID) (picoshare.GuestLink, erro
 		SELECT
 			guest_links.id AS id,
 			guest_links.label AS label,
+			guest_links.disabled As disabled,
 			guest_links.max_file_bytes AS max_file_bytes,
 			guest_links.max_file_uploads AS max_file_uploads,
 			guest_links.creation_time AS creation_time,
@@ -37,6 +38,7 @@ func (s Store) GetGuestLinks() ([]picoshare.GuestLink, error) {
 		SELECT
 			guest_links.id AS id,
 			guest_links.label AS label,
+			guest_links.disabled As disabled,
 			guest_links.max_file_bytes AS max_file_bytes,
 			guest_links.max_file_uploads AS max_file_uploads,
 			guest_links.creation_time AS creation_time,
@@ -129,6 +131,7 @@ func (s Store) DeleteGuestLink(id picoshare.GuestLinkID) error {
 func guestLinkFromRow(row rowScanner) (picoshare.GuestLink, error) {
 	var id picoshare.GuestLinkID
 	var label picoshare.GuestLinkLabel
+	var disabled picoshare.GuestUploadDisabled
 	var maxFileBytes picoshare.GuestUploadMaxFileBytes
 	var maxFileUploads picoshare.GuestUploadCountLimit
 	var creationTimeRaw string
@@ -136,7 +139,7 @@ func guestLinkFromRow(row rowScanner) (picoshare.GuestLink, error) {
 	var fileLifetimeRaw *string
 	var filesUploaded int
 
-	err := row.Scan(&id, &label, &maxFileBytes, &maxFileUploads, &creationTimeRaw, &urlExpirationTimeRaw, &fileLifetimeRaw, &filesUploaded)
+	err := row.Scan(&id, &label, &disabled, &maxFileBytes, &maxFileUploads, &creationTimeRaw, &urlExpirationTimeRaw, &fileLifetimeRaw, &filesUploaded)
 	if err == sql.ErrNoRows {
 		return picoshare.GuestLink{}, store.GuestLinkNotFoundError{ID: id}
 	} else if err != nil {
@@ -166,6 +169,7 @@ func guestLinkFromRow(row rowScanner) (picoshare.GuestLink, error) {
 	return picoshare.GuestLink{
 		ID:             id,
 		Label:          label,
+		Disabled:       disabled,
 		MaxFileBytes:   maxFileBytes,
 		MaxFileUploads: maxFileUploads,
 		FilesUploaded:  filesUploaded,

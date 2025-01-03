@@ -9,8 +9,8 @@ type (
 	GuestLinkLabel          string
 	GuestUploadMaxFileBytes *uint64
 	GuestUploadCountLimit   *int
-
-	GuestLink struct {
+	GuestUploadDisabled     *int
+	GuestLink               struct {
 		ID             GuestLinkID
 		Label          GuestLinkLabel
 		Created        time.Time
@@ -18,6 +18,7 @@ type (
 		FileLifetime   FileLifetime
 		MaxFileBytes   GuestUploadMaxFileBytes
 		MaxFileUploads GuestUploadCountLimit
+		Disabled       GuestUploadDisabled
 		FilesUploaded  int
 	}
 )
