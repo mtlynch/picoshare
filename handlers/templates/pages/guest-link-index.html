@@ -29,7 +29,11 @@
 
 {{ define "script-tags" }}
   <script type="module" nonce="{{ .CspNonce }}">
-    import { guestLinkDelete, guestLinkEnable, guestLinkDisable } from "/js/controllers/guestLinks.js";
+    import {
+      guestLinkDelete,
+      guestLinkEnable,
+      guestLinkDisable,
+    } from "/js/controllers/guestLinks.js";
     import { showElement, hideElement } from "/js/lib/bulma.js";
     import { copyToClipboard } from "/js/lib/clipboard.js";
 

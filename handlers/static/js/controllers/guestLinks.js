@@ -78,7 +78,7 @@ export async function guestLinkEnable(id) {
       if (error.message) {
         return Promise.reject(
           "Failed to communicate with server" +
-          (error.message ? `: ${error.message}` : ".")
+            (error.message ? `: ${error.message}` : ".")
         );
       }
       return Promise.reject(error);
@@ -102,7 +102,7 @@ export async function guestLinkDisable(id) {
       if (error.message) {
         return Promise.reject(
           "Failed to communicate with server" +
-          (error.message ? `: ${error.message}` : ".")
+            (error.message ? `: ${error.message}` : ".")
         );
       }
       return Promise.reject(error);
