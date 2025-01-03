@@ -125,6 +125,7 @@
           <th>Max Upload Size</th>
           <th>Uploads</th>
           <th class="has-text-right">Actions</th>
+          <th>Enable/Disable</th>
         </tr>
       </thead>
       <tbody>
@@ -174,6 +175,29 @@
                   </button>
                 </p>
               </div>
+            </td>
+            <td class="is-vcentered">
+              {{ if isDisabled . }}
+                <p class="control">
+                  <button
+                    class="button is-danger"
+                    aria-label=""
+                    pico-link-id="{{ .ID }}"
+                  >
+                    <i class="fas fa-ban" aria-hidden="true"></i>
+                  </button>
+                </p>
+              {{ else }}
+                <p class="control">
+                  <button
+                    class="button is-success"
+                    aria-label=""
+                    pico-link-id="{{ .ID }}"
+                  >
+                    <i class="fas fa-check-square" aria-hidden="true"></i>
+                  </button>
+                </p>
+              {{ end }}
             </td>
           </tr>
         {{ end }}
