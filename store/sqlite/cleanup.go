@@ -9,12 +9,8 @@ import (
 
 // Purge deletes expired entries and clears orphaned rows from the database.
 func (s Store) Purge() error {
-	log.Printf("deleting expired entries and orphaned data from database")
+	log.Printf("deleting expired entries from database")
 	if err := s.deleteExpiredEntries(); err != nil {
-		return err
-	}
-
-	if err := s.deleteOrphanedRows(); err != nil {
 		return err
 	}
 
@@ -58,37 +54,4 @@ func (s Store) deleteExpiredEntries() error {
 	}
 
 	return tx.Commit()
-}
-
-func (s Store) deleteOrphanedRows() error {
-	log.Printf("purging orphaned rows from database")
-
-	// Delete rows from entries_data if they don't reference valid rows in
-	// entries. This can happen if the entry insertion fails partway through.
-	rows, err := s.ctx.Exec(`
-   	DELETE FROM
-   		entries_data
-   	WHERE
-   	id IN (
-   		SELECT
-   			DISTINCT entries_data.id AS entry_id
-   		FROM
-   			entries_data
-   		LEFT JOIN
-   			entries ON entries_data.id = entries.id
-   		WHERE
-   			entries.id IS NULL
-   		)`)
-	if err != nil {
-		return err
-	}
-
-	ra, err := rows.RowsAffected()
-	if err != nil {
-		return err
-	}
-
-	log.Printf("purge completed successfully (%d rows affected)", ra)
-
-	return nil
 }
