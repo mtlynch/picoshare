@@ -129,9 +129,9 @@
       </thead>
       <tbody>
         {{ range .GuestLinks }}
-          <tr {{ if not (isActive .) }}class="inactive"{{ end }}>
+          <tr {{ if not .IsActive }}class="inactive"{{ end }}>
             <td class="is-vcentered">
-              {{ if isActive . }}
+              {{ if .IsActive }}
                 <a href="/g/{{ .ID }}">
                   {{ template "label-formatted" . }}
                 </a>
