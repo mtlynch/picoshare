@@ -176,9 +176,10 @@ func (s Server) fileIndexGet() http.HandlerFunc {
 			if et == picoshare.NeverExpire {
 				return "Never"
 			}
-			t := time.Time(et)
+			t := et.Time().Local()
 			delta := t.Sub(s.clock.Now())
-			return fmt.Sprintf("%s (%.0f days)", t.Format(time.DateOnly), delta.Hours()/24)
+			daysRemaining := delta.Hours() / 24
+			return fmt.Sprintf("%s (%.0f days)", t.Format(time.DateOnly), daysRemaining)
 		},
 		"formatFileSize": humanReadableFileSize,
 	}
@@ -262,9 +263,10 @@ func (s Server) fileInfoGet() http.HandlerFunc {
 			if et == picoshare.NeverExpire {
 				return "Never"
 			}
-			t := time.Time(et)
+			t := et.Time().Local()
 			delta := t.Sub(s.clock.Now())
-			return fmt.Sprintf("%s (%.0f days)", t.Format(time.DateOnly), delta.Hours()/24)
+			daysRemaining := delta.Hours() / 24
+			return fmt.Sprintf("%s (%.0f days)", t.Format(time.DateOnly), daysRemaining)
 		},
 		"formatTimestamp": func(t time.Time) string {
 			return t.Format(time.RFC3339)
