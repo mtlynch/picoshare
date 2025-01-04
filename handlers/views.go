@@ -87,9 +87,6 @@ func (s Server) guestLinkIndexGet() http.HandlerFunc {
 			}
 			return fmt.Sprintf("%s (%.0f days%s)", t.Format(time.DateOnly), math.Abs(delta.Hours())/24, suffix)
 		},
-		"isActive": func(gl picoshare.GuestLink) bool {
-			return gl.IsActive()
-		},
 	}
 
 	t := parseTemplatesWithFuncs(fns, "templates/pages/guest-link-index.html")
