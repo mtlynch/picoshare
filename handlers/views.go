@@ -80,7 +80,7 @@ func (s Server) guestLinkIndexGet() http.HandlerFunc {
 				return "Never"
 			}
 			t := time.Time(et)
-			delta := time.Until(t)
+			delta := t.Sub(s.clock.Now())
 			suffix := ""
 			if delta.Seconds() < 0 {
 				suffix = " ago"
@@ -177,7 +177,7 @@ func (s Server) fileIndexGet() http.HandlerFunc {
 				return "Never"
 			}
 			t := time.Time(et)
-			delta := time.Until(t)
+			delta := t.Sub(s.clock.Now())
 			return fmt.Sprintf("%s (%.0f days)", t.Format(time.DateOnly), delta.Hours()/24)
 		},
 		"formatFileSize": humanReadableFileSize,
@@ -263,7 +263,7 @@ func (s Server) fileInfoGet() http.HandlerFunc {
 				return "Never"
 			}
 			t := time.Time(et)
-			delta := time.Until(t)
+			delta := t.Sub(s.clock.Now())
 			return fmt.Sprintf("%s (%.0f days)", t.Format(time.DateOnly), delta.Hours()/24)
 		},
 		"formatTimestamp": func(t time.Time) string {
