@@ -289,7 +289,6 @@ func TestDeleteExistingGuestLink(t *testing.T) {
 		Created:    time.Now(),
 		UrlExpires: mustParseExpirationTime("2030-01-02T03:04:25Z"),
 	})
-
 	s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceChecker, nilGarbageCollector, handlers.NewClock())
 
 	req, err := http.NewRequest("DELETE", "/api/guest-links/abcdefgh23456789", nil)
@@ -345,5 +344,148 @@ func TestDeleteInvalidGuestLink(t *testing.T) {
 
 	if got, want := res.StatusCode, http.StatusBadRequest; got != want {
 		t.Fatalf("status=%d, want=%d", got, want)
+	}
+}
+
+func TestDisableExistingGuestLink(t *testing.T) {
+	dataStore := test_sqlite.New()
+	dataStore.InsertGuestLink(picoshare.GuestLink{
+		ID:           picoshare.GuestLinkID("abcdefgh23456789"),
+		Created:      mustParseTime("2022-01-01T00:00:00Z"),
+		UrlExpires:   mustParseExpirationTime("2030-01-02T03:04:25Z"),
+		FileLifetime: picoshare.NewFileLifetimeInDays(365),
+	})
+
+	s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceChecker, nilGarbageCollector, handlers.NewClock())
+
+	req, err := http.NewRequest("PUT", "/api/guest-links/abcdefgh23456789/disable", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	rec := httptest.NewRecorder()
+	s.Router().ServeHTTP(rec, req)
+	res := rec.Result()
+
+	if status := res.StatusCode; status != http.StatusNoContent {
+		t.Fatalf("PUT returned wrong status code: got %v want %v", status, http.StatusNoContent)
+	}
+
+	gl, err := dataStore.GetGuestLink(picoshare.GuestLinkID("abcdefgh23456789"))
+	if err != nil {
+		t.Fatalf("failed to retrieve guest link from datastore: %v", err)
+	}
+
+	if !gl.IsDisabled {
+		t.Fatalf("expected guest link to be disabled, got: %v", gl)
+	}
+}
+
+func TestDisableNonExistentGuestLink(t *testing.T) {
+	dataStore := test_sqlite.New()
+	s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceChecker, nilGarbageCollector, handlers.NewClock())
+
+	req, err := http.NewRequest("PUT", "/api/guest-links/abcdefgh23456789/disable", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	rec := httptest.NewRecorder()
+	s.Router().ServeHTTP(rec, req)
+	res := rec.Result()
+
+	// File doesn't exist, but there's no error for disabling a non-existent file.
+	if status := res.StatusCode; status != http.StatusNoContent {
+		t.Fatalf("PUT returned wrong status code: got %v want %v", status, http.StatusNoContent)
+	}
+}
+
+func TestDisableInvalidGuestLink(t *testing.T) {
+	dataStore := test_sqlite.New()
+	s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceChecker, nilGarbageCollector, handlers.NewClock())
+
+	req, err := http.NewRequest("PUT", "/api/guest-links/i-am-an-invalid-link/disable", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	rec := httptest.NewRecorder()
+	s.Router().ServeHTTP(rec, req)
+	res := rec.Result()
+
+	if status := res.StatusCode; status != http.StatusBadRequest {
+		t.Fatalf("PUT returned wrong status code: got %v want %v", status, http.StatusBadRequest)
+	}
+}
+
+func TestEnableExistingGuestLink(t *testing.T) {
+	dataStore := test_sqlite.New()
+	dataStore.InsertGuestLink(picoshare.GuestLink{
+		ID:           picoshare.GuestLinkID("abcdefgh23456789"),
+		Created:      mustParseTime("2022-01-01T00:00:00Z"),
+		UrlExpires:   mustParseExpirationTime("2030-01-02T03:04:25Z"),
+		FileLifetime: picoshare.NewFileLifetimeInDays(365),
+		IsDisabled:   true,
+	})
+
+	s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceChecker, nilGarbageCollector, handlers.NewClock())
+
+	req, err := http.NewRequest("PUT", "/api/guest-links/abcdefgh23456789/enable", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	rec := httptest.NewRecorder()
+	s.Router().ServeHTTP(rec, req)
+	res := rec.Result()
+
+	if status := res.StatusCode; status != http.StatusNoContent {
+		t.Fatalf("PUT returned wrong status code: got %v want %v", status, http.StatusNoContent)
+	}
+
+	gl, err := dataStore.GetGuestLink(picoshare.GuestLinkID("abcdefgh23456789"))
+	if err != nil {
+		t.Fatalf("failed to retrieve guest link from datastore: %v", err)
+	}
+
+	if gl.IsDisabled {
+		t.Fatalf("expected guest link to be enabled, got: %v", gl)
+	}
+}
+
+func TestEnableNonExistentGuestLink(t *testing.T) {
+	dataStore := test_sqlite.New()
+	s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceChecker, nilGarbageCollector, handlers.NewClock())
+
+	req, err := http.NewRequest("PUT", "/api/guest-links/abcdefgh23456789/enable", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	rec := httptest.NewRecorder()
+	s.Router().ServeHTTP(rec, req)
+	res := rec.Result()
+
+	// File doesn't exist, but there's no error for disabling a non-existent file.
+	if status := res.StatusCode; status != http.StatusNoContent {
+		t.Fatalf("PUT returned wrong status code: got %v want %v", status, http.StatusNoContent)
+	}
+}
+
+func TestEnableInvalidGuestLink(t *testing.T) {
+	dataStore := test_sqlite.New()
+	s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceChecker, nilGarbageCollector, handlers.NewClock())
+
+	req, err := http.NewRequest("PUT", "/api/guest-links/i-am-an-invalid-link/enable", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	rec := httptest.NewRecorder()
+	s.Router().ServeHTTP(rec, req)
+	res := rec.Result()
+
+	if status := res.StatusCode; status != http.StatusBadRequest {
+		t.Fatalf("PUT returned wrong status code: got %v want %v", status, http.StatusBadRequest)
 	}
 }
