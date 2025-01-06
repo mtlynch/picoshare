@@ -73,10 +73,12 @@ func (s *Server) guestLinksDisable() http.HandlerFunc {
 		}
 
 		if err := s.getDB(r).DisableGuestLink(id); err != nil {
-			log.Printf("failed to delete guest link: %v", err)
-			http.Error(w, fmt.Sprintf("Failed to delete guest link: %v", err), http.StatusInternalServerError)
+			log.Printf("failed to disable guest link: %v", err)
+			http.Error(w, fmt.Sprintf("Failed to disable guest link: %v", err), http.StatusInternalServerError)
 			return
 		}
+
+		w.WriteHeader(http.StatusNoContent)
 	}
 }
 
@@ -90,10 +92,12 @@ func (s *Server) guestLinksEnable() http.HandlerFunc {
 		}
 
 		if err := s.getDB(r).EnableGuestLink(id); err != nil {
-			log.Printf("failed to delete guest link: %v", err)
-			http.Error(w, fmt.Sprintf("Failed to delete guest link: %v", err), http.StatusInternalServerError)
+			log.Printf("failed to enable guest link: %v", err)
+			http.Error(w, fmt.Sprintf("Failed to enable guest link: %v", err), http.StatusInternalServerError)
 			return
 		}
+
+		w.WriteHeader(http.StatusNoContent)
 	}
 }
 

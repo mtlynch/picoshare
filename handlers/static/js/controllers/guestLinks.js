@@ -62,8 +62,8 @@ export async function guestLinkDelete(id) {
 }
 
 export async function guestLinkEnable(id) {
-  return fetch(`/api/guest-links/enable/${id}`, {
-    method: "PATCH",
+  return fetch(`/api/guest-links/${id}/enable`, {
+    method: "PUT",
     credentials: "include",
   })
     .then((response) => {
@@ -86,8 +86,8 @@ export async function guestLinkEnable(id) {
 }
 
 export async function guestLinkDisable(id) {
-  return fetch(`/api/guest-links/disable/${id}`, {
-    method: "PATCH",
+  return fetch(`/api/guest-links/${id}/disable`, {
+    method: "PUT",
     credentials: "include",
   })
     .then((response) => {
