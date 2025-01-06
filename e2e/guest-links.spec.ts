@@ -171,3 +171,68 @@ test("invalid options on guest link generate error message", async ({
   // There should be an error message
   await expect(page.getByText("Invalid request: label too long")).toBeVisible();
 });
+
+test("disables and enables a guest link, affecting access", async ({
+  page,
+  browser,
+}) => {
+  await login(page);
+
+  await page.getByRole("menuitem", { name: "Guest Links" }).click();
+
+  await page.getByRole("button", { name: "Create new" }).click();
+
+  await expect(page).toHaveURL("/guest-links/new");
+  await page.locator("#label").fill("test guest link enable/disable");
+  await page.locator("#file-upload-limit").fill("1");
+  await page.getByRole("button", { name: "Create" }).click();
+
+  await expect(page).toHaveURL("/guest-links");
+  const guestLinkRow = await page
+    .getByRole("row")
+    .filter({ hasText: "test guest link enable/disable" });
+  await expect(guestLinkRow).toBeVisible();
+
+  // Save the route to the guest link URL so that we can return to it later.
+  const guestLinkRouteValue = await guestLinkRow
+    .getByRole("cell")
+    .nth(labelColumn)
+    .getByRole("link")
+    .getAttribute("href");
+  expect(guestLinkRouteValue).not.toBeNull();
+  const guestLinkRoute = String(guestLinkRouteValue);
+
+  // Disable the guest link
+  await guestLinkRow.getByRole("button", { name: "Disable" }).click();
+  {
+    const guestContext = await browser.newContext();
+
+    // Share database across users.
+    await guestContext.addCookies([
+      readDbTokenCookie(await page.context().cookies()),
+    ]);
+
+    const guestPage = await guestContext.newPage();
+
+    await guestPage.goto(guestLinkRoute);
+    await expect(guestPage.locator("h1")).toContainText("Guest Link Inactive");
+    await expect(guestPage.locator(".file-input")).toHaveCount(0);
+  }
+
+  // Enable the guest link
+  await guestLinkRow.getByRole("button", { name: "Enable" }).click();
+  {
+    const guestContext = await browser.newContext();
+
+    // Share database across users.
+    await guestContext.addCookies([
+      readDbTokenCookie(await page.context().cookies()),
+    ]);
+
+    const guestPage = await guestContext.newPage();
+
+    await guestPage.goto(guestLinkRoute);
+    await expect(guestPage.locator("h1")).toContainText("Upload");
+    await expect(guestPage.locator(".file-input")).toBeVisible();
+  }
+});
