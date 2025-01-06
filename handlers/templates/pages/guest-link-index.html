@@ -87,47 +87,57 @@
       });
     });
 
+    const guestLinkButtonStates = {
+      Enable: {
+        apiCall: guestLinkEnable,
+        message: "Guest link enabled successfully.",
+        buttonClass: "is-sucess",
+        iconClass: "fa-check-square",
+        nextState: "Disable",
+      },
+      Disable: {
+        apiCall: guestLinkDisable,
+        message: "Successfully disabled the guest link.",
+        buttonClass: "is-danger",
+        iconClass: "fa-ban",
+        nextState: "Enable",
+      },
+    };
+
+    const updateGuideLinkButtonStates = (button) => {
+      // Switch the button color & icon
+      const buttonClasses = button.classList;
+      buttonClasses.toggle("is-success");
+      buttonClasses.toggle("is-danger");
+
+      const oldIcon = button.querySelector("i");
+      const iconClasses = oldIcon.classList;
+      iconClasses.toggle("fa-check-square");
+      iconClasses.toggle("fa-ban");
+    };
+
+    // Switch the state of the guest link
     document
       .querySelectorAll('[aria-label="Enable"], [aria-label="Disable"]')
       .forEach((toggleBtn) => {
         toggleBtn.addEventListener("click", () => {
+          const currentState = toggleBtn.getAttribute("aria-label");
           const id = toggleBtn.getAttribute("pico-link-id");
-          // switch enable/disable
-          if (toggleBtn.getAttribute("aria-label") === "Enable") {
-            guestLinkEnable(id)
-              .then(() => {
-                const button = toggleBtn;
-                button.classList.remove("is-danger");
-                button.classList.add("is-success");
-                button.setAttribute("aria-label", "Disable");
-                button.innerHTML =
-                  '<i class="fas fa-check-square" aria-hidden="true"></i>';
-                document
-                  .querySelector("snackbar-notifications")
-                  .addInfoMessage("Successfully disabled the guest link.");
-              })
-              .catch((error) => {
-                document.getElementById("error-message").innerText = error;
-                showElement(errorContainer);
-              });
-          } else if (toggleBtn.getAttribute("aria-label") === "Disable") {
-            guestLinkDisable(id)
-              .then(() => {
-                const button = toggleBtn;
-                button.classList.remove("is-success");
-                button.classList.add("is-danger");
-                button.setAttribute("aria-label", "Enable");
-                button.innerHTML =
-                  '<i class="fas fa-ban" aria-hidden="true"></i>';
-                document
-                  .querySelector("snackbar-notifications")
-                  .addInfoMessage("Guest link enabled successfully.");
-              })
-              .catch((error) => {
-                document.getElementById("error-message").innerText = error;
-                showElement(errorContainer);
-              });
-          }
+          const config = guestLinkButtonStates[currentState];
+
+          config
+            .apiCall(id)
+            .then(() => {
+              toggleBtn.setAttribute("aria-label", config.nextState);
+              updateGuideLinkButtonStates(toggleBtn);
+              document
+                .querySelector("snackbar-notifications")
+                .addInfoMessage(config.message);
+            })
+            .catch((error) => {
+              document.getElementById("error-message").innerText = error;
+              showElement(errorContainer);
+            });
         });
       });
   </script>
@@ -173,7 +183,6 @@
           <th>Max Upload Size</th>
           <th>Uploads</th>
           <th class="has-text-right">Actions</th>
-          <th>Enable/Disable</th>
         </tr>
       </thead>
       <tbody>
@@ -222,30 +231,28 @@
                     <i class="fa fa-trash" aria-hidden="true"></i>
                   </button>
                 </p>
+                {{ if .IsDisabledLink }}
+                  <p class="control">
+                    <button
+                      class="button is-success"
+                      aria-label="Enable"
+                      pico-link-id="{{ .ID }}"
+                    >
+                      <i class="fas fa-check-square" aria-hidden="true"></i>
+                    </button>
+                  </p>
+                {{ else }}
+                  <p class="control">
+                    <button
+                      class="button is-danger"
+                      aria-label="Disable"
+                      pico-link-id="{{ .ID }}"
+                    >
+                      <i class="fas fa-ban" aria-hidden="true"></i>
+                    </button>
+                  </p>
+                {{ end }}
               </div>
-            </td>
-            <td class="is-vcentered">
-              {{ if isDisabled . }}
-                <p class="control">
-                  <button
-                    class="button is-danger"
-                    aria-label="Enable"
-                    pico-link-id="{{ .ID }}"
-                  >
-                    <i class="fas fa-ban" aria-hidden="true"></i>
-                  </button>
-                </p>
-              {{ else }}
-                <p class="control">
-                  <button
-                    class="button is-success"
-                    aria-label="Disable"
-                    pico-link-id="{{ .ID }}"
-                  >
-                    <i class="fas fa-check-square" aria-hidden="true"></i>
-                  </button>
-                </p>
-              {{ end }}
             </td>
           </tr>
         {{ end }}
