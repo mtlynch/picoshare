@@ -9,8 +9,8 @@ type (
 	GuestLinkLabel          string
 	GuestUploadMaxFileBytes *uint64
 	GuestUploadCountLimit   *int
-	GuestUploadDisabled     *int
-	GuestLink               struct {
+
+	GuestLink struct {
 		ID             GuestLinkID
 		Label          GuestLinkLabel
 		Created        time.Time
@@ -18,7 +18,7 @@ type (
 		FileLifetime   FileLifetime
 		MaxFileBytes   GuestUploadMaxFileBytes
 		MaxFileUploads GuestUploadCountLimit
-		Disabled       GuestUploadDisabled
+		IsDisabled     bool
 		FilesUploaded  int
 	}
 )
@@ -26,7 +26,6 @@ type (
 var (
 	GuestUploadUnlimitedFileSize    = GuestUploadMaxFileBytes(nil)
 	GuestUploadUnlimitedFileUploads = GuestUploadCountLimit(nil)
-	GuestLinkDisabled               = GuestUploadDisabled(nil)
 )
 
 func (glid GuestLinkID) Empty() bool {
@@ -55,12 +54,12 @@ func (gl GuestLink) IsExpired() bool {
 	return time.Now().After(time.Time(gl.UrlExpires))
 }
 
-func (gl GuestLink) IsDisabled() bool {
-	return gl.Disabled != GuestLinkDisabled && *gl.Disabled == 1
+func (gl GuestLink) IsDisabledLink() bool {
+	return gl.IsDisabled
 }
 
 func (gl GuestLink) IsActive() bool {
-	return !gl.IsExpired() && gl.CanAcceptMoreFiles() && !gl.IsDisabled()
+	return !gl.IsExpired() && gl.CanAcceptMoreFiles() && !gl.IsDisabledLink()
 }
 
 func (label GuestLinkLabel) Empty() bool {
