@@ -54,12 +54,8 @@ func (gl GuestLink) IsExpired() bool {
 	return time.Now().After(time.Time(gl.UrlExpires))
 }
 
-func (gl GuestLink) IsDisabledLink() bool {
-	return gl.IsDisabled
-}
-
 func (gl GuestLink) IsActive() bool {
-	return !gl.IsExpired() && gl.CanAcceptMoreFiles() && !gl.IsDisabledLink()
+	return !gl.IsExpired() && gl.CanAcceptMoreFiles() && !gl.IsDisabled
 }
 
 func (label GuestLinkLabel) Empty() bool {

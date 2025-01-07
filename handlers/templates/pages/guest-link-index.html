@@ -104,7 +104,7 @@
       },
     };
 
-    const updateGuideLinkButtonStates = (button) => {
+    const updateGuestLinkButtonStates = (button) => {
       // Switch the button color & icon
       const buttonClasses = button.classList;
       buttonClasses.toggle("is-success");
@@ -129,7 +129,7 @@
             .apiCall(id)
             .then(() => {
               toggleBtn.setAttribute("aria-label", config.nextState);
-              updateGuideLinkButtonStates(toggleBtn);
+              updateGuestLinkButtonStates(toggleBtn);
               document
                 .querySelector("snackbar-notifications")
                 .addInfoMessage(config.message);
@@ -231,7 +231,7 @@
                     <i class="fa fa-trash" aria-hidden="true"></i>
                   </button>
                 </p>
-                {{ if .IsDisabledLink }}
+                {{ if .IsDisabled }}
                   <p class="control">
                     <button
                       class="button is-success"

@@ -466,7 +466,7 @@ func TestEnableNonExistentGuestLink(t *testing.T) {
 	s.Router().ServeHTTP(rec, req)
 	res := rec.Result()
 
-	// File doesn't exist, but there's no error for disabling a non-existent file.
+	// File doesn't exist, but there's no error for enabling a non-existent file.
 	if status := res.StatusCode; status != http.StatusNoContent {
 		t.Fatalf("PUT returned wrong status code: got %v want %v", status, http.StatusNoContent)
 	}
