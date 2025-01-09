@@ -17,12 +17,13 @@ import (
 	"github.com/mtlynch/picoshare/v2/store/test_sqlite"
 )
 
-func TestGuestLinksPostAcceptsValidRequest(t *testing.T) {
+func TestGuestLinksPost(t *testing.T) {
 	for _, tt := range []struct {
 		description string
 		payload     string
 		currentTime time.Time
 		expected    picoshare.GuestLink
+		status      int
 	}{
 		{
 			description: "minimally populated request",
@@ -42,6 +43,7 @@ func TestGuestLinksPostAcceptsValidRequest(t *testing.T) {
 				MaxFileBytes:   picoshare.GuestUploadUnlimitedFileSize,
 				MaxFileUploads: picoshare.GuestUploadUnlimitedFileUploads,
 			},
+			status: http.StatusOK,
 		},
 		{
 			description: "fully populated request",
@@ -61,6 +63,7 @@ func TestGuestLinksPostAcceptsValidRequest(t *testing.T) {
 				MaxFileBytes:   makeGuestUploadMaxFileBytes(1048576),
 				MaxFileUploads: makeGuestUploadCountLimit(1),
 			},
+			status: http.StatusOK,
 		},
 		{
 			description: "guest file expires in 1 day",
@@ -80,6 +83,7 @@ func TestGuestLinksPostAcceptsValidRequest(t *testing.T) {
 				MaxFileBytes:   makeGuestUploadMaxFileBytes(1048576),
 				MaxFileUploads: makeGuestUploadCountLimit(1),
 			},
+			status: http.StatusOK,
 		},
 		{
 			description: "guest file expires in 30 days",
@@ -99,6 +103,126 @@ func TestGuestLinksPostAcceptsValidRequest(t *testing.T) {
 				MaxFileBytes:   makeGuestUploadMaxFileBytes(1048576),
 				MaxFileUploads: makeGuestUploadCountLimit(1),
 			},
+			status: http.StatusOK,
+		},
+		{
+			description: "empty string",
+			payload:     "",
+			status:      http.StatusBadRequest,
+		},
+		{
+			description: "empty payload",
+			payload:     "{}",
+			status:      http.StatusBadRequest,
+		},
+		{
+			description: "invalid label field (non-string)",
+			payload: `{
+					"label": 5,
+					"urlExpirationTime":"2025-01-01T00:00:00Z",
+					"maxFileBytes": null,
+					"maxFileUploads": null
+				}`,
+			status: http.StatusBadRequest,
+		},
+		{
+			description: "invalid label field (too long)",
+			payload: fmt.Sprintf(`{
+					"label": "%s",
+					"urlExpirationTime":"2025-01-01T00:00:00Z",
+					"maxFileBytes": null,
+					"maxFileUploads": null
+				}`, strings.Repeat("A", 201)),
+			status: http.StatusBadRequest,
+		},
+		{
+			description: "missing urlExpirationTime field",
+			payload: `{
+					"label": null,
+					"maxFileBytes": null,
+					"maxFileUploads": null
+				}`,
+			status: http.StatusBadRequest,
+		},
+		{
+			description: "invalid expirationTime field",
+			payload: `{
+					"label": null,
+					"urlExpirationTime": 25,
+					"maxFileBytes": null,
+					"maxFileUploads": null
+				}`,
+			status: http.StatusBadRequest,
+		},
+		{
+			description: "negative maxFileBytes field",
+			payload: `{
+					"label": null,
+					"urlExpirationTime":"2025-01-01T00:00:00Z",
+					"maxFileBytes": -5,
+					"maxFileUploads": null
+				}`,
+			status: http.StatusBadRequest,
+		},
+		{
+			description: "decimal maxFileBytes field",
+			payload: `{
+					"label": null,
+					"urlExpirationTime":"2025-01-01T00:00:00Z",
+					"maxFileBytes": 1.5,
+					"maxFileUploads": null
+				}`,
+			status: http.StatusBadRequest,
+		},
+		{
+			description: "too low a maxFileBytes field",
+			payload: `{
+					"label": null,
+					"urlExpirationTime":"2025-01-01T00:00:00Z",
+					"maxFileBytes": 1,
+					"maxFileUploads": null
+				}`,
+			status: http.StatusBadRequest,
+		},
+		{
+			description: "zero maxFileBytes field",
+			payload: `{
+					"label": null,
+					"urlExpirationTime":"2025-01-01T00:00:00Z",
+					"maxFileBytes": 0,
+					"maxFileUploads": null
+				}`,
+			status: http.StatusBadRequest,
+		},
+		{
+			description: "negative maxFileUploads field",
+			payload: `{
+					"label": null,
+					"urlExpirationTime":"2025-01-01T00:00:00Z",
+					"maxFileBytes": null,
+					"maxFileUploads": -5
+				}`,
+			status: http.StatusBadRequest,
+		},
+		{
+			description: "decimal maxFileUploads field",
+			payload: `{
+					"label": null,
+					"urlExpirationTime":"2025-01-01T00:00:00Z",
+					"maxFileBytes": null,
+					"maxFileUploads": 1.5
+				}`,
+			status: http.StatusBadRequest,
+		},
+		{
+			description: "zero maxFileUploads field",
+			payload: `{
+					"label": null,
+					"urlExpirationTime":"2025-01-01T00:00:00Z",
+					"maxFileBytes": null,
+					"maxFileUploads": 0
+				}`,
+			status: http.StatusBadRequest,
 		},
 	} {
 		t.Run(tt.description, func(t *testing.T) {
@@ -116,14 +240,17 @@ func TestGuestLinksPostAcceptsValidRequest(t *testing.T) {
 			s.Router().ServeHTTP(rec, req)
 			res := rec.Result()
 
-			if status := res.StatusCode; status != http.StatusOK {
-				t.Fatalf("%s: handler returned wrong status code: got %v want %v",
-					tt.description, status, http.StatusOK)
+			if got, want := res.StatusCode, tt.status; got != want {
+				t.Fatalf("status=%d, want=%d", got, want)
+			}
+
+			if tt.status != http.StatusOK {
+				return
 			}
 
 			body, err := io.ReadAll(res.Body)
 			if err != nil {
-				t.Fatalf("failed to read response body")
+				t.Fatal("failed to read response body")
 			}
 
 			var response handlers.GuestLinkPostResponse
@@ -134,7 +261,7 @@ func TestGuestLinksPostAcceptsValidRequest(t *testing.T) {
 
 			gl, err := dataStore.GetGuestLink(picoshare.GuestLinkID(response.ID))
 			if err != nil {
-				t.Fatalf("%s: failed to retrieve guest link from datastore: %v", tt.description, err)
+				t.Fatalf("failed to retrieve guest link from datastore: %v", err)
 			}
 
 			// Copy the ID, which we can't predict in advance.
@@ -142,139 +269,6 @@ func TestGuestLinksPostAcceptsValidRequest(t *testing.T) {
 
 			if got, want := gl, tt.expected; !reflect.DeepEqual(got, want) {
 				t.Fatalf("guestLink=%+v, want=%+v", got, want)
-			}
-		})
-	}
-}
-
-func TestGuestLinksPostRejectsInvalidRequest(t *testing.T) {
-	for _, tt := range []struct {
-		description string
-		payload     string
-	}{
-		{
-			description: "empty string",
-			payload:     "",
-		},
-		{
-			description: "empty payload",
-			payload:     "{}",
-		},
-		{
-			description: "invalid label field (non-string)",
-			payload: `{
-					"label": 5,
-					"urlExpirationTime":"2025-01-01T00:00:00Z",
-					"maxFileBytes": null,
-					"maxFileUploads": null
-				}`,
-		},
-		{
-			description: "invalid label field (too long)",
-			payload: fmt.Sprintf(`{
-					"label": "%s",
-					"urlExpirationTime":"2025-01-01T00:00:00Z",
-					"maxFileBytes": null,
-					"maxFileUploads": null
-				}`, strings.Repeat("A", 201)),
-		},
-		{
-			description: "missing urlExpirationTime field",
-			payload: `{
-					"label": null,
-					"maxFileBytes": null,
-					"maxFileUploads": null
-				}`,
-		},
-		{
-			description: "invalid expirationTime field",
-			payload: `{
-					"label": null,
-					"urlExpirationTime": 25,
-					"maxFileBytes": null,
-					"maxFileUploads": null
-				}`,
-		},
-		{
-			description: "negative maxFileBytes field",
-			payload: `{
-					"label": null,
-					"urlExpirationTime":"2025-01-01T00:00:00Z",
-					"maxFileBytes": -5,
-					"maxFileUploads": null
-				}`,
-		},
-		{
-			description: "decimal maxFileBytes field",
-			payload: `{
-					"label": null,
-					"urlExpirationTime":"2025-01-01T00:00:00Z",
-					"maxFileBytes": 1.5,
-					"maxFileUploads": null
-				}`,
-		},
-		{
-			description: "too low a maxFileBytes field",
-			payload: `{
-					"label": null,
-					"urlExpirationTime":"2025-01-01T00:00:00Z",
-					"maxFileBytes": 1,
-					"maxFileUploads": null
-				}`,
-		},
-		{
-			description: "zero maxFileBytes field",
-			payload: `{
-					"label": null,
-					"urlExpirationTime":"2025-01-01T00:00:00Z",
-					"maxFileBytes": 0,
-					"maxFileUploads": null
-				}`,
-		},
-		{
-			description: "negative maxFileUploads field",
-			payload: `{
-					"label": null,
-					"urlExpirationTime":"2025-01-01T00:00:00Z",
-					"maxFileBytes": null,
-					"maxFileUploads": -5
-				}`,
-		},
-		{
-			description: "decimal maxFileUploads field",
-			payload: `{
-					"label": null,
-					"urlExpirationTime":"2025-01-01T00:00:00Z",
-					"maxFileBytes": null,
-					"maxFileUploads": 1.5
-				}`,
-		},
-		{
-			description: "zero maxFileUploads field",
-			payload: `{
-					"label": null,
-					"urlExpirationTime":"2025-01-01T00:00:00Z",
-					"maxFileBytes": null,
-					"maxFileUploads": 0
-				}`,
-		},
-	} {
-		t.Run(tt.description, func(t *testing.T) {
-			dataStore := test_sqlite.New()
-			s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceChecker, nilGarbageCollector, handlers.NewClock())
-
-			req, err := http.NewRequest("POST", "/api/guest-links", strings.NewReader(tt.payload))
-			if err != nil {
-				t.Fatal(err)
-			}
-			req.Header.Add("Content-Type", "text/json")
-
-			rec := httptest.NewRecorder()
-			s.Router().ServeHTTP(rec, req)
-			res := rec.Result()
-
-			if got, want := res.StatusCode, http.StatusBadRequest; got != want {
-				t.Fatalf("status=%d, want=%d", got, want)
 			}
 		})
 	}
