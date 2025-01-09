@@ -202,8 +202,10 @@ test("disables and enables a guest link, affecting access", async ({
   expect(guestLinkRouteValue).not.toBeNull();
   const guestLinkRoute = String(guestLinkRouteValue);
 
-  // Disable the guest link
+  // Disable the guest link.
   await guestLinkRow.getByRole("button", { name: "Disable" }).click();
+  
+  // Try to access the guest link as a guest user.
   {
     const guestContext = await browser.newContext();
 
@@ -219,8 +221,10 @@ test("disables and enables a guest link, affecting access", async ({
     await expect(guestPage.locator(".file-input")).toHaveCount(0);
   }
 
-  // Enable the guest link
+  // Enable the guest link.
   await guestLinkRow.getByRole("button", { name: "Enable" }).click();
+  
+  // Try to access the guest link as a guest user.
   {
     const guestContext = await browser.newContext();
 

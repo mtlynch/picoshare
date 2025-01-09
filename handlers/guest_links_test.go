@@ -347,145 +347,252 @@ func TestDeleteInvalidGuestLink(t *testing.T) {
 	}
 }
 
-func TestDisableExistingGuestLink(t *testing.T) {
-	dataStore := test_sqlite.New()
-	dataStore.InsertGuestLink(picoshare.GuestLink{
-		ID:           picoshare.GuestLinkID("abcdefgh23456789"),
-		Created:      mustParseTime("2022-01-01T00:00:00Z"),
-		UrlExpires:   mustParseExpirationTime("2030-01-02T03:04:25Z"),
-		FileLifetime: picoshare.NewFileLifetimeInDays(365),
-	})
+func TestGuestLinkToggleInValidRequest(t *testing.T) {
 
-	s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceChecker, nilGarbageCollector, handlers.NewClock())
-
-	req, err := http.NewRequest("PUT", "/api/guest-links/abcdefgh23456789/disable", nil)
-	if err != nil {
-		t.Fatal(err)
+	type operation struct {
+		name   string
+		action func(s handlers.Server, id string) (*httptest.ResponseRecorder, error)
 	}
 
-	rec := httptest.NewRecorder()
-	s.Router().ServeHTTP(rec, req)
-	res := rec.Result()
-
-	if status := res.StatusCode; status != http.StatusNoContent {
-		t.Fatalf("PUT returned wrong status code: got %v want %v", status, http.StatusNoContent)
+	type testCase struct {
+		description string
+		payload     string
+		operations  []operation
+		expected    picoshare.GuestLink
 	}
 
-	gl, err := dataStore.GetGuestLink(picoshare.GuestLinkID("abcdefgh23456789"))
-	if err != nil {
-		t.Fatalf("failed to retrieve guest link from datastore: %v", err)
+	// Create an operation that can be either 'enable' or 'disable' a guest link.
+	createOperation := func(action string) operation {
+		return operation{
+			name: action,
+			action: func(s handlers.Server, id string) (*httptest.ResponseRecorder, error) {
+				req, err := http.NewRequest("PUT", fmt.Sprintf("/api/guest-links/%s/%s", id, action), nil)
+				if err != nil {
+					return nil, err
+				}
+				rec := httptest.NewRecorder()
+				s.Router().ServeHTTP(rec, req)
+				return rec, nil
+			},
+		}
 	}
 
-	if !gl.IsDisabled {
-		t.Fatalf("expected guest link to be disabled, got: %v", gl)
+	disableOperation := createOperation("disable")
+	enableOperation := createOperation("enable")
+
+	//Function to create a new guest link.
+	createLink := func(s handlers.Server, payload string) (*handlers.GuestLinkPostResponse, *httptest.ResponseRecorder, error) {
+		req, err := http.NewRequest("POST", "/api/guest-links", strings.NewReader(payload))
+		if err != nil {
+			return nil, nil, err
+		}
+		req.Header.Add("Content-Type", "text/json")
+		rec := httptest.NewRecorder()
+		s.Router().ServeHTTP(rec, req)
+		res := rec.Result()
+
+		if got, want := res.StatusCode, http.StatusOK; got != want {
+			return nil, rec, fmt.Errorf("unexpected status code: %d", got)
+		}
+
+		body, err := io.ReadAll(res.Body)
+		if err != nil {
+			return nil, rec, err
+		}
+
+		var response handlers.GuestLinkPostResponse
+		err = json.Unmarshal(body, &response)
+		if err != nil {
+			return nil, rec, err
+		}
+
+		return &response, rec, nil
+	}
+
+	for _, tt := range []testCase{
+		{
+			description: "guest_link operation: disable",
+			payload: `{
+					"label": "disable",
+					"urlExpirationTime":"2030-01-02T03:04:25Z",
+					"fileLifetime":"876000h0m0s",
+					"maxFileBytes": null,
+					"maxFileUploads": null
+				}`,
+			operations: []operation{disableOperation},
+			expected: picoshare.GuestLink{
+				Label:          picoshare.GuestLinkLabel("disable"),
+				UrlExpires:     mustParseExpirationTime("2030-01-02T03:04:25Z"),
+				FileLifetime:   picoshare.FileLifetimeInfinite,
+				MaxFileBytes:   picoshare.GuestUploadUnlimitedFileSize,
+				MaxFileUploads: picoshare.GuestUploadUnlimitedFileUploads,
+				IsDisabled:     true,
+			},
+		},
+		{
+			description: "guest_link operation: enable",
+			payload: `{
+					"label": "enable",
+					"urlExpirationTime":"2030-01-02T03:04:25Z",
+					"fileLifetime":"876000h0m0s",
+					"maxFileBytes": null,
+					"maxFileUploads": null
+				}`,
+			operations: []operation{enableOperation},
+			expected: picoshare.GuestLink{
+				Label:          picoshare.GuestLinkLabel("enable"),
+				UrlExpires:     mustParseExpirationTime("2030-01-02T03:04:25Z"),
+				FileLifetime:   picoshare.FileLifetimeInfinite,
+				MaxFileBytes:   picoshare.GuestUploadUnlimitedFileSize,
+				MaxFileUploads: picoshare.GuestUploadUnlimitedFileUploads,
+				IsDisabled:     false,
+			},
+		},
+		{
+			description: "guest_link operations: disable and enable",
+			payload: `{
+					"label": "disable and enable",
+					"urlExpirationTime":"2030-01-02T03:04:25Z",
+					"fileLifetime":"876000h0m0s",
+					"maxFileBytes": null,
+					"maxFileUploads": null
+				}`,
+			operations: []operation{disableOperation, enableOperation},
+			expected: picoshare.GuestLink{
+				Label:          picoshare.GuestLinkLabel("disable and enable"),
+				UrlExpires:     mustParseExpirationTime("2030-01-02T03:04:25Z"),
+				FileLifetime:   picoshare.FileLifetimeInfinite,
+				MaxFileBytes:   picoshare.GuestUploadUnlimitedFileSize,
+				MaxFileUploads: picoshare.GuestUploadUnlimitedFileUploads,
+				IsDisabled:     false,
+			},
+		},
+		{
+			description: "guest_link operations: enable and disable",
+			payload: `{
+					"label": "enable and disable",
+					"urlExpirationTime":"2030-01-02T03:04:25Z",
+					"fileLifetime":"876000h0m0s",
+					"maxFileBytes": null,
+					"maxFileUploads": null
+				}`,
+			operations: []operation{enableOperation, disableOperation},
+			expected: picoshare.GuestLink{
+				Label:          picoshare.GuestLinkLabel("enable and disable"),
+				UrlExpires:     mustParseExpirationTime("2030-01-02T03:04:25Z"),
+				FileLifetime:   picoshare.FileLifetimeInfinite,
+				MaxFileBytes:   picoshare.GuestUploadUnlimitedFileSize,
+				MaxFileUploads: picoshare.GuestUploadUnlimitedFileUploads,
+				IsDisabled:     true,
+			},
+		},
+	} {
+		t.Run(tt.description, func(t *testing.T) {
+			dataStore := test_sqlite.New()
+			s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceChecker, nilGarbageCollector, handlers.NewClock())
+
+			// Create the guest link based on the provided payload
+			response, rec, err := createLink(s, tt.payload)
+			if err != nil {
+				t.Fatalf("failed to create guest link: %v", err)
+			}
+			if got, want := rec.Code, http.StatusOK; got != want {
+				t.Fatalf("failed to create guest link: %v", rec.Code)
+			}
+
+			// Execute the operations defined in the test case.
+			for _, op := range tt.operations {
+				rec, err := op.action(s, response.ID)
+				if err != nil {
+					t.Fatalf("failed to %s guest link: %v", op.name, err)
+				}
+				if got, want := rec.Code, http.StatusNoContent; got != want {
+					t.Fatalf("failed to %s guest link: %v", op.name, rec.Code)
+				}
+			}
+
+			gl, err := dataStore.GetGuestLink(picoshare.GuestLinkID(response.ID))
+			if err != nil {
+				t.Fatalf("failed to retrieve guest link from datastore: %v", err)
+			}
+
+			// Copy the values that we can't predict in advance.
+			tt.expected.Created = gl.Created
+			tt.expected.ID = picoshare.GuestLinkID(response.ID)
+
+			if !reflect.DeepEqual(gl, tt.expected) {
+				t.Errorf("guest link does not match expected: got %+v, want %+v", gl, tt.expected)
+			}
+		})
 	}
 }
 
-func TestDisableNonExistentGuestLink(t *testing.T) {
-	dataStore := test_sqlite.New()
-	s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceChecker, nilGarbageCollector, handlers.NewClock())
-
-	req, err := http.NewRequest("PUT", "/api/guest-links/abcdefgh23456789/disable", nil)
-	if err != nil {
-		t.Fatal(err)
+func TestGuestLinkOperations(t *testing.T) {
+	type operation struct {
+		name   string
+		action func(s handlers.Server, id string) (*httptest.ResponseRecorder, error)
 	}
 
-	rec := httptest.NewRecorder()
-	s.Router().ServeHTTP(rec, req)
-	res := rec.Result()
-
-	// File doesn't exist, but there's no error for disabling a non-existent file.
-	if status := res.StatusCode; status != http.StatusNoContent {
-		t.Fatalf("PUT returned wrong status code: got %v want %v", status, http.StatusNoContent)
-	}
-}
-
-func TestDisableInvalidGuestLink(t *testing.T) {
-	dataStore := test_sqlite.New()
-	s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceChecker, nilGarbageCollector, handlers.NewClock())
-
-	req, err := http.NewRequest("PUT", "/api/guest-links/i-am-an-invalid-link/disable", nil)
-	if err != nil {
-		t.Fatal(err)
+	// Create an operation that can be either 'enable' or 'disable' a guest link.
+	createOperation := func(action string) operation {
+		return operation{
+			name: action,
+			action: func(s handlers.Server, id string) (*httptest.ResponseRecorder, error) {
+				req, err := http.NewRequest("PUT", fmt.Sprintf("/api/guest-links/%s/%s", id, action), nil)
+				if err != nil {
+					return nil, err
+				}
+				rec := httptest.NewRecorder()
+				s.Router().ServeHTTP(rec, req)
+				return rec, nil
+			},
+		}
 	}
 
-	rec := httptest.NewRecorder()
-	s.Router().ServeHTTP(rec, req)
-	res := rec.Result()
-
-	if status := res.StatusCode; status != http.StatusBadRequest {
-		t.Fatalf("PUT returned wrong status code: got %v want %v", status, http.StatusBadRequest)
-	}
-}
-
-func TestEnableExistingGuestLink(t *testing.T) {
-	dataStore := test_sqlite.New()
-	dataStore.InsertGuestLink(picoshare.GuestLink{
-		ID:           picoshare.GuestLinkID("abcdefgh23456789"),
-		Created:      mustParseTime("2022-01-01T00:00:00Z"),
-		UrlExpires:   mustParseExpirationTime("2030-01-02T03:04:25Z"),
-		FileLifetime: picoshare.NewFileLifetimeInDays(365),
-		IsDisabled:   true,
-	})
-
-	s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceChecker, nilGarbageCollector, handlers.NewClock())
-
-	req, err := http.NewRequest("PUT", "/api/guest-links/abcdefgh23456789/enable", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	rec := httptest.NewRecorder()
-	s.Router().ServeHTTP(rec, req)
-	res := rec.Result()
-
-	if status := res.StatusCode; status != http.StatusNoContent {
-		t.Fatalf("PUT returned wrong status code: got %v want %v", status, http.StatusNoContent)
-	}
-
-	gl, err := dataStore.GetGuestLink(picoshare.GuestLinkID("abcdefgh23456789"))
-	if err != nil {
-		t.Fatalf("failed to retrieve guest link from datastore: %v", err)
-	}
-
-	if gl.IsDisabled {
-		t.Fatalf("expected guest link to be enabled, got: %v", gl)
-	}
-}
-
-func TestEnableNonExistentGuestLink(t *testing.T) {
-	dataStore := test_sqlite.New()
-	s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceChecker, nilGarbageCollector, handlers.NewClock())
-
-	req, err := http.NewRequest("PUT", "/api/guest-links/abcdefgh23456789/enable", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	rec := httptest.NewRecorder()
-	s.Router().ServeHTTP(rec, req)
-	res := rec.Result()
-
-	// File doesn't exist, but there's no error for enabling a non-existent file.
-	if status := res.StatusCode; status != http.StatusNoContent {
-		t.Fatalf("PUT returned wrong status code: got %v want %v", status, http.StatusNoContent)
-	}
-}
-
-func TestEnableInvalidGuestLink(t *testing.T) {
-	dataStore := test_sqlite.New()
-	s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceChecker, nilGarbageCollector, handlers.NewClock())
-
-	req, err := http.NewRequest("PUT", "/api/guest-links/i-am-an-invalid-link/enable", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	rec := httptest.NewRecorder()
-	s.Router().ServeHTTP(rec, req)
-	res := rec.Result()
-
-	if status := res.StatusCode; status != http.StatusBadRequest {
-		t.Fatalf("PUT returned wrong status code: got %v want %v", status, http.StatusBadRequest)
+	disableOperation := createOperation("disable")
+	enableOperation := createOperation("enable")
+	for _, tt := range []struct {
+		description string
+		payload     picoshare.GuestLinkID
+		operation   operation
+		expected    int
+	}{
+		{
+			description: "disable a nonexistent guest link",
+			payload:     "abcdefgh23456789",
+			operation:   disableOperation,
+			expected:    http.StatusNotFound,
+		},
+		{
+			description: "enable a nonexistent guest link",
+			payload:     "abcdefgh23456789",
+			operation:   enableOperation,
+			expected:    http.StatusNotFound,
+		},
+		{
+			description: "disable an invalid guest link",
+			payload:     "i-am-an-invalid-link",
+			operation:   disableOperation,
+			expected:    http.StatusNotFound,
+		},
+		{
+			description: "enable an invalid guest link",
+			payload:     "i-am-an-invalid-link",
+			operation:   enableOperation,
+			expected:    http.StatusNotFound,
+		},
+	} {
+		t.Run(tt.description, func(t *testing.T) {
+			dataStore := test_sqlite.New()
+			s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceChecker, nilGarbageCollector, handlers.NewClock())
+			// Execute the operation defined in the test case.
+			rec, err := tt.operation.action(s, string(tt.payload))
+			if err != nil {
+				t.Fatalf("failed to %s guest link: %v", tt.operation.name, err)
+			}
+			if got, want := rec.Code, tt.expected; got != want {
+				t.Errorf("failed to %s guest link: got %d, want %d", tt.operation.name, got, want)
+			}
+		})
 	}
 }

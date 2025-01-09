@@ -68,7 +68,13 @@ func (s *Server) guestLinksDisable() http.HandlerFunc {
 		id, err := parseGuestLinkID(mux.Vars(r)["id"])
 		if err != nil {
 			log.Printf("failed to parse guest link ID %s: %v", mux.Vars(r)["id"], err)
-			http.Error(w, fmt.Sprintf("Invalid guest link ID: %v", err), http.StatusBadRequest)
+			http.Error(w, fmt.Sprintf("Invalid guest link ID: %v", err), http.StatusNotFound)
+			return
+		}
+
+		if _, err := s.getDB(r).GetGuestLink(id); err != nil {
+			log.Printf("failed to get guest link ID %s: %v", mux.Vars(r)["id"], err)
+			http.Error(w, fmt.Sprintf("Guest link with ID %s not found: %v", mux.Vars(r)["id"], err), http.StatusNotFound)
 			return
 		}
 
@@ -87,7 +93,13 @@ func (s *Server) guestLinksEnable() http.HandlerFunc {
 		id, err := parseGuestLinkID(mux.Vars(r)["id"])
 		if err != nil {
 			log.Printf("failed to parse guest link ID %s: %v", mux.Vars(r)["id"], err)
-			http.Error(w, fmt.Sprintf("Invalid guest link ID: %v", err), http.StatusBadRequest)
+			http.Error(w, fmt.Sprintf("Invalid guest link ID: %v", err), http.StatusNotFound)
+			return
+		}
+
+		if _, err := s.getDB(r).GetGuestLink(id); err != nil {
+			log.Printf("failed to get guest link ID %s: %v", mux.Vars(r)["id"], err)
+			http.Error(w, fmt.Sprintf("Guest link with ID %s not found: %v", mux.Vars(r)["id"], err), http.StatusNotFound)
 			return
 		}
 
