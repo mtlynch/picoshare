@@ -21,6 +21,7 @@ func TestGuestLinksPostAcceptsValidRequest(t *testing.T) {
 	for _, tt := range []struct {
 		description string
 		payload     string
+		currentTime time.Time
 		expected    picoshare.GuestLink
 	}{
 		{
@@ -32,7 +33,9 @@ func TestGuestLinksPostAcceptsValidRequest(t *testing.T) {
 					"maxFileBytes": null,
 					"maxFileUploads": null
 				}`,
+			currentTime: mustParseTime("2024-01-01T00:00:00Z"),
 			expected: picoshare.GuestLink{
+				Created:        mustParseTime("2024-01-01T00:00:00Z"),
 				Label:          picoshare.GuestLinkLabel(""),
 				UrlExpires:     mustParseExpirationTime("2030-01-02T03:04:25Z"),
 				FileLifetime:   picoshare.FileLifetimeInfinite,
@@ -49,7 +52,9 @@ func TestGuestLinksPostAcceptsValidRequest(t *testing.T) {
 					"maxFileBytes": 1048576,
 					"maxFileUploads": 1
 				}`,
+			currentTime: mustParseTime("2024-01-01T00:00:00Z"),
 			expected: picoshare.GuestLink{
+				Created:        mustParseTime("2024-01-01T00:00:00Z"),
 				Label:          picoshare.GuestLinkLabel("For my good pal, Maurice"),
 				UrlExpires:     mustParseExpirationTime("2030-01-02T03:04:25Z"),
 				FileLifetime:   picoshare.FileLifetimeInfinite,
@@ -66,7 +71,9 @@ func TestGuestLinksPostAcceptsValidRequest(t *testing.T) {
 					"maxFileBytes": 1048576,
 					"maxFileUploads": 1
 				}`,
+			currentTime: mustParseTime("2024-01-01T00:00:00Z"),
 			expected: picoshare.GuestLink{
+				Created:        mustParseTime("2024-01-01T00:00:00Z"),
 				Label:          picoshare.GuestLinkLabel("For my good pal, Maurice"),
 				UrlExpires:     mustParseExpirationTime("2030-01-02T03:04:25Z"),
 				FileLifetime:   picoshare.NewFileLifetimeInDays(1),
@@ -75,7 +82,7 @@ func TestGuestLinksPostAcceptsValidRequest(t *testing.T) {
 			},
 		},
 		{
-			description: "guest file expires in 30 day",
+			description: "guest file expires in 30 days",
 			payload: `{
 					"label": "For my good pal, Maurice",
 					"urlExpirationTime":"2030-01-02T03:04:25Z",
@@ -83,7 +90,9 @@ func TestGuestLinksPostAcceptsValidRequest(t *testing.T) {
 					"maxFileBytes": 1048576,
 					"maxFileUploads": 1
 				}`,
+			currentTime: mustParseTime("2024-01-01T00:00:00Z"),
 			expected: picoshare.GuestLink{
+				Created:        mustParseTime("2024-01-01T00:00:00Z"),
 				Label:          picoshare.GuestLinkLabel("For my good pal, Maurice"),
 				UrlExpires:     mustParseExpirationTime("2030-01-02T03:04:25Z"),
 				FileLifetime:   picoshare.NewFileLifetimeInDays(30),
@@ -94,7 +103,8 @@ func TestGuestLinksPostAcceptsValidRequest(t *testing.T) {
 	} {
 		t.Run(tt.description, func(t *testing.T) {
 			dataStore := test_sqlite.New()
-			s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceChecker, nilGarbageCollector, handlers.NewClock())
+			c := mockClock{tt.currentTime}
+			s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceChecker, nilGarbageCollector, c)
 
 			req, err := http.NewRequest("POST", "/api/guest-links", strings.NewReader(tt.payload))
 			if err != nil {
@@ -127,9 +137,8 @@ func TestGuestLinksPostAcceptsValidRequest(t *testing.T) {
 				t.Fatalf("%s: failed to retrieve guest link from datastore: %v", tt.description, err)
 			}
 
-			// Copy the values that we can't predict in advance.
+			// Copy the ID, which we can't predict in advance.
 			tt.expected.ID = picoshare.GuestLinkID(response.ID)
-			tt.expected.Created = gl.Created
 
 			if !reflect.DeepEqual(gl, tt.expected) {
 				t.Fatalf("%s: guest link does not match expected: got %+v, want %+v", tt.description, gl, tt.expected)
