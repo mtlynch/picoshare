@@ -140,8 +140,8 @@ func TestGuestLinksPostAcceptsValidRequest(t *testing.T) {
 			// Copy the ID, which we can't predict in advance.
 			tt.expected.ID = picoshare.GuestLinkID(response.ID)
 
-			if !reflect.DeepEqual(gl, tt.expected) {
-				t.Fatalf("%s: guest link does not match expected: got %+v, want %+v", tt.description, gl, tt.expected)
+			if got, want := gl, tt.expected; !reflect.DeepEqual(got, want) {
+				t.Fatalf("guestLink=%+v, want=%+v", got, want)
 			}
 		})
 	}
@@ -273,9 +273,8 @@ func TestGuestLinksPostRejectsInvalidRequest(t *testing.T) {
 			s.Router().ServeHTTP(rec, req)
 			res := rec.Result()
 
-			if status := res.StatusCode; status != http.StatusBadRequest {
-				t.Fatalf("%s: handler returned wrong status code: got %v want %v",
-					tt.description, status, http.StatusBadRequest)
+			if got, want := res.StatusCode, http.StatusBadRequest; got != want {
+				t.Fatalf("status=%d, want=%d", got, want)
 			}
 		})
 	}
@@ -308,8 +307,8 @@ func TestDeleteExistingGuestLink(t *testing.T) {
 	s.Router().ServeHTTP(rec, req)
 	res := rec.Result()
 
-	if status := res.StatusCode; status != http.StatusOK {
-		t.Fatalf("DELETE returned wrong status code: got %v want %v", status, http.StatusOK)
+	if got, want := res.StatusCode, http.StatusOK; got != want {
+		t.Fatalf("status=%d, want=%d", got, want)
 	}
 
 	_, err = dataStore.GetGuestLink(picoshare.GuestLinkID("dummy-guest-link-id"))
@@ -332,9 +331,8 @@ func TestDeleteNonExistentGuestLink(t *testing.T) {
 	res := rec.Result()
 
 	// File doesn't exist, but there's no error for deleting a non-existent file.
-	if status := res.StatusCode; status != http.StatusOK {
-		t.Fatalf("DELETE returned wrong status code: got %v want %v",
-			status, http.StatusOK)
+	if got, want := res.StatusCode, http.StatusOK; got != want {
+		t.Fatalf("status=%d, want=%d", got, want)
 	}
 }
 
@@ -351,7 +349,7 @@ func TestDeleteInvalidGuestLink(t *testing.T) {
 	s.Router().ServeHTTP(rec, req)
 	res := rec.Result()
 
-	if status := res.StatusCode; status != http.StatusBadRequest {
-		t.Fatalf("DELETE returned wrong status code: got %v want %v", status, http.StatusBadRequest)
+	if got, want := res.StatusCode, http.StatusBadRequest; got != want {
+		t.Fatalf("status=%d, want=%d", got, want)
 	}
 }
