@@ -87,40 +87,38 @@
       });
     });
 
-    const guestLinkButtonStates = {
-      Enable: {
-        apiCall: guestLinkEnable,
-        message: "Guest link enabled successfully.",
-        buttonClass: "is-sucess",
-        iconClass: "fa-check-square",
-        nextState: "Disable",
-      },
-      Disable: {
-        apiCall: guestLinkDisable,
-        message: "Successfully disabled the guest link.",
-        buttonClass: "is-danger",
-        iconClass: "fa-ban",
-        nextState: "Enable",
-      },
-    };
-
     const updateGuestLinkButtonStates = (button) => {
-      // Switch the button color & icon
-      const buttonClasses = button.classList;
-      buttonClasses.toggle("is-success");
-      buttonClasses.toggle("is-danger");
-
+      // Switch the button color & icon.
+      button.classList.toggle("is-success");
+      button.classList.toggle("is-danger");
       const oldIcon = button.querySelector("i");
       const iconClasses = oldIcon.classList;
       iconClasses.toggle("fa-check-square");
       iconClasses.toggle("fa-ban");
     };
 
-    // Switch the state of the guest link
+    // Switch the state of the guest link.
     document
       .querySelectorAll('[aria-label="Enable"], [aria-label="Disable"]')
       .forEach((toggleBtn) => {
         toggleBtn.addEventListener("click", () => {
+          const guestLinkButtonStates = {
+            Enable: {
+              apiCall: guestLinkEnable,
+              message: "Successfully",
+              buttonClass: "is-sucess",
+              iconClass: "fa-check-square",
+              nextState: "Disable",
+            },
+            Disable: {
+              apiCall: guestLinkDisable,
+              message: "Guest link disabled",
+              buttonClass: "is-danger",
+              iconClass: "fa-ban",
+              nextState: "Enable",
+            },
+          };
+
           const currentState = toggleBtn.getAttribute("aria-label");
           const id = toggleBtn.getAttribute("pico-link-id");
           const config = guestLinkButtonStates[currentState];
