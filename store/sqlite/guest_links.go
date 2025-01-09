@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"log"
-	"time"
 
 	"github.com/mtlynch/picoshare/v2/picoshare"
 	"github.com/mtlynch/picoshare/v2/store"
@@ -87,7 +86,7 @@ func (s *Store) InsertGuestLink(guestLink picoshare.GuestLink) error {
 		sql.Named("label", guestLink.Label),
 		sql.Named("max_file_bytes", guestLink.MaxFileBytes),
 		sql.Named("max_file_uploads", guestLink.MaxFileUploads),
-		sql.Named("creation_time", formatTime(time.Now())),
+		sql.Named("creation_time", formatTime(guestLink.Created)),
 		sql.Named("url_expiration_time", formatExpirationTime(guestLink.UrlExpires)),
 		sql.Named("file_expiration_time", formatFileLifetime(guestLink.FileLifetime))); err != nil {
 		return err
