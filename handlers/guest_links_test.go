@@ -347,20 +347,18 @@ func TestDeleteInvalidGuestLink(t *testing.T) {
 	}
 }
 
-func TestGuestLinkToggleInValidRequest(t *testing.T) {
-	type testCase struct {
+func TestEnableDisableGuestLink(t *testing.T) {
+
+	for _, tt := range []struct {
 		description      string
-		operationUrls    []string
+		url              string
 		guestLinkInStore picoshare.GuestLink
 		expected         picoshare.GuestLink
-	}
-
-	for _, tt := range []testCase{
+		status           int
+	}{
 		{
-			description: "guest_link operation: disable",
-			operationUrls: []string{
-				"/api/guest-links/abcdefgh23456789/disable",
-			},
+			description: "disabling active guest link succeeds",
+			url:         "/api/guest-links/abcdefgh23456789/disable",
 			guestLinkInStore: picoshare.GuestLink{
 				ID:             picoshare.GuestLinkID("abcdefgh23456789"),
 				Created:        mustParseTime("2024-01-01T00:00:00Z"),
@@ -368,6 +366,7 @@ func TestGuestLinkToggleInValidRequest(t *testing.T) {
 				FileLifetime:   picoshare.FileLifetimeInfinite,
 				MaxFileBytes:   picoshare.GuestUploadUnlimitedFileSize,
 				MaxFileUploads: picoshare.GuestUploadUnlimitedFileUploads,
+				IsDisabled:     false,
 			},
 			expected: picoshare.GuestLink{
 				ID:             picoshare.GuestLinkID("abcdefgh23456789"),
@@ -378,12 +377,11 @@ func TestGuestLinkToggleInValidRequest(t *testing.T) {
 				MaxFileUploads: picoshare.GuestUploadUnlimitedFileUploads,
 				IsDisabled:     true,
 			},
+			status: http.StatusNoContent,
 		},
 		{
-			description: "guest_link operation: enable",
-			operationUrls: []string{
-				"/api/guest-links/abcdefgh23456789/enable",
-			},
+			description: "enabling inactive guest link succeeds",
+			url:         "/api/guest-links/abcdefgh23456789/enable",
 			guestLinkInStore: picoshare.GuestLink{
 				ID:             picoshare.GuestLinkID("abcdefgh23456789"),
 				Created:        mustParseTime("2024-01-01T00:00:00Z"),
@@ -391,6 +389,7 @@ func TestGuestLinkToggleInValidRequest(t *testing.T) {
 				FileLifetime:   picoshare.FileLifetimeInfinite,
 				MaxFileBytes:   picoshare.GuestUploadUnlimitedFileSize,
 				MaxFileUploads: picoshare.GuestUploadUnlimitedFileUploads,
+				IsDisabled:     true,
 			},
 			expected: picoshare.GuestLink{
 				ID:             picoshare.GuestLinkID("abcdefgh23456789"),
@@ -401,13 +400,11 @@ func TestGuestLinkToggleInValidRequest(t *testing.T) {
 				MaxFileUploads: picoshare.GuestUploadUnlimitedFileUploads,
 				IsDisabled:     false,
 			},
+			status: http.StatusNoContent,
 		},
 		{
-			description: "guest_link operation: disable enable",
-			operationUrls: []string{
-				"/api/guest-links/abcdefgh23456789/disable",
-				"/api/guest-links/abcdefgh23456789/enable",
-			},
+			description: "disabling guest link succeeds but has no effect when guest link is not disabled",
+			url:         "/api/guest-links/abcdefgh23456789/disable",
 			guestLinkInStore: picoshare.GuestLink{
 				ID:             picoshare.GuestLinkID("abcdefgh23456789"),
 				Created:        mustParseTime("2024-01-01T00:00:00Z"),
@@ -415,30 +412,7 @@ func TestGuestLinkToggleInValidRequest(t *testing.T) {
 				FileLifetime:   picoshare.FileLifetimeInfinite,
 				MaxFileBytes:   picoshare.GuestUploadUnlimitedFileSize,
 				MaxFileUploads: picoshare.GuestUploadUnlimitedFileUploads,
-			},
-			expected: picoshare.GuestLink{
-				ID:             picoshare.GuestLinkID("abcdefgh23456789"),
-				Created:        mustParseTime("2024-01-01T00:00:00Z"),
-				UrlExpires:     mustParseExpirationTime("2030-01-02T03:04:25Z"),
-				FileLifetime:   picoshare.FileLifetimeInfinite,
-				MaxFileBytes:   picoshare.GuestUploadUnlimitedFileSize,
-				MaxFileUploads: picoshare.GuestUploadUnlimitedFileUploads,
-				IsDisabled:     false,
-			},
-		},
-		{
-			description: "guest_link operation: enable disable",
-			operationUrls: []string{
-				"/api/guest-links/abcdefgh23456789/enable",
-				"/api/guest-links/abcdefgh23456789/disable",
-			},
-			guestLinkInStore: picoshare.GuestLink{
-				ID:             picoshare.GuestLinkID("abcdefgh23456789"),
-				Created:        mustParseTime("2024-01-01T00:00:00Z"),
-				UrlExpires:     mustParseExpirationTime("2030-01-02T03:04:25Z"),
-				FileLifetime:   picoshare.FileLifetimeInfinite,
-				MaxFileBytes:   picoshare.GuestUploadUnlimitedFileSize,
-				MaxFileUploads: picoshare.GuestUploadUnlimitedFileUploads,
+				IsDisabled:     true,
 			},
 			expected: picoshare.GuestLink{
 				ID:             picoshare.GuestLinkID("abcdefgh23456789"),
@@ -449,31 +423,77 @@ func TestGuestLinkToggleInValidRequest(t *testing.T) {
 				MaxFileUploads: picoshare.GuestUploadUnlimitedFileUploads,
 				IsDisabled:     true,
 			},
+			status: http.StatusNoContent,
+		},
+		{
+			description: "enabling guest link succeeds but has no effect when guest link is not enabled",
+			url:         "/api/guest-links/abcdefgh23456789/enable",
+			guestLinkInStore: picoshare.GuestLink{
+				ID:             picoshare.GuestLinkID("abcdefgh23456789"),
+				Created:        mustParseTime("2024-01-01T00:00:00Z"),
+				UrlExpires:     mustParseExpirationTime("2030-01-02T03:04:25Z"),
+				FileLifetime:   picoshare.FileLifetimeInfinite,
+				MaxFileBytes:   picoshare.GuestUploadUnlimitedFileSize,
+				MaxFileUploads: picoshare.GuestUploadUnlimitedFileUploads,
+				IsDisabled:     false,
+			},
+			expected: picoshare.GuestLink{
+				ID:             picoshare.GuestLinkID("abcdefgh23456789"),
+				Created:        mustParseTime("2024-01-01T00:00:00Z"),
+				UrlExpires:     mustParseExpirationTime("2030-01-02T03:04:25Z"),
+				FileLifetime:   picoshare.FileLifetimeInfinite,
+				MaxFileBytes:   picoshare.GuestUploadUnlimitedFileSize,
+				MaxFileUploads: picoshare.GuestUploadUnlimitedFileUploads,
+				IsDisabled:     false,
+			},
+			status: http.StatusNoContent,
+		},
+		{
+			description: "disable a nonexistent guest link",
+			url:         "/api/guest-links/abcdefgh23456789/disable",
+			status:      http.StatusNotFound,
+		}, {
+			description: "enable a nonexistent guest link",
+			url:         "/api/guest-links/abcdefgh23456789/enable",
+			status:      http.StatusNotFound,
+		},
+		{
+			description: "disable a invalid guest link",
+			url:         "/api/guest-links/i-am-an-invalid-link/disable",
+			status:      http.StatusBadRequest,
+		},
+		{
+			description: "enable a invalid guest link",
+			url:         "/api/guest-links/i-am-an-invalid-link/enable",
+			status:      http.StatusBadRequest,
 		},
 	} {
 		t.Run(tt.description, func(t *testing.T) {
 			dataStore := test_sqlite.New()
 
-			if err := dataStore.InsertGuestLink(tt.guestLinkInStore); err != nil {
-				t.Fatalf("failed to insert dummy guest link: %v", err)
+			if tt.status == http.StatusNoContent {
+				if err := dataStore.InsertGuestLink(tt.guestLinkInStore); err != nil {
+					t.Fatalf("failed to insert dummy guest link: %v", err)
+				}
 			}
 
 			s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceChecker, nilGarbageCollector, handlers.NewClock())
 
-			for _, url := range tt.operationUrls {
-				req, err := http.NewRequest("PUT", url, nil)
-				if err != nil {
-					t.Fatalf("failed to disable url : %s", url)
-				}
-				req.Header.Add("Content-Type", "text/json")
-				rec := httptest.NewRecorder()
-				s.Router().ServeHTTP(rec, req)
-				res := rec.Result()
+			req, err := http.NewRequest("PUT", tt.url, nil)
+			if err != nil {
+				t.Fatalf("failed to create request for url: %s, error: %v", tt.url, err)
+			}
+			rec := httptest.NewRecorder()
+			s.Router().ServeHTTP(rec, req)
+			res := rec.Result()
 
-				if got, want := res.StatusCode, http.StatusNoContent; got != want {
-					t.Errorf("%s: handler returned wrong status code: got %v want %v",
-						tt.description, got, want)
-				}
+			if got, want := res.StatusCode, tt.status; got != want {
+				t.Errorf("%s: handler returned wrong status code: got %v want %v",
+					tt.description, got, want)
+			}
+
+			if tt.status != http.StatusNoContent {
+				return
 			}
 
 			gl, err := dataStore.GetGuestLink(tt.guestLinkInStore.ID)
@@ -483,55 +503,6 @@ func TestGuestLinkToggleInValidRequest(t *testing.T) {
 
 			if got, want := gl, tt.expected; !reflect.DeepEqual(got, want) {
 				t.Fatalf("guestLink=%+v, want=%+v", got, want)
-			}
-		})
-	}
-}
-
-func TestGuestLinkOperations(t *testing.T) {
-	for _, tt := range []struct {
-		description string
-		url         string
-		expected    int
-	}{
-		{
-			description: "disable a nonexistent guest link",
-			url:         "/api/guest-links/abcdefgh23456789/disable",
-			expected:    http.StatusNotFound,
-		},
-		{
-			description: "enable a nonexistent guest link",
-			url:         "/api/guest-links/abcdefgh23456789/enable",
-			expected:    http.StatusNotFound,
-		},
-		{
-			description: "disable an invalid guest link",
-			url:         "/api/guest-links/i-am-an-invalid-link/disable",
-			expected:    http.StatusBadRequest,
-		},
-		{
-			description: "enable an invalid guest link",
-			url:         "/api/guest-links/i-am-an-invalid-link/enable",
-			expected:    http.StatusBadRequest,
-		},
-	} {
-		t.Run(tt.description, func(t *testing.T) {
-			dataStore := test_sqlite.New()
-			s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceChecker, nilGarbageCollector, handlers.NewClock())
-
-			req, err := http.NewRequest("PUT", tt.url, nil)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			req.Header.Add("Content-Type", "text/json")
-			rec := httptest.NewRecorder()
-			s.Router().ServeHTTP(rec, req)
-			res := rec.Result()
-
-			if got, want := res.StatusCode, tt.expected; got != want {
-				t.Errorf("%s: handler returned wrong status code: got %v want %v",
-					tt.description, got, want)
 			}
 		})
 	}
