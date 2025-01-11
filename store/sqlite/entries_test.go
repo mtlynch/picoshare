@@ -36,7 +36,7 @@ func TestInsertDeleteSingleEntry(t *testing.T) {
 	}
 
 	if got, want := string(contents), input; got != want {
-		log.Fatalf("unexpected file contents: got %v, want %v", got, want)
+		log.Fatalf("contents=%s, want=%s", got, want)
 	}
 
 	meta, err := dataStore.GetEntriesMetadata()
@@ -56,9 +56,8 @@ func TestInsertDeleteSingleEntry(t *testing.T) {
 		t.Fatalf("unexpected download count in entry metadata: got %v, want %v", meta[0].DownloadCount, 0)
 	}
 
-	expectedFilename := picoshare.Filename("dummy-file.txt")
-	if meta[0].Filename != expectedFilename {
-		t.Fatalf("unexpected filename: got %v, want %v", meta[0].Filename, expectedFilename)
+	if got, want := meta[0].Filename, picoshare.Filename("dummy-file.txt"); got != want {
+		t.Fatalf("filename=%s, want=%s", got, want)
 	}
 
 	err = dataStore.DeleteEntry(picoshare.EntryID("dummy-id"))
@@ -71,8 +70,8 @@ func TestInsertDeleteSingleEntry(t *testing.T) {
 		t.Fatalf("failed to get entry metadata: %v", err)
 	}
 
-	if len(meta) != 0 {
-		t.Fatalf("unexpected metadata size: got %v, want %v", len(meta), 0)
+	if got, want := len(meta), 0; got != want {
+		t.Fatalf("metadata size=%d, want=%d", got, want)
 	}
 }
 
