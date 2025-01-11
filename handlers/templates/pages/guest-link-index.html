@@ -109,30 +109,29 @@
       .querySelectorAll('[aria-label="Enable"], [aria-label="Disable"]')
       .forEach((toggleBtn) => {
         toggleBtn.addEventListener("click", () => {
-          const guestLinkButtonStates = {
-            Enable: {
-              apiCall: guestLinkEnable,
-              message: "Guest link reactivated",
-              nextState: "Disable",
-            },
-            Disable: {
-              apiCall: guestLinkDisable,
-              message: "Guest link disabled",
-              nextState: "Enable",
-            },
-          };
-
           const currentState = toggleBtn.getAttribute("aria-label");
           const id = toggleBtn.getAttribute("pico-link-id");
-          const config = guestLinkButtonStates[currentState];
 
-          config
-            .apiCall(id)
+          let apiCall = undefined;
+          let snackBarMessage = undefined;
+          let newAriaLabel = undefined;
+
+          if (toggleBtn.getAttribute("aria-label") === "Enable") {
+            apiCall = guestLinkEnable;
+            snackBarMessage = "Guest link reactivated";
+            newAriaLabel = "Disable";
+          } else {
+            apiCall = guestLinkDisable;
+            snackBarMessage = "Guest link disabled";
+            newAriaLabel = "Enable";
+          }
+
+          apiCall(id)
             .then(() => {
-              // Disable the guest link's row in the table.
-              toggleBtn.closest("tr").classList.toggle("inactive");
+              toggleBtn.setAttribute("aria-label", newAriaLabel);
 
-              toggleBtn.setAttribute("aria-label", config.nextState);
+              // Toggle the guest link's row active state in the table.
+              toggleBtn.closest("tr").classList.toggle("inactive");
 
               // Switch the button color and icon.
               toggleBtn.classList.toggle("is-success");
@@ -142,7 +141,7 @@
 
               document
                 .querySelector("snackbar-notifications")
-                .addInfoMessage(config.message);
+                .addInfoMessage(snackBarMessage);
             })
             .catch((error) => {
               document.getElementById("error-message").innerText = error;
