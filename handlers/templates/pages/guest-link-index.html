@@ -141,6 +141,7 @@
           config
             .apiCall(id)
             .then(() => {
+              toggleBtn.closest("tr").classList.toggle("inactive");
               toggleBtn.setAttribute("aria-label", config.nextState);
               updateGuestLinkButtonStates(toggleBtn);
               document
