@@ -350,14 +350,14 @@ func TestDeleteInvalidGuestLink(t *testing.T) {
 func TestEnableDisableGuestLink(t *testing.T) {
 	for _, tt := range []struct {
 		description      string
-		url              string
+		requestRoute     string
 		guestLinkInStore picoshare.GuestLink
 		expected         picoshare.GuestLink
 		status           int
 	}{
 		{
-			description: "disabling active guest link succeeds",
-			url:         "/api/guest-links/abcdefgh23456789/disable",
+			description:  "disabling active guest link succeeds",
+			requestRoute: "/api/guest-links/abcdefgh23456789/disable",
 			guestLinkInStore: picoshare.GuestLink{
 				ID:             picoshare.GuestLinkID("abcdefgh23456789"),
 				Created:        mustParseTime("2024-01-01T00:00:00Z"),
@@ -379,8 +379,8 @@ func TestEnableDisableGuestLink(t *testing.T) {
 			status: http.StatusNoContent,
 		},
 		{
-			description: "enabling inactive guest link succeeds",
-			url:         "/api/guest-links/abcdefgh23456789/enable",
+			description:  "enabling inactive guest link succeeds",
+			requestRoute: "/api/guest-links/abcdefgh23456789/enable",
 			guestLinkInStore: picoshare.GuestLink{
 				ID:             picoshare.GuestLinkID("abcdefgh23456789"),
 				Created:        mustParseTime("2024-01-01T00:00:00Z"),
@@ -402,8 +402,8 @@ func TestEnableDisableGuestLink(t *testing.T) {
 			status: http.StatusNoContent,
 		},
 		{
-			description: "disabling guest link succeeds but has no effect when guest link is not disabled",
-			url:         "/api/guest-links/abcdefgh23456789/disable",
+			description:  "disabling guest link succeeds but has no effect when guest link is not disabled",
+			requestRoute: "/api/guest-links/abcdefgh23456789/disable",
 			guestLinkInStore: picoshare.GuestLink{
 				ID:             picoshare.GuestLinkID("abcdefgh23456789"),
 				Created:        mustParseTime("2024-01-01T00:00:00Z"),
@@ -425,8 +425,8 @@ func TestEnableDisableGuestLink(t *testing.T) {
 			status: http.StatusNoContent,
 		},
 		{
-			description: "enabling guest link succeeds but has no effect when guest link is not enabled",
-			url:         "/api/guest-links/abcdefgh23456789/enable",
+			description:  "enabling guest link succeeds but has no effect when guest link is not enabled",
+			requestRoute: "/api/guest-links/abcdefgh23456789/enable",
 			guestLinkInStore: picoshare.GuestLink{
 				ID:             picoshare.GuestLinkID("abcdefgh23456789"),
 				Created:        mustParseTime("2024-01-01T00:00:00Z"),
@@ -448,23 +448,23 @@ func TestEnableDisableGuestLink(t *testing.T) {
 			status: http.StatusNoContent,
 		},
 		{
-			description: "disable a non-existent guest link",
-			url:         "/api/guest-links/abcdefgh23456789/disable",
-			status:      http.StatusNotFound,
+			description:  "disable a non-existent guest link",
+			requestRoute: "/api/guest-links/abcdefgh23456789/disable",
+			status:       http.StatusNotFound,
 		}, {
-			description: "enable a non-existent guest link",
-			url:         "/api/guest-links/abcdefgh23456789/enable",
-			status:      http.StatusNotFound,
+			description:  "enable a non-existent guest link",
+			requestRoute: "/api/guest-links/abcdefgh23456789/enable",
+			status:       http.StatusNotFound,
 		},
 		{
-			description: "disable a guest link with an invalid ID",
-			url:         "/api/guest-links/i-am-an-invalid-link/disable",
-			status:      http.StatusBadRequest,
+			description:  "disable a guest link with an invalid ID",
+			requestRoute: "/api/guest-links/i-am-an-invalid-link/disable",
+			status:       http.StatusBadRequest,
 		},
 		{
-			description: "enable a guest link with an invalid ID",
-			url:         "/api/guest-links/i-am-an-invalid-link/enable",
-			status:      http.StatusBadRequest,
+			description:  "enable a guest link with an invalid ID",
+			requestRoute: "/api/guest-links/i-am-an-invalid-link/enable",
+			status:       http.StatusBadRequest,
 		},
 	} {
 		t.Run(tt.description, func(t *testing.T) {
@@ -478,9 +478,9 @@ func TestEnableDisableGuestLink(t *testing.T) {
 
 			s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceChecker, nilGarbageCollector, handlers.NewClock())
 
-			req, err := http.NewRequest("PUT", tt.url, nil)
+			req, err := http.NewRequest("PUT", tt.requestRoute, nil)
 			if err != nil {
-				t.Fatalf("failed to create request for url: %s, error: %v", tt.url, err)
+				t.Fatalf("failed to create request for route: %s, error: %v", tt.requestRoute, err)
 			}
 			rec := httptest.NewRecorder()
 			s.Router().ServeHTTP(rec, req)
