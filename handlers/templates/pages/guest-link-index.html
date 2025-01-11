@@ -104,14 +104,6 @@
       });
     });
 
-    const updateGuestLinkButtonStates = (button) => {
-      // Switch the button color & icon.
-      button.classList.toggle("is-success");
-      button.classList.toggle("is-warning");
-      button.querySelector("i").classList.toggle("fa-ban");
-      button.querySelector("i").classList.toggle("fa-check-square");
-    };
-
     // Switch the state of the guest link.
     document
       .querySelectorAll('[aria-label="Enable"], [aria-label="Disable"]')
@@ -139,9 +131,17 @@
           config
             .apiCall(id)
             .then(() => {
+              // Disable the guest link's row in the table.
               toggleBtn.closest("tr").classList.toggle("inactive");
+
               toggleBtn.setAttribute("aria-label", config.nextState);
-              updateGuestLinkButtonStates(toggleBtn);
+
+              // Switch the button color  icon.
+              toggleBtn.classList.toggle("is-success");
+              toggleBtn.classList.toggle("is-warning");
+              toggleBtn.querySelector("i").classList.toggle("fa-ban");
+              toggleBtn.querySelector("i").classList.toggle("fa-check-square");
+
               document
                 .querySelector("snackbar-notifications")
                 .addInfoMessage(config.message);
