@@ -448,21 +448,21 @@ func TestEnableDisableGuestLink(t *testing.T) {
 			status: http.StatusNoContent,
 		},
 		{
-			description: "disable a nonexistent guest link",
+			description: "disable a non-existent guest link",
 			url:         "/api/guest-links/abcdefgh23456789/disable",
 			status:      http.StatusNotFound,
 		}, {
-			description: "enable a nonexistent guest link",
+			description: "enable a non-existent guest link",
 			url:         "/api/guest-links/abcdefgh23456789/enable",
 			status:      http.StatusNotFound,
 		},
 		{
-			description: "disable a invalid guest link",
+			description: "disable a guest link with an invalid ID",
 			url:         "/api/guest-links/i-am-an-invalid-link/disable",
 			status:      http.StatusBadRequest,
 		},
 		{
-			description: "enable a invalid guest link",
+			description: "enable a guest link with an invalid ID",
 			url:         "/api/guest-links/i-am-an-invalid-link/enable",
 			status:      http.StatusBadRequest,
 		},
