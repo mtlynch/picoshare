@@ -17,6 +17,8 @@ type Store interface {
 	GetGuestLinks() ([]picoshare.GuestLink, error)
 	InsertGuestLink(picoshare.GuestLink) error
 	DeleteGuestLink(picoshare.GuestLinkID) error
+	DisableGuestLink(picoshare.GuestLinkID) error
+	EnableGuestLink(picoshare.GuestLinkID) error
 	InsertEntryDownload(picoshare.EntryID, picoshare.DownloadRecord) error
 	GetEntryDownloads(id picoshare.EntryID) ([]picoshare.DownloadRecord, error)
 	ReadSettings() (picoshare.Settings, error)

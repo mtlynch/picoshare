@@ -18,6 +18,7 @@ type (
 		FileLifetime   FileLifetime
 		MaxFileBytes   GuestUploadMaxFileBytes
 		MaxFileUploads GuestUploadCountLimit
+		IsDisabled     bool
 		FilesUploaded  int
 	}
 )
@@ -54,7 +55,7 @@ func (gl GuestLink) IsExpired() bool {
 }
 
 func (gl GuestLink) IsActive() bool {
-	return !gl.IsExpired() && gl.CanAcceptMoreFiles()
+	return !gl.IsExpired() && gl.CanAcceptMoreFiles() && !gl.IsDisabled
 }
 
 func (label GuestLinkLabel) Empty() bool {

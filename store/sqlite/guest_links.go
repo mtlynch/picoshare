@@ -14,6 +14,7 @@ func (s Store) GetGuestLink(id picoshare.GuestLinkID) (picoshare.GuestLink, erro
 		SELECT
 			guest_links.id AS id,
 			guest_links.label AS label,
+			guest_links.is_disabled As is_disabled,
 			guest_links.max_file_bytes AS max_file_bytes,
 			guest_links.max_file_uploads AS max_file_uploads,
 			guest_links.creation_time AS creation_time,
@@ -37,6 +38,7 @@ func (s Store) GetGuestLinks() ([]picoshare.GuestLink, error) {
 		SELECT
 			guest_links.id AS id,
 			guest_links.label AS label,
+			guest_links.is_disabled As is_disabled,
 			guest_links.max_file_bytes AS max_file_bytes,
 			guest_links.max_file_uploads AS max_file_uploads,
 			guest_links.creation_time AS creation_time,
@@ -74,16 +76,18 @@ func (s *Store) InsertGuestLink(guestLink picoshare.GuestLink) error {
 		(
 			id,
 			label,
+			is_disabled,
 			max_file_bytes,
 			max_file_uploads,
 			creation_time,
 			url_expiration_time,
 			file_expiration_time
 		)
-		VALUES (:id, :label, :max_file_bytes, :max_file_uploads, :creation_time, :url_expiration_time, :file_expiration_time)
+		VALUES (:id, :label, :is_disabled,:max_file_bytes, :max_file_uploads, :creation_time, :url_expiration_time, :file_expiration_time)
 	`,
 		sql.Named("id", guestLink.ID),
 		sql.Named("label", guestLink.Label),
+		sql.Named("is_disabled", guestLink.IsDisabled),
 		sql.Named("max_file_bytes", guestLink.MaxFileBytes),
 		sql.Named("max_file_uploads", guestLink.MaxFileUploads),
 		sql.Named("creation_time", formatTime(guestLink.Created)),
@@ -126,9 +130,48 @@ func (s Store) DeleteGuestLink(id picoshare.GuestLinkID) error {
 	return tx.Commit()
 }
 
+func (s Store) DisableGuestLink(id picoshare.GuestLinkID) error {
+	log.Printf("disabling guest link %s", id)
+
+	_, err := s.ctx.Exec(`
+    UPDATE
+        guest_links
+    SET
+        is_disabled = 1
+    WHERE
+        id = :id`, sql.Named("id", id))
+
+	if err != nil {
+		log.Printf("disabling guest link %s failed: %v", id, err)
+		return err
+	}
+
+	return nil
+}
+
+func (s Store) EnableGuestLink(id picoshare.GuestLinkID) error {
+	log.Printf("enabling guest link %s", id)
+
+	_, err := s.ctx.Exec(`
+	UPDATE
+		guest_links
+	SET
+		is_disabled = 0
+	WHERE
+		id = :id`, sql.Named("id", id))
+
+	if err != nil {
+		log.Printf("enabling guest link %s failed: %v", id, err)
+		return err
+	}
+
+	return nil
+}
+
 func guestLinkFromRow(row rowScanner) (picoshare.GuestLink, error) {
 	var id picoshare.GuestLinkID
 	var label picoshare.GuestLinkLabel
+	var isDisabled bool
 	var maxFileBytes picoshare.GuestUploadMaxFileBytes
 	var maxFileUploads picoshare.GuestUploadCountLimit
 	var creationTimeRaw string
@@ -136,7 +179,7 @@ func guestLinkFromRow(row rowScanner) (picoshare.GuestLink, error) {
 	var fileLifetimeRaw *string
 	var filesUploaded int
 
-	err := row.Scan(&id, &label, &maxFileBytes, &maxFileUploads, &creationTimeRaw, &urlExpirationTimeRaw, &fileLifetimeRaw, &filesUploaded)
+	err := row.Scan(&id, &label, &isDisabled, &maxFileBytes, &maxFileUploads, &creationTimeRaw, &urlExpirationTimeRaw, &fileLifetimeRaw, &filesUploaded)
 	if err == sql.ErrNoRows {
 		return picoshare.GuestLink{}, store.GuestLinkNotFoundError{ID: id}
 	} else if err != nil {
@@ -166,6 +209,7 @@ func guestLinkFromRow(row rowScanner) (picoshare.GuestLink, error) {
 	return picoshare.GuestLink{
 		ID:             id,
 		Label:          label,
+		IsDisabled:     isDisabled,
 		MaxFileBytes:   maxFileBytes,
 		MaxFileUploads: maxFileUploads,
 		FilesUploaded:  filesUploaded,
