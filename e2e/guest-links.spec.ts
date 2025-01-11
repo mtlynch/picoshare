@@ -205,6 +205,10 @@ test("disables and enables a guest link, affecting access", async ({
   // Disable the guest link.
   await guestLinkRow.getByRole("button", { name: "Disable" }).click();
 
+  await expect(
+    guestLinkRow.getByRole("button", { name: "Copy" })
+  ).not.toBeVisible();
+
   // Try to access the guest link as a guest user.
   {
     const guestContext = await browser.newContext();
@@ -223,6 +227,10 @@ test("disables and enables a guest link, affecting access", async ({
 
   // Enable the guest link.
   await guestLinkRow.getByRole("button", { name: "Enable" }).click();
+
+  await expect(
+    guestLinkRow.getByRole("button", { name: "Copy" })
+  ).toBeVisible();
 
   // Try to access the guest link as a guest user.
   {
