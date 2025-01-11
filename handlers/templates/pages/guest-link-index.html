@@ -91,10 +91,8 @@
       // Switch the button color & icon.
       button.classList.toggle("is-success");
       button.classList.toggle("is-danger");
-      const oldIcon = button.querySelector("i");
-      const iconClasses = oldIcon.classList;
-      iconClasses.toggle("fa-check-square");
-      iconClasses.toggle("fa-ban");
+      button.querySelector("i").classList.toggle("fa-ban");
+      button.querySelector("i").classList.toggle("fa-check-square");
     };
 
     // Switch the state of the guest link.

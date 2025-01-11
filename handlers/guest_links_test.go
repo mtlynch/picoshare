@@ -348,7 +348,6 @@ func TestDeleteInvalidGuestLink(t *testing.T) {
 }
 
 func TestEnableDisableGuestLink(t *testing.T) {
-
 	for _, tt := range []struct {
 		description      string
 		url              string
@@ -471,7 +470,7 @@ func TestEnableDisableGuestLink(t *testing.T) {
 		t.Run(tt.description, func(t *testing.T) {
 			dataStore := test_sqlite.New()
 
-			if tt.status == http.StatusNoContent {
+			if !tt.guestLinkInStore.Empty() {
 				if err := dataStore.InsertGuestLink(tt.guestLinkInStore); err != nil {
 					t.Fatalf("failed to insert dummy guest link: %v", err)
 				}
@@ -488,8 +487,7 @@ func TestEnableDisableGuestLink(t *testing.T) {
 			res := rec.Result()
 
 			if got, want := res.StatusCode, tt.status; got != want {
-				t.Errorf("%s: handler returned wrong status code: got %v want %v",
-					tt.description, got, want)
+				t.Fatalf("status=%d, want=%d", got, want)
 			}
 
 			if tt.status != http.StatusNoContent {
@@ -502,7 +500,7 @@ func TestEnableDisableGuestLink(t *testing.T) {
 			}
 
 			if got, want := gl, tt.expected; !reflect.DeepEqual(got, want) {
-				t.Fatalf("guestLink=%+v, want=%+v", got, want)
+				t.Errorf("guestLink=%+v, want=%+v", got, want)
 			}
 		})
 	}
