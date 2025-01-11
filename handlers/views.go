@@ -80,15 +80,12 @@ func (s Server) guestLinkIndexGet() http.HandlerFunc {
 				return "Never"
 			}
 			t := time.Time(et)
-			delta := time.Until(t)
+			delta := t.Sub(s.clock.Now())
 			suffix := ""
 			if delta.Seconds() < 0 {
 				suffix = " ago"
 			}
 			return fmt.Sprintf("%s (%.0f days%s)", t.Format(time.DateOnly), math.Abs(delta.Hours())/24, suffix)
-		},
-		"isActive": func(gl picoshare.GuestLink) bool {
-			return gl.IsActive()
 		},
 	}
 
@@ -176,9 +173,10 @@ func (s Server) fileIndexGet() http.HandlerFunc {
 			if et == picoshare.NeverExpire {
 				return "Never"
 			}
-			t := time.Time(et)
-			delta := time.Until(t)
-			return fmt.Sprintf("%s (%.0f days)", t.Format(time.DateOnly), delta.Hours()/24)
+			t := et.Time().Local()
+			delta := t.Sub(s.clock.Now())
+			daysRemaining := delta.Hours() / 24
+			return fmt.Sprintf("%s (%.0f days)", t.Format(time.DateOnly), daysRemaining)
 		},
 		"formatFileSize": humanReadableFileSize,
 	}
@@ -262,9 +260,10 @@ func (s Server) fileInfoGet() http.HandlerFunc {
 			if et == picoshare.NeverExpire {
 				return "Never"
 			}
-			t := time.Time(et)
-			delta := time.Until(t)
-			return fmt.Sprintf("%s (%.0f days)", t.Format(time.DateOnly), delta.Hours()/24)
+			t := et.Time().Local()
+			delta := t.Sub(s.clock.Now())
+			daysRemaining := delta.Hours() / 24
+			return fmt.Sprintf("%s (%.0f days)", t.Format(time.DateOnly), daysRemaining)
 		},
 		"formatTimestamp": func(t time.Time) string {
 			return t.Format(time.RFC3339)

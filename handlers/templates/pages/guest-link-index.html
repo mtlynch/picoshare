@@ -10,6 +10,23 @@
     .table {
       & tr {
         transition: all 1000ms ease-out;
+
+        /* Show aria-label in a tooltip over the button. */
+        button[aria-label]:hover::after {
+          content: attr(aria-label);
+          position: absolute;
+          background: #333;
+          color: white;
+          padding: 4px 8px;
+          border-radius: 4px;
+          font-size: 14px;
+          margin-top: -5rem;
+          white-space: nowrap;
+        }
+
+        button {
+          position: relative;
+        }
       }
 
       & .inactive {
@@ -29,7 +46,11 @@
 
 {{ define "script-tags" }}
   <script type="module" nonce="{{ .CspNonce }}">
-    import { guestLinkDelete } from "/js/controllers/guestLinks.js";
+    import {
+      guestLinkDelete,
+      guestLinkEnable,
+      guestLinkDisable,
+    } from "/js/controllers/guestLinks.js";
     import { showElement, hideElement } from "/js/lib/bulma.js";
     import { copyToClipboard } from "/js/lib/clipboard.js";
 
@@ -82,6 +103,52 @@
           });
       });
     });
+
+    // Switch the state of the guest link.
+    document
+      .querySelectorAll('[aria-label="Enable"], [aria-label="Disable"]')
+      .forEach((toggleBtn) => {
+        toggleBtn.addEventListener("click", () => {
+          const currentState = toggleBtn.getAttribute("aria-label");
+          const id = toggleBtn.getAttribute("pico-link-id");
+
+          let apiCall = undefined;
+          let snackBarMessage = undefined;
+          let newAriaLabel = undefined;
+
+          if (toggleBtn.getAttribute("aria-label") === "Enable") {
+            apiCall = guestLinkEnable;
+            snackBarMessage = "Guest link reactivated";
+            newAriaLabel = "Disable";
+          } else {
+            apiCall = guestLinkDisable;
+            snackBarMessage = "Guest link disabled";
+            newAriaLabel = "Enable";
+          }
+
+          apiCall(id)
+            .then(() => {
+              toggleBtn.setAttribute("aria-label", newAriaLabel);
+
+              // Toggle the guest link's row active state in the table.
+              toggleBtn.closest("tr").classList.toggle("inactive");
+
+              // Switch the button color and icon.
+              toggleBtn.classList.toggle("is-success");
+              toggleBtn.classList.toggle("is-warning");
+              toggleBtn.querySelector("i").classList.toggle("fa-ban");
+              toggleBtn.querySelector("i").classList.toggle("fa-check-square");
+
+              document
+                .querySelector("snackbar-notifications")
+                .addInfoMessage(snackBarMessage);
+            })
+            .catch((error) => {
+              document.getElementById("error-message").innerText = error;
+              showElement(errorContainer);
+            });
+        });
+      });
   </script>
 {{ end }}
 
@@ -129,9 +196,9 @@
       </thead>
       <tbody>
         {{ range .GuestLinks }}
-          <tr {{ if not (isActive .) }}class="inactive"{{ end }}>
+          <tr {{ if not .IsActive }}class="inactive"{{ end }}>
             <td class="is-vcentered">
-              {{ if isActive . }}
+              {{ if .IsActive }}
                 <a href="/g/{{ .ID }}">
                   {{ template "label-formatted" . }}
                 </a>
@@ -164,6 +231,27 @@
                     <i class="fa-solid fa-copy"></i>
                   </button>
                 </p>
+                {{ if .IsDisabled }}
+                  <p class="control">
+                    <button
+                      class="button is-success"
+                      aria-label="Enable"
+                      pico-link-id="{{ .ID }}"
+                    >
+                      <i class="fas fa-check-square" aria-hidden="true"></i>
+                    </button>
+                  </p>
+                {{ else }}
+                  <p class="control">
+                    <button
+                      class="button is-warning"
+                      aria-label="Disable"
+                      pico-link-id="{{ .ID }}"
+                    >
+                      <i class="fas fa-ban" aria-hidden="true"></i>
+                    </button>
+                  </p>
+                {{ end }}
                 <p class="control">
                   <button
                     class="button is-danger"
