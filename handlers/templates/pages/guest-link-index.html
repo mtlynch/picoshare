@@ -10,6 +10,23 @@
     .table {
       & tr {
         transition: all 1000ms ease-out;
+
+        /* Show aria-label in a tooltip over the button. */
+        button[aria-label]:hover::after {
+          content: attr(aria-label);
+          position: absolute;
+          background: #333;
+          color: white;
+          padding: 4px 8px;
+          border-radius: 4px;
+          font-size: 14px;
+          margin-top: -5rem;
+          white-space: nowrap;
+        }
+
+        button {
+          position: relative;
+        }
       }
 
       & .inactive {
