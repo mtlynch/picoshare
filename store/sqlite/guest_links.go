@@ -107,6 +107,12 @@ func (s Store) DeleteGuestLink(id picoshare.GuestLinkID) error {
 		return err
 	}
 
+	defer func() {
+		if err := tx.Rollback(); err != nil {
+			log.Printf("failed to rollback delete guest link: %v", err)
+		}
+	}()
+
 	if _, err = tx.Exec(`
 	UPDATE
 		entries

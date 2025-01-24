@@ -41,6 +41,12 @@ func applyMigrations(ctx *sql.DB) {
 			log.Fatalf("failed to create migration transaction %d: %v", migration.version, err)
 		}
 
+		defer func() {
+			if err := tx.Rollback(); err != nil {
+				log.Printf("failed to rollback failed database migration: %v", err)
+			}
+		}()
+
 		if _, err := tx.Exec(migration.query); err != nil {
 			log.Fatalf("failed to perform DB migration %d: %v", migration.version, err)
 		}
