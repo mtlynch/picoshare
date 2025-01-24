@@ -25,6 +25,12 @@ func (s Store) deleteExpiredEntries() error {
 		return err
 	}
 
+	defer func() {
+		if err := tx.Rollback(); err != nil {
+			log.Printf("failed to rollback delete expired entries: %v", err)
+		}
+	}()
+
 	currentTime := formatTime(time.Now())
 
 	if _, err = tx.Exec(`
