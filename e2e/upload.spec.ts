@@ -124,6 +124,9 @@ test("uploads a file and deletes it", async ({ page }) => {
     .filter({ hasText: "upload-for-deletion.txt" })
     .getByRole("link", { name: "upload-for-deletion.txt" })
     .click();
+  await expect(page.locator("pre")).toHaveText(
+    "I'm an upload that will soon be deleted"
+  );
 
   // Delete the file.
   await page.goBack();
