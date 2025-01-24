@@ -117,6 +117,17 @@ test("uploads a file and deletes it", async ({ page }) => {
 
   await page.getByRole("menuitem", { name: "Files" }).click();
 
+  // View the file's contents. We want to register at least one view to ensure
+  // that deletion also deletes the view history.
+  await page
+    .getByRole("row")
+    .filter({ hasText: "upload-for-deletion.txt" })
+    .getByRole("link", { name: "upload-for-deletion.txt" })
+    .click();
+
+  // Delete the file.
+  await page.goBack();
+
   await page
     .getByRole("row")
     .filter({ hasText: "upload-for-deletion.txt" })
