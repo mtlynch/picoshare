@@ -30,7 +30,7 @@ func (s Store) deleteExpiredEntries() error {
 	}
 
 	defer func() {
-		if err := tx.Rollback(); err != nil {
+		if err := tx.Rollback(); err != nil && err != sql.ErrTxDone {
 			log.Printf("failed to rollback delete expired entries: %v", err)
 		}
 	}()
