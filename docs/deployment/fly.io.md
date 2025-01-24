@@ -13,7 +13,7 @@ You'll need:
 
 ```bash
 # You can change this to any region from https://fly.io/docs/reference/regions/
-REGION="iad"
+REGION='iad'
 
 RANDOM_SUFFIX="$(head /dev/urandom | tr -dc 'a-z0-9' | head -c 6 ; echo '')"
 APP_NAME="picoshare-${RANDOM_SUFFIX}"
@@ -31,7 +31,7 @@ You can add a persistent volume to store PicoShare's data across server deploys.
 **Note**: You'll need either a persistent volume or Litestream replication ([below](#set-your-litestream-environment-variables-optional)) to prevent PicoShare from losing all data on every server redeploy.
 
 ```bash
-VOLUME_NAME="pico_data"
+VOLUME_NAME='pico_data'
 SIZE_IN_GB=3 # This is the limit of fly.io's free tier as of 2022-02-19
 
 fly volumes create "${VOLUME_NAME}" \
@@ -91,7 +91,7 @@ Finally, it's time to deploy your app.
 
 ```bash
 # Change this to the latest Docker image tag
-PICOSHARE_IMAGE="mtlynch/picoshare:1.0.0"
+PICOSHARE_IMAGE='mtlynch/picoshare:1.0.0'
 
 fly deploy \
   --region="${REGION}" \
