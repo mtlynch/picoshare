@@ -82,7 +82,7 @@ go fmt ./...
 ### Formatting JavaScript/HTML/CSS
 
 ```bash
-npm run format
+./dev-scripts/format-frontend
 ```
 
 ## Proposing changes

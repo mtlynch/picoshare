@@ -109,7 +109,7 @@ func TestEntryGet(t *testing.T) {
 						ID:          mockEntry.ID,
 						Filename:    mockEntry.Filename,
 						ContentType: mockEntry.ContentType,
-						Size:        uint64(len(data)),
+						Size:        mustParseFileSize(len(data)),
 					},
 					Reader: strings.NewReader(data),
 				}

@@ -8,7 +8,7 @@ import (
 
 type Store interface {
 	GetEntriesMetadata() ([]picoshare.UploadMetadata, error)
-	ReadEntryFile(picoshare.EntryID, func(io.ReadSeeker)) error
+	ReadEntryFile(picoshare.EntryID) (io.ReadSeeker, error)
 	GetEntryMetadata(id picoshare.EntryID) (picoshare.UploadMetadata, error)
 	InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) error
 	UpdateEntryMetadata(id picoshare.EntryID, metadata picoshare.UploadMetadata) error
@@ -17,6 +17,8 @@ type Store interface {
 	GetGuestLinks() ([]picoshare.GuestLink, error)
 	InsertGuestLink(picoshare.GuestLink) error
 	DeleteGuestLink(picoshare.GuestLinkID) error
+	DisableGuestLink(picoshare.GuestLinkID) error
+	EnableGuestLink(picoshare.GuestLinkID) error
 	InsertEntryDownload(picoshare.EntryID, picoshare.DownloadRecord) error
 	GetEntryDownloads(id picoshare.EntryID) ([]picoshare.DownloadRecord, error)
 	ReadSettings() (picoshare.Settings, error)

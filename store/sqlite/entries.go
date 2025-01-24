@@ -59,9 +59,9 @@ func (s Store) GetEntriesMetadata() ([]picoshare.UploadMetadata, error) {
 		var contentType string
 		var uploadTimeRaw string
 		var expirationTimeRaw string
-		var fileSize uint64
+		var fileSizeRaw uint64
 		var downloadCount uint64
-		if err = rows.Scan(&id, &filename, &note, &contentType, &uploadTimeRaw, &expirationTimeRaw, &fileSize, &downloadCount); err != nil {
+		if err = rows.Scan(&id, &filename, &note, &contentType, &uploadTimeRaw, &expirationTimeRaw, &fileSizeRaw, &downloadCount); err != nil {
 			return []picoshare.UploadMetadata{}, err
 		}
 
@@ -71,6 +71,11 @@ func (s Store) GetEntriesMetadata() ([]picoshare.UploadMetadata, error) {
 		}
 
 		et, err := parseDatetime(expirationTimeRaw)
+		if err != nil {
+			return []picoshare.UploadMetadata{}, err
+		}
+
+		fileSize, err := picoshare.FileSizeFromUint64(fileSizeRaw)
 		if err != nil {
 			return []picoshare.UploadMetadata{}, err
 		}
@@ -90,15 +95,13 @@ func (s Store) GetEntriesMetadata() ([]picoshare.UploadMetadata, error) {
 	return ee, nil
 }
 
-func (s Store) ReadEntryFile(id picoshare.EntryID, readFile func(io.ReadSeeker)) error {
+func (s Store) ReadEntryFile(id picoshare.EntryID) (io.ReadSeeker, error) {
 	r, err := file.NewReader(s.ctx, id)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	readFile(r)
-
-	return nil
+	return r, nil
 }
 
 func (s Store) GetEntryMetadata(id picoshare.EntryID) (picoshare.UploadMetadata, error) {
@@ -107,7 +110,7 @@ func (s Store) GetEntryMetadata(id picoshare.EntryID) (picoshare.UploadMetadata,
 	var contentType string
 	var uploadTimeRaw string
 	var expirationTimeRaw string
-	var fileSize uint64
+	var fileSizeRaw uint64
 	var guestLinkID *picoshare.GuestLinkID
 	err := s.ctx.QueryRow(`
 	SELECT
@@ -131,7 +134,7 @@ func (s Store) GetEntryMetadata(id picoshare.EntryID) (picoshare.UploadMetadata,
 				id
 		) sizes ON entries.id = sizes.id
 	WHERE
-		entries.id = :entry_id`, sql.Named("entry_id", id)).Scan(&filename, &note, &contentType, &uploadTimeRaw, &expirationTimeRaw, &fileSize, &guestLinkID)
+		entries.id = :entry_id`, sql.Named("entry_id", id)).Scan(&filename, &note, &contentType, &uploadTimeRaw, &expirationTimeRaw, &fileSizeRaw, &guestLinkID)
 	if err == sql.ErrNoRows {
 		return picoshare.UploadMetadata{}, store.EntryNotFoundError{ID: id}
 	} else if err != nil {
@@ -156,6 +159,11 @@ func (s Store) GetEntryMetadata(id picoshare.EntryID) (picoshare.UploadMetadata,
 		return picoshare.UploadMetadata{}, err
 	}
 
+	fileSize, err := picoshare.FileSizeFromUint64(fileSizeRaw)
+	if err != nil {
+		return picoshare.UploadMetadata{}, err
+	}
+
 	return picoshare.UploadMetadata{
 		ID:          id,
 		Filename:    picoshare.Filename(filename),
@@ -167,6 +175,7 @@ func (s Store) GetEntryMetadata(id picoshare.EntryID) (picoshare.UploadMetadata,
 		Size:        fileSize,
 	}, nil
 }
+
 func (s Store) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) error {
 	log.Printf("saving new entry %s", metadata.ID)
 
@@ -210,14 +219,14 @@ func (s Store) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) 
 	}
 
 	// Calculate number of chunks needed
-	numChunks := (metadata.Size + defaultChunkSize - 1) / defaultChunkSize
+	numChunks := (metadata.Size.UInt64() + defaultChunkSize - 1) / defaultChunkSize
 
 	log.Printf("numChunks=%d", numChunks) // DEBUG
 
 	for idx := uint64(0); idx < numChunks; idx++ {
 		chunkSize := defaultChunkSize
 		if idx == numChunks-1 {
-			chunkSize = metadata.Size - (idx * defaultChunkSize)
+			chunkSize = metadata.Size.UInt64() - (idx * defaultChunkSize)
 		}
 
 		// Initialize chunk with zeroblob
@@ -236,15 +245,12 @@ func (s Store) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) 
 			return err
 		}
 
-		buf := make([]byte, chunkSize)
-		if _, err := io.ReadFull(reader, buf); err != nil {
-			return fmt.Errorf("failed to read chunk %d: %v", idx, err)
-		}
+		limitedReader := io.LimitReader(reader, int64(chunkSize))
 
 		_, err = tx.Exec(`SELECT writeblob('main', 'entries_data', 'chunk', :rowid, :offset, :data)`,
 			sql.Named("rowid", rowid),
 			sql.Named("offset", 0),
-			sql.Named("data", buf))
+			sql.Named("data", sqlite3.Pointer(limitedReader)))
 		if err != nil {
 			return fmt.Errorf("failed to write chunk %d: %v", idx, err)
 		}

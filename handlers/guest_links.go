@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/mtlynch/picoshare/v2/handlers/parse"
@@ -60,6 +61,39 @@ func (s Server) guestLinksDelete() http.HandlerFunc {
 			http.Error(w, fmt.Sprintf("Failed to delete guest link: %v", err), http.StatusInternalServerError)
 			return
 		}
+	}
+}
+
+func (s *Server) guestLinksEnableDisable() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id, err := parseGuestLinkID(mux.Vars(r)["id"])
+		if err != nil {
+			log.Printf("failed to parse guest link ID %s: %v", mux.Vars(r)["id"], err)
+			http.Error(w, fmt.Sprintf("Invalid guest link ID: %v", err), http.StatusBadRequest)
+			return
+		}
+
+		if _, err := s.getDB(r).GetGuestLink(id); err != nil {
+			log.Printf("failed to get guest link ID %s: %v", mux.Vars(r)["id"], err)
+			http.Error(w, fmt.Sprintf("Guest link with ID %s not found: %v", mux.Vars(r)["id"], err), http.StatusNotFound)
+			return
+		}
+
+		// Determine if client is enabling or disabling link.
+		var dbFn func(picoshare.GuestLinkID) error
+		if strings.HasSuffix(r.URL.Path, "/enable") {
+			dbFn = s.getDB(r).EnableGuestLink
+		} else {
+			dbFn = s.getDB(r).DisableGuestLink
+		}
+
+		if err := dbFn(id); err != nil {
+			log.Printf("failed to change guest link enabled state: %v", err)
+			http.Error(w, fmt.Sprintf("Failed to change guest link enabled state: %v", err), http.StatusInternalServerError)
+			return
+		}
+
+		w.WriteHeader(http.StatusNoContent)
 	}
 }
 

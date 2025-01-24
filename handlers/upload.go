@@ -234,12 +234,10 @@ func (s Server) insertFileFromRequest(r *http.Request, expiration picoshare.Expi
 		return picoshare.EntryID(""), err
 	}
 
-	if metadata.Size == 0 {
-		return picoshare.EntryID(""), errors.New("file is empty")
-	} else if metadata.Size < 0 {
-		return picoshare.EntryID(""), errors.New("file size must be positive")
+	fileSize, err := picoshare.FileSizeFromInt64(metadata.Size)
+	if err != nil {
+		return picoshare.EntryID(""), err
 	}
-	fileSize := uint64(metadata.Size)
 
 	filename, err := parse.Filename(metadata.Filename)
 	if err != nil {
