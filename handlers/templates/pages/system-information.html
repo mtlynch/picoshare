@@ -51,20 +51,20 @@
   <ul>
     <li>
       <strong>Server disk usage</strong>:
-      {{ formatFileSize .UsedBytes }}
+      {{ formatDiskUsage .UsedBytes }}
       ({{ percentage .UsedBytes .TotalBytes }}) used of
-      {{ formatFileSize .TotalBytes }} total
+      {{ formatDiskUsage .TotalBytes }} total
     </li>
     <li>
       <strong>PicoShare usage</strong>
       <ul>
         <li>
           <strong>Upload data</strong>:
-          {{ formatFileSize .TotalServingBytes }}
+          {{ formatDiskUsage .TotalServingBytes }}
         </li>
         <li>
           <strong>Database files</strong>:
-          {{ formatFileSize .DatabaseFileBytes }}
+          {{ formatDiskUsage .DatabaseFileBytes }}
           <a id="file-size-information" href="#"
             ><span class="icon has-text-info">
               <i class="fas fa-info-circle"></i> </span

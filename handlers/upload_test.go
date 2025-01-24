@@ -242,12 +242,12 @@ func TestEntryPut(t *testing.T) {
 		},
 	} {
 		t.Run(tt.description, func(t *testing.T) {
-			store := test_sqlite.New()
+			dataStore := test_sqlite.New()
 			originalData := "dummy original data"
 			metadata := originalEntry
 			metadata.Size = mustParseFileSize(len(originalData))
-			store.InsertEntry(strings.NewReader((originalData)), metadata)
-			s := handlers.New(mockAuthenticator{}, &store, nilSpaceChecker, nilGarbageCollector, handlers.NewClock())
+			dataStore.InsertEntry(strings.NewReader((originalData)), metadata)
+			s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceChecker, nilGarbageCollector, handlers.NewClock())
 
 			req, err := http.NewRequest("PUT", "/api/entry/"+tt.targetID, strings.NewReader(tt.payload))
 			if err != nil {
@@ -263,7 +263,7 @@ func TestEntryPut(t *testing.T) {
 				t.Fatalf("status=%d, want=%d", got, want)
 			}
 
-			entry, err := store.GetEntryMetadata(picoshare.EntryID(originalEntry.ID))
+			entry, err := dataStore.GetEntryMetadata(picoshare.EntryID(originalEntry.ID))
 			if err != nil {
 				t.Fatalf("failed to get expected entry %v from data store: %v", originalEntry.ID, err)
 			}
@@ -448,20 +448,20 @@ func TestGuestUpload(t *testing.T) {
 		},
 	} {
 		t.Run(tt.description, func(t *testing.T) {
-			store := test_sqlite.New()
-			if err := store.InsertGuestLink(tt.guestLinkInStore); err != nil {
+			dataStore := test_sqlite.New()
+			if err := dataStore.InsertGuestLink(tt.guestLinkInStore); err != nil {
 				t.Fatalf("failed to insert dummy guest link: %v", err)
 			}
 			for _, entry := range tt.entriesInStore {
 				data := "dummy data"
 				entry.UploadMetadata.Size = mustParseFileSize(len(data))
-				if err := store.InsertEntry(strings.NewReader(data), entry.UploadMetadata); err != nil {
+				if err := dataStore.InsertEntry(strings.NewReader(data), entry.UploadMetadata); err != nil {
 					t.Fatalf("failed to insert dummy entry: %v", err)
 				}
 			}
 
 			c := mockClock{tt.currentTime}
-			s := handlers.New(authenticator, &store, nilSpaceChecker, nilGarbageCollector, c)
+			s := handlers.New(authenticator, &dataStore, nilSpaceChecker, nilGarbageCollector, c)
 
 			filename := "dummyimage.png"
 			contents := "dummy bytes"
@@ -498,7 +498,7 @@ func TestGuestUpload(t *testing.T) {
 				t.Fatalf("response is not valid JSON: %v", body)
 			}
 
-			entry, err := store.GetEntryMetadata(picoshare.EntryID(response.ID))
+			entry, err := dataStore.GetEntryMetadata(picoshare.EntryID(response.ID))
 			if err != nil {
 				t.Fatalf("failed to get expected entry %v from data store: %v", response.ID, err)
 			}
@@ -511,7 +511,7 @@ func TestGuestUpload(t *testing.T) {
 				t.Errorf("file expiration=%v, want=%v", got, want)
 			}
 
-			entryFile, err := store.ReadEntryFile(entry.ID)
+			entryFile, err := dataStore.ReadEntryFile(entry.ID)
 			if err != nil {
 				t.Fatalf("failed to read entry file for %v: %v", entry.ID, err)
 			}

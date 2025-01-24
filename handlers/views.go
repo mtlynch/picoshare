@@ -626,7 +626,7 @@ func (s Server) settingsGet() http.HandlerFunc {
 
 func (s Server) systemInformationGet() http.HandlerFunc {
 	fns := template.FuncMap{
-		"formatFileSize": humanReadableFileSize,
+		"formatDiskUsage": humanReadableDiskUsage,
 		"percentage": func(part, total uint64) string {
 			return fmt.Sprintf("%.0f%%", 100.0*(float64(part)/float64(total)))
 		},
@@ -665,9 +665,12 @@ func (s Server) systemInformationGet() http.HandlerFunc {
 }
 
 func humanReadableFileSize(fileSize picoshare.FileSize) string {
+	return humanReadableDiskUsage(fileSize.UInt64())
+}
+
+func humanReadableDiskUsage(b uint64) string {
 	const unit = 1024
 
-	b := fileSize.UInt64()
 	if b < unit {
 		return fmt.Sprintf("%d B", b)
 	}
