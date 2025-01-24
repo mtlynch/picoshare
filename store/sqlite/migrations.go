@@ -42,7 +42,7 @@ func applyMigrations(ctx *sql.DB) {
 		}
 
 		defer func() {
-			if err := tx.Rollback(); err != nil {
+			if err := tx.Rollback(); err != nil && err != sql.ErrTxDone {
 				log.Printf("failed to rollback failed database migration: %v", err)
 			}
 		}()

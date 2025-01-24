@@ -258,7 +258,7 @@ func (s Store) DeleteEntry(id picoshare.EntryID) error {
 	}
 
 	defer func() {
-		if err := tx.Rollback(); err != nil {
+		if err := tx.Rollback(); err != nil && err != sql.ErrTxDone {
 			log.Printf("failed to rollback delete entry: %v", err)
 		}
 	}()
