@@ -10,6 +10,11 @@ kill_timeout = "5s"
   PORT = "8080"
   PS_BEHIND_PROXY = "yes"
 
+[[mounts]]
+  source = "pico_data_testing_2025_01_24"
+  destination = "/data"
+  processes = ["app"]
+
 [[services]]
   protocol = "tcp"
   internal_port = 8080

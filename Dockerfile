@@ -50,7 +50,7 @@ RUN set -x && \
     mv "${litestream_binary_tgz_filename}" litestream.tgz
 RUN tar -xvzf litestream.tgz
 
-FROM alpine:3.15
+FROM alpine:3.16
 
 RUN apk add --no-cache bash
 
