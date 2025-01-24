@@ -10,10 +10,10 @@ CREATE TABLE new_downloads (
 
 INSERT INTO new_downloads
 SELECT
-    CAST(entry_id AS TEXT),
-    download_timestamp,
-    client_ip,
-    user_agent
+    CAST(entry_id AS TEXT) AS entry_id,
+    download_timestamp AS download_timestamp,
+    client_ip AS client_ip,
+    user_agent AS user_agent
 FROM downloads;
 
 DROP TABLE downloads;
