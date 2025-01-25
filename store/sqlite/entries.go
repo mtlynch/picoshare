@@ -265,9 +265,9 @@ func (s Store) DeleteEntry(id picoshare.EntryID) error {
 
 	if _, err := tx.Exec(`
 	DELETE FROM
-			downloads
+		downloads
 	WHERE
-			entry_id = :entry_id`, sql.Named("entry_id", id)); err != nil {
+		entry_id = :entry_id`, sql.Named("entry_id", id)); err != nil {
 		log.Printf("delete from downloads table failed, aborting transaction: %v", err)
 		return err
 	}
