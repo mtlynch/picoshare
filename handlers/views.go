@@ -39,7 +39,7 @@ func (s Server) indexGet() http.HandlerFunc {
 		if err := t.Execute(w, struct {
 			commonProps
 		}{
-			commonProps: makeCommonProps("PicoShare", r.Context()),
+			commonProps: makeCommonProps("JankDrop", r.Context()),
 		}); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -106,7 +106,7 @@ func (s Server) guestLinkIndexGet() http.HandlerFunc {
 			commonProps
 			GuestLinks []picoshare.GuestLink
 		}{
-			commonProps: makeCommonProps("PicoShare - Guest Links", r.Context()),
+			commonProps: makeCommonProps("JankDrop - Guest Links", r.Context()),
 			GuestLinks:  links,
 		}); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -142,7 +142,7 @@ func (s Server) guestLinksNewGet() http.HandlerFunc {
 			ExpirationOptions   []expirationOption
 			FileLifetimeOptions []fileLifetimeOption
 		}{
-			commonProps: makeCommonProps("PicoShare - New Guest Link", r.Context()),
+			commonProps: makeCommonProps("JankDrop - New Guest Link", r.Context()),
 			ExpirationOptions: []expirationOption{
 				{"1 day", s.clock.Now().AddDate(0, 0, 1), false},
 				{"7 days", s.clock.Now().AddDate(0, 0, 7), false},
@@ -197,7 +197,7 @@ func (s Server) fileIndexGet() http.HandlerFunc {
 			commonProps
 			Files []picoshare.UploadMetadata
 		}{
-			commonProps: makeCommonProps("PicoShare - Files", r.Context()),
+			commonProps: makeCommonProps("JankDrop - Files", r.Context()),
 			Files:       em,
 		}); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -245,7 +245,7 @@ func (s Server) fileEditGet() http.HandlerFunc {
 			commonProps
 			Metadata picoshare.UploadMetadata
 		}{
-			commonProps: makeCommonProps("PicoShare - Edit", r.Context()),
+			commonProps: makeCommonProps("JankDrop - Edit", r.Context()),
 			Metadata:    metadata,
 		}); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -307,7 +307,7 @@ func (s Server) fileInfoGet() http.HandlerFunc {
 			Metadata      picoshare.UploadMetadata
 			DownloadCount int
 		}{
-			commonProps:   makeCommonProps("PicoShare - File Information", r.Context()),
+			commonProps:   makeCommonProps("JankDrop - File Information", r.Context()),
 			Metadata:      metadata,
 			DownloadCount: len(downloads),
 		}); err != nil {
@@ -378,7 +378,7 @@ func (s Server) fileDownloadsGet() http.HandlerFunc {
 			Metadata  picoshare.UploadMetadata
 			Downloads []downloadRecord
 		}{
-			commonProps: makeCommonProps("PicoShare - Downloads", r.Context()),
+			commonProps: makeCommonProps("JankDrop - Downloads", r.Context()),
 			Metadata:    metadata,
 			Downloads:   records,
 		}); err != nil {
@@ -412,7 +412,7 @@ func (s Server) fileConfirmDeleteGet() http.HandlerFunc {
 			commonProps
 			Metadata picoshare.UploadMetadata
 		}{
-			commonProps: makeCommonProps("PicoShare - Delete", r.Context()),
+			commonProps: makeCommonProps("JankDrop - Delete", r.Context()),
 			Metadata:    metadata,
 		}); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -428,7 +428,7 @@ func (s Server) authGet() http.HandlerFunc {
 		if err := t.Execute(w, struct {
 			commonProps
 		}{
-			commonProps: makeCommonProps("PicoShare - Log in", r.Context()),
+			commonProps: makeCommonProps("JankDrop - Log in", r.Context()),
 		}); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -514,7 +514,7 @@ func (s Server) uploadGet() http.HandlerFunc {
 			MaxNoteLength     int
 			GuestLinkMetadata picoshare.GuestLink
 		}{
-			commonProps:       makeCommonProps("PicoShare - Upload", r.Context()),
+			commonProps:       makeCommonProps("JankDrop - Upload", r.Context()),
 			MaxNoteLength:     parse.MaxFileNoteBytes,
 			ExpirationOptions: expirationOptions,
 		}); err != nil {
@@ -561,7 +561,7 @@ func (s Server) guestUploadGet() http.HandlerFunc {
 			if err := tInactive.Execute(w, struct {
 				commonProps
 			}{
-				commonProps: makeCommonProps("PicoShare - Guest Link Inactive", r.Context()),
+				commonProps: makeCommonProps("JankDrop - Guest Link Inactive", r.Context()),
 			}); err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
@@ -574,7 +574,7 @@ func (s Server) guestUploadGet() http.HandlerFunc {
 			ExpirationOptions []interface{}
 			GuestLinkMetadata picoshare.GuestLink
 		}{
-			commonProps:       makeCommonProps("PicoShare - Upload", r.Context()),
+			commonProps:       makeCommonProps("JankDrop - Upload", r.Context()),
 			GuestLinkMetadata: gl,
 		}); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -613,7 +613,7 @@ func (s Server) settingsGet() http.HandlerFunc {
 			ExpirationTimeUnit string
 			DefaultNeverExpire bool
 		}{
-			commonProps:        makeCommonProps("PicoShare - Settings", r.Context()),
+			commonProps:        makeCommonProps("JankDrop - Settings", r.Context()),
 			DefaultExpiration:  defaultExpiration,
 			ExpirationTimeUnit: expirationTimeUnit,
 			DefaultNeverExpire: defaultNeverExpire,
@@ -650,7 +650,7 @@ func (s Server) systemInformationGet() http.HandlerFunc {
 			BuildTime         time.Time
 			Version           string
 		}{
-			commonProps:       makeCommonProps("PicoShare - System Information", r.Context()),
+			commonProps:       makeCommonProps("JankDrop - System Information", r.Context()),
 			TotalServingBytes: spaceUsage.TotalServingBytes,
 			DatabaseFileBytes: spaceUsage.DatabaseFileSize,
 			UsedBytes:         spaceUsage.FileSystemUsedBytes,
