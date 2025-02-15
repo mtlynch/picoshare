@@ -3,13 +3,24 @@ package http
 import (
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"net/http"
-	"time"
 
 	"github.com/mtlynch/picoshare/v2/handlers/auth/shared_secret/kdf"
 )
 
 const authCookieName = "sharedSecret"
+
+var (
+	// ErrInvalidCredentials indicates that the provided credentials are incorrect.
+	ErrInvalidCredentials = errors.New("incorrect shared secret")
+
+	// ErrEmptyCredentials indicates that no credentials were provided.
+	ErrEmptyCredentials = errors.New("invalid shared secret")
+
+	// ErrMalformedRequest indicates that the request body is malformed.
+	ErrMalformedRequest = errors.New("malformed request")
+)
 
 // Authenticator handles HTTP authentication using shared secrets.
 type Authenticator struct {
@@ -35,12 +46,17 @@ func New(sharedSecretKey string) (*Authenticator, error) {
 func (a *Authenticator) StartSession(w http.ResponseWriter, r *http.Request) {
 	secret, err := a.sharedSecretFromRequest(r)
 	if err != nil {
-		http.Error(w, "Invalid shared secret", http.StatusBadRequest)
+		switch err {
+		case ErrMalformedRequest, ErrEmptyCredentials:
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		default:
+			http.Error(w, ErrInvalidCredentials.Error(), http.StatusUnauthorized)
+		}
 		return
 	}
 
 	if !a.kdf.Compare(secret, a.secret) {
-		http.Error(w, "Incorrect shared secret", http.StatusUnauthorized)
+		http.Error(w, ErrInvalidCredentials.Error(), http.StatusUnauthorized)
 		return
 	}
 
@@ -70,7 +86,7 @@ func (a *Authenticator) ClearSession(w http.ResponseWriter) {
 		Path:     "/",
 		HttpOnly: true,
 		SameSite: http.SameSiteStrictMode,
-		Expires:  time.Unix(0, 0),
+		MaxAge:   -1,
 	})
 }
 
@@ -79,9 +95,12 @@ func (a *Authenticator) sharedSecretFromRequest(r *http.Request) ([]byte, error)
 		SharedSecretKey string `json:"sharedSecretKey"`
 	}{}
 	decoder := json.NewDecoder(r.Body)
-	err := decoder.Decode(&body)
-	if err != nil {
-		return nil, err
+	if err := decoder.Decode(&body); err != nil {
+		return nil, ErrMalformedRequest
+	}
+
+	if body.SharedSecretKey == "" {
+		return nil, ErrEmptyCredentials
 	}
 
 	return a.kdf.DeriveFromKey([]byte(body.SharedSecretKey))
@@ -94,6 +113,6 @@ func (a *Authenticator) createCookie(w http.ResponseWriter) {
 		Path:     "/",
 		HttpOnly: true,
 		SameSite: http.SameSiteStrictMode,
-		Expires:  time.Now().Add(time.Hour * 24 * 30),
+		MaxAge:   30 * 24 * 60 * 60, // 30 days in seconds
 	})
 }

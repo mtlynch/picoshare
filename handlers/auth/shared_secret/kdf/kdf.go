@@ -9,6 +9,14 @@ import (
 	"golang.org/x/crypto/pbkdf2"
 )
 
+var (
+	// ErrInvalidKey indicates that the provided key is empty or invalid.
+	ErrInvalidKey = errors.New("invalid shared secret key")
+
+	// ErrInvalidBase64 indicates that the provided base64 string is empty or malformed.
+	ErrInvalidBase64 = errors.New("invalid shared secret")
+)
+
 // KDF defines the interface for key derivation operations.
 type KDF interface {
 	DeriveFromKey(key []byte) ([]byte, error)
@@ -37,7 +45,7 @@ func New() KDF {
 // DeriveFromKey derives a key using PBKDF2.
 func (k *pbkdf2KDF) DeriveFromKey(key []byte) ([]byte, error) {
 	if len(key) == 0 {
-		return nil, errors.New("invalid shared secret key")
+		return nil, ErrInvalidKey
 	}
 
 	dk := pbkdf2.Key(key, k.salt, k.iter, k.keyLength, sha256.New)
@@ -47,12 +55,12 @@ func (k *pbkdf2KDF) DeriveFromKey(key []byte) ([]byte, error) {
 // FromBase64 decodes a base64-encoded key.
 func (k *pbkdf2KDF) FromBase64(b64encoded string) ([]byte, error) {
 	if len(b64encoded) == 0 {
-		return nil, errors.New("invalid shared secret")
+		return nil, ErrInvalidBase64
 	}
 
 	decoded, err := base64.StdEncoding.DecodeString(b64encoded)
 	if err != nil {
-		return nil, err
+		return nil, ErrInvalidBase64
 	}
 
 	return decoded, nil
