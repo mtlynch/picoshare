@@ -9,7 +9,7 @@ import (
 	"golang.org/x/crypto/pbkdf2"
 )
 
-// KDF defines the interface for key derivation operations
+// KDF defines the interface for key derivation operations.
 type KDF interface {
 	DeriveFromKey(key []byte) ([]byte, error)
 	FromBase64(b64encoded string) ([]byte, error)
@@ -22,7 +22,7 @@ type pbkdf2KDF struct {
 	keyLength int
 }
 
-// New creates a new KDF instance with default parameters
+// New creates a new KDF instance with default parameters.
 func New() KDF {
 	return &pbkdf2KDF{
 		// These would be insecure values for storing a database of user credentials,
@@ -34,7 +34,7 @@ func New() KDF {
 	}
 }
 
-// DeriveFromKey derives a key using PBKDF2
+// DeriveFromKey derives a key using PBKDF2.
 func (k *pbkdf2KDF) DeriveFromKey(key []byte) ([]byte, error) {
 	if len(key) == 0 {
 		return nil, errors.New("invalid shared secret key")
@@ -44,7 +44,7 @@ func (k *pbkdf2KDF) DeriveFromKey(key []byte) ([]byte, error) {
 	return dk, nil
 }
 
-// FromBase64 decodes a base64-encoded key
+// FromBase64 decodes a base64-encoded key.
 func (k *pbkdf2KDF) FromBase64(b64encoded string) ([]byte, error) {
 	if len(b64encoded) == 0 {
 		return nil, errors.New("invalid shared secret")
@@ -58,7 +58,7 @@ func (k *pbkdf2KDF) FromBase64(b64encoded string) ([]byte, error) {
 	return decoded, nil
 }
 
-// Compare securely compares two keys
+// Compare securely compares two keys.
 func (k *pbkdf2KDF) Compare(a, b []byte) bool {
 	return subtle.ConstantTimeCompare(a, b) != 0
 }

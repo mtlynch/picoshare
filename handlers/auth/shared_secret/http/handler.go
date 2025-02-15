@@ -11,13 +11,13 @@ import (
 
 const authCookieName = "sharedSecret"
 
-// Authenticator handles HTTP authentication using shared secrets
+// Authenticator handles HTTP authentication using shared secrets.
 type Authenticator struct {
 	kdf    kdf.KDF
 	secret []byte
 }
 
-// New creates a new HTTP authenticator
+// New creates a new HTTP authenticator.
 func New(sharedSecretKey string) (*Authenticator, error) {
 	k := kdf.New()
 	secret, err := k.DeriveFromKey([]byte(sharedSecretKey))
@@ -31,7 +31,7 @@ func New(sharedSecretKey string) (*Authenticator, error) {
 	}, nil
 }
 
-// StartSession begins an authenticated session
+// StartSession begins an authenticated session.
 func (a *Authenticator) StartSession(w http.ResponseWriter, r *http.Request) {
 	secret, err := a.sharedSecretFromRequest(r)
 	if err != nil {
@@ -47,7 +47,7 @@ func (a *Authenticator) StartSession(w http.ResponseWriter, r *http.Request) {
 	a.createCookie(w)
 }
 
-// Authenticate verifies if the request has valid authentication
+// Authenticate verifies if the request has valid authentication.
 func (a *Authenticator) Authenticate(r *http.Request) bool {
 	authCookie, err := r.Cookie(authCookieName)
 	if err != nil {
@@ -62,7 +62,7 @@ func (a *Authenticator) Authenticate(r *http.Request) bool {
 	return a.kdf.Compare(secret, a.secret)
 }
 
-// ClearSession removes the authentication cookie
+// ClearSession removes the authentication cookie.
 func (a *Authenticator) ClearSession(w http.ResponseWriter) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     authCookieName,
