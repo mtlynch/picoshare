@@ -18,31 +18,31 @@ func TestStartSession(t *testing.T) {
 		description string
 		secretKey   string
 		requestBody string
-		err         error
+		expectedErr error
 	}{
 		{
 			description: "accept valid credentials",
 			secretKey:   "mysecret",
 			requestBody: `{"sharedSecretKey": "mysecret"}`,
-			err:         nil,
+			expectedErr: nil,
 		},
 		{
 			description: "reject invalid credentials",
 			secretKey:   "mysecret",
 			requestBody: `{"sharedSecretKey": "wrongsecret"}`,
-			err:         httpAuth.ErrInvalidCredentials,
+			expectedErr: httpAuth.ErrInvalidCredentials,
 		},
 		{
 			description: "reject empty credentials",
 			secretKey:   "mysecret",
 			requestBody: `{"sharedSecretKey": ""}`,
-			err:         httpAuth.ErrEmptyCredentials,
+			expectedErr: httpAuth.ErrEmptyCredentials,
 		},
 		{
 			description: "reject malformed JSON",
 			secretKey:   "mysecret",
 			requestBody: `{malformed`,
-			err:         httpAuth.ErrMalformedRequest,
+			expectedErr: httpAuth.ErrMalformedRequest,
 		},
 	} {
 		t.Run(fmt.Sprintf("%s [%s]", tt.description, tt.requestBody), func(t *testing.T) {
@@ -58,21 +58,23 @@ func TestStartSession(t *testing.T) {
 
 			resp := w.Result()
 			body, _ := io.ReadAll(resp.Body)
-			if got, want := getError(resp.StatusCode, strings.TrimSpace(string(body))), tt.err; got != want {
+			if got, want := getError(resp.StatusCode, strings.TrimSpace(string(body))), tt.expectedErr; got != want {
 				t.Fatalf("err=%v, want=%v", got, want)
 			}
 
-			if tt.err == nil {
-				cookie := getCookie(t, resp)
-				if got, want := cookie.Name, "sharedSecret"; got != want {
-					t.Errorf("cookie name=%v, want=%v", got, want)
-				}
-				if !cookie.HttpOnly {
-					t.Error("cookie is not HTTP-only")
-				}
-				if got, want := cookie.MaxAge, 30*24*60*60; got != want {
-					t.Errorf("cookie MaxAge=%v, want=%v", got, want)
-				}
+			if tt.expectedErr != nil {
+				return
+			}
+
+			cookie := getCookie(t, resp)
+			if got, want := cookie.Name, "sharedSecret"; got != want {
+				t.Errorf("cookie name=%v, want=%v", got, want)
+			}
+			if !cookie.HttpOnly {
+				t.Error("cookie is not HTTP-only")
+			}
+			if got, want := cookie.MaxAge, 30*24*60*60; got != want {
+				t.Errorf("cookie MaxAge=%v, want=%v", got, want)
 			}
 		})
 	}
