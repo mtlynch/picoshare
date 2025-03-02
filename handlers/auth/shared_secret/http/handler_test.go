@@ -15,37 +15,42 @@ import (
 
 func TestStartSession(t *testing.T) {
 	for _, tt := range []struct {
-		description string
-		secretKey   string
-		requestBody string
-		expectedErr error
+		description    string
+		secretKey      string
+		requestBody    string
+		expectedStatus int
+		expectedErr    error
 	}{
 		{
-			description: "accept valid credentials",
-			secretKey:   "mysecret",
-			requestBody: `{"sharedSecretKey": "mysecret"}`,
-			expectedErr: nil,
+			description:    "accept valid credentials",
+			secretKey:      "mysecret",
+			requestBody:    `{"sharedSecretKey": "mysecret"}`,
+			expectedStatus: http.StatusOK,
+			expectedErr:    nil,
 		},
 		{
-			description: "reject invalid credentials",
-			secretKey:   "mysecret",
-			requestBody: `{"sharedSecretKey": "wrongsecret"}`,
-			expectedErr: httpAuth.ErrInvalidCredentials,
+			description:    "reject invalid credentials",
+			secretKey:      "mysecret",
+			requestBody:    `{"sharedSecretKey": "wrongsecret"}`,
+			expectedStatus: http.StatusUnauthorized,
+			expectedErr:    httpAuth.ErrInvalidCredentials,
 		},
 		{
-			description: "reject empty credentials",
-			secretKey:   "mysecret",
-			requestBody: `{"sharedSecretKey": ""}`,
-			expectedErr: httpAuth.ErrEmptyCredentials,
+			description:    "reject empty credentials",
+			secretKey:      "mysecret",
+			requestBody:    `{"sharedSecretKey": ""}`,
+			expectedStatus: http.StatusBadRequest,
+			expectedErr:    httpAuth.ErrEmptyCredentials,
 		},
 		{
-			description: "reject malformed JSON",
-			secretKey:   "mysecret",
-			requestBody: `{malformed`,
-			expectedErr: httpAuth.ErrMalformedRequest,
+			description:    "reject malformed JSON",
+			secretKey:      "mysecret",
+			requestBody:    `{malformed`,
+			expectedStatus: http.StatusBadRequest,
+			expectedErr:    httpAuth.ErrMalformedRequest,
 		},
 	} {
-		t.Run(fmt.Sprintf("%s [%s]", tt.description, tt.requestBody), func(t *testing.T) {
+		t.Run(tt.description, func(t *testing.T) {
 			auth, err := httpAuth.New(tt.secretKey)
 			if err != nil {
 				t.Fatalf("failed to create authenticator: %v", err)
@@ -56,9 +61,14 @@ func TestStartSession(t *testing.T) {
 
 			auth.StartSession(w, req)
 
-			resp := w.Result()
-			body, _ := io.ReadAll(resp.Body)
-			if got, want := getError(resp.StatusCode, strings.TrimSpace(string(body))), tt.expectedErr; got != want {
+			res := w.Result()
+
+			if got, want := res.StatusCode, tt.expectedStatus; got != want {
+				t.Fatalf("status=%d, want=%d", got, want)
+			}
+
+			body, _ := io.ReadAll(res.Body)
+			if got, want := getError(res.StatusCode, strings.TrimSpace(string(body))), tt.expectedErr; got != want {
 				t.Fatalf("err=%v, want=%v", got, want)
 			}
 
@@ -66,7 +76,7 @@ func TestStartSession(t *testing.T) {
 				return
 			}
 
-			cookie := getCookie(t, resp)
+			cookie := getCookie(t, res)
 			if got, want := cookie.Name, "sharedSecret"; got != want {
 				t.Errorf("cookie name=%v, want=%v", got, want)
 			}
@@ -112,7 +122,7 @@ func TestAuthenticate(t *testing.T) {
 			want:        false,
 		},
 	} {
-		t.Run(fmt.Sprintf("%s [%s]", tt.description, tt.cookieVal), func(t *testing.T) {
+		t.Run(tt.description, func(t *testing.T) {
 			auth, err := httpAuth.New(tt.secretKey)
 			if err != nil {
 				t.Fatalf("failed to create authenticator: %v", err)
@@ -142,8 +152,8 @@ func TestClearSession(t *testing.T) {
 	w := httptest.NewRecorder()
 	auth.ClearSession(w)
 
-	resp := w.Result()
-	cookie := getCookie(t, resp)
+	res := w.Result()
+	cookie := getCookie(t, res)
 
 	if got, want := cookie.Name, "sharedSecret"; got != want {
 		t.Errorf("cookie name=%v, want=%v", got, want)
