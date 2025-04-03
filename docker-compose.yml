@@ -1,0 +1,49 @@
+services:
+  traefik:
+    image: traefik:v3
+    container_name: traefik
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    command:
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.myresolver.acme.httpchallenge=true"
+      - "--certificatesresolvers.myresolver.acme.httpchallenge.entrypoint=web"
+      - "--certificatesresolvers.myresolver.acme.email=example@email.com"    # replace with your email
+      - "--certificatesresolvers.myresolver.acme.storage=/acme.json"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /opt/traefik/acme.json:/acme.json
+    networks:
+      - web
+
+  picoshare:
+    image: mtlynch/picoshare # Pre-built image of PicoShare (or replace with your own image)
+    container_name: picoshare
+    environment:
+      - PORT=4002
+      - PS_SHARED_SECRET=demigod # Make sure to change this password to a secure one
+    ports:
+      - "${PORT}:${PORT}"
+    volumes:
+      - ./data:/data
+    command: -db /data/store.db
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.picoshare.rule=Host(`example.domain.com`)"  # Replace with your domain
+      - "traefik.http.routers.picoshare.entrypoints=websecure"
+      - "traefik.http.routers.picoshare.tls=true"
+      - "traefik.http.routers.picoshare.tls.certresolver=myresolver"
+      - "traefik.http.services.picoshare.loadbalancer.server.port=4002"
+    networks:
+      - web
+
+networks:
+  web:
+    driver: bridge
