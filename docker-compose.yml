@@ -15,7 +15,7 @@ services:
       - "--entrypoints.websecure.address=:443"
       - "--certificatesresolvers.myresolver.acme.httpchallenge=true"
       - "--certificatesresolvers.myresolver.acme.httpchallenge.entrypoint=web"
-      - "--certificatesresolvers.myresolver.acme.email=example@email.com"    # replace with your email
+      - "--certificatesresolvers.myresolver.acme.email=example@email.com" # replace with your email
       - "--certificatesresolvers.myresolver.acme.storage=/acme.json"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
@@ -36,7 +36,7 @@ services:
     command: -db /data/store.db
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.picoshare.rule=Host(`example.domain.com`)"  # Replace with your domain
+      - "traefik.http.routers.picoshare.rule=Host(`example.domain.com`)" # Replace with your domain
       - "traefik.http.routers.picoshare.entrypoints=websecure"
       - "traefik.http.routers.picoshare.tls=true"
       - "traefik.http.routers.picoshare.tls.certresolver=myresolver"
