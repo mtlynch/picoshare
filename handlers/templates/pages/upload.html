@@ -23,6 +23,7 @@
     import { guestUploadFile, uploadFile } from "/js/controllers/files.js";
     import { showElement, hideElement } from "/js/lib/bulma.js";
     import { sortClipboardItems } from "/js/lib/clipboard.js";
+    import QrCreator from "https://cdn.jsdelivr.net/npm/qr-creator/dist/qr-creator.es6.min.js";
 
     const uploadEl = document.querySelector(".file");
     const resultEl = document.getElementById("upload-result");
@@ -248,6 +249,18 @@
       // cursor in the right place.
       pasteEl.focus();
     });
+
+    QrCreator.render(
+      {
+        text: window.location.href,
+        radius: 0.5, // 0.0 to 0.5
+        ecLevel: "H", // L, M, Q, H
+        fill: "#000000", // foreground color
+        background: null, // color or null for transparent
+        size: 128, // in pixels
+      },
+      document.getElementById("qr-code")
+    );
   </script>
   {{ if .GuestLinkMetadata.ID }}
     <script type="application/json" id="guest-link-metadata">
@@ -267,6 +280,8 @@
 
 {{ define "content" }}
   <h1 class="title">Upload</h1>
+
+  <div class="mb-5" id="qr-code"></div>
 
   <div id="upload-form">
     <div class="file is-boxed">

@@ -10,10 +10,15 @@
   <div class="box-wrapper">
     <upload-link-box id="short-link-box">Shortlink</upload-link-box>
   </div>
+  <div class="box-wrapper">
+    <h3>QR Code</h3>
+    <div id="qr-code"></div>
+  </div>
 </template>
 
 <script type="module" nonce="{{ .CspNonce }}">
   import { makeShortLink, makeVerboseLink } from "/js/lib/links.js";
+  import QrCreator from "https://cdn.jsdelivr.net/npm/qr-creator/dist/qr-creator.es6.min.js";
 
   (function () {
     const template = document.querySelector("#upload-links-template");
@@ -56,6 +61,18 @@
             makeVerboseLink(this.fileId, this.filename);
           this.shadowRoot.getElementById("short-link-box").href = makeShortLink(
             this.fileId
+          );
+
+          QrCreator.render(
+            {
+              text: makeShortLink(this.fileId),
+              radius: 0.5, // 0.0 to 0.5
+              ecLevel: "H", // L, M, Q, H
+              fill: "#000000", // foreground color
+              background: null, // color or null for transparent
+              size: 128, // in pixels
+            },
+            this.shadowRoot.getElementById("qr-code")
           );
         }
       }
