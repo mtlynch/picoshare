@@ -71,10 +71,6 @@ func (s Store) GetGuestLinks() ([]picoshare.GuestLink, error) {
 func (s *Store) InsertGuestLink(guestLink picoshare.GuestLink) error {
 	log.Printf("saving new guest link %s", guestLink.ID)
 
-	log.Printf("creation time = %v", guestLink.Created)          // DEBUG
-	log.Printf("URL expiration time = %v", guestLink.UrlExpires) // DEBUG
-	log.Printf("file lifetime = %v", guestLink.FileLifetime)     // DEBUG
-
 	if _, err := s.ctx.Exec(`
 	INSERT INTO guest_links
 		(
