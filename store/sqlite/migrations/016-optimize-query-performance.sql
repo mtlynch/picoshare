@@ -31,6 +31,7 @@ WITH fs AS (
     FROM entries_data
     GROUP BY id
 ),
+
 dc AS (
     SELECT
         entry_id,
@@ -38,6 +39,7 @@ dc AS (
     FROM downloads
     GROUP BY entry_id
 )
+
 SELECT
     e.id,
     coalesce(fs.file_size, 0) AS file_size,
