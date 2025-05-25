@@ -27,7 +27,7 @@ func TestExpiration(t *testing.T) {
 		{
 			description: "reject expiration time in the past",
 			currentTime: mustParseDate("2024-06-01"),
-			input:       "2000-01-01T00:00:00Z",
+			input:       "2024-01-01T00:00:00Z",
 			output:      picoshare.ExpirationTime{},
 			err:         parse.ErrExpirationTooSoon,
 		},
