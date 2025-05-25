@@ -74,7 +74,6 @@
           <th>Note</th>
           <th>Size</th>
           <th>Uploaded</th>
-          <th>Downloads</th>
           <th>Expires</th>
           <th></th>
         </tr>
@@ -95,11 +94,6 @@
             </td>
             <td class="is-vcentered">{{ formatFileSize .Size }}</td>
             <td class="is-vcentered">{{ formatDate .Uploaded }}</td>
-            <td class="is-vcentered">
-              <a href="/files/{{ .ID }}/downloads" aria-label="Download count"
-                >{{ .DownloadCount }}</a
-              >
-            </td>
             <td class="is-vcentered">
               {{- formatExpiration .Expires -}}
             </td>
