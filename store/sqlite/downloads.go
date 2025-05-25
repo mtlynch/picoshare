@@ -43,14 +43,22 @@ func (s Store) InsertEntryDownload(id picoshare.EntryID, r picoshare.DownloadRec
 		return err
 	}
 
-	// Increment the download count in the entries table
+	// Update the download count in the cache table
 	if _, err := tx.Exec(`
-	UPDATE entries
-	SET download_count = COALESCE(download_count, 0) + 1
-	WHERE id = :entry_id`,
+	INSERT INTO entry_cache (entry_id, file_size, download_count, last_updated)
+	VALUES (
+		:entry_id,
+		COALESCE((SELECT SUM(LENGTH(chunk)) FROM entries_data WHERE id = :entry_id), 0),
+		1,
+		:last_updated
+	)
+	ON CONFLICT(entry_id) DO UPDATE SET
+		download_count = download_count + 1,
+		last_updated = :last_updated`,
 		sql.Named("entry_id", id.String()),
+		sql.Named("last_updated", formatTime(r.Time)),
 	); err != nil {
-		log.Printf("update download count failed: %v", err)
+		log.Printf("update download count in cache failed: %v", err)
 		return err
 	}
 

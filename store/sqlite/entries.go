@@ -14,18 +14,24 @@ import (
 func (s Store) GetEntriesMetadata() ([]picoshare.UploadMetadata, error) {
 	rows, err := s.ctx.Query(`
 	SELECT
-		id,
-		filename,
-		note,
-		content_type,
-		upload_time,
-		expiration_time,
-		COALESCE(file_size, 0) AS file_size,
-		COALESCE(download_count, 0) AS download_count
+		e.id,
+		e.filename,
+		e.note,
+		e.content_type,
+		e.upload_time,
+		e.expiration_time,
+		COALESCE(c.file_size, (
+			SELECT SUM(LENGTH(chunk))
+			FROM entries_data
+			WHERE entries_data.id = e.id
+		)) AS file_size,
+		COALESCE(c.download_count, 0) AS download_count
 	FROM
-		entries
+		entries e
+	LEFT JOIN
+		entry_cache c ON e.id = c.entry_id
 	ORDER BY
-		upload_time DESC`)
+		e.upload_time DESC`)
 	if err != nil {
 		return []picoshare.UploadMetadata{}, err
 	}
@@ -93,21 +99,23 @@ func (s Store) GetEntryMetadata(id picoshare.EntryID) (picoshare.UploadMetadata,
 	var guestLinkID *picoshare.GuestLinkID
 	err := s.ctx.QueryRow(`
 	SELECT
-		filename,
-		note,
-		content_type,
-		upload_time,
-		expiration_time,
-		COALESCE(file_size, (
+		e.filename,
+		e.note,
+		e.content_type,
+		e.upload_time,
+		e.expiration_time,
+		COALESCE(c.file_size, (
 			SELECT SUM(LENGTH(chunk))
 			FROM entries_data
-			WHERE entries_data.id = entries.id
+			WHERE entries_data.id = e.id
 		)) AS file_size,
-		guest_link_id
+		e.guest_link_id
 	FROM
-		entries
+		entries e
+	LEFT JOIN
+		entry_cache c ON e.id = c.entry_id
 	WHERE
-		id = :entry_id`, sql.Named("entry_id", id)).Scan(&filename, &note, &contentType, &uploadTimeRaw, &expirationTimeRaw, &fileSizeRaw, &guestLinkID)
+		e.id = :entry_id`, sql.Named("entry_id", id)).Scan(&filename, &note, &contentType, &uploadTimeRaw, &expirationTimeRaw, &fileSizeRaw, &guestLinkID)
 	if err == sql.ErrNoRows {
 		return picoshare.UploadMetadata{}, store.EntryNotFoundError{ID: id}
 	} else if err != nil {
@@ -180,6 +188,7 @@ func (s Store) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) 
 		return err
 	}
 
+	// Insert entry metadata
 	_, err = s.ctx.Exec(`
 	INSERT INTO
 		entries
@@ -190,11 +199,9 @@ func (s Store) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) 
 		note,
 		content_type,
 		upload_time,
-		expiration_time,
-		file_size,
-		download_count
+		expiration_time
 	)
-	VALUES(:entry_id, NULLIF(:guest_link_id, ''), :filename, :note, :content_type, :upload_time, :expiration_time, :file_size, 0)`,
+	VALUES(:entry_id, NULLIF(:guest_link_id, ''), :filename, :note, :content_type, :upload_time, :expiration_time)`,
 		sql.Named("entry_id", metadata.ID),
 		sql.Named("guest_link_id", metadata.GuestLink.ID),
 		sql.Named("filename", metadata.Filename),
@@ -202,10 +209,29 @@ func (s Store) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) 
 		sql.Named("content_type", metadata.ContentType),
 		sql.Named("upload_time", formatTime(metadata.Uploaded)),
 		sql.Named("expiration_time", formatExpirationTime(metadata.Expires)),
-		sql.Named("file_size", fileSize),
 	)
 	if err != nil {
 		log.Printf("insert into entries table failed, aborting transaction: %v", err)
+		return err
+	}
+
+	// Insert cache entry
+	_, err = s.ctx.Exec(`
+	INSERT INTO
+		entry_cache
+	(
+		entry_id,
+		file_size,
+		download_count,
+		last_updated
+	)
+	VALUES(:entry_id, :file_size, 0, :last_updated)`,
+		sql.Named("entry_id", metadata.ID),
+		sql.Named("file_size", fileSize),
+		sql.Named("last_updated", formatTime(metadata.Uploaded)),
+	)
+	if err != nil {
+		log.Printf("insert into entry_cache table failed: %v", err)
 		return err
 	}
 
@@ -274,12 +300,68 @@ func (s Store) DeleteEntry(id picoshare.EntryID) error {
 		return err
 	}
 
+	// Delete cache entry (will be automatically deleted by foreign key cascade, but explicit is clearer)
+	if _, err := tx.Exec(`
+	DELETE FROM
+		entry_cache
+	WHERE
+		entry_id = :entry_id`, sql.Named("entry_id", id)); err != nil {
+		log.Printf("delete from entry_cache table failed, aborting transaction: %v", err)
+		return err
+	}
+
 	if _, err := tx.Exec(`
 	DELETE FROM
 		entries
 	WHERE
 		id = :entry_id`, sql.Named("entry_id", id)); err != nil {
 		log.Printf("delete from entries table failed, aborting transaction: %v", err)
+		return err
+	}
+
+	return tx.Commit()
+}
+
+// RebuildEntryCache rebuilds the entire entry cache from scratch
+func (s Store) RebuildEntryCache() error {
+	log.Printf("rebuilding entry cache")
+
+	tx, err := s.ctx.BeginTx(context.Background(), nil)
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		if err := tx.Rollback(); err != nil && err != sql.ErrTxDone {
+			log.Printf("failed to rollback cache rebuild: %v", err)
+		}
+	}()
+
+	// Clear existing cache
+	if _, err := tx.Exec(`DELETE FROM entry_cache`); err != nil {
+		return err
+	}
+
+	// Rebuild cache
+	_, err = tx.Exec(`
+	INSERT INTO entry_cache (entry_id, file_size, download_count, last_updated)
+	SELECT
+		e.id,
+		COALESCE(fs.file_size, 0) as file_size,
+		COALESCE(dc.download_count, 0) as download_count,
+		datetime('now') as last_updated
+	FROM entries e
+	LEFT JOIN (
+		SELECT id, SUM(LENGTH(chunk)) as file_size
+		FROM entries_data
+		GROUP BY id
+	) fs ON e.id = fs.id
+	LEFT JOIN (
+		SELECT entry_id, COUNT(*) as download_count
+		FROM downloads
+		GROUP BY entry_id
+	) dc ON e.id = dc.entry_id`)
+	if err != nil {
 		return err
 	}
 
