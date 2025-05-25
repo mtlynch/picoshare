@@ -118,21 +118,24 @@ func TestCollectDoesNothingWhenNoFilesAreExpired(t *testing.T) {
 	d := "dummy data"
 	dataStore.InsertEntry(strings.NewReader(d),
 		picoshare.UploadMetadata{
-			ID:      picoshare.EntryID("AAAAAAAAAAAA"),
-			Expires: mustParseExpirationTime("4000-01-01T00:00:00Z"),
-			Size:    mustParseFileSize(len(d)),
+			ID:       picoshare.EntryID("AAAAAAAAAAAA"),
+			Uploaded: mustParseTime("2023-01-01T00:00:00Z"),
+			Expires:  mustParseExpirationTime("4000-01-01T00:00:00Z"),
+			Size:     mustParseFileSize(len(d)),
 		})
 	dataStore.InsertEntry(strings.NewReader(d),
 		picoshare.UploadMetadata{
-			ID:      picoshare.EntryID("BBBBBBBBBBBB"),
-			Expires: mustParseExpirationTime("3000-01-01T00:00:00Z"),
-			Size:    mustParseFileSize(len(d)),
+			ID:       picoshare.EntryID("BBBBBBBBBBBB"),
+			Uploaded: mustParseTime("2023-01-01T00:00:00Z"),
+			Expires:  mustParseExpirationTime("3000-01-01T00:00:00Z"),
+			Size:     mustParseFileSize(len(d)),
 		})
 	dataStore.InsertEntry(strings.NewReader(d),
 		picoshare.UploadMetadata{
-			ID:      picoshare.EntryID("CCCCCCCCCCCC"),
-			Expires: picoshare.NeverExpire,
-			Size:    mustParseFileSize(len(d)),
+			ID:       picoshare.EntryID("CCCCCCCCCCCC"),
+			Uploaded: mustParseTime("2023-01-01T00:00:00Z"),
+			Expires:  picoshare.NeverExpire,
+			Size:     mustParseFileSize(len(d)),
 		})
 
 	c := garbagecollect.NewCollector(dataStore)
@@ -153,19 +156,22 @@ func TestCollectDoesNothingWhenNoFilesAreExpired(t *testing.T) {
 
 	expected := []picoshare.UploadMetadata{
 		{
-			ID:      picoshare.EntryID("AAAAAAAAAAAA"),
-			Expires: mustParseExpirationTime("4000-01-01T00:00:00Z"),
-			Size:    mustParseFileSize(len(d)),
+			ID:       picoshare.EntryID("AAAAAAAAAAAA"),
+			Uploaded: mustParseTime("2023-01-01T00:00:00Z"),
+			Expires:  mustParseExpirationTime("4000-01-01T00:00:00Z"),
+			Size:     mustParseFileSize(len(d)),
 		},
 		{
-			ID:      picoshare.EntryID("BBBBBBBBBBBB"),
-			Expires: mustParseExpirationTime("3000-01-01T00:00:00Z"),
-			Size:    mustParseFileSize(len(d)),
+			ID:       picoshare.EntryID("BBBBBBBBBBBB"),
+			Uploaded: mustParseTime("2023-01-01T00:00:00Z"),
+			Expires:  mustParseExpirationTime("3000-01-01T00:00:00Z"),
+			Size:     mustParseFileSize(len(d)),
 		},
 		{
-			ID:      picoshare.EntryID("CCCCCCCCCCCC"),
-			Expires: picoshare.NeverExpire,
-			Size:    mustParseFileSize(len(d)),
+			ID:       picoshare.EntryID("CCCCCCCCCCCC"),
+			Uploaded: mustParseTime("2023-01-01T00:00:00Z"),
+			Expires:  picoshare.NeverExpire,
+			Size:     mustParseFileSize(len(d)),
 		},
 	}
 

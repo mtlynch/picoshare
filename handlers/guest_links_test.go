@@ -286,7 +286,7 @@ func TestDeleteExistingGuestLink(t *testing.T) {
 	dataStore := test_sqlite.New()
 	dataStore.InsertGuestLink(picoshare.GuestLink{
 		ID:         picoshare.GuestLinkID("abcdefgh23456789"),
-		Created:    time.Now(),
+		Created:    mustParseTime("2025-05-25T00:00:00Z"),
 		UrlExpires: mustParseExpirationTime("2030-01-02T03:04:25Z"),
 	})
 	s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceChecker, nilGarbageCollector, handlers.NewClock())
