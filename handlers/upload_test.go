@@ -162,10 +162,12 @@ func TestEntryPost(t *testing.T) {
 
 func TestEntryPut(t *testing.T) {
 	originalEntry := picoshare.UploadMetadata{
-		ID:       picoshare.EntryID("AAAAAAAAAA"),
-		Filename: picoshare.Filename("original-filename.mp3"),
-		Expires:  mustParseExpirationTime("2024-12-15T21:52:33Z"),
-		Note:     picoshare.FileNote{},
+		ID:          picoshare.EntryID("AAAAAAAAAA"),
+		Filename:    picoshare.Filename("original-filename.mp3"),
+		ContentType: picoshare.ContentType("audio/mpeg"),
+		Uploaded:    mustParseTime("2023-01-01T00:00:00Z"),
+		Expires:     mustParseExpirationTime("2024-12-15T21:52:33Z"),
+		Note:        picoshare.FileNote{},
 	}
 	for _, tt := range []struct {
 		description      string
@@ -299,7 +301,7 @@ func TestGuestUpload(t *testing.T) {
 			description: "valid upload to guest link whose files never expire",
 			guestLinkInStore: picoshare.GuestLink{
 				ID:           picoshare.GuestLinkID("abcdefgh23456789"),
-				Created:      mustParseTime("2022-01-01T00:00:00Z"),
+				Created:      mustParseTime("2022-05-26T00:00:00Z"),
 				UrlExpires:   mustParseExpirationTime("2030-01-02T03:04:25Z"),
 				FileLifetime: picoshare.FileLifetimeInfinite,
 			},
@@ -364,7 +366,7 @@ func TestGuestUpload(t *testing.T) {
 			description: "reject upload that includes a note",
 			guestLinkInStore: picoshare.GuestLink{
 				ID:           picoshare.GuestLinkID("abcdefgh23456789"),
-				Created:      mustParseTime("2022-01-01T00:00:00Z"),
+				Created:      mustParseTime("2022-05-26T00:00:00Z"),
 				UrlExpires:   mustParseExpirationTime("2030-01-02T03:04:25Z"),
 				FileLifetime: picoshare.FileLifetimeInfinite,
 			},
@@ -386,18 +388,22 @@ func TestGuestUpload(t *testing.T) {
 			entriesInStore: []picoshare.UploadEntry{
 				{
 					UploadMetadata: picoshare.UploadMetadata{
-						ID: picoshare.EntryID("dummy-entry1"),
+						ID:       picoshare.EntryID("dummy-entry1"),
+						Uploaded: mustParseTime("2024-02-01T00:00:00Z"),
 						GuestLink: picoshare.GuestLink{
 							ID: picoshare.GuestLinkID("abcdefgh23456789"),
 						},
+						Expires: picoshare.NeverExpire,
 					},
 				},
 				{
 					UploadMetadata: picoshare.UploadMetadata{
-						ID: picoshare.EntryID("dummy-entry2"),
+						ID:       picoshare.EntryID("dummy-entry2"),
+						Uploaded: mustParseTime("2024-02-02T00:00:00Z"),
 						GuestLink: picoshare.GuestLink{
 							ID: picoshare.GuestLinkID("abcdefgh23456789"),
 						},
+						Expires: picoshare.NeverExpire,
 					},
 				},
 			},
@@ -424,7 +430,7 @@ func TestGuestUpload(t *testing.T) {
 			description: "guest file expires in 1 day",
 			guestLinkInStore: picoshare.GuestLink{
 				ID:           picoshare.GuestLinkID("abcdefgh23456789"),
-				Created:      mustParseTime("2022-01-01T00:00:00Z"),
+				Created:      mustParseTime("2022-05-26T00:00:00Z"),
 				UrlExpires:   mustParseExpirationTime("2030-01-02T03:04:25Z"),
 				FileLifetime: picoshare.NewFileLifetimeInDays(1),
 			},
@@ -437,7 +443,7 @@ func TestGuestUpload(t *testing.T) {
 			description: "guest file expires in 365 days",
 			guestLinkInStore: picoshare.GuestLink{
 				ID:           picoshare.GuestLinkID("abcdefgh23456789"),
-				Created:      mustParseTime("2022-01-01T00:00:00Z"),
+				Created:      mustParseTime("2022-05-26T00:00:00Z"),
 				UrlExpires:   mustParseExpirationTime("2030-01-02T03:04:25Z"),
 				FileLifetime: picoshare.NewFileLifetimeInDays(365),
 			},

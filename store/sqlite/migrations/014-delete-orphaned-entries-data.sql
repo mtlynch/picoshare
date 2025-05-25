@@ -18,8 +18,9 @@ WHERE entry_id NOT IN (
 -- This can happen if guest links were deleted but entries still reference them.
 UPDATE entries
 SET guest_link_id = NULL
-WHERE guest_link_id IS NOT NULL
-AND guest_link_id NOT IN (
-    SELECT id
-    FROM guest_links
-);
+WHERE
+    guest_link_id IS NOT NULL
+    AND guest_link_id NOT IN (
+        SELECT id
+        FROM guest_links
+    );

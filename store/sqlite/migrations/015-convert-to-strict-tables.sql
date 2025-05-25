@@ -17,20 +17,15 @@ CREATE TABLE guest_links_new (
     ),
     creation_time TEXT NOT NULL CHECK (
         datetime(creation_time) IS NOT NULL
-        AND datetime(creation_time) >= datetime('2022-02-19')
+        AND datetime(creation_time) > datetime('2022-02-19')
     ),
     url_expiration_time TEXT CHECK (
         url_expiration_time IS NULL OR (
             datetime(url_expiration_time) IS NOT NULL
-            AND datetime(url_expiration_time) >= datetime('2022-02-19')
+            AND datetime(url_expiration_time) > datetime('2022-02-19')
         )
     ),
-    file_expiration_time TEXT CHECK (
-        file_expiration_time IS NULL OR (
-            datetime(file_expiration_time) IS NOT NULL
-            AND datetime(file_expiration_time) >= datetime('2022-02-19')
-        )
-    ),
+    file_expiration_time TEXT,
     is_disabled INTEGER NOT NULL CHECK (is_disabled IN (0, 1)) DEFAULT 0
 ) STRICT;
 
@@ -40,12 +35,12 @@ CREATE TABLE entries_new (
     content_type TEXT NOT NULL,
     upload_time TEXT NOT NULL CHECK (
         datetime(upload_time) IS NOT NULL
-        AND datetime(upload_time) >= datetime('2022-02-19')
+        AND datetime(upload_time) > datetime('2022-02-19')
     ),
     expiration_time TEXT CHECK (
         expiration_time IS NULL OR (
             datetime(expiration_time) IS NOT NULL
-            AND datetime(expiration_time) >= datetime('2022-02-19')
+            AND datetime(expiration_time) > datetime('2022-02-19')
         )
     ),
     -- guest_link_id identifies which guest link (if any) the client used to
@@ -65,7 +60,7 @@ CREATE TABLE downloads_new (
     entry_id TEXT NOT NULL,
     download_timestamp TEXT NOT NULL CHECK (
         datetime(download_timestamp) IS NOT NULL
-        AND datetime(download_timestamp) >= datetime('2022-02-19')
+        AND datetime(download_timestamp) > datetime('2022-02-19')
     ),
     client_ip TEXT,
     user_agent TEXT,
@@ -101,10 +96,10 @@ SELECT
     upload_time,
     expiration_time,
     CASE
-        WHEN guest_link_id IS NOT NULL AND guest_link_id != ''
-        AND guest_link_id IN (SELECT id FROM guest_links_new)
-        THEN guest_link_id
-        ELSE NULL
+        WHEN
+            guest_link_id IS NOT NULL AND guest_link_id != ''
+            AND guest_link_id IN (SELECT id FROM guest_links_new)
+            THEN guest_link_id
     END,
     note
 FROM entries;
@@ -146,7 +141,7 @@ ALTER TABLE settings_new RENAME TO settings;
 
 -- Add foreign key constraint after renaming tables
 -- This is done after the rename to avoid issues with the constraint during migration
-CREATE INDEX idx_entries_guest_link_id ON entries(guest_link_id);
+CREATE INDEX idx_entries_guest_link_id ON entries (guest_link_id);
 
 -- Recreate the index for fast file size calculation.
 CREATE INDEX idx_entries_data_length
