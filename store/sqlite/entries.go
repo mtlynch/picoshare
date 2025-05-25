@@ -14,36 +14,18 @@ import (
 func (s Store) GetEntriesMetadata() ([]picoshare.UploadMetadata, error) {
 	rows, err := s.ctx.Query(`
 	SELECT
-		entries.id AS id,
-		entries.filename AS filename,
-		entries.note AS note,
-		entries.content_type AS content_type,
-		entries.upload_time AS upload_time,
-		entries.expiration_time AS expiration_time,
-		sizes.file_size AS file_size,
-		IFNULL(downloads.download_count, 0) AS download_count
+		id,
+		filename,
+		note,
+		content_type,
+		upload_time,
+		expiration_time,
+		COALESCE(file_size, 0) AS file_size,
+		COALESCE(download_count, 0) AS download_count
 	FROM
 		entries
-	INNER JOIN
-		(
-			SELECT
-				id,
-				SUM(LENGTH(chunk)) AS file_size
-			FROM
-				entries_data
-			GROUP BY
-				id
-		) sizes ON entries.id = sizes.id
-	LEFT OUTER JOIN
-		(
-			SELECT
-				entry_id,
-				COUNT (entry_id) as download_count
-			FROM
-				downloads
-			GROUP BY
-				entry_id
-		) downloads ON entries.id = downloads.entry_id`)
+	ORDER BY
+		upload_time DESC`)
 	if err != nil {
 		return []picoshare.UploadMetadata{}, err
 	}
@@ -111,27 +93,21 @@ func (s Store) GetEntryMetadata(id picoshare.EntryID) (picoshare.UploadMetadata,
 	var guestLinkID *picoshare.GuestLinkID
 	err := s.ctx.QueryRow(`
 	SELECT
-		entries.filename AS filename,
-		entries.note AS note,
-		entries.content_type AS content_type,
-		entries.upload_time AS upload_time,
-		entries.expiration_time AS expiration_time,
-		sizes.file_size AS file_size,
-		entries.guest_link_id AS guest_link_id
+		filename,
+		note,
+		content_type,
+		upload_time,
+		expiration_time,
+		COALESCE(file_size, (
+			SELECT SUM(LENGTH(chunk))
+			FROM entries_data
+			WHERE entries_data.id = entries.id
+		)) AS file_size,
+		guest_link_id
 	FROM
 		entries
-	INNER JOIN
-		(
-			SELECT
-				id,
-				SUM(LENGTH(chunk)) AS file_size
-			FROM
-				entries_data
-			GROUP BY
-				id
-		) sizes ON entries.id = sizes.id
 	WHERE
-		entries.id = :entry_id`, sql.Named("entry_id", id)).Scan(&filename, &note, &contentType, &uploadTimeRaw, &expirationTimeRaw, &fileSizeRaw, &guestLinkID)
+		id = :entry_id`, sql.Named("entry_id", id)).Scan(&filename, &note, &contentType, &uploadTimeRaw, &expirationTimeRaw, &fileSizeRaw, &guestLinkID)
 	if err == sql.ErrNoRows {
 		return picoshare.UploadMetadata{}, store.EntryNotFoundError{ID: id}
 	} else if err != nil {
@@ -190,7 +166,21 @@ func (s Store) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) 
 		return err
 	}
 
-	_, err := s.ctx.Exec(`
+	// Calculate file size after writing the file data
+	var fileSize uint64
+	err := s.ctx.QueryRow(`
+	SELECT
+		SUM(LENGTH(chunk)) AS file_size
+	FROM
+		entries_data
+	WHERE
+		id = :entry_id`, sql.Named("entry_id", metadata.ID)).Scan(&fileSize)
+	if err != nil {
+		log.Printf("failed to calculate file size for entry %s: %v", metadata.ID, err)
+		return err
+	}
+
+	_, err = s.ctx.Exec(`
 	INSERT INTO
 		entries
 	(
@@ -200,9 +190,11 @@ func (s Store) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) 
 		note,
 		content_type,
 		upload_time,
-		expiration_time
+		expiration_time,
+		file_size,
+		download_count
 	)
-	VALUES(:entry_id, NULLIF(:guest_link_id, ''), :filename, :note, :content_type, :upload_time, :expiration_time)`,
+	VALUES(:entry_id, NULLIF(:guest_link_id, ''), :filename, :note, :content_type, :upload_time, :expiration_time, :file_size, 0)`,
 		sql.Named("entry_id", metadata.ID),
 		sql.Named("guest_link_id", metadata.GuestLink.ID),
 		sql.Named("filename", metadata.Filename),
@@ -210,6 +202,7 @@ func (s Store) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) 
 		sql.Named("content_type", metadata.ContentType),
 		sql.Named("upload_time", formatTime(metadata.Uploaded)),
 		sql.Named("expiration_time", formatExpirationTime(metadata.Expires)),
+		sql.Named("file_size", fileSize),
 	)
 	if err != nil {
 		log.Printf("insert into entries table failed, aborting transaction: %v", err)

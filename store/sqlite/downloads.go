@@ -1,6 +1,7 @@
 package sqlite
 
 import (
+	"context"
 	"database/sql"
 	"log"
 
@@ -9,7 +10,21 @@ import (
 
 func (s Store) InsertEntryDownload(id picoshare.EntryID, r picoshare.DownloadRecord) error {
 	log.Printf("recording download of file ID %s from client %s", id.String(), r.ClientIP)
-	if _, err := s.ctx.Exec(`
+
+	// Use a transaction to ensure both operations succeed or fail together
+	tx, err := s.ctx.BeginTx(context.Background(), nil)
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		if err := tx.Rollback(); err != nil && err != sql.ErrTxDone {
+			log.Printf("failed to rollback download insert: %v", err)
+		}
+	}()
+
+	// Insert the download record
+	if _, err := tx.Exec(`
 	INSERT INTO
 		downloads
 	(
@@ -27,7 +42,19 @@ func (s Store) InsertEntryDownload(id picoshare.EntryID, r picoshare.DownloadRec
 		log.Printf("insert into downloads table failed: %v", err)
 		return err
 	}
-	return nil
+
+	// Increment the download count in the entries table
+	if _, err := tx.Exec(`
+	UPDATE entries
+	SET download_count = COALESCE(download_count, 0) + 1
+	WHERE id = :entry_id`,
+		sql.Named("entry_id", id.String()),
+	); err != nil {
+		log.Printf("update download count failed: %v", err)
+		return err
+	}
+
+	return tx.Commit()
 }
 
 func (s Store) GetEntryDownloads(id picoshare.EntryID) ([]picoshare.DownloadRecord, error) {
