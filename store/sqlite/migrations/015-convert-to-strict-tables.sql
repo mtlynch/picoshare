@@ -75,7 +75,8 @@ CREATE TABLE settings_new (
     )
 ) STRICT;
 
--- Copy data to new tables (guest_links first, then entries to satisfy foreign key)
+-- Copy data to new tables (guest_links first, then entries to satisfy
+-- foreign key)
 INSERT INTO guest_links_new
 SELECT
     id,
@@ -100,7 +101,7 @@ SELECT
             guest_link_id IS NOT NULL AND guest_link_id != ''
             AND guest_link_id IN (SELECT id FROM guest_links_new)
             THEN guest_link_id
-    END,
+    END AS guest_link_id,
     note
 FROM entries;
 
@@ -140,7 +141,8 @@ ALTER TABLE downloads_new RENAME TO downloads;
 ALTER TABLE settings_new RENAME TO settings;
 
 -- Add foreign key constraint after renaming tables
--- This is done after the rename to avoid issues with the constraint during migration
+-- This is done after the rename to avoid issues with the constraint during
+-- migration
 CREATE INDEX idx_entries_guest_link_id ON entries (guest_link_id);
 
 -- Recreate the index for fast file size calculation.
