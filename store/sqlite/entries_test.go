@@ -19,6 +19,7 @@ func TestInsertDeleteSingleEntry(t *testing.T) {
 	if err := dataStore.InsertEntry(bytes.NewBufferString(input), picoshare.UploadMetadata{
 		ID:       picoshare.EntryID("dummy-id"),
 		Filename: "dummy-file.txt",
+		Uploaded: time.Now(),
 		Expires:  mustParseExpirationTime("2040-01-01T00:00:00Z"),
 		Size:     mustParseFileSize(len(input)),
 	}); err != nil {
@@ -83,6 +84,7 @@ func TestReadLastByteOfEntry(t *testing.T) {
 	if err := db.InsertEntry(bytes.NewBufferString(input), picoshare.UploadMetadata{
 		ID:       picoshare.EntryID("dummy-id"),
 		Filename: "dummy-file.txt",
+		Uploaded: time.Now(),
 		Expires:  mustParseExpirationTime("2040-01-01T00:00:00Z"),
 		Size:     mustParseFileSize(len(input)),
 	}); err != nil {
