@@ -19,7 +19,7 @@ func TestInsertDeleteSingleEntry(t *testing.T) {
 	if err := dataStore.InsertEntry(bytes.NewBufferString(input), picoshare.UploadMetadata{
 		ID:       picoshare.EntryID("dummy-id"),
 		Filename: "dummy-file.txt",
-		Uploaded: time.Now(),
+		Uploaded: mustParseTime("2025-05-25T00:00:00Z"),
 		Expires:  mustParseExpirationTime("2040-01-01T00:00:00Z"),
 		Size:     mustParseFileSize(len(input)),
 	}); err != nil {
@@ -84,7 +84,7 @@ func TestReadLastByteOfEntry(t *testing.T) {
 	if err := db.InsertEntry(bytes.NewBufferString(input), picoshare.UploadMetadata{
 		ID:       picoshare.EntryID("dummy-id"),
 		Filename: "dummy-file.txt",
-		Uploaded: time.Now(),
+		Uploaded: mustParseTime("2025-05-25T00:00:00Z"),
 		Expires:  mustParseExpirationTime("2040-01-01T00:00:00Z"),
 		Size:     mustParseFileSize(len(input)),
 	}); err != nil {
@@ -114,6 +114,14 @@ func TestReadLastByteOfEntry(t *testing.T) {
 	if got, want := string(contents), "!"; got != want {
 		log.Fatalf("unexpected file contents: got %v, want %v", got, want)
 	}
+}
+
+func mustParseTime(s string) time.Time {
+	t, err := time.Parse(time.RFC3339, s)
+	if err != nil {
+		panic(err)
+	}
+	return t
 }
 
 func mustParseExpirationTime(s string) picoshare.ExpirationTime {
