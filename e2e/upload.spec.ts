@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 import { login } from "./helpers/login.js";
 
 const noteColumn = 1;
-const expirationColumn = 5;
+const expirationColumn = 4;
 
 test("uploads a file without specifying any parameters", async ({
   page,

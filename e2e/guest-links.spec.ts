@@ -3,7 +3,7 @@ import { login } from "./helpers/login.js";
 import { readDbTokenCookie } from "./helpers/db.js";
 
 const labelColumn = 0;
-const expiresColumn = 5;
+const expiresColumn = 4;
 
 test("creates a guest link and uploads a file as a guest", async ({
   page,

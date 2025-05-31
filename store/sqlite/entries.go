@@ -20,8 +20,7 @@ func (s Store) GetEntriesMetadata() ([]picoshare.UploadMetadata, error) {
 		entries.content_type AS content_type,
 		entries.upload_time AS upload_time,
 		entries.expiration_time AS expiration_time,
-		sizes.file_size AS file_size,
-		IFNULL(downloads.download_count, 0) AS download_count
+		sizes.file_size AS file_size
 	FROM
 		entries
 	INNER JOIN
@@ -33,17 +32,7 @@ func (s Store) GetEntriesMetadata() ([]picoshare.UploadMetadata, error) {
 				entries_data
 			GROUP BY
 				id
-		) sizes ON entries.id = sizes.id
-	LEFT OUTER JOIN
-		(
-			SELECT
-				entry_id,
-				COUNT (entry_id) as download_count
-			FROM
-				downloads
-			GROUP BY
-				entry_id
-		) downloads ON entries.id = downloads.entry_id`)
+		) sizes ON entries.id = sizes.id`)
 	if err != nil {
 		return []picoshare.UploadMetadata{}, err
 	}
@@ -57,8 +46,7 @@ func (s Store) GetEntriesMetadata() ([]picoshare.UploadMetadata, error) {
 		var uploadTimeRaw string
 		var expirationTimeRaw string
 		var fileSizeRaw uint64
-		var downloadCount uint64
-		if err = rows.Scan(&id, &filename, &note, &contentType, &uploadTimeRaw, &expirationTimeRaw, &fileSizeRaw, &downloadCount); err != nil {
+		if err = rows.Scan(&id, &filename, &note, &contentType, &uploadTimeRaw, &expirationTimeRaw, &fileSizeRaw); err != nil {
 			return []picoshare.UploadMetadata{}, err
 		}
 
@@ -78,14 +66,13 @@ func (s Store) GetEntriesMetadata() ([]picoshare.UploadMetadata, error) {
 		}
 
 		ee = append(ee, picoshare.UploadMetadata{
-			ID:            picoshare.EntryID(id),
-			Filename:      picoshare.Filename(filename),
-			Note:          picoshare.FileNote{Value: note},
-			ContentType:   picoshare.ContentType(contentType),
-			Uploaded:      ut,
-			Expires:       picoshare.ExpirationTime(et),
-			Size:          fileSize,
-			DownloadCount: downloadCount,
+			ID:          picoshare.EntryID(id),
+			Filename:    picoshare.Filename(filename),
+			Note:        picoshare.FileNote{Value: note},
+			ContentType: picoshare.ContentType(contentType),
+			Uploaded:    ut,
+			Expires:     picoshare.ExpirationTime(et),
+			Size:        fileSize,
 		})
 	}
 
