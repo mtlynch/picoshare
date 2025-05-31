@@ -1,9 +1,12 @@
--- Convert to STRICT tables and improve constraints
+-- Convert to STRICT tables and improve constraints.
 
--- Temporarily disable foreign key constraints during migration
+-- Temporarily disable foreign key constraints during migration.
 PRAGMA foreign_keys = OFF;
 
--- First create all new tables with STRICT mode and comprehensive constraints
+-- 2022-02-20 is PicoShare epoch (the day of the first release), so we verify
+-- that creation and modification timestamps can never be before this point.
+
+-- Create all new tables with STRICT mode and comprehensive constraints.
 CREATE TABLE guest_links_new (
     id TEXT PRIMARY KEY,
     label TEXT CHECK (
@@ -17,12 +20,12 @@ CREATE TABLE guest_links_new (
     ),
     creation_time TEXT NOT NULL CHECK (
         datetime(creation_time) IS NOT NULL
-        AND datetime(creation_time) > datetime('2022-02-19')
+        AND datetime(creation_time) >= datetime('2022-02-20')
     ),
     url_expiration_time TEXT CHECK (
         url_expiration_time IS NULL OR (
             datetime(url_expiration_time) IS NOT NULL
-            AND datetime(url_expiration_time) > datetime('2022-02-19')
+            AND datetime(url_expiration_time) >= datetime('2022-02-20')
         )
     ),
     file_expiration_time TEXT,
@@ -35,12 +38,12 @@ CREATE TABLE entries_new (
     content_type TEXT NOT NULL,
     upload_time TEXT NOT NULL CHECK (
         datetime(upload_time) IS NOT NULL
-        AND datetime(upload_time) > datetime('2022-02-19')
+        AND datetime(upload_time) >= datetime('2022-02-20')
     ),
     expiration_time TEXT CHECK (
         expiration_time IS NULL OR (
             datetime(expiration_time) IS NOT NULL
-            AND datetime(expiration_time) > datetime('2022-02-19')
+            AND datetime(expiration_time) >= datetime('2022-02-20')
         )
     ),
     -- guest_link_id identifies which guest link (if any) the client used to
@@ -60,7 +63,7 @@ CREATE TABLE downloads_new (
     entry_id TEXT NOT NULL,
     download_timestamp TEXT NOT NULL CHECK (
         datetime(download_timestamp) IS NOT NULL
-        AND datetime(download_timestamp) > datetime('2022-02-19')
+        AND datetime(download_timestamp) >= datetime('2022-02-20')
     ),
     client_ip TEXT,
     user_agent TEXT,
@@ -75,8 +78,8 @@ CREATE TABLE settings_new (
     )
 ) STRICT;
 
--- Copy data to new tables (guest_links first, then entries to satisfy
--- foreign key)
+-- Copy data to new tables (guest_links first, then entries to satisfy foreign
+-- key).
 INSERT INTO guest_links_new
 SELECT
     id,
@@ -140,9 +143,8 @@ ALTER TABLE entries_data_new RENAME TO entries_data;
 ALTER TABLE downloads_new RENAME TO downloads;
 ALTER TABLE settings_new RENAME TO settings;
 
--- Add foreign key constraint after renaming tables
--- This is done after the rename to avoid issues with the constraint during
--- migration
+-- Add foreign key constraint after renaming tables to avoid issues with the
+-- constraint during migration.
 CREATE INDEX idx_entries_guest_link_id ON entries (guest_link_id);
 
 -- Recreate the index for fast file size calculation.
