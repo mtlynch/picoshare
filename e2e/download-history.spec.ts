@@ -29,7 +29,7 @@ test("upload a file and verify it has no download history", async ({
     .click();
 
   await expect(page).toHaveURL(/\/files\/.+\/info$/);
-  await expect(page.getByText("(History)")).toHaveText("0");
+  await expect(page.getByText("(History)")).toHaveText("0 (History)");
   await page
     .locator("section")
     .filter({ has: page.getByRole("heading", { name: "Downloads" }) })
@@ -77,7 +77,7 @@ test("upload a file, download it, and verify it has a download history", async (
     .click();
 
   await expect(page).toHaveURL(/\/files\/.+\/info$/);
-  await expect(page.getByText("(History)")).toHaveText("1");
+  await expect(page.getByText("(History)")).toHaveText("1 (History)");
   await expect(
     page
       .locator("section")
