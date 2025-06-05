@@ -43,6 +43,7 @@ func NewWithChunkSize(path string, chunkSize uint64, optimizeForLitestream bool)
 	if _, err := ctx.Exec(`
 		PRAGMA temp_store = FILE;
 		PRAGMA journal_mode = WAL;
+		PRAGMA foreign_keys = 1;
 		`); err != nil {
 		log.Fatalf("failed to set pragmas: %v", err)
 	}

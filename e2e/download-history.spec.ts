@@ -2,7 +2,6 @@ import { test, expect } from "@playwright/test";
 import { login } from "./helpers/login.js";
 
 const browserColumn = 3;
-const downloadCountColumn = 4;
 
 test("upload a file and verify it has no download history", async ({
   page,
@@ -23,19 +22,14 @@ test("upload a file and verify it has no download history", async ({
   await page.getByRole("menuitem", { name: "Files" }).click();
 
   await expect(page).toHaveURL(/\/files$/);
-  const matchingRow = await page
-    .getByRole("row")
-    .filter({ hasText: "simple-upload.txt" });
-  await expect(
-    matchingRow.getByRole("cell").nth(downloadCountColumn)
-  ).toHaveText("0");
   await page
     .getByRole("row")
     .filter({ hasText: "simple-upload.txt" })
-    .getByRole("button", { name: "Information" })
+    .getByLabel("Information")
     .click();
 
   await expect(page).toHaveURL(/\/files\/.+\/info$/);
+  await expect(page.getByText("(History)")).toHaveText("0 (History)");
   await page
     .locator("section")
     .filter({ has: page.getByRole("heading", { name: "Downloads" }) })
@@ -76,19 +70,14 @@ test("upload a file, download it, and verify it has a download history", async (
   await page.getByRole("menuitem", { name: "Files" }).click();
 
   await expect(page).toHaveURL(/\/files$/);
-  const matchingRow = await page
-    .getByRole("row")
-    .filter({ hasText: "simple-upload.txt" });
-  await expect(
-    matchingRow.getByRole("cell").nth(downloadCountColumn)
-  ).toHaveText("1");
   await page
     .getByRole("row")
     .filter({ hasText: "simple-upload.txt" })
-    .getByRole("button", { name: "Information" })
+    .getByLabel("Information")
     .click();
 
   await expect(page).toHaveURL(/\/files\/.+\/info$/);
+  await expect(page.getByText("(History)")).toHaveText("1 (History)");
   await expect(
     page
       .locator("section")
