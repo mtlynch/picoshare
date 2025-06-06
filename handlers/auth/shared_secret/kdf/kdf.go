@@ -114,19 +114,3 @@ func (k *Pbkdf2KDF) Serialize() string {
 func (k *Pbkdf2KDF) Deserialize(s string) (DerivedKey, error) {
 	return NewDerivedKeyFromBase64(s)
 }
-
-// CreateCookieValue generates base64-encoded derived key for cookies.
-// Deprecated: Use Serialize() instead.
-func (k *Pbkdf2KDF) CreateCookieValue() string {
-	return k.Serialize()
-}
-
-// DecodeBase64 is a package-level utility function for decoding base64 strings.
-// Deprecated: Use NewDerivedKeyFromBase64() instead.
-func DecodeBase64(encoded string) ([]byte, error) {
-	derivedKey, err := NewDerivedKeyFromBase64(encoded)
-	if err != nil {
-		return nil, err
-	}
-	return derivedKey.Bytes(), nil
-}
