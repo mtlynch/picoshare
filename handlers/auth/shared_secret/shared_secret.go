@@ -21,21 +21,14 @@ var (
 	ErrMalformedRequest = errors.New("malformed request")
 )
 
-// KDF defines the interface for key derivation operations.
-type KDF interface {
-	Compare(key kdf.DerivedKey) bool
-	Serialize() string
-	Deserialize(s string) (kdf.DerivedKey, error)
-}
-
 // SharedSecretAuthenticator handles authentication using a shared secret.
 type SharedSecretAuthenticator struct {
-	kdf KDF
+	kdf *kdf.Pbkdf2KDF
 }
 
 // New creates a new SharedSecretAuthenticator.
 func New(sharedSecretKey string) (SharedSecretAuthenticator, error) {
-	k, err := kdf.New([]byte(sharedSecretKey))
+	k, err := kdf.New(sharedSecretKey)
 	if err != nil {
 		return SharedSecretAuthenticator{}, err
 	}
@@ -58,11 +51,14 @@ func (ssa SharedSecretAuthenticator) StartSession(w http.ResponseWriter, r *http
 		return
 	}
 
-	// Convert raw input to RawKey, then derive to DerivedKey for comparison
-	rawKey := kdf.NewRawKey(inputKeyString)
-	derivedKey := rawKey.Derive(ssa.kdf.(*kdf.Pbkdf2KDF))
+	// Create KDF from user input and compare with server KDF
+	userKDF, err := kdf.New(inputKeyString)
+	if err != nil {
+		http.Error(w, ErrInvalidCredentials.Error(), http.StatusUnauthorized)
+		return
+	}
 
-	if !ssa.kdf.Compare(derivedKey) {
+	if !ssa.kdf.Compare(userKDF) {
 		http.Error(w, ErrInvalidCredentials.Error(), http.StatusUnauthorized)
 		return
 	}
@@ -77,12 +73,12 @@ func (ssa SharedSecretAuthenticator) Authenticate(r *http.Request) bool {
 		return false
 	}
 
-	derivedKey, err := ssa.kdf.Deserialize(authCookie.Value)
+	cookieKDF, err := kdf.Deserialize(authCookie.Value)
 	if err != nil {
 		return false
 	}
 
-	return ssa.kdf.Compare(derivedKey)
+	return ssa.kdf.Compare(cookieKDF)
 }
 
 // ClearSession removes the authentication cookie.
