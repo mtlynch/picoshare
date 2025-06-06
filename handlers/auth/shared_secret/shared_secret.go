@@ -23,20 +23,17 @@ var (
 
 // SharedSecretAuthenticator handles authentication using a shared secret.
 type SharedSecretAuthenticator struct {
-	deriver   kdf.Pbkdf2Deriver
 	serverKey kdf.DerivedKey
 }
 
 // New creates a new SharedSecretAuthenticator.
 func New(sharedSecretKey string) (SharedSecretAuthenticator, error) {
-	deriver := kdf.NewDeriver()
-	serverKey, err := deriver.Derive(sharedSecretKey)
+	serverKey, err := kdf.DeriveKeyFromSecret(sharedSecretKey)
 	if err != nil {
 		return SharedSecretAuthenticator{}, err
 	}
 
 	return SharedSecretAuthenticator{
-		deriver:   deriver,
 		serverKey: serverKey,
 	}, nil
 }
@@ -55,7 +52,7 @@ func (ssa SharedSecretAuthenticator) StartSession(w http.ResponseWriter, r *http
 	}
 
 	// Derive key from user input and compare with server key.
-	userKey, err := ssa.deriver.Derive(inputKeyString)
+	userKey, err := kdf.DeriveKeyFromSecret(inputKeyString)
 	if err != nil {
 		http.Error(w, ErrInvalidCredentials.Error(), http.StatusUnauthorized)
 		return

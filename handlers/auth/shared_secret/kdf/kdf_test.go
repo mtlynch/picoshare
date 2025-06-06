@@ -7,19 +7,7 @@ import (
 	"github.com/mtlynch/picoshare/v2/handlers/auth/shared_secret/kdf"
 )
 
-func TestNewDeriver(t *testing.T) {
-	deriver := kdf.NewDeriver()
-	// Since NewDeriver now returns a struct, we just verify it was created
-	// by checking that we can call methods on it
-	_, err := deriver.Derive("test")
-	if err != nil {
-		t.Fatalf("NewDeriver() returned invalid deriver: %v", err)
-	}
-}
-
-func TestDerive(t *testing.T) {
-	deriver := kdf.NewDeriver()
-
+func TestDeriveKeyFromSecret(t *testing.T) {
 	for _, tt := range []struct {
 		description string
 		input       string
@@ -40,7 +28,7 @@ func TestDerive(t *testing.T) {
 		},
 	} {
 		t.Run(fmt.Sprintf("%s [%s]", tt.description, tt.input), func(t *testing.T) {
-			_, err := deriver.Derive(tt.input)
+			_, err := kdf.DeriveKeyFromSecret(tt.input)
 			if got, want := err, tt.err; got != want {
 				t.Fatalf("err=%v, want=%v", got, want)
 			}
@@ -49,15 +37,13 @@ func TestDerive(t *testing.T) {
 }
 
 func TestKeyComparison(t *testing.T) {
-	deriver := kdf.NewDeriver()
-
-	key1, err := deriver.Derive("test")
+	key1, err := kdf.DeriveKeyFromSecret("test")
 	if err != nil {
 		t.Fatalf("failed to derive key: %v", err)
 	}
 
 	// Test that same secret creates matching keys
-	key2, err := deriver.Derive("test")
+	key2, err := kdf.DeriveKeyFromSecret("test")
 	if err != nil {
 		t.Fatalf("failed to derive second key: %v", err)
 	}
@@ -67,7 +53,7 @@ func TestKeyComparison(t *testing.T) {
 	}
 
 	// Test with different secrets
-	key3, err := deriver.Derive("different-secret")
+	key3, err := kdf.DeriveKeyFromSecret("different-secret")
 	if err != nil {
 		t.Fatalf("failed to derive key3: %v", err)
 	}
@@ -83,8 +69,7 @@ func TestKeyComparison(t *testing.T) {
 }
 
 func TestDeserializeKey(t *testing.T) {
-	deriver := kdf.NewDeriver()
-	key, err := deriver.Derive("test")
+	key, err := kdf.DeriveKeyFromSecret("test")
 	if err != nil {
 		t.Fatalf("failed to derive key: %v", err)
 	}
@@ -138,8 +123,7 @@ func TestDeserializeKey(t *testing.T) {
 }
 
 func TestSerializeDeserialize(t *testing.T) {
-	deriver := kdf.NewDeriver()
-	key, err := deriver.Derive("test")
+	key, err := kdf.DeriveKeyFromSecret("test")
 	if err != nil {
 		t.Fatalf("failed to derive key: %v", err)
 	}
@@ -168,8 +152,6 @@ func TestSerializeDeserialize(t *testing.T) {
 }
 
 func TestCompare(t *testing.T) {
-	deriver := kdf.NewDeriver()
-
 	// Test with different secrets
 	for _, tt := range []struct {
 		description string
@@ -197,7 +179,7 @@ func TestCompare(t *testing.T) {
 		},
 	} {
 		t.Run(tt.description, func(t *testing.T) {
-			key1, err := deriver.Derive(tt.secret1)
+			key1, err := kdf.DeriveKeyFromSecret(tt.secret1)
 			if err != nil {
 				t.Fatalf("failed to derive first key: %v", err)
 			}
@@ -208,7 +190,7 @@ func TestCompare(t *testing.T) {
 					t.Errorf("result=%v, want=%v", got, want)
 				}
 			} else {
-				key2, err := deriver.Derive(tt.secret2)
+				key2, err := kdf.DeriveKeyFromSecret(tt.secret2)
 				if err != nil {
 					t.Fatalf("failed to derive second key: %v", err)
 				}
@@ -222,17 +204,16 @@ func TestCompare(t *testing.T) {
 }
 
 func TestIntegration(t *testing.T) {
-	// Test the full flow: create deriver, derive keys, compare and serialize
-	deriver := kdf.NewDeriver()
+	// Test the full flow: derive keys, compare and serialize
 	secret := "mysecret"
 
-	serverKey, err := deriver.Derive(secret)
+	serverKey, err := kdf.DeriveKeyFromSecret(secret)
 	if err != nil {
 		t.Fatalf("failed to derive server key: %v", err)
 	}
 
 	// Test login flow
-	userKey, err := deriver.Derive(secret)
+	userKey, err := kdf.DeriveKeyFromSecret(secret)
 	if err != nil {
 		t.Fatalf("failed to derive user key: %v", err)
 	}
@@ -241,7 +222,7 @@ func TestIntegration(t *testing.T) {
 		t.Errorf("login comparison failed")
 	}
 
-	wrongUserKey, err := deriver.Derive("wrongsecret")
+	wrongUserKey, err := kdf.DeriveKeyFromSecret("wrongsecret")
 	if err != nil {
 		t.Fatalf("failed to derive wrong user key: %v", err)
 	}
@@ -261,18 +242,17 @@ func TestIntegration(t *testing.T) {
 		t.Errorf("cookie comparison failed")
 	}
 
-	// Test that different deriver instances with same secret work
-	deriver2 := kdf.NewDeriver()
-	serverKey2, err := deriver2.Derive(secret)
+	// Test that multiple calls with same secret work consistently
+	serverKey2, err := kdf.DeriveKeyFromSecret(secret)
 	if err != nil {
 		t.Fatalf("failed to derive second server key: %v", err)
 	}
 
 	if !serverKey2.Equal(userKey) {
-		t.Errorf("second deriver login comparison failed")
+		t.Errorf("second derivation login comparison failed")
 	}
 
 	if !serverKey2.Equal(cookieKey) {
-		t.Errorf("second deriver cookie comparison failed")
+		t.Errorf("second derivation cookie comparison failed")
 	}
 }
