@@ -37,35 +37,36 @@ func TestDeriveKeyFromSecret(t *testing.T) {
 }
 
 func TestKeyComparison(t *testing.T) {
-	key1, err := kdf.DeriveKeyFromSecret("test")
-	if err != nil {
-		t.Fatalf("failed to derive key: %v", err)
+	originalKey, err := kdf.DeriveKeyFromSecret("test")
+	if got, want := err, error(nil); got != want {
+		t.Fatalf("failed to derive key: err=%v, want=%v", got, want)
 	}
 
-	// Test that same secret creates matching keys
-	key2, err := kdf.DeriveKeyFromSecret("test")
-	if err != nil {
-		t.Fatalf("failed to derive second key: %v", err)
-	}
+	t.Run("same secret creates matching keys", func(t *testing.T) {
+		sameKey, err := kdf.DeriveKeyFromSecret("test")
+		if got, want := err, error(nil); got != want {
+			t.Fatalf("failed to derive second key: err=%v, want=%v", got, want)
+		}
+		if got, want := originalKey.Equal(sameKey), true; got != want {
+			t.Errorf("key comparison=%v, want=%v", got, want)
+		}
+	})
 
-	if !key1.Equal(key2) {
-		t.Errorf("keys with same secret should match")
-	}
+	t.Run("different secrets don't match", func(t *testing.T) {
+		otherKey, err := kdf.DeriveKeyFromSecret("different-secret")
+		if got, want := err, error(nil); got != want {
+			t.Fatalf("failed to derive third key: err=%v, want=%v", got, want)
+		}
+		if got, want := originalKey.Equal(otherKey), false; got != want {
+			t.Errorf("key comparison=%v, want=%v", got, want)
+		}
+	})
 
-	// Test with different secrets
-	key3, err := kdf.DeriveKeyFromSecret("different-secret")
-	if err != nil {
-		t.Fatalf("failed to derive key3: %v", err)
-	}
-
-	if key1.Equal(key3) {
-		t.Errorf("keys with different secrets should not match")
-	}
-
-	// Test comparison with empty struct.
-	if key1.Equal(kdf.DerivedKey{}) {
-		t.Errorf("comparison with nil should return false")
-	}
+	t.Run("comparison with empty key returns false", func(t *testing.T) {
+		if got, want := originalKey.Equal(kdf.DerivedKey{}), false; got != want {
+			t.Errorf("empty key comparison=%v, want=%v", got, want)
+		}
+	})
 }
 
 func TestDeserializeKey(t *testing.T) {
