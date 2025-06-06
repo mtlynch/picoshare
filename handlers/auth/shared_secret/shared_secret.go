@@ -22,9 +22,16 @@ var (
 	ErrMalformedRequest = errors.New("malformed request")
 )
 
+// KDF defines the interface for key derivation operations.
+type KDF interface {
+	DeriveFromKey(key []byte) ([]byte, error)
+	FromBase64(b64encoded string) ([]byte, error)
+	Compare(a, b []byte) bool
+}
+
 // SharedSecretAuthenticator handles authentication using a shared secret.
 type SharedSecretAuthenticator struct {
-	kdf    kdf.KDF
+	kdf    KDF
 	secret []byte
 }
 
