@@ -23,8 +23,9 @@ var (
 
 // KDF defines the interface for key derivation operations.
 type KDF interface {
-	Compare(input []byte) bool
-	CreateCookieValue() string
+	Compare(key kdf.DerivedKey) bool
+	Serialize() string
+	Deserialize(s string) (kdf.DerivedKey, error)
 }
 
 // SharedSecretAuthenticator handles authentication using a shared secret.
@@ -46,7 +47,7 @@ func New(sharedSecretKey string) (SharedSecretAuthenticator, error) {
 
 // StartSession begins an authenticated session.
 func (ssa SharedSecretAuthenticator) StartSession(w http.ResponseWriter, r *http.Request) {
-	inputKey, err := ssa.inputKeyFromRequest(r)
+	inputKeyString, err := ssa.inputKeyFromRequest(r)
 	if err != nil {
 		switch err {
 		case ErrMalformedRequest, ErrEmptyCredentials:
@@ -57,7 +58,11 @@ func (ssa SharedSecretAuthenticator) StartSession(w http.ResponseWriter, r *http
 		return
 	}
 
-	if !ssa.kdf.Compare(inputKey) {
+	// Convert raw input to RawKey, then derive to DerivedKey for comparison
+	rawKey := kdf.NewRawKey(inputKeyString)
+	derivedKey := rawKey.Derive(ssa.kdf.(*kdf.Pbkdf2KDF))
+
+	if !ssa.kdf.Compare(derivedKey) {
 		http.Error(w, ErrInvalidCredentials.Error(), http.StatusUnauthorized)
 		return
 	}
@@ -72,7 +77,7 @@ func (ssa SharedSecretAuthenticator) Authenticate(r *http.Request) bool {
 		return false
 	}
 
-	derivedKey, err := kdf.DecodeBase64(authCookie.Value)
+	derivedKey, err := ssa.kdf.Deserialize(authCookie.Value)
 	if err != nil {
 		return false
 	}
@@ -92,26 +97,26 @@ func (ssa SharedSecretAuthenticator) ClearSession(w http.ResponseWriter) {
 	})
 }
 
-func (ssa SharedSecretAuthenticator) inputKeyFromRequest(r *http.Request) ([]byte, error) {
+func (ssa SharedSecretAuthenticator) inputKeyFromRequest(r *http.Request) (string, error) {
 	body := struct {
 		SharedSecretKey string `json:"sharedSecretKey"`
 	}{}
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(&body); err != nil {
-		return nil, ErrMalformedRequest
+		return "", ErrMalformedRequest
 	}
 
 	if body.SharedSecretKey == "" {
-		return nil, ErrEmptyCredentials
+		return "", ErrEmptyCredentials
 	}
 
-	return []byte(body.SharedSecretKey), nil
+	return body.SharedSecretKey, nil
 }
 
 func (ssa SharedSecretAuthenticator) createCookie(w http.ResponseWriter) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     authCookieName,
-		Value:    ssa.kdf.CreateCookieValue(),
+		Value:    ssa.kdf.Serialize(),
 		Path:     "/",
 		HttpOnly: true,
 		SameSite: http.SameSiteStrictMode,

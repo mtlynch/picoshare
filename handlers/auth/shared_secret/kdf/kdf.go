@@ -12,7 +12,64 @@ import (
 var (
 	// ErrInvalidKey indicates that the provided key is empty or invalid.
 	ErrInvalidKey = errors.New("invalid shared secret key")
+	// ErrInvalidSerialization indicates that the serialized data is invalid.
+	ErrInvalidSerialization = errors.New("invalid serialized key data")
 )
+
+// RawKey represents a user-provided password or secret string.
+type RawKey struct {
+	value string
+}
+
+// DerivedKey represents a cryptographically derived key.
+type DerivedKey struct {
+	value []byte
+}
+
+// NewRawKey creates a new RawKey from a string input.
+func NewRawKey(input string) RawKey {
+	return RawKey{value: input}
+}
+
+// String returns the raw string value.
+func (r RawKey) String() string {
+	return r.value
+}
+
+// Derive converts a RawKey to a DerivedKey using the provided KDF.
+func (r RawKey) Derive(k *Pbkdf2KDF) DerivedKey {
+	derived := pbkdf2.Key([]byte(r.value), k.salt, k.iter, k.keyLength, sha256.New)
+	return DerivedKey{value: derived}
+}
+
+// NewDerivedKeyFromBase64 creates a DerivedKey from a base64-encoded string.
+func NewDerivedKeyFromBase64(encoded string) (DerivedKey, error) {
+	if encoded == "" {
+		return DerivedKey{}, ErrInvalidSerialization
+	}
+	decoded, err := base64.StdEncoding.DecodeString(encoded)
+	if err != nil {
+		return DerivedKey{}, ErrInvalidSerialization
+	}
+	return DerivedKey{value: decoded}, nil
+}
+
+// Bytes returns the raw byte slice value.
+func (d DerivedKey) Bytes() []byte {
+	return d.value
+}
+
+// ToBase64 returns the base64-encoded representation of the derived key.
+func (d DerivedKey) ToBase64() string {
+	return base64.StdEncoding.EncodeToString(d.value)
+}
+
+// KDF defines the interface for key derivation operations.
+type KDF interface {
+	Compare(key DerivedKey) bool
+	Serialize() string
+	Deserialize(s string) (DerivedKey, error)
+}
 
 type Pbkdf2KDF struct {
 	salt       []byte
@@ -40,39 +97,36 @@ func New(key []byte) (*Pbkdf2KDF, error) {
 	return kdf, nil
 }
 
-// Compare handles both raw input and base64-decoded cookie values.
-// It automatically detects the input type and performs the appropriate comparison.
-func (k *Pbkdf2KDF) Compare(input []byte) bool {
-	if len(input) == 0 {
+// Compare performs constant-time comparison between the stored derived key and the input derived key.
+func (k *Pbkdf2KDF) Compare(input DerivedKey) bool {
+	if len(input.value) == 0 {
 		return false
 	}
-
-	// First try comparing as derived key (for cookie validation)
-	// Derived keys have a specific length matching our key length
-	if len(input) == k.keyLength {
-		if subtle.ConstantTimeCompare(input, k.derivedKey) != 0 {
-			return true
-		}
-	}
-
-	// Then try deriving from raw input (for login)
-	derived := pbkdf2.Key(input, k.salt, k.iter, k.keyLength, sha256.New)
-	return subtle.ConstantTimeCompare(derived, k.derivedKey) != 0
+	return subtle.ConstantTimeCompare(input.value, k.derivedKey) != 0
 }
 
-// CreateCookieValue generates base64-encoded derived key for cookies.
-func (k *Pbkdf2KDF) CreateCookieValue() string {
+// Serialize returns the base64-encoded representation of the internal derived key.
+func (k *Pbkdf2KDF) Serialize() string {
 	return base64.StdEncoding.EncodeToString(k.derivedKey)
 }
 
+// Deserialize creates a DerivedKey from a base64-encoded string.
+func (k *Pbkdf2KDF) Deserialize(s string) (DerivedKey, error) {
+	return NewDerivedKeyFromBase64(s)
+}
+
+// CreateCookieValue generates base64-encoded derived key for cookies.
+// Deprecated: Use Serialize() instead.
+func (k *Pbkdf2KDF) CreateCookieValue() string {
+	return k.Serialize()
+}
+
 // DecodeBase64 is a package-level utility function for decoding base64 strings.
+// Deprecated: Use NewDerivedKeyFromBase64() instead.
 func DecodeBase64(encoded string) ([]byte, error) {
-	if encoded == "" {
-		return nil, errors.New("empty base64 string")
-	}
-	decoded, err := base64.StdEncoding.DecodeString(encoded)
+	derivedKey, err := NewDerivedKeyFromBase64(encoded)
 	if err != nil {
-		return nil, errors.New("invalid base64 string")
+		return nil, err
 	}
-	return decoded, nil
+	return derivedKey.Bytes(), nil
 }
