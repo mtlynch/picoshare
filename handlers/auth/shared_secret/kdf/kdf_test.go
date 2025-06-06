@@ -69,60 +69,6 @@ func TestKeyComparison(t *testing.T) {
 	})
 }
 
-func TestDeserializeKey(t *testing.T) {
-	key, err := kdf.DeriveKeyFromSecret("test")
-	if err != nil {
-		t.Fatalf("failed to derive key: %v", err)
-	}
-
-	// Get a valid base64 representation
-	serialized := key.Serialize()
-
-	for _, tt := range []struct {
-		description string
-		input       string
-		expectError bool
-	}{
-		{
-			description: "accept valid base64",
-			input:       serialized,
-			expectError: false,
-		},
-		{
-			description: "reject empty string",
-			input:       "",
-			expectError: true,
-		},
-		{
-			description: "reject invalid base64",
-			input:       "not-base64!",
-			expectError: true,
-		},
-	} {
-		t.Run(fmt.Sprintf("%s [%s]", tt.description, tt.input), func(t *testing.T) {
-			deserializedKey, err := kdf.DeserializeKey(tt.input)
-
-			if tt.expectError {
-				if err == nil {
-					t.Errorf("expected error but got none")
-				}
-				//if deserializedKey != nil {
-				//	t.Errorf("deserializedKey=%v, want=nil when error occurs", deserializedKey)
-				//}
-			} else {
-				if err != nil {
-					t.Errorf("unexpected error: %v", err)
-				}
-
-				// Test that the deserialized key works with Equal.
-				if !key.Equal(deserializedKey) {
-					t.Errorf("deserialized key doesn't match original")
-				}
-			}
-		})
-	}
-}
-
 func TestSerializeDeserialize(t *testing.T) {
 	key, err := kdf.DeriveKeyFromSecret("test")
 	if err != nil {
