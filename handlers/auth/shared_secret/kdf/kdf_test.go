@@ -1,7 +1,6 @@
 package kdf_test
 
 import (
-	"encoding/base64"
 	"fmt"
 	"testing"
 
@@ -38,9 +37,9 @@ func TestNew(t *testing.T) {
 				if k == nil {
 					t.Errorf("kdf is nil, expected non-nil instance")
 				}
-				derivedKey := k.GetDerivedKey()
-				if len(derivedKey) == 0 {
-					t.Errorf("derived key is empty, expected non-empty output")
+				cookieValue := k.CreateCookieValue()
+				if len(cookieValue) == 0 {
+					t.Errorf("cookie value is empty, expected non-empty output")
 				}
 			} else if k != nil {
 				t.Errorf("kdf=%v, want=nil when error occurs", k)
@@ -49,12 +48,13 @@ func TestNew(t *testing.T) {
 	}
 }
 
-func TestCompareWithInput(t *testing.T) {
+func TestCompare(t *testing.T) {
 	k, err := kdf.New([]byte("test"))
 	if err != nil {
 		t.Fatalf("failed to create KDF: %v", err)
 	}
 
+	// Test with raw input (login scenario)
 	for _, tt := range []struct {
 		description string
 		input       []byte
@@ -76,16 +76,15 @@ func TestCompareWithInput(t *testing.T) {
 			expected:    false,
 		},
 	} {
-		t.Run(tt.description, func(t *testing.T) {
-			result := k.CompareWithInput(tt.input)
+		t.Run(fmt.Sprintf("raw input: %s", tt.description), func(t *testing.T) {
+			result := k.Compare(tt.input)
 			if got, want := result, tt.expected; got != want {
 				t.Errorf("result=%v, want=%v", got, want)
 			}
 		})
 	}
-}
 
-func TestCompareWithDerived(t *testing.T) {
+	// Test with derived key input (cookie scenario)
 	k1, err := kdf.New([]byte("test1"))
 	if err != nil {
 		t.Fatalf("failed to create KDF1: %v", err)
@@ -101,6 +100,17 @@ func TestCompareWithDerived(t *testing.T) {
 		t.Fatalf("failed to create KDF1 duplicate: %v", err)
 	}
 
+	// Get derived keys by decoding cookie values
+	k1DerivedKey, err := kdf.DecodeBase64(k1Dup.CreateCookieValue())
+	if err != nil {
+		t.Fatalf("failed to decode k1 cookie: %v", err)
+	}
+
+	k2DerivedKey, err := kdf.DecodeBase64(k2.CreateCookieValue())
+	if err != nil {
+		t.Fatalf("failed to decode k2 cookie: %v", err)
+	}
+
 	for _, tt := range []struct {
 		description string
 		derivedKey  []byte
@@ -108,12 +118,12 @@ func TestCompareWithDerived(t *testing.T) {
 	}{
 		{
 			description: "same derived key matches",
-			derivedKey:  k1Dup.GetDerivedKey(),
+			derivedKey:  k1DerivedKey,
 			expected:    true,
 		},
 		{
 			description: "different derived key doesn't match",
-			derivedKey:  k2.GetDerivedKey(),
+			derivedKey:  k2DerivedKey,
 			expected:    false,
 		},
 		{
@@ -122,8 +132,8 @@ func TestCompareWithDerived(t *testing.T) {
 			expected:    false,
 		},
 	} {
-		t.Run(tt.description, func(t *testing.T) {
-			result := k1.CompareWithDerived(tt.derivedKey)
+		t.Run(fmt.Sprintf("derived key: %s", tt.description), func(t *testing.T) {
+			result := k1.Compare(tt.derivedKey)
 			if got, want := result, tt.expected; got != want {
 				t.Errorf("result=%v, want=%v", got, want)
 			}
@@ -131,121 +141,123 @@ func TestCompareWithDerived(t *testing.T) {
 	}
 }
 
-func TestGetDerivedKey(t *testing.T) {
+func TestCreateCookieValue(t *testing.T) {
 	k, err := kdf.New([]byte("test"))
 	if err != nil {
 		t.Fatalf("failed to create KDF: %v", err)
 	}
 
-	derivedKey := k.GetDerivedKey()
-	if len(derivedKey) == 0 {
-		t.Errorf("derived key is empty, expected non-empty output")
+	cookieValue := k.CreateCookieValue()
+	if len(cookieValue) == 0 {
+		t.Errorf("cookie value is empty, expected non-empty output")
 	}
 
-	// Test that we get a copy, not the original
-	derivedKey[0] = 0xFF
-	derivedKey2 := k.GetDerivedKey()
-	if derivedKey[0] == derivedKey2[0] {
-		t.Errorf("GetDerivedKey returned the same slice, expected a copy")
+	// Test that we can decode the cookie value
+	decoded, err := kdf.DecodeBase64(cookieValue)
+	if err != nil {
+		t.Errorf("failed to decode cookie value: %v", err)
+	}
+
+	if len(decoded) == 0 {
+		t.Errorf("decoded cookie value is empty")
+	}
+
+	// Test that the decoded value works with Compare
+	if !k.Compare(decoded) {
+		t.Errorf("decoded cookie value doesn't match with Compare")
 	}
 }
 
-func TestFromBase64(t *testing.T) {
+func TestDecodeBase64(t *testing.T) {
 	k, err := kdf.New([]byte("test"))
 	if err != nil {
 		t.Fatalf("failed to create KDF: %v", err)
 	}
 
-	validKey := k.GetDerivedKey()
-	validBase64 := base64.StdEncoding.EncodeToString(validKey)
+	validCookieValue := k.CreateCookieValue()
 
 	for _, tt := range []struct {
 		description string
 		input       string
-		output      []byte
-		err         error
+		expectError bool
 	}{
 		{
 			description: "accept valid base64",
-			input:       validBase64,
-			output:      validKey,
-			err:         nil,
+			input:       validCookieValue,
+			expectError: false,
 		},
 		{
 			description: "reject empty string",
 			input:       "",
-			output:      nil,
-			err:         kdf.ErrInvalidBase64,
+			expectError: true,
 		},
 		{
 			description: "reject invalid base64",
 			input:       "not-base64!",
-			output:      nil,
-			err:         kdf.ErrInvalidBase64,
+			expectError: true,
 		},
 	} {
 		t.Run(fmt.Sprintf("%s [%s]", tt.description, tt.input), func(t *testing.T) {
-			key, err := k.FromBase64(tt.input)
-			if got, want := err, tt.err; got != want {
-				t.Fatalf("err=%v, want=%v", got, want)
-			}
+			decoded, err := kdf.DecodeBase64(tt.input)
 
-			if err == nil {
-				if len(key) == 0 {
-					t.Errorf("key is empty, expected non-empty output")
+			if tt.expectError {
+				if err == nil {
+					t.Errorf("expected error but got none")
 				}
-				if tt.output != nil && tt.description == "accept valid base64" {
-					if got, want := key, tt.output; base64.StdEncoding.EncodeToString(got) != base64.StdEncoding.EncodeToString(want) {
-						t.Errorf("key=%v, want=%v", base64.StdEncoding.EncodeToString(got), base64.StdEncoding.EncodeToString(want))
-					}
+				if decoded != nil {
+					t.Errorf("decoded=%v, want=nil when error occurs", decoded)
 				}
-			} else if key != nil {
-				t.Errorf("key=%v, want=nil when error occurs", key)
+			} else {
+				if err != nil {
+					t.Errorf("unexpected error: %v", err)
+				}
+				if len(decoded) == 0 {
+					t.Errorf("decoded value is empty, expected non-empty output")
+				}
 			}
 		})
 	}
 }
 
-func TestCompare(t *testing.T) {
-	k, err := kdf.New([]byte("test"))
+func TestIntegration(t *testing.T) {
+	// Test the full flow: create KDF, generate cookie, decode and compare
+	secret := "mysecret"
+	k, err := kdf.New([]byte(secret))
 	if err != nil {
 		t.Fatalf("failed to create KDF: %v", err)
 	}
 
-	key1 := []byte("test1")
-	key2 := []byte("test2")
-	key1Dup := []byte("test1")
+	// Test login flow
+	if !k.Compare([]byte(secret)) {
+		t.Errorf("login comparison failed")
+	}
 
-	for _, tt := range []struct {
-		description string
-		a           []byte
-		b           []byte
-		output      bool
-	}{
-		{
-			description: "same keys match",
-			a:           key1,
-			b:           key1Dup,
-			output:      true,
-		},
-		{
-			description: "different keys don't match",
-			a:           key1,
-			b:           key2,
-			output:      false,
-		},
-		{
-			description: "empty keys match",
-			a:           []byte{},
-			b:           []byte{},
-			output:      true,
-		},
-	} {
-		t.Run(tt.description, func(t *testing.T) {
-			result := k.Compare(tt.a, tt.b)
-			if got, want := result, tt.output; got != want {
-				t.Errorf("result=%v, want=%v", got, want)
-			}
-		})
+	if k.Compare([]byte("wrongsecret")) {
+		t.Errorf("login comparison should have failed for wrong secret")
+	}
+
+	// Test cookie flow
+	cookieValue := k.CreateCookieValue()
+	decodedCookie, err := kdf.DecodeBase64(cookieValue)
+	if err != nil {
+		t.Fatalf("failed to decode cookie: %v", err)
+	}
+
+	if !k.Compare(decodedCookie) {
+		t.Errorf("cookie comparison failed")
+	}
+
+	// Test that different KDF instances with same secret work
+	k2, err := kdf.New([]byte(secret))
+	if err != nil {
+		t.Fatalf("failed to create second KDF: %v", err)
+	}
+
+	if !k2.Compare([]byte(secret)) {
+		t.Errorf("second KDF login comparison failed")
+	}
+
+	if !k2.Compare(decodedCookie) {
+		t.Errorf("second KDF cookie comparison failed")
 	}
 }

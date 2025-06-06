@@ -1,7 +1,6 @@
 package shared_secret
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -24,11 +23,8 @@ var (
 
 // KDF defines the interface for key derivation operations.
 type KDF interface {
-	CompareWithInput(inputKey []byte) bool
-	CompareWithDerived(derivedKey []byte) bool
-	GetDerivedKey() []byte
-	FromBase64(b64encoded string) ([]byte, error)
-	Compare(a, b []byte) bool
+	Compare(input []byte) bool
+	CreateCookieValue() string
 }
 
 // SharedSecretAuthenticator handles authentication using a shared secret.
@@ -61,7 +57,7 @@ func (ssa SharedSecretAuthenticator) StartSession(w http.ResponseWriter, r *http
 		return
 	}
 
-	if !ssa.kdf.CompareWithInput(inputKey) {
+	if !ssa.kdf.Compare(inputKey) {
 		http.Error(w, ErrInvalidCredentials.Error(), http.StatusUnauthorized)
 		return
 	}
@@ -76,12 +72,12 @@ func (ssa SharedSecretAuthenticator) Authenticate(r *http.Request) bool {
 		return false
 	}
 
-	derivedKey, err := ssa.kdf.FromBase64(authCookie.Value)
+	derivedKey, err := kdf.DecodeBase64(authCookie.Value)
 	if err != nil {
 		return false
 	}
 
-	return ssa.kdf.CompareWithDerived(derivedKey)
+	return ssa.kdf.Compare(derivedKey)
 }
 
 // ClearSession removes the authentication cookie.
@@ -113,10 +109,9 @@ func (ssa SharedSecretAuthenticator) inputKeyFromRequest(r *http.Request) ([]byt
 }
 
 func (ssa SharedSecretAuthenticator) createCookie(w http.ResponseWriter) {
-	derivedKey := ssa.kdf.GetDerivedKey()
 	http.SetCookie(w, &http.Cookie{
 		Name:     authCookieName,
-		Value:    base64.StdEncoding.EncodeToString(derivedKey),
+		Value:    ssa.kdf.CreateCookieValue(),
 		Path:     "/",
 		HttpOnly: true,
 		SameSite: http.SameSiteStrictMode,

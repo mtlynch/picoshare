@@ -12,9 +12,6 @@ import (
 var (
 	// ErrInvalidKey indicates that the provided key is empty or invalid.
 	ErrInvalidKey = errors.New("invalid shared secret key")
-
-	// ErrInvalidBase64 indicates that the provided base64 string is empty or malformed.
-	ErrInvalidBase64 = errors.New("invalid shared secret")
 )
 
 type Pbkdf2KDF struct {
@@ -39,49 +36,43 @@ func New(key []byte) (*Pbkdf2KDF, error) {
 		keyLength: 32,
 	}
 
-	dk := pbkdf2.Key(key, kdf.salt, kdf.iter, kdf.keyLength, sha256.New)
-	kdf.derivedKey = dk
+	kdf.derivedKey = pbkdf2.Key(key, kdf.salt, kdf.iter, kdf.keyLength, sha256.New)
 	return kdf, nil
 }
 
-// CompareWithInput derives a key from the input and compares it with the stored derived key.
-func (k *Pbkdf2KDF) CompareWithInput(inputKey []byte) bool {
-	if len(inputKey) == 0 {
+// Compare handles both raw input and base64-decoded cookie values.
+// It automatically detects the input type and performs the appropriate comparison.
+func (k *Pbkdf2KDF) Compare(input []byte) bool {
+	if len(input) == 0 {
 		return false
 	}
 
-	dk := pbkdf2.Key(inputKey, k.salt, k.iter, k.keyLength, sha256.New)
-	return subtle.ConstantTimeCompare(dk, k.derivedKey) != 0
-}
-
-// CompareWithDerived compares a provided derived key with the stored derived key.
-func (k *Pbkdf2KDF) CompareWithDerived(derivedKey []byte) bool {
-	return subtle.ConstantTimeCompare(derivedKey, k.derivedKey) != 0
-}
-
-// GetDerivedKey returns the internally stored derived key.
-func (k *Pbkdf2KDF) GetDerivedKey() []byte {
-	// Return a copy to prevent external modification
-	result := make([]byte, len(k.derivedKey))
-	copy(result, k.derivedKey)
-	return result
-}
-
-// FromBase64 decodes a base64-encoded key.
-func (k *Pbkdf2KDF) FromBase64(b64encoded string) ([]byte, error) {
-	if len(b64encoded) == 0 {
-		return nil, ErrInvalidBase64
+	// First try comparing as derived key (for cookie validation)
+	// Derived keys have a specific length matching our key length
+	if len(input) == k.keyLength {
+		if subtle.ConstantTimeCompare(input, k.derivedKey) != 0 {
+			return true
+		}
 	}
 
-	decoded, err := base64.StdEncoding.DecodeString(b64encoded)
+	// Then try deriving from raw input (for login)
+	derived := pbkdf2.Key(input, k.salt, k.iter, k.keyLength, sha256.New)
+	return subtle.ConstantTimeCompare(derived, k.derivedKey) != 0
+}
+
+// CreateCookieValue generates base64-encoded derived key for cookies.
+func (k *Pbkdf2KDF) CreateCookieValue() string {
+	return base64.StdEncoding.EncodeToString(k.derivedKey)
+}
+
+// DecodeBase64 is a package-level utility function for decoding base64 strings.
+func DecodeBase64(encoded string) ([]byte, error) {
+	if encoded == "" {
+		return nil, errors.New("empty base64 string")
+	}
+	decoded, err := base64.StdEncoding.DecodeString(encoded)
 	if err != nil {
-		return nil, ErrInvalidBase64
+		return nil, errors.New("invalid base64 string")
 	}
-
 	return decoded, nil
-}
-
-// Compare securely compares two keys.
-func (k *Pbkdf2KDF) Compare(a, b []byte) bool {
-	return subtle.ConstantTimeCompare(a, b) != 0
 }
