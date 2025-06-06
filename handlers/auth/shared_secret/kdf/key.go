@@ -11,28 +11,25 @@ type DerivedKey struct {
 }
 
 // Equal performs constant-time comparison between this key and another key.
-func (k *DerivedKey) Equal(other *DerivedKey) bool {
-	if other == nil || len(other.data) == 0 {
-		return false
-	}
+func (k DerivedKey) Equal(other DerivedKey) bool {
 	return subtle.ConstantTimeCompare(k.data, other.data) != 0
 }
 
 // Serialize returns the base64-encoded representation of the derived key.
-func (k *DerivedKey) Serialize() string {
+func (k DerivedKey) Serialize() string {
 	return base64.StdEncoding.EncodeToString(k.data)
 }
 
 // DeserializeKey creates a DerivedKey from a base64-encoded string.
-func DeserializeKey(base64Data string) (*DerivedKey, error) {
+func DeserializeKey(base64Data string) (DerivedKey, error) {
 	if base64Data == "" {
-		return nil, ErrInvalidSerialization
+		return DerivedKey{}, ErrInvalidSerialization
 	}
 
 	decoded, err := base64.StdEncoding.DecodeString(base64Data)
 	if err != nil {
-		return nil, ErrInvalidSerialization
+		return DerivedKey{}, ErrInvalidSerialization
 	}
 
-	return &DerivedKey{data: decoded}, nil
+	return DerivedKey{data: decoded}, nil
 }

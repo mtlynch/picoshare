@@ -34,11 +34,11 @@ func NewDeriver() *Pbkdf2Deriver {
 }
 
 // Derive creates a derived key from the provided secret string.
-func (d *Pbkdf2Deriver) Derive(secret string) (*DerivedKey, error) {
+func (d *Pbkdf2Deriver) Derive(secret string) (DerivedKey, error) {
 	if secret == "" {
-		return nil, ErrInvalidSecret
+		return DerivedKey{}, ErrInvalidSecret
 	}
 
 	keyData := pbkdf2.Key([]byte(secret), d.salt, d.iter, d.keyLength, sha256.New)
-	return &DerivedKey{data: keyData}, nil
+	return DerivedKey{data: keyData}, nil
 }

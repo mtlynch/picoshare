@@ -73,8 +73,8 @@ func TestKeyComparison(t *testing.T) {
 		t.Errorf("keys with different secrets should not match")
 	}
 
-	// Test comparison with nil
-	if key1.Equal(nil) {
+	// Test comparison with empty struct.
+	if key1.Equal(kdf.DerivedKey{}) {
 		t.Errorf("comparison with nil should return false")
 	}
 }
@@ -117,18 +117,15 @@ func TestDeserializeKey(t *testing.T) {
 				if err == nil {
 					t.Errorf("expected error but got none")
 				}
-				if deserializedKey != nil {
-					t.Errorf("deserializedKey=%v, want=nil when error occurs", deserializedKey)
-				}
+				//if deserializedKey != nil {
+				//	t.Errorf("deserializedKey=%v, want=nil when error occurs", deserializedKey)
+				//}
 			} else {
 				if err != nil {
 					t.Errorf("unexpected error: %v", err)
 				}
-				if deserializedKey == nil {
-					t.Errorf("deserialized key is nil, expected non-nil output")
-				}
 
-				// Test that the deserialized key works with Equal
+				// Test that the deserialized key works with Equal.
 				if !key.Equal(deserializedKey) {
 					t.Errorf("deserialized key doesn't match original")
 				}
@@ -203,8 +200,8 @@ func TestCompare(t *testing.T) {
 			}
 
 			if tt.secret2 == "" {
-				// Test with nil for empty secret case
-				if got, want := key1.Equal(nil), tt.expected; got != want {
+				// Test with uninitialized struct for empty secret case.
+				if got, want := key1.Equal(kdf.DerivedKey{}), tt.expected; got != want {
 					t.Errorf("result=%v, want=%v", got, want)
 				}
 			} else {
