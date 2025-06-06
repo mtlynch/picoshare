@@ -83,7 +83,18 @@ func TestAuthenticate(t *testing.T) {
 
 	// Start a valid session to get a valid cookie.
 	w := httptest.NewRecorder()
-	sessionReq := httptest.NewRequest(http.MethodPost, "/auth", createJSONBody(t, secretKey))
+	sessionReq := httptest.NewRequest(http.MethodPost, "/auth", func() *bytes.Buffer {
+		body := struct {
+			SharedSecretKey string `json:"sharedSecretKey"`
+		}{
+			SharedSecretKey: secretKey,
+		}
+		var buf bytes.Buffer
+		if err := json.NewEncoder(&buf).Encode(body); err != nil {
+			t.Fatalf("failed to encode JSON: %v", err)
+		}
+		return &buf
+	}())
 	auth.StartSession(w, sessionReq)
 
 	validCookie := getCookie(t, w.Result())
@@ -132,7 +143,18 @@ func TestAuthenticate(t *testing.T) {
 		}
 
 		wrongW := httptest.NewRecorder()
-		wrongReq := httptest.NewRequest(http.MethodPost, "/auth", createJSONBody(t, "wrongsecret"))
+		wrongReq := httptest.NewRequest(http.MethodPost, "/auth", func() *bytes.Buffer {
+			body := struct {
+				SharedSecretKey string `json:"sharedSecretKey"`
+			}{
+				SharedSecretKey: "wrongsecret",
+			}
+			var buf bytes.Buffer
+			if err := json.NewEncoder(&buf).Encode(body); err != nil {
+				t.Fatalf("failed to encode JSON: %v", err)
+			}
+			return &buf
+		}())
 		wrongAuth.StartSession(wrongW, wrongReq)
 		wrongCookie := getCookie(t, wrongW.Result())
 
@@ -178,19 +200,4 @@ func getCookie(t *testing.T, resp *http.Response) *http.Cookie {
 		t.Fatalf("got %d cookies, want 1", len(cookies))
 	}
 	return cookies[0]
-}
-
-// Helper function to create a JSON request body
-func createJSONBody(t *testing.T, secret string) *bytes.Buffer {
-	t.Helper()
-	body := struct {
-		SharedSecretKey string `json:"sharedSecretKey"`
-	}{
-		SharedSecretKey: secret,
-	}
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(body); err != nil {
-		t.Fatalf("failed to encode JSON: %v", err)
-	}
-	return &buf
 }
