@@ -61,7 +61,7 @@ func (ssa SharedSecretAuthenticator) StartSession(w http.ResponseWriter, r *http
 		return
 	}
 
-	if !ssa.serverKey.Compare(userKey) {
+	if !ssa.serverKey.Equal(userKey) {
 		http.Error(w, ErrInvalidCredentials.Error(), http.StatusUnauthorized)
 		return
 	}
@@ -81,7 +81,7 @@ func (ssa SharedSecretAuthenticator) Authenticate(r *http.Request) bool {
 		return false
 	}
 
-	return ssa.serverKey.Compare(cookieKey)
+	return ssa.serverKey.Equal(cookieKey)
 }
 
 // ClearSession removes the authentication cookie.

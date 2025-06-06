@@ -59,22 +59,22 @@ func TestKeyComparison(t *testing.T) {
 		t.Fatalf("failed to derive second key: %v", err)
 	}
 
-	if !key1.Compare(key2) {
+	if !key1.Equal(key2) {
 		t.Errorf("keys with same secret should match")
 	}
 
-	// Test that different secrets don't match
-	key3, err := deriver.Derive("different")
+	// Test with different secrets
+	key3, err := deriver.Derive("different-secret")
 	if err != nil {
-		t.Fatalf("failed to derive third key: %v", err)
+		t.Fatalf("failed to derive key3: %v", err)
 	}
 
-	if key1.Compare(key3) {
+	if key1.Equal(key3) {
 		t.Errorf("keys with different secrets should not match")
 	}
 
 	// Test comparison with nil
-	if key1.Compare(nil) {
+	if key1.Equal(nil) {
 		t.Errorf("comparison with nil should return false")
 	}
 }
@@ -128,8 +128,8 @@ func TestDeserializeKey(t *testing.T) {
 					t.Errorf("deserialized key is nil, expected non-nil output")
 				}
 
-				// Test that the deserialized key works with Compare
-				if !key.Compare(deserializedKey) {
+				// Test that the deserialized key works with Equal
+				if !key.Equal(deserializedKey) {
 					t.Errorf("deserialized key doesn't match original")
 				}
 			}
@@ -156,7 +156,7 @@ func TestSerializeDeserialize(t *testing.T) {
 		t.Errorf("failed to deserialize: %v", err)
 	}
 
-	if !key.Compare(deserializedKey) {
+	if !key.Equal(deserializedKey) {
 		t.Errorf("deserialized key doesn't match original")
 	}
 
@@ -204,7 +204,7 @@ func TestCompare(t *testing.T) {
 
 			if tt.secret2 == "" {
 				// Test with nil for empty secret case
-				if got, want := key1.Compare(nil), tt.expected; got != want {
+				if got, want := key1.Equal(nil), tt.expected; got != want {
 					t.Errorf("result=%v, want=%v", got, want)
 				}
 			} else {
@@ -213,7 +213,7 @@ func TestCompare(t *testing.T) {
 					t.Fatalf("failed to derive second key: %v", err)
 				}
 
-				if got, want := key1.Compare(key2), tt.expected; got != want {
+				if got, want := key1.Equal(key2), tt.expected; got != want {
 					t.Errorf("result=%v, want=%v", got, want)
 				}
 			}
@@ -237,7 +237,7 @@ func TestIntegration(t *testing.T) {
 		t.Fatalf("failed to derive user key: %v", err)
 	}
 
-	if !serverKey.Compare(userKey) {
+	if !serverKey.Equal(userKey) {
 		t.Errorf("login comparison failed")
 	}
 
@@ -246,7 +246,7 @@ func TestIntegration(t *testing.T) {
 		t.Fatalf("failed to derive wrong user key: %v", err)
 	}
 
-	if serverKey.Compare(wrongUserKey) {
+	if serverKey.Equal(wrongUserKey) {
 		t.Errorf("login comparison should have failed for wrong secret")
 	}
 
@@ -257,7 +257,7 @@ func TestIntegration(t *testing.T) {
 		t.Fatalf("failed to deserialize: %v", err)
 	}
 
-	if !serverKey.Compare(cookieKey) {
+	if !serverKey.Equal(cookieKey) {
 		t.Errorf("cookie comparison failed")
 	}
 
@@ -268,11 +268,11 @@ func TestIntegration(t *testing.T) {
 		t.Fatalf("failed to derive second server key: %v", err)
 	}
 
-	if !serverKey2.Compare(userKey) {
+	if !serverKey2.Equal(userKey) {
 		t.Errorf("second deriver login comparison failed")
 	}
 
-	if !serverKey2.Compare(cookieKey) {
+	if !serverKey2.Equal(cookieKey) {
 		t.Errorf("second deriver cookie comparison failed")
 	}
 }

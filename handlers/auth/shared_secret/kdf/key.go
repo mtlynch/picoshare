@@ -10,8 +10,8 @@ type DerivedKey struct {
 	data []byte
 }
 
-// Compare performs constant-time comparison between this key and another key.
-func (k *DerivedKey) Compare(other *DerivedKey) bool {
+// Equal performs constant-time comparison between this key and another key.
+func (k *DerivedKey) Equal(other *DerivedKey) bool {
 	if other == nil || len(other.data) == 0 {
 		return false
 	}
