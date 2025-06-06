@@ -67,7 +67,10 @@ func TestStartSession(t *testing.T) {
 				t.Fatalf("status=%d, want=%d", got, want)
 			}
 
-			body, _ := io.ReadAll(res.Body)
+			body, err := io.ReadAll(res.Body)
+			if err != nil {
+				t.Fatalf("failed to read response body: %v", err)
+			}
 			if got, want := getError(res.StatusCode, strings.TrimSpace(string(body))), tt.expectedErr; got != want {
 				t.Fatalf("err=%v, want=%v", got, want)
 			}
@@ -91,56 +94,75 @@ func TestStartSession(t *testing.T) {
 }
 
 func TestAuthenticate(t *testing.T) {
-	for _, tt := range []struct {
-		description string
-		secretKey   string
-		cookieVal   string
-		want        bool
-	}{
-		{
-			description: "accept valid cookie",
-			secretKey:   "mysecret",
-			cookieVal:   createValidCookie(t, "mysecret"),
-			want:        true,
-		},
-		{
-			description: "reject invalid cookie",
-			secretKey:   "mysecret",
-			cookieVal:   createValidCookie(t, "wrongsecret"),
-			want:        false,
-		},
-		{
-			description: "reject empty cookie",
-			secretKey:   "mysecret",
-			cookieVal:   "",
-			want:        false,
-		},
-		{
-			description: "reject malformed base64 cookie",
-			secretKey:   "mysecret",
-			cookieVal:   "not-base64!",
-			want:        false,
-		},
-	} {
-		t.Run(tt.description, func(t *testing.T) {
-			auth, err := shared_secret.New(tt.secretKey)
-			if err != nil {
-				t.Fatalf("failed to create authenticator: %v", err)
-			}
+	secretKey := "mysecret"
 
-			req := httptest.NewRequest(http.MethodGet, "/", nil)
-			if tt.cookieVal != "" {
-				req.AddCookie(&http.Cookie{
-					Name:  "sharedSecret",
-					Value: tt.cookieVal,
-				})
-			}
-
-			if got, want := auth.Authenticate(req), tt.want; got != want {
-				t.Errorf("got=%v, want=%v", got, want)
-			}
-		})
+	// Create authenticator.
+	auth, err := shared_secret.New(secretKey)
+	if err != nil {
+		t.Fatalf("failed to create authenticator: %v", err)
 	}
+
+	// Start a valid session to get a valid cookie.
+	w := httptest.NewRecorder()
+	sessionReq := httptest.NewRequest(http.MethodPost, "/auth", createJSONBody(t, secretKey))
+	auth.StartSession(w, sessionReq)
+
+	validCookie := getCookie(t, w.Result())
+
+	t.Run("valid cookie should authenticate successfully", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "/", nil)
+		req.AddCookie(validCookie)
+		if got, want := auth.Authenticate(req), true; got != want {
+			t.Errorf("got=%v, want=%v", got, want)
+		}
+	})
+
+	t.Run("request with no cookie should fail", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "/", nil)
+		if got, want := auth.Authenticate(req), false; got != want {
+			t.Errorf("got=%v, want=%v", got, want)
+		}
+	})
+
+	t.Run("empty cookie should fail", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "/", nil)
+		req.AddCookie(&http.Cookie{
+			Name:  "sharedSecret",
+			Value: "",
+		})
+		if got, want := auth.Authenticate(req), false; got != want {
+			t.Errorf("got=%v, want=%v", got, want)
+		}
+	})
+
+	t.Run("malformed base64 cookie should fail", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "/", nil)
+		req.AddCookie(&http.Cookie{
+			Name:  "sharedSecret",
+			Value: "not-base64!",
+		})
+		if got, want := auth.Authenticate(req), false; got != want {
+			t.Errorf("got=%v, want=%v", got, want)
+		}
+	})
+
+	t.Run("cookie created with wrong secret should fail", func(t *testing.T) {
+		wrongAuth, err := shared_secret.New("wrongsecret")
+		if err != nil {
+			t.Fatalf("failed to create wrong authenticator: %v", err)
+		}
+
+		wrongW := httptest.NewRecorder()
+		wrongReq := httptest.NewRequest(http.MethodPost, "/auth", createJSONBody(t, "wrongsecret"))
+		wrongAuth.StartSession(wrongW, wrongReq)
+		wrongCookie := getCookie(t, wrongW.Result())
+
+		req := httptest.NewRequest(http.MethodGet, "/", nil)
+		req.AddCookie(wrongCookie)
+		if got, want := auth.Authenticate(req), false; got != want {
+			t.Errorf("got=%v, want=%v", got, want)
+		}
+	})
 }
 
 func TestClearSession(t *testing.T) {
@@ -196,21 +218,6 @@ func getCookie(t *testing.T, resp *http.Response) *http.Cookie {
 		t.Fatalf("got %d cookies, want 1", len(cookies))
 	}
 	return cookies[0]
-}
-
-// Helper function to create a valid cookie value for testing
-func createValidCookie(t *testing.T, secret string) string {
-	t.Helper()
-	auth, err := shared_secret.New(secret)
-	if err != nil {
-		t.Fatalf("failed to create authenticator: %v", err)
-	}
-
-	w := httptest.NewRecorder()
-	req := httptest.NewRequest(http.MethodPost, "/auth", createJSONBody(t, secret))
-	auth.StartSession(w, req)
-
-	return getCookie(t, w.Result()).Value
 }
 
 // Helper function to create a JSON request body
