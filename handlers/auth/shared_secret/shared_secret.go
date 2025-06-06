@@ -24,34 +24,33 @@ var (
 
 // KDF defines the interface for key derivation operations.
 type KDF interface {
-	DeriveFromKey(key []byte) ([]byte, error)
+	CompareWithInput(inputKey []byte) bool
+	CompareWithDerived(derivedKey []byte) bool
+	GetDerivedKey() []byte
 	FromBase64(b64encoded string) ([]byte, error)
 	Compare(a, b []byte) bool
 }
 
 // SharedSecretAuthenticator handles authentication using a shared secret.
 type SharedSecretAuthenticator struct {
-	kdf    KDF
-	secret []byte
+	kdf KDF
 }
 
 // New creates a new SharedSecretAuthenticator.
 func New(sharedSecretKey string) (SharedSecretAuthenticator, error) {
-	k := kdf.New()
-	secret, err := k.DeriveFromKey([]byte(sharedSecretKey))
+	k, err := kdf.New([]byte(sharedSecretKey))
 	if err != nil {
 		return SharedSecretAuthenticator{}, err
 	}
 
 	return SharedSecretAuthenticator{
-		kdf:    k,
-		secret: secret,
+		kdf: k,
 	}, nil
 }
 
 // StartSession begins an authenticated session.
 func (ssa SharedSecretAuthenticator) StartSession(w http.ResponseWriter, r *http.Request) {
-	secret, err := ssa.sharedSecretFromRequest(r)
+	inputKey, err := ssa.inputKeyFromRequest(r)
 	if err != nil {
 		switch err {
 		case ErrMalformedRequest, ErrEmptyCredentials:
@@ -62,7 +61,7 @@ func (ssa SharedSecretAuthenticator) StartSession(w http.ResponseWriter, r *http
 		return
 	}
 
-	if !ssa.kdf.Compare(secret, ssa.secret) {
+	if !ssa.kdf.CompareWithInput(inputKey) {
 		http.Error(w, ErrInvalidCredentials.Error(), http.StatusUnauthorized)
 		return
 	}
@@ -77,12 +76,12 @@ func (ssa SharedSecretAuthenticator) Authenticate(r *http.Request) bool {
 		return false
 	}
 
-	secret, err := ssa.kdf.FromBase64(authCookie.Value)
+	derivedKey, err := ssa.kdf.FromBase64(authCookie.Value)
 	if err != nil {
 		return false
 	}
 
-	return ssa.kdf.Compare(secret, ssa.secret)
+	return ssa.kdf.CompareWithDerived(derivedKey)
 }
 
 // ClearSession removes the authentication cookie.
@@ -97,7 +96,7 @@ func (ssa SharedSecretAuthenticator) ClearSession(w http.ResponseWriter) {
 	})
 }
 
-func (ssa SharedSecretAuthenticator) sharedSecretFromRequest(r *http.Request) ([]byte, error) {
+func (ssa SharedSecretAuthenticator) inputKeyFromRequest(r *http.Request) ([]byte, error) {
 	body := struct {
 		SharedSecretKey string `json:"sharedSecretKey"`
 	}{}
@@ -110,13 +109,14 @@ func (ssa SharedSecretAuthenticator) sharedSecretFromRequest(r *http.Request) ([
 		return nil, ErrEmptyCredentials
 	}
 
-	return ssa.kdf.DeriveFromKey([]byte(body.SharedSecretKey))
+	return []byte(body.SharedSecretKey), nil
 }
 
 func (ssa SharedSecretAuthenticator) createCookie(w http.ResponseWriter) {
+	derivedKey := ssa.kdf.GetDerivedKey()
 	http.SetCookie(w, &http.Cookie{
 		Name:     authCookieName,
-		Value:    base64.StdEncoding.EncodeToString(ssa.secret),
+		Value:    base64.StdEncoding.EncodeToString(derivedKey),
 		Path:     "/",
 		HttpOnly: true,
 		SameSite: http.SameSiteStrictMode,
