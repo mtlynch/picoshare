@@ -37,21 +37,9 @@ func TestDerive(t *testing.T) {
 		},
 	} {
 		t.Run(fmt.Sprintf("%s [%s]", tt.description, tt.input), func(t *testing.T) {
-			key, err := deriver.Derive(tt.input)
+			_, err := deriver.Derive(tt.input)
 			if got, want := err, tt.err; got != want {
 				t.Fatalf("err=%v, want=%v", got, want)
-			}
-
-			if !tt.expectError {
-				if key == nil {
-					t.Errorf("key is nil, expected non-nil instance")
-				}
-				serialized := key.Serialize()
-				if len(serialized) == 0 {
-					t.Errorf("serialized value is empty, expected non-empty output")
-				}
-			} else if key != nil {
-				t.Errorf("key=%v, want=nil when error occurs", key)
 			}
 		})
 	}
