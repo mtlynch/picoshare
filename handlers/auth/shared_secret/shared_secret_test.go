@@ -1,4 +1,4 @@
-package http_test
+package shared_secret_test
 
 import (
 	"bytes"
@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	httpAuth "github.com/mtlynch/picoshare/v2/handlers/auth/shared_secret/http"
+	"github.com/mtlynch/picoshare/v2/handlers/auth/shared_secret"
 )
 
 func TestStartSession(t *testing.T) {
@@ -33,25 +33,25 @@ func TestStartSession(t *testing.T) {
 			secretKey:      "mysecret",
 			requestBody:    `{"sharedSecretKey": "wrongsecret"}`,
 			expectedStatus: http.StatusUnauthorized,
-			expectedErr:    httpAuth.ErrInvalidCredentials,
+			expectedErr:    shared_secret.ErrInvalidCredentials,
 		},
 		{
 			description:    "reject empty credentials",
 			secretKey:      "mysecret",
 			requestBody:    `{"sharedSecretKey": ""}`,
 			expectedStatus: http.StatusBadRequest,
-			expectedErr:    httpAuth.ErrEmptyCredentials,
+			expectedErr:    shared_secret.ErrEmptyCredentials,
 		},
 		{
 			description:    "reject malformed JSON",
 			secretKey:      "mysecret",
 			requestBody:    `{malformed`,
 			expectedStatus: http.StatusBadRequest,
-			expectedErr:    httpAuth.ErrMalformedRequest,
+			expectedErr:    shared_secret.ErrMalformedRequest,
 		},
 	} {
 		t.Run(tt.description, func(t *testing.T) {
-			auth, err := httpAuth.New(tt.secretKey)
+			auth, err := shared_secret.New(tt.secretKey)
 			if err != nil {
 				t.Fatalf("failed to create authenticator: %v", err)
 			}
@@ -123,7 +123,7 @@ func TestAuthenticate(t *testing.T) {
 		},
 	} {
 		t.Run(tt.description, func(t *testing.T) {
-			auth, err := httpAuth.New(tt.secretKey)
+			auth, err := shared_secret.New(tt.secretKey)
 			if err != nil {
 				t.Fatalf("failed to create authenticator: %v", err)
 			}
@@ -144,7 +144,7 @@ func TestAuthenticate(t *testing.T) {
 }
 
 func TestClearSession(t *testing.T) {
-	auth, err := httpAuth.New("mysecret")
+	auth, err := shared_secret.New("mysecret")
 	if err != nil {
 		t.Fatalf("failed to create authenticator: %v", err)
 	}
@@ -175,13 +175,13 @@ func getError(statusCode int, body string) error {
 	case http.StatusOK:
 		return nil
 	case http.StatusUnauthorized:
-		return httpAuth.ErrInvalidCredentials
+		return shared_secret.ErrInvalidCredentials
 	case http.StatusBadRequest:
 		switch body {
-		case httpAuth.ErrEmptyCredentials.Error():
-			return httpAuth.ErrEmptyCredentials
+		case shared_secret.ErrEmptyCredentials.Error():
+			return shared_secret.ErrEmptyCredentials
 		default:
-			return httpAuth.ErrMalformedRequest
+			return shared_secret.ErrMalformedRequest
 		}
 	default:
 		return fmt.Errorf("unexpected status code: %d", statusCode)
@@ -201,7 +201,7 @@ func getCookie(t *testing.T, resp *http.Response) *http.Cookie {
 // Helper function to create a valid cookie value for testing
 func createValidCookie(t *testing.T, secret string) string {
 	t.Helper()
-	auth, err := httpAuth.New(secret)
+	auth, err := shared_secret.New(secret)
 	if err != nil {
 		t.Fatalf("failed to create authenticator: %v", err)
 	}
