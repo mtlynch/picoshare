@@ -23,7 +23,7 @@ var (
 
 // SharedSecretAuthenticator handles authentication using a shared secret.
 type SharedSecretAuthenticator struct {
-	deriver   *kdf.Pbkdf2Deriver
+	deriver   kdf.Pbkdf2Deriver
 	serverKey kdf.DerivedKey
 }
 

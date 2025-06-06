@@ -22,8 +22,8 @@ type Pbkdf2Deriver struct {
 }
 
 // NewDeriver creates a new PBKDF2 key deriver with default parameters.
-func NewDeriver() *Pbkdf2Deriver {
-	return &Pbkdf2Deriver{
+func NewDeriver() Pbkdf2Deriver {
+	return Pbkdf2Deriver{
 		// These would be insecure values for storing a database of user credentials,
 		// but we're only storing a single password, so it's not important to have
 		// random salt or high iteration rounds.
@@ -34,7 +34,7 @@ func NewDeriver() *Pbkdf2Deriver {
 }
 
 // Derive creates a derived key from the provided secret string.
-func (d *Pbkdf2Deriver) Derive(secret string) (DerivedKey, error) {
+func (d Pbkdf2Deriver) Derive(secret string) (DerivedKey, error) {
 	if secret == "" {
 		return DerivedKey{}, ErrInvalidSecret
 	}

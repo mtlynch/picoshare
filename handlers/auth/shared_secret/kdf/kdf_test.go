@@ -9,8 +9,11 @@ import (
 
 func TestNewDeriver(t *testing.T) {
 	deriver := kdf.NewDeriver()
-	if deriver == nil {
-		t.Fatal("NewDeriver() returned nil")
+	// Since NewDeriver now returns a struct, we just verify it was created
+	// by checking that we can call methods on it
+	_, err := deriver.Derive("test")
+	if err != nil {
+		t.Fatalf("NewDeriver() returned invalid deriver: %v", err)
 	}
 }
 
