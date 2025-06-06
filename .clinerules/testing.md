@@ -1,6 +1,7 @@
 # Testing
 
 - To run unit tests, run ./dev-scripts/run-go-tests
+- When writing new test cases, avoid having t.Run have special-case behavior for particular inputs. Instead, use general purpose logic that doesn't assume particular inputs.
 - Do not attempt to run e2e tests
 
 ## if got, want
