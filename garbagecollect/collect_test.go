@@ -204,6 +204,68 @@ func makeRelativeExpirationTime(delta time.Duration) picoshare.ExpirationTime {
 	return picoshare.ExpirationTime(time.Now().UTC().Add(delta).Truncate(time.Second))
 }
 
+func TestCollectExpiredFileWithDownloadHistory(t *testing.T) {
+	dataStore := test_sqlite.New()
+
+	// First, test that foreign key constraints are actually working by trying
+	// to insert a download record for a non-existent entry.
+	nonExistentID := picoshare.EntryID("NON_EXISTENT")
+	downloadRecord := picoshare.DownloadRecord{
+		Time:      mustParseTime("2023-06-01T12:00:00Z"),
+		ClientIP:  "192.168.1.1",
+		UserAgent: "test-agent",
+	}
+	if err := dataStore.InsertEntryDownload(nonExistentID, downloadRecord); err == nil {
+		t.Fatalf("expected foreign key constraint error when inserting download for non-existent entry, but got no error")
+	}
+
+	// Create an expired entry.
+	entryID := picoshare.EntryID("EXPIRED_WITH_DOWNLOADS")
+	entryData := "test file content"
+	if err := dataStore.InsertEntry(strings.NewReader(entryData),
+		picoshare.UploadMetadata{
+			ID:       entryID,
+			Filename: "test.txt",
+			Uploaded: mustParseTime("2023-01-01T00:00:00Z"),
+			Expires:  mustParseExpirationTime("2022-03-01T00:00:00Z"), // Expired.
+			Size:     mustParseFileSize(len(entryData)),
+		}); err != nil {
+		t.Fatalf("failed to insert entry: %v", err)
+	}
+
+	// Record a download for the expired entry.
+	if err := dataStore.InsertEntryDownload(entryID, downloadRecord); err != nil {
+		t.Fatalf("failed to insert download record: %v", err)
+	}
+
+	// Attempt garbage collection. This should now succeed because we properly
+	// delete download records before deleting entries.
+	c := garbagecollect.NewCollector(dataStore)
+	if err := c.Collect(); err != nil {
+		t.Fatalf("garbage collection failed: %v", err)
+	}
+
+	// Verify that the expired entry and its download history were both deleted.
+	remaining, err := dataStore.GetEntriesMetadata()
+	if err != nil {
+		t.Fatalf("retrieving datastore metadata failed: %v", err)
+	}
+
+	if len(remaining) != 0 {
+		t.Fatalf("expected no entries to remain after garbage collection, but found %d entries", len(remaining))
+	}
+
+	// Verify that download history was also deleted.
+	downloads, err := dataStore.GetEntryDownloads(entryID)
+	if err != nil {
+		t.Fatalf("failed to get entry downloads: %v", err)
+	}
+
+	if len(downloads) != 0 {
+		t.Fatalf("expected no download records to remain after garbage collection, but found %d records", len(downloads))
+	}
+}
+
 func mustParseFileSize(val int) picoshare.FileSize {
 	fileSize, err := picoshare.FileSizeFromInt(val)
 	if err != nil {

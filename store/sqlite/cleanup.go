@@ -37,6 +37,24 @@ func (s Store) deleteExpiredEntries() error {
 
 	currentTime := formatTime(time.Now())
 
+	// Delete download records for expired entries first to avoid foreign key
+	// constraint violations.
+	if _, err = tx.Exec(`
+   DELETE FROM
+   	downloads
+   WHERE
+   	entry_id IN (
+   		SELECT
+   			id
+   		FROM
+   			entries
+   		WHERE
+   			entries.expiration_time IS NOT NULL AND
+   			entries.expiration_time < :current_time
+   	);`, sql.Named("current_time", currentTime)); err != nil {
+		return err
+	}
+
 	if _, err = tx.Exec(`
    DELETE FROM
    	entries_data
