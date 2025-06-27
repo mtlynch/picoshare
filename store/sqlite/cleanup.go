@@ -39,6 +39,22 @@ func (s Store) deleteExpiredEntries() error {
 
 	if _, err = tx.Exec(`
    DELETE FROM
+   	downloads
+   WHERE
+   	entry_id IN (
+   		SELECT
+   			id
+   		FROM
+   			entries
+   		WHERE
+   			entries.expiration_time IS NOT NULL AND
+   			entries.expiration_time < :current_time
+   	);`, sql.Named("current_time", currentTime)); err != nil {
+		return err
+	}
+
+	if _, err = tx.Exec(`
+   DELETE FROM
    	entries_data
    WHERE
    	id IN (
