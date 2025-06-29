@@ -355,6 +355,22 @@ func (s Server) fileDownloadsGet() http.HandlerFunc {
 			return
 		}
 
+		showUniqueOnly := r.URL.Query().Get("unique") == "true"
+
+		filteredDownloads := downloads
+		if showUniqueOnly {
+			seen := make(map[string]bool)
+			var uniqueDownloads []picoshare.DownloadRecord
+
+			for _, download := range downloads {
+				if !seen[download.ClientIP] {
+					seen[download.ClientIP] = true
+					uniqueDownloads = append(uniqueDownloads, download)
+				}
+			}
+			filteredDownloads = uniqueDownloads
+		}
+
 		// Convert raw downloads to display-friendly information.
 		type downloadRecord struct {
 			Time     time.Time
@@ -362,8 +378,8 @@ func (s Server) fileDownloadsGet() http.HandlerFunc {
 			Browser  string
 			Platform string
 		}
-		records := make([]downloadRecord, len(downloads))
-		for i, d := range downloads {
+		records := make([]downloadRecord, len(filteredDownloads))
+		for i, d := range filteredDownloads {
 			agent := useragent.Parse(d.UserAgent)
 			records[i] = downloadRecord{
 				Time:     d.Time,
@@ -375,12 +391,14 @@ func (s Server) fileDownloadsGet() http.HandlerFunc {
 
 		if err := t.Execute(w, struct {
 			commonProps
-			Metadata  picoshare.UploadMetadata
-			Downloads []downloadRecord
+			Metadata       picoshare.UploadMetadata
+			Downloads      []downloadRecord
+			ShowUniqueOnly bool
 		}{
-			commonProps: makeCommonProps("PicoShare - Downloads", r.Context()),
-			Metadata:    metadata,
-			Downloads:   records,
+			commonProps:    makeCommonProps("PicoShare - Downloads", r.Context()),
+			Metadata:       metadata,
+			Downloads:      records,
+			ShowUniqueOnly: showUniqueOnly,
 		}); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
