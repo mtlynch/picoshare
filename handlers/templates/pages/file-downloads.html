@@ -11,10 +11,9 @@
         el.innerText = formatRfc3339Local(parseRfc3339(el.innerText));
       });
 
-      // Handle unique IPs checkbox
-      const checkbox = document.getElementById("unique-ips-only");
-      if (checkbox) {
-        checkbox.addEventListener("change", function () {
+      document
+        .getElementById("unique-ips-only")
+        .addEventListener("change", function () {
           const url = new URL(window.location);
           if (this.checked) {
             url.searchParams.set("unique", "true");
@@ -23,7 +22,6 @@
           }
           window.location.href = url.toString();
         });
-      }
     });
   </script>
 {{ end }}
