@@ -77,12 +77,19 @@ jobs:
       - checkout
       - attach_workspace:
           at: ./
+      - restore_cache:
+          keys:
+            - go-mod-v3-{{ checksum "go.sum" }}
       - run:
           name: Compile production backend
           command: PS_VERSION="$(git describe --tags)" dev-scripts/build-backend
       - run:
           name: Compile dev backend
           command: PS_VERSION="$(git describe --tags)" dev-scripts/build-backend dev
+      - save_cache:
+          key: go-mod-v3-{{ checksum "go.sum" }}
+          paths:
+            - ~/go/pkg/mod
       - persist_to_workspace:
           root: ./
           paths:

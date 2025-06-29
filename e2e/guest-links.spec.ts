@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
-import { login } from "./helpers/login.js";
-import { readDbTokenCookie } from "./helpers/db.js";
+import { login } from "./helpers/login";
+import { readDbTokenCookie } from "./helpers/db";
 
 const labelColumn = 0;
 const expiresColumn = 4;
@@ -40,9 +40,10 @@ test("creates a guest link and uploads a file as a guest", async ({
     const guestContext = await browser.newContext();
 
     // Share database across users
-    await guestContext.addCookies([
-      readDbTokenCookie(await page.context().cookies()),
-    ]);
+    const dbCookie = readDbTokenCookie(await page.context().cookies());
+    if (dbCookie) {
+      await guestContext.addCookies([dbCookie]);
+    }
 
     const guestPage = await guestContext.newPage();
 
@@ -117,9 +118,10 @@ test("files uploaded through guest link remain accessible after guest link is de
     const guestContext = await browser.newContext();
 
     // Share database across users.
-    await guestContext.addCookies([
-      readDbTokenCookie(await page.context().cookies()),
-    ]);
+    const dbCookie = readDbTokenCookie(await page.context().cookies());
+    if (dbCookie) {
+      await guestContext.addCookies([dbCookie]);
+    }
 
     const guestPage = await guestContext.newPage();
 
@@ -214,9 +216,10 @@ test("disables and enables a guest link, affecting access", async ({
     const guestContext = await browser.newContext();
 
     // Share database across users.
-    await guestContext.addCookies([
-      readDbTokenCookie(await page.context().cookies()),
-    ]);
+    const dbCookie1 = readDbTokenCookie(await page.context().cookies());
+    if (dbCookie1) {
+      await guestContext.addCookies([dbCookie1]);
+    }
 
     const guestPage = await guestContext.newPage();
 
@@ -237,9 +240,10 @@ test("disables and enables a guest link, affecting access", async ({
     const guestContext = await browser.newContext();
 
     // Share database across users.
-    await guestContext.addCookies([
-      readDbTokenCookie(await page.context().cookies()),
-    ]);
+    const dbCookie2 = readDbTokenCookie(await page.context().cookies());
+    if (dbCookie2) {
+      await guestContext.addCookies([dbCookie2]);
+    }
 
     const guestPage = await guestContext.newPage();
 

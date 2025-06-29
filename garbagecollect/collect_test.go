@@ -44,6 +44,13 @@ func TestCollectExpiredFile(t *testing.T) {
 			Expires:  mustParseExpirationTime("2024-01-01T00:00:00Z"),
 			Size:     mustParseFileSize(len(d)),
 		})
+	dataStore.InsertEntryDownload(
+		picoshare.EntryID("AAAAAAAAAAAA"),
+		picoshare.DownloadRecord{
+			Time:      mustParseTime("2023-06-01T12:00:00Z"),
+			ClientIP:  "192.168.1.1",
+			UserAgent: "test-agent",
+		})
 	dataStore.InsertEntry(strings.NewReader(d),
 		picoshare.UploadMetadata{
 			ID:       picoshare.EntryID("BBBBBBBBBBBB"),
