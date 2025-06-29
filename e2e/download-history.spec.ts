@@ -140,8 +140,10 @@ test("filter downloads to unique IPs only", async ({ page }) => {
   // Force a second download.
   await page.reload();
 
-  // Navigate to downloads history
-  await page.goBack();
+  // Going back doesn't work on Firefox here for some reason.
+  await page.goto("/");
+
+  // Navigate to downloads history.
   await page.getByRole("menuitem", { name: "Files" }).click();
   await expect(page).toHaveURL(/\/files$/);
   await page
