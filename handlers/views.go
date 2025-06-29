@@ -355,10 +355,8 @@ func (s Server) fileDownloadsGet() http.HandlerFunc {
 			return
 		}
 
-		// Check for unique parameter
 		showUniqueOnly := r.URL.Query().Get("unique") == "true"
 
-		// Filter downloads to unique IPs if requested
 		filteredDownloads := downloads
 		if showUniqueOnly {
 			seen := make(map[string]bool)
