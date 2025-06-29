@@ -10,6 +10,20 @@
       document.querySelectorAll(".download-time").forEach((el) => {
         el.innerText = formatRfc3339Local(parseRfc3339(el.innerText));
       });
+
+      // Handle unique IPs checkbox
+      const checkbox = document.getElementById("unique-ips-only");
+      if (checkbox) {
+        checkbox.addEventListener("change", function () {
+          const url = new URL(window.location);
+          if (this.checked) {
+            url.searchParams.set("unique", "true");
+          } else {
+            url.searchParams.delete("unique");
+          }
+          window.location.href = url.toString();
+        });
+      }
     });
   </script>
 {{ end }}
@@ -22,6 +36,17 @@
   {{ end }}
 
   {{ if gt (len .Downloads) 0 }}
+    <div class="field">
+      <label class="checkbox">
+        <input
+          type="checkbox"
+          id="unique-ips-only"
+          {{ if .ShowUniqueOnly }}checked{{ end }}
+        />
+        Unique IPs only
+      </label>
+    </div>
+
     <div class="table-container">
       <table class="table">
         <thead>
