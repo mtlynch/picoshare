@@ -133,20 +133,15 @@ test("filter downloads to unique IPs only", async ({ page }) => {
     "Upload complete!"
   );
 
-  // Download the file twice from the same IP
   await page.locator("#result-links a").first().click();
   await expect(
     page.getByText("File for testing unique IP filtering")
   ).toBeVisible();
-  await page.goBack();
-
-  await page.locator("#result-links a").first().click();
-  await expect(
-    page.getByText("File for testing unique IP filtering")
-  ).toBeVisible();
-  await page.goBack();
+  // Force a second download.
+  await page.reload();
 
   // Navigate to downloads history
+  await page.goBack();
   await page.getByRole("menuitem", { name: "Files" }).click();
   await expect(page).toHaveURL(/\/files$/);
   await page
