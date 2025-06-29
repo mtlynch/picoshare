@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { login } from "./helpers/login.js";
+import { login } from "./helpers/login";
 
 const browserColumn = 3;
 
@@ -105,7 +105,7 @@ test("upload a file, download it, and verify it has a download history", async (
     if (browserName == "firefox") {
       return "Firefox";
     }
-    return null;
+    return "Unknown";
   })();
 
   await expect(

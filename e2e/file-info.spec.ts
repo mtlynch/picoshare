@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { login } from "./helpers/login.js";
+import { login } from "./helpers/login";
 
 test("upload a file with no attributes, and verify the file info page is correct", async ({
   page,
