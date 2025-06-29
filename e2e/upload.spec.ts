@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { login } from "./helpers/login.js";
+import { login } from "./helpers/login";
 
 const noteColumn = 1;
 const expirationColumn = 4;
