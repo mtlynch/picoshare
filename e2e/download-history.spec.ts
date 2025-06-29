@@ -182,8 +182,9 @@ test("filter downloads to unique IPs only", async ({ page }) => {
   await expect(page.getByRole("table").getByRole("row")).toHaveCount(2);
 
   // Verify download number is correct (should show "1").
-  const downloadCell = page.getByRole("table").getByRole("cell").nth(2);
-  await expect(downloadCell).toHaveText("1");
+  await expect(
+    page.getByRole("table").getByRole("row").nth(2).getByRole("cell").first()
+  ).toHaveText("1");
 
   // Uncheck the checkbox.
   await uniqueCheckbox.uncheck();
