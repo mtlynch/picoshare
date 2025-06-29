@@ -58,10 +58,14 @@ func TestKeyComparison(t *testing.T) {
 		}
 	})
 
-	t.Run("comparison with empty key returns false", func(t *testing.T) {
-		if got, want := originalKey.Equal(kdf.DerivedKey{}), false; got != want {
-			t.Errorf("empty key comparison=%v, want=%v", got, want)
-		}
+	t.Run("comparison with empty key panics", func(t *testing.T) {
+		defer func() {
+			if r := recover(); r == nil {
+				t.Fatal("comparing an empty key should panic")
+			}
+		}()
+
+		originalKey.Equal(kdf.DerivedKey{})
 	})
 }
 
@@ -79,4 +83,14 @@ func TestSerializeDeserialize(t *testing.T) {
 	if !key.Equal(deserializedKey) {
 		t.Errorf("deserialized key doesn't match original")
 	}
+}
+
+func TestSerializeEmptyKey(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Fatal("serializing an empty key should panic")
+		}
+	}()
+
+	kdf.DerivedKey{}.Serialize()
 }

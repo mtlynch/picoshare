@@ -41,11 +41,17 @@ type DerivedKey struct {
 
 // Equal performs constant-time comparison between this key and another key.
 func (k DerivedKey) Equal(other DerivedKey) bool {
+	if len(k.data) == 0 || len(other.data) == 0 {
+		panic("can't compare equality of an uninitialized DerivedKey")
+	}
 	return subtle.ConstantTimeCompare(k.data, other.data) != 0
 }
 
 // Serialize returns the base64-encoded representation of the derived key.
 func (k DerivedKey) Serialize() string {
+	if len(k.data) == 0 {
+		panic("can't serialize uninitialized DerivedKey")
+	}
 	return base64.StdEncoding.EncodeToString(k.data)
 }
 
