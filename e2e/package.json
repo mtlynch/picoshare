@@ -15,7 +15,6 @@
   "devDependencies": {
     "@playwright/test": "1.40.0",
     "@types/node": "^24.0.7",
-    "isomorphic-fetch": "^3.0.0",
     "typescript": "^5.8.3"
   }
 }
