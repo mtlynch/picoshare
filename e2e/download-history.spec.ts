@@ -134,20 +134,28 @@ test("filter downloads to unique IPs only", async ({ page }) => {
   );
 
   // Download the file twice from the same IP
-  const downloadLink = page.locator("#result-links a").first();
-  await downloadLink.click();
+  await page.locator("#result-links a").first().click();
+  await expect(
+    page.getByText("File for testing unique IP filtering")
+  ).toBeVisible();
   await page.goBack();
-  await downloadLink.click();
+
+  await page.locator("#result-links a").first().click();
+  await expect(
+    page.getByText("File for testing unique IP filtering")
+  ).toBeVisible();
   await page.goBack();
 
   // Navigate to downloads history
   await page.getByRole("menuitem", { name: "Files" }).click();
+  await expect(page).toHaveURL(/\/files$/);
   await page
     .getByRole("row")
     .filter({ hasText: "multi-download.txt" })
     .getByLabel("Information")
     .click();
 
+  await expect(page).toHaveURL(/\/files\/.+\/info$/);
   await page
     .locator("section")
     .filter({ has: page.getByRole("heading", { name: "Downloads" }) })
