@@ -1,7 +1,6 @@
 package kdf_test
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/mtlynch/picoshare/v2/handlers/auth/shared_secret/kdf"
@@ -11,23 +10,20 @@ func TestDeriveKeyFromSecret(t *testing.T) {
 	for _, tt := range []struct {
 		description string
 		input       string
-		expectError bool
 		err         error
 	}{
 		{
 			description: "accept valid secret",
 			input:       "mysecret",
-			expectError: false,
 			err:         nil,
 		},
 		{
 			description: "reject empty secret",
 			input:       "",
-			expectError: true,
 			err:         kdf.ErrInvalidSecret,
 		},
 	} {
-		t.Run(fmt.Sprintf("%s [%s]", tt.description, tt.input), func(t *testing.T) {
+		t.Run(tt.description, func(t *testing.T) {
 			_, err := kdf.DeriveKeyFromSecret(tt.input)
 			if got, want := err, tt.err; got != want {
 				t.Fatalf("err=%v, want=%v", got, want)
