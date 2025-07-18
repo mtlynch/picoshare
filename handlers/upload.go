@@ -131,7 +131,14 @@ func (s Server) guestEntryPost() http.HandlerFunc {
 			r.Body = http.MaxBytesReader(w, r.Body, int64(*gl.MaxFileBytes))
 		}
 
-		id, err := s.insertFileFromRequest(r, gl.FileLifetime.ExpirationFromTime(s.clock.Now()), guestLinkID)
+		expiration, err := s.parseGuestExpirationFromRequest(r, gl)
+		if err != nil {
+			log.Printf("invalid expiration for guest upload: %v", err)
+			http.Error(w, fmt.Sprintf("Invalid expiration: %v", err), http.StatusBadRequest)
+			return
+		}
+
+		id, err := s.insertFileFromRequest(r, expiration, guestLinkID)
 		if err != nil {
 			var de *dbError
 			if errors.As(err, &de) {
@@ -295,6 +302,40 @@ func (s Server) parseExpirationFromRequest(r *http.Request) (picoshare.Expiratio
 		return picoshare.ExpirationTime{}, errors.New("missing required URL parameter: expiration")
 	}
 	return parse.Expiration(expirationRaw[0], s.clock.Now())
+}
+
+func (s Server) parseGuestExpirationFromRequest(r *http.Request, gl picoshare.GuestLink) (picoshare.ExpirationTime, error) {
+	expirationRaw, ok := r.URL.Query()["expiration"]
+	if !ok {
+		// If no expiration is provided, use the guest link's default.
+		return gl.FileLifetime.ExpirationFromTime(s.clock.Now()), nil
+	}
+	if len(expirationRaw) <= 0 || expirationRaw[0] == "" {
+		// If expiration parameter is empty, use the guest link's default.
+		return gl.FileLifetime.ExpirationFromTime(s.clock.Now()), nil
+	}
+
+	requestedExpiration, err := parse.Expiration(expirationRaw[0], s.clock.Now())
+	if err != nil {
+		return picoshare.ExpirationTime{}, err
+	}
+
+	// Validate that the requested expiration doesn't exceed the guest link's maximum.
+	maxExpiration := gl.FileLifetime.ExpirationFromTime(s.clock.Now())
+
+	// If guest link allows infinite lifetime, accept any requested expiration.
+	if gl.FileLifetime.Equal(picoshare.FileLifetimeInfinite) {
+		return requestedExpiration, nil
+	}
+
+	// If the requested expiration is beyond the guest link's maximum, cap it.
+	if requestedExpiration != picoshare.NeverExpire &&
+		maxExpiration != picoshare.NeverExpire &&
+		requestedExpiration.Time().After(maxExpiration.Time()) {
+		return maxExpiration, nil
+	}
+
+	return requestedExpiration, nil
 }
 
 // mibToBytes converts an amount in MiB to an amount in bytes.

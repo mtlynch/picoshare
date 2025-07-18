@@ -587,12 +587,65 @@ func (s Server) guestUploadGet() http.HandlerFunc {
 			return
 		}
 
+		// Generate expiration options up to the guest link's maximum file lifetime.
+		type lifetimeOption struct {
+			Lifetime  picoshare.FileLifetime
+			IsDefault bool
+		}
+		type expirationOption struct {
+			FriendlyName string
+			Expiration   time.Time
+			IsDefault    bool
+		}
+
+		baseLifetimeOptions := []lifetimeOption{
+			{picoshare.NewFileLifetimeInDays(1), false},
+			{picoshare.NewFileLifetimeInDays(7), false},
+			{picoshare.NewFileLifetimeInDays(30), false},
+			{picoshare.NewFileLifetimeInYears(1), false},
+			{picoshare.FileLifetimeInfinite, false},
+		}
+
+		// Filter options to only include those within the guest link's maximum.
+		validLifetimeOptions := []lifetimeOption{}
+		for _, lto := range baseLifetimeOptions {
+			// If the guest link allows infinite file lifetime, include all options.
+			if gl.FileLifetime.Equal(picoshare.FileLifetimeInfinite) {
+				validLifetimeOptions = append(validLifetimeOptions, lto)
+			} else if lto.Lifetime.Days() <= gl.FileLifetime.Days() {
+				validLifetimeOptions = append(validLifetimeOptions, lto)
+			}
+		}
+
+		// Mark the guest link's file lifetime as the default.
+		for i, lto := range validLifetimeOptions {
+			if lto.Lifetime.Equal(gl.FileLifetime) {
+				validLifetimeOptions[i].IsDefault = true
+			}
+		}
+
+		// Convert to expiration options.
+		expirationOptions := []expirationOption{}
+		for _, lto := range validLifetimeOptions {
+			friendlyName := lto.Lifetime.FriendlyName()
+			expiration := lto.Lifetime.ExpirationFromTime(s.clock.Now())
+			if lto.Lifetime.Equal(picoshare.FileLifetimeInfinite) {
+				expiration = picoshare.NeverExpire
+			}
+			expirationOptions = append(expirationOptions, expirationOption{
+				FriendlyName: friendlyName,
+				Expiration:   expiration.Time(),
+				IsDefault:    lto.IsDefault,
+			})
+		}
+
 		if err := t.Execute(w, struct {
 			commonProps
-			ExpirationOptions []interface{}
+			ExpirationOptions []expirationOption
 			GuestLinkMetadata picoshare.GuestLink
 		}{
 			commonProps:       makeCommonProps("PicoShare - Upload", r.Context()),
+			ExpirationOptions: expirationOptions,
 			GuestLinkMetadata: gl,
 		}); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)

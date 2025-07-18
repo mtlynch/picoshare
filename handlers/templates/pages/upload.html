@@ -107,7 +107,12 @@
       };
       if (guestLinkMetadata) {
         uploader = () => {
-          return guestUploadFile(file, guestLinkMetadata.id, updateProgress);
+          return guestUploadFile(
+            file,
+            guestLinkMetadata.id,
+            readExpiration(),
+            updateProgress
+          );
         };
       }
       uploader()

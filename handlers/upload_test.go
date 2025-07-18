@@ -583,3 +583,162 @@ func mustParseFileSize(val int) picoshare.FileSize {
 
 	return fileSize
 }
+
+func TestGuestUploadWithExpiration(t *testing.T) {
+	authenticator, err := shared_secret.New("dummypass")
+	if err != nil {
+		t.Fatalf("failed to create shared secret: %v", err)
+	}
+
+	for _, tt := range []struct {
+		description                string
+		guestLinkInStore           picoshare.GuestLink
+		currentTime                time.Time
+		expirationParam            string
+		includeExpirationParam     bool
+		status                     int
+		fileExpirationTimeExpected picoshare.ExpirationTime
+	}{
+		{
+			description: "guest upload without expiration parameter uses guest link default (infinite)",
+			guestLinkInStore: picoshare.GuestLink{
+				ID:           picoshare.GuestLinkID("abcdefgh23456789"),
+				Created:      mustParseTime("2022-05-26T00:00:00Z"),
+				UrlExpires:   mustParseExpirationTime("2030-01-02T03:04:25Z"),
+				FileLifetime: picoshare.FileLifetimeInfinite,
+			},
+			currentTime:                mustParseTime("2024-01-01T00:00:00Z"),
+			includeExpirationParam:     false,
+			status:                     http.StatusOK,
+			fileExpirationTimeExpected: picoshare.NeverExpire,
+		},
+		{
+			description: "guest upload without expiration parameter uses guest link default (7 days)",
+			guestLinkInStore: picoshare.GuestLink{
+				ID:           picoshare.GuestLinkID("abcdefgh23456789"),
+				Created:      mustParseTime("2022-05-26T00:00:00Z"),
+				UrlExpires:   mustParseExpirationTime("2030-01-02T03:04:25Z"),
+				FileLifetime: picoshare.NewFileLifetimeInDays(7),
+			},
+			currentTime:                mustParseTime("2024-01-01T00:00:00Z"),
+			includeExpirationParam:     false,
+			status:                     http.StatusOK,
+			fileExpirationTimeExpected: mustParseExpirationTime("2024-01-08T00:00:00Z"),
+		},
+		{
+			description: "guest upload with valid expiration within guest link limits",
+			guestLinkInStore: picoshare.GuestLink{
+				ID:           picoshare.GuestLinkID("abcdefgh23456789"),
+				Created:      mustParseTime("2022-05-26T00:00:00Z"),
+				UrlExpires:   mustParseExpirationTime("2030-01-02T03:04:25Z"),
+				FileLifetime: picoshare.NewFileLifetimeInDays(30),
+			},
+			currentTime:                mustParseTime("2024-01-01T00:00:00Z"),
+			includeExpirationParam:     true,
+			expirationParam:            "2024-01-15T00:00:00Z",
+			status:                     http.StatusOK,
+			fileExpirationTimeExpected: mustParseExpirationTime("2024-01-15T00:00:00Z"),
+		},
+		{
+			description: "guest upload with expiration exceeding guest link limit gets capped",
+			guestLinkInStore: picoshare.GuestLink{
+				ID:           picoshare.GuestLinkID("abcdefgh23456789"),
+				Created:      mustParseTime("2022-05-26T00:00:00Z"),
+				UrlExpires:   mustParseExpirationTime("2030-01-02T03:04:25Z"),
+				FileLifetime: picoshare.NewFileLifetimeInDays(7),
+			},
+			currentTime:                mustParseTime("2024-01-01T00:00:00Z"),
+			includeExpirationParam:     true,
+			expirationParam:            "2024-01-31T00:00:00Z",
+			status:                     http.StatusOK,
+			fileExpirationTimeExpected: mustParseExpirationTime("2024-01-08T00:00:00Z"), // Capped to guest link's max.
+		},
+		{
+			description: "guest upload with infinite guest link accepts any expiration",
+			guestLinkInStore: picoshare.GuestLink{
+				ID:           picoshare.GuestLinkID("abcdefgh23456789"),
+				Created:      mustParseTime("2022-05-26T00:00:00Z"),
+				UrlExpires:   mustParseExpirationTime("2030-01-02T03:04:25Z"),
+				FileLifetime: picoshare.FileLifetimeInfinite,
+			},
+			currentTime:                mustParseTime("2024-01-01T00:00:00Z"),
+			includeExpirationParam:     true,
+			expirationParam:            "2025-01-01T00:00:00Z",
+			status:                     http.StatusOK,
+			fileExpirationTimeExpected: mustParseExpirationTime("2025-01-01T00:00:00Z"),
+		},
+		{
+			description: "guest upload with empty expiration parameter uses guest link default",
+			guestLinkInStore: picoshare.GuestLink{
+				ID:           picoshare.GuestLinkID("abcdefgh23456789"),
+				Created:      mustParseTime("2022-05-26T00:00:00Z"),
+				UrlExpires:   mustParseExpirationTime("2030-01-02T03:04:25Z"),
+				FileLifetime: picoshare.NewFileLifetimeInDays(30),
+			},
+			currentTime:                mustParseTime("2024-01-01T00:00:00Z"),
+			includeExpirationParam:     true,
+			expirationParam:            "",
+			status:                     http.StatusOK,
+			fileExpirationTimeExpected: mustParseExpirationTime("2024-01-31T00:00:00Z"),
+		},
+	} {
+		t.Run(tt.description, func(t *testing.T) {
+			dataStore := test_sqlite.New()
+			if err := dataStore.InsertGuestLink(tt.guestLinkInStore); err != nil {
+				t.Fatalf("failed to insert dummy guest link: %v", err)
+			}
+
+			c := mockClock{tt.currentTime}
+			s := handlers.New(authenticator, &dataStore, nilSpaceChecker, nilGarbageCollector, c)
+
+			filename := "dummyimage.png"
+			contents := "dummy bytes"
+			formData, contentType := createMultipartFormBody(filename, "", strings.NewReader(contents))
+
+			url := "/api/guest/" + tt.guestLinkInStore.ID.String()
+			if tt.includeExpirationParam {
+				url += "?expiration=" + tt.expirationParam
+			}
+
+			req, err := http.NewRequest("POST", url, formData)
+			if err != nil {
+				t.Fatal(err)
+			}
+			req.Header.Add("Content-Type", contentType)
+			req.Header.Add("Accept", "application/json")
+
+			rec := httptest.NewRecorder()
+			s.Router().ServeHTTP(rec, req)
+			res := rec.Result()
+
+			if got, want := res.StatusCode, tt.status; got != want {
+				t.Fatalf("status=%d, want=%d", got, want)
+			}
+
+			// Only check the response if the request succeeded.
+			if res.StatusCode != http.StatusOK {
+				return
+			}
+
+			body, err := io.ReadAll(res.Body)
+			if err != nil {
+				t.Fatalf("failed to read response body")
+			}
+
+			var response handlers.EntryPostResponse
+			err = json.Unmarshal(body, &response)
+			if err != nil {
+				t.Fatalf("response is not valid JSON: %v", body)
+			}
+
+			entry, err := dataStore.GetEntryMetadata(picoshare.EntryID(response.ID))
+			if err != nil {
+				t.Fatalf("failed to get expected entry %v from data store: %v", response.ID, err)
+			}
+
+			if got, want := entry.Expires, tt.fileExpirationTimeExpected; got != want {
+				t.Errorf("file expiration=%v, want=%v", got, want)
+			}
+		})
+	}
+}
