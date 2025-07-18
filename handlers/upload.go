@@ -321,18 +321,14 @@ func (s Server) parseGuestExpirationFromRequest(r *http.Request, gl picoshare.Gu
 	}
 
 	// Validate that the requested expiration doesn't exceed the guest link's maximum.
-	maxExpiration := gl.FileLifetime.ExpirationFromTime(s.clock.Now())
-
-	// If guest link allows infinite lifetime, accept any requested expiration.
-	if gl.FileLifetime.Equal(picoshare.FileLifetimeInfinite) {
-		return requestedExpiration, nil
-	}
+	maxPermittedExpiration := gl.FileLifetime.ExpirationFromTime(s.clock.Now())
 
 	// If the requested expiration is beyond the guest link's maximum, cap it.
-	if requestedExpiration != picoshare.NeverExpire &&
-		maxExpiration != picoshare.NeverExpire &&
-		requestedExpiration.Time().After(maxExpiration.Time()) {
-		return maxExpiration, nil
+	if requestedExpiration.Time().After(maxPermittedExpiration.Time()) {
+		return picoshare.ExpirationTime{},
+			fmt.Errorf("requested expiration time of %v is beyond guest link's limit: %v",
+				requestedExpiration,
+				maxPermittedExpiration)
 	}
 
 	return requestedExpiration, nil
