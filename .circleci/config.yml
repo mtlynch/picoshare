@@ -100,7 +100,8 @@ jobs:
       - image: mcr.microsoft.com/playwright:v1.40.0-focal
     environment:
       NODE_ENV: development
-      PLAYWRIGHT_FORCE_TTY: false
+      # Without this, Playwright puts in ANSI escape codes that don't render
+      # correctly in CircleCI logs.
       FORCE_COLOR: false
     steps:
       - checkout
