@@ -112,6 +112,27 @@ jobs:
           command: ./dev-scripts/run-e2e-tests --skip-build
       - store_artifacts:
           path: e2e/playwright-report
+  e2e_auth_poc:
+    docker:
+      - image: mcr.microsoft.com/playwright:v1.54.0-noble
+    environment:
+      NODE_ENV: development
+    steps:
+      - checkout
+      - attach_workspace:
+          at: ./
+      - run:
+          name: Install dependencies
+          command: cd e2e && npm install
+      - run:
+          name: Run auth-based e2e tests (proof of concept)
+          command: |
+            cd e2e
+            npx playwright test --config=playwright-auth.config.ts download-history-auth.spec.ts
+      - store_artifacts:
+          path: e2e/playwright-report
+      - store_artifacts:
+          path: e2e/results
   package_release:
     executor: base
     steps:
@@ -264,6 +285,12 @@ workflows:
             tags:
               only: /.*/
       - e2e:
+          filters:
+            tags:
+              only: /.*/
+          requires:
+            - build_backend
+      - e2e_auth_poc:
           filters:
             tags:
               only: /.*/
