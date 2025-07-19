@@ -128,7 +128,7 @@ jobs:
           name: Run auth-based e2e tests (proof of concept)
           command: |
             cd e2e
-            npx playwright test --config=playwright-auth.config.ts download-history-auth.spec.ts
+            npx playwright test --config=./playwright-auth.config.ts download-history-auth.spec.ts
       - store_artifacts:
           path: e2e/playwright-report
       - store_artifacts:
