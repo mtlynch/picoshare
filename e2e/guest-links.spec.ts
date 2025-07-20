@@ -318,7 +318,39 @@ test("guest upload shows expiration dropdown with options limited by guest link"
       .locator("#expiration-select option[selected]")
       .textContent();
     expect(defaultSelected).toBe("7 days");
+
+    // Upload a file to verify the default expiration is applied correctly.
+    await guestPage.locator(".file-input").setInputFiles([
+      {
+        name: "7-day-default-test.txt",
+        mimeType: "text/plain",
+        buffer: Buffer.from("testing 7-day default expiration"),
+      },
+    ]);
+
+    await expect(guestPage.locator("#upload-result .message-body")).toHaveText(
+      "Upload complete!"
+    );
   }
+
+  // Check that the file has the correct expiration (7 days).
+  await page.getByRole("menuitem", { name: "Files" }).click();
+
+  const fileRow = page
+    .getByRole("row")
+    .filter({ hasText: "7-day-default-test.txt" });
+  await expect(fileRow).toBeVisible();
+
+  const expirationText = await fileRow
+    .getByRole("cell")
+    .nth(expiresColumn)
+    .textContent();
+
+  // Verify the expiration contains the expected date (7 days from now).
+  const expectedDate = new Date();
+  expectedDate.setDate(expectedDate.getDate() + 7);
+  expect(expirationText).toContain(expectedDate.toISOString().split("T")[0]);
+  expect(expirationText).toContain("(7 days)");
 });
 
 test("guest upload with infinite file lifetime shows all expiration options", async ({
@@ -384,7 +416,33 @@ test("guest upload with infinite file lifetime shows all expiration options", as
       .locator("#expiration-select option[selected]")
       .textContent();
     expect(defaultSelected).toBe("Never");
+
+    // Upload a file to verify the default "Never" expiration is applied correctly.
+    await guestPage.locator(".file-input").setInputFiles([
+      {
+        name: "infinite-default-test.txt",
+        mimeType: "text/plain",
+        buffer: Buffer.from("testing infinite default expiration"),
+      },
+    ]);
+
+    await expect(guestPage.locator("#upload-result .message-body")).toHaveText(
+      "Upload complete!"
+    );
   }
+
+  // Check that the file has the correct expiration (Never).
+  await page.getByRole("menuitem", { name: "Files" }).click();
+
+  const fileRow = page
+    .getByRole("row")
+    .filter({ hasText: "infinite-default-test.txt" });
+  await expect(fileRow).toBeVisible();
+
+  // Verify the expiration is "Never".
+  await expect(fileRow.getByRole("cell").nth(expiresColumn)).toHaveText(
+    "Never"
+  );
 });
 
 test("guest upload respects selected expiration time", async ({
@@ -451,16 +509,20 @@ test("guest upload respects selected expiration time", async ({
   // Check that the file has the correct expiration (7 days, not 30).
   await page.getByRole("menuitem", { name: "Files" }).click();
 
-  // Look for the uploaded file.
   const fileRow = page
     .getByRole("row")
     .filter({ hasText: "custom-expiration-test.txt" });
   await expect(fileRow).toBeVisible();
 
-  // Check that the expiration is not "30 days" (which would be the guest link default).
-  // The exact date depends on when the test runs, but it should not show "Never".
-  const expirationCell = fileRow.getByRole("cell").nth(expiresColumn);
-  const expirationText = await expirationCell.textContent();
+  const expirationText = await fileRow
+    .getByRole("cell")
+    .nth(expiresColumn)
+    .textContent();
+
+  // Verify the expiration contains the expected date (7 days from now, not 30).
+  const expectedDate = new Date();
+  expectedDate.setDate(expectedDate.getDate() + 7);
+  expect(expirationText).toContain(expectedDate.toISOString().split("T")[0]);
+  expect(expirationText).toContain("(7 days)");
   expect(expirationText).not.toBe("Never");
-  expect(expirationText).not.toBe("30 days from now"); // Should be 7 days.
 });
