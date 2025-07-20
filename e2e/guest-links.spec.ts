@@ -216,9 +216,9 @@ test("disables and enables a guest link, affecting access", async ({
     const guestContext = await browser.newContext();
 
     // Share database across users.
-    const dbCookie1 = readDbTokenCookie(await page.context().cookies());
-    if (dbCookie1) {
-      await guestContext.addCookies([dbCookie1]);
+    const dbCookie = readDbTokenCookie(await page.context().cookies());
+    if (dbCookie) {
+      await guestContext.addCookies([dbCookie]);
     }
 
     const guestPage = await guestContext.newPage();
@@ -240,9 +240,9 @@ test("disables and enables a guest link, affecting access", async ({
     const guestContext = await browser.newContext();
 
     // Share database across users.
-    const dbCookie2 = readDbTokenCookie(await page.context().cookies());
-    if (dbCookie2) {
-      await guestContext.addCookies([dbCookie2]);
+    const dbCookie = readDbTokenCookie(await page.context().cookies());
+    if (dbCookie) {
+      await guestContext.addCookies([dbCookie]);
     }
 
     const guestPage = await guestContext.newPage();
