@@ -609,10 +609,7 @@ func (s Server) guestUploadGet() http.HandlerFunc {
 		// Filter options to only include those within the guest link's maximum.
 		validLifetimeOptions := []lifetimeOption{}
 		for _, lto := range baseLifetimeOptions {
-			// If the guest link allows infinite file lifetime, include all options.
-			if gl.FileLifetime.Equal(picoshare.FileLifetimeInfinite) {
-				validLifetimeOptions = append(validLifetimeOptions, lto)
-			} else if lto.Lifetime.Days() <= gl.FileLifetime.Days() {
+			if lto.Lifetime.Days() <= gl.FileLifetime.Days() {
 				validLifetimeOptions = append(validLifetimeOptions, lto)
 			}
 		}
@@ -621,6 +618,7 @@ func (s Server) guestUploadGet() http.HandlerFunc {
 		for i, lto := range validLifetimeOptions {
 			if lto.Lifetime.Equal(gl.FileLifetime) {
 				validLifetimeOptions[i].IsDefault = true
+				break
 			}
 		}
 
