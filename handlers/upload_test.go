@@ -448,7 +448,7 @@ func TestGuestUpload(t *testing.T) {
 				FileLifetime: picoshare.NewFileLifetimeInDays(365),
 			},
 			currentTime:                mustParseTime("2023-01-01T00:00:00Z"),
-			url:                        "/api/guest/abcdefgh23456789?expiration=2030-01-01T00:00:00Z",
+			url:                        "/api/guest/abcdefgh23456789?expiration=2024-01-01T00:00:00Z",
 			status:                     http.StatusOK,
 			fileExpirationTimeExpected: mustParseExpirationTime("2024-01-01T00:00:00Z"),
 		},
