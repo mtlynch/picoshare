@@ -13,7 +13,7 @@
   },
   "homepage": "https://pico.rocks",
   "devDependencies": {
-    "@playwright/test": "1.40.0",
+    "@playwright/test": "1.54.0",
     "@types/node": "^24.0.7",
     "typescript": "^5.8.3"
   }
