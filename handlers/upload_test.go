@@ -427,7 +427,7 @@ func TestGuestUpload(t *testing.T) {
 			fileExpirationTimeExpected: picoshare.NeverExpire,
 		},
 		{
-			description: "guest file with 1 day limit rejects expiration beyond limit",
+			description: "guest file expires in 1 day",
 			guestLinkInStore: picoshare.GuestLink{
 				ID:           picoshare.GuestLinkID("abcdefgh23456789"),
 				Created:      mustParseTime("2022-05-26T00:00:00Z"),
@@ -435,12 +435,12 @@ func TestGuestUpload(t *testing.T) {
 				FileLifetime: picoshare.NewFileLifetimeInDays(1),
 			},
 			currentTime:                mustParseTime("2024-01-01T00:00:00Z"),
-			url:                        "/api/guest/abcdefgh23456789?expiration=2030-01-01T00:00:00Z",
-			status:                     http.StatusBadRequest,
+			url:                        "/api/guest/abcdefgh23456789?expiration=2024-01-02T00:00:00Z",
+			status:                     http.StatusOK,
 			fileExpirationTimeExpected: mustParseExpirationTime("2024-01-02T00:00:00Z"),
 		},
 		{
-			description: "guest file with 365 day limit rejects expiration beyond limit",
+			description: "guest file expires in 365 days",
 			guestLinkInStore: picoshare.GuestLink{
 				ID:           picoshare.GuestLinkID("abcdefgh23456789"),
 				Created:      mustParseTime("2022-05-26T00:00:00Z"),
@@ -449,7 +449,7 @@ func TestGuestUpload(t *testing.T) {
 			},
 			currentTime:                mustParseTime("2023-01-01T00:00:00Z"),
 			url:                        "/api/guest/abcdefgh23456789?expiration=2030-01-01T00:00:00Z",
-			status:                     http.StatusBadRequest,
+			status:                     http.StatusOK,
 			fileExpirationTimeExpected: mustParseExpirationTime("2024-01-01T00:00:00Z"),
 		},
 		{
@@ -466,17 +466,17 @@ func TestGuestUpload(t *testing.T) {
 			fileExpirationTimeExpected: picoshare.NeverExpire,
 		},
 		{
-			description: "guest upload without expiration parameter returns error (7 days guest link)",
+			description: "guest upload with empty expiration parameter returns error",
 			guestLinkInStore: picoshare.GuestLink{
 				ID:           picoshare.GuestLinkID("abcdefgh23456789"),
 				Created:      mustParseTime("2022-05-26T00:00:00Z"),
 				UrlExpires:   mustParseExpirationTime("2030-01-02T03:04:25Z"),
-				FileLifetime: picoshare.NewFileLifetimeInDays(7),
+				FileLifetime: picoshare.NewFileLifetimeInDays(30),
 			},
 			currentTime:                mustParseTime("2024-01-01T00:00:00Z"),
-			url:                        "/api/guest/abcdefgh23456789",
+			url:                        "/api/guest/abcdefgh23456789?expiration=",
 			status:                     http.StatusBadRequest,
-			fileExpirationTimeExpected: mustParseExpirationTime("2024-01-08T00:00:00Z"),
+			fileExpirationTimeExpected: mustParseExpirationTime("2024-01-31T00:00:00Z"),
 		},
 		{
 			description: "guest upload with valid expiration within guest link limits",
@@ -505,20 +505,7 @@ func TestGuestUpload(t *testing.T) {
 			fileExpirationTimeExpected: mustParseExpirationTime("2025-01-01T00:00:00Z"),
 		},
 		{
-			description: "guest upload with empty expiration parameter returns error",
-			guestLinkInStore: picoshare.GuestLink{
-				ID:           picoshare.GuestLinkID("abcdefgh23456789"),
-				Created:      mustParseTime("2022-05-26T00:00:00Z"),
-				UrlExpires:   mustParseExpirationTime("2030-01-02T03:04:25Z"),
-				FileLifetime: picoshare.NewFileLifetimeInDays(30),
-			},
-			currentTime:                mustParseTime("2024-01-01T00:00:00Z"),
-			url:                        "/api/guest/abcdefgh23456789?expiration=",
-			status:                     http.StatusBadRequest,
-			fileExpirationTimeExpected: mustParseExpirationTime("2024-01-31T00:00:00Z"),
-		},
-		{
-			description: "reject guest upload with expiration that exceeds guest link limit gets capped",
+			description: "reject guest upload with expiration that exceeds guest link limit",
 			guestLinkInStore: picoshare.GuestLink{
 				ID:           picoshare.GuestLinkID("abcdefgh23456789"),
 				Created:      mustParseTime("2022-05-26T00:00:00Z"),
