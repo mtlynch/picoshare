@@ -267,8 +267,7 @@ test("guest upload shows expiration dropdown with options limited by guest link"
   await page.locator("#label").fill("7-day expiration test");
   await page.locator("#file-upload-limit").fill("5");
 
-  // Set file expiration to 7 days.
-  await page.locator("#file-expiration-select").selectOption("168h0m0s");
+  await page.locator("#file-expiration-select").selectOption("7 days");
 
   await page.getByRole("button", { name: "Create" }).click();
 
@@ -335,10 +334,7 @@ test("guest upload with infinite file lifetime shows all expiration options", as
   await expect(page).toHaveURL("/guest-links/new");
   await page.locator("#label").fill("Infinite expiration test");
   await page.locator("#file-upload-limit").fill("5");
-
-  // Set file expiration to Never (infinite).
-  await page.locator("#file-expiration-select").selectOption("876000h0m0s");
-
+  await page.locator("#file-expiration-select").selectOption("Never");
   await page.getByRole("button", { name: "Create" }).click();
 
   await expect(page).toHaveURL("/guest-links");
@@ -404,10 +400,7 @@ test("guest upload respects selected expiration time", async ({
   await expect(page).toHaveURL("/guest-links/new");
   await page.locator("#label").fill("Custom expiration test");
   await page.locator("#file-upload-limit").fill("5");
-
-  // Set file expiration to 30 days.
-  await page.locator("#file-expiration-select").selectOption("720h0m0s");
-
+  await page.locator("#file-expiration-select").selectOption("30 days");
   await page.getByRole("button", { name: "Create" }).click();
 
   await expect(page).toHaveURL("/guest-links");
