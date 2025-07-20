@@ -287,14 +287,7 @@ func parseContentType(s string) (picoshare.ContentType, error) {
 }
 
 func (s Server) parseExpirationFromRequest(r *http.Request) (picoshare.ExpirationTime, error) {
-	expirationRaw, ok := r.URL.Query()["expiration"]
-	if !ok {
-		return picoshare.ExpirationTime{}, errors.New("missing required URL parameter: expiration")
-	}
-	if len(expirationRaw) <= 0 {
-		return picoshare.ExpirationTime{}, errors.New("missing required URL parameter: expiration")
-	}
-	return parse.Expiration(expirationRaw[0], s.clock.Now())
+	return parse.Expiration(r.URL.Query().Get("expiration"), s.clock.Now())
 }
 
 // mibToBytes converts an amount in MiB to an amount in bytes.
