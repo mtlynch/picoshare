@@ -305,12 +305,7 @@ func (s Server) parseExpirationFromRequest(r *http.Request) (picoshare.Expiratio
 }
 
 func (s Server) parseGuestExpirationFromRequest(r *http.Request, gl picoshare.GuestLink) (picoshare.ExpirationTime, error) {
-	expirationRaw, ok := r.URL.Query()["expiration"]
-	if !ok {
-		return picoshare.ExpirationTime{}, errors.New("missing required URL parameter: expiration")
-	}
-
-	requestedExpiration, err := parse.Expiration(expirationRaw[0], s.clock.Now())
+	requestedExpiration, err := parse.Expiration(r.URL.Query().Get("expiration"), s.clock.Now())
 	if err != nil {
 		return picoshare.ExpirationTime{}, err
 	}
