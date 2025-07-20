@@ -65,11 +65,13 @@ export async function guestUploadFile(
 ) {
   const formData = new FormData();
   formData.append("file", file);
-  let url = `/api/guest/${guestLinkID}`;
-  if (expirationTime) {
-    url += `?expiration=${encodeURIComponent(expirationTime)}`;
-  }
-  return uploadFormData(url, formData, progressFn);
+  return uploadFormData(
+    `/api/guest/${guestLinkID}?expiration=${encodeURIComponent(
+      expirationTime
+    )}`,
+    formData,
+    progressFn
+  );
 }
 
 export async function editFile(id, filename, expiration, note) {
