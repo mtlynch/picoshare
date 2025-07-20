@@ -131,7 +131,14 @@ func (s Server) guestEntryPost() http.HandlerFunc {
 			r.Body = http.MaxBytesReader(w, r.Body, int64(*gl.MaxFileBytes))
 		}
 
-		id, err := s.insertFileFromRequest(r, gl.FileLifetime.ExpirationFromTime(s.clock.Now()), guestLinkID)
+		expiration, err := s.parseGuestExpirationFromRequest(r, gl)
+		if err != nil {
+			log.Printf("invalid expiration for guest upload: %v", err)
+			http.Error(w, fmt.Sprintf("Invalid expiration: %v", err), http.StatusBadRequest)
+			return
+		}
+
+		id, err := s.insertFileFromRequest(r, expiration, guestLinkID)
 		if err != nil {
 			var de *dbError
 			if errors.As(err, &de) {
@@ -288,6 +295,26 @@ func parseContentType(s string) (picoshare.ContentType, error) {
 
 func (s Server) parseExpirationFromRequest(r *http.Request) (picoshare.ExpirationTime, error) {
 	return parse.Expiration(r.URL.Query().Get("expiration"), s.clock.Now())
+}
+
+func (s Server) parseGuestExpirationFromRequest(r *http.Request, gl picoshare.GuestLink) (picoshare.ExpirationTime, error) {
+	requestedExpiration, err := parse.Expiration(r.URL.Query().Get("expiration"), s.clock.Now())
+	if err != nil {
+		return picoshare.ExpirationTime{}, err
+	}
+
+	// Validate that the requested expiration doesn't exceed the guest link's maximum.
+	maxPermittedExpiration := gl.FileLifetime.ExpirationFromTime(s.clock.Now())
+
+	// If the requested expiration is beyond the guest link's maximum, reject it.
+	if requestedExpiration.Time().After(maxPermittedExpiration.Time()) {
+		return picoshare.ExpirationTime{},
+			fmt.Errorf("requested expiration time of %v is beyond guest link's limit: %v",
+				requestedExpiration,
+				maxPermittedExpiration)
+	}
+
+	return requestedExpiration, nil
 }
 
 // mibToBytes converts an amount in MiB to an amount in bytes.

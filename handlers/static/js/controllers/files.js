@@ -57,10 +57,21 @@ export async function uploadFile(file, expirationTime, note, progressFn) {
   );
 }
 
-export async function guestUploadFile(file, guestLinkID, progressFn) {
+export async function guestUploadFile(
+  file,
+  guestLinkID,
+  expirationTime,
+  progressFn
+) {
   const formData = new FormData();
   formData.append("file", file);
-  return uploadFormData(`/api/guest/${guestLinkID}`, formData, progressFn);
+  return uploadFormData(
+    `/api/guest/${guestLinkID}?expiration=${encodeURIComponent(
+      expirationTime
+    )}`,
+    formData,
+    progressFn
+  );
 }
 
 export async function editFile(id, filename, expiration, note) {
