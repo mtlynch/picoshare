@@ -82,7 +82,7 @@
         {{ range .Files }}
           <tr test-data-filename="{{ .Filename }}">
             <td class="is-vcentered">
-              <a href="/-{{ .ID }}">{{ .Filename }}</a>
+              <a href="/-{{ .ID }}" target="_blank">{{ .Filename }}</a>
             </td>
             <td class="is-vcentered">
               {{ if .Note.Value }}
