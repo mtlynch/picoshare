@@ -298,7 +298,16 @@ func (s Server) parseExpirationFromRequest(r *http.Request) (picoshare.Expiratio
 }
 
 func (s Server) parseGuestExpirationFromRequest(r *http.Request, gl picoshare.GuestLink) (picoshare.ExpirationTime, error) {
-	requestedExpiration, err := parse.Expiration(r.URL.Query().Get("expiration"), s.clock.Now())
+	expirationParam := r.URL.Query().Get("expiration")
+
+	// If no expiration is specified or it's empty (e.g., when the client is curl
+	// or a command-line utility), default to the maximum allowed expiration for
+	// this guest link.
+	if expirationParam == "" {
+		return gl.FileLifetime.ExpirationFromTime(s.clock.Now()), nil
+	}
+
+	requestedExpiration, err := parse.Expiration(expirationParam, s.clock.Now())
 	if err != nil {
 		return picoshare.ExpirationTime{}, err
 	}

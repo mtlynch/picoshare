@@ -1,6 +1,10 @@
 # Testing
 
 - To run unit tests, run ./dev-scripts/run-go-tests
+- If you plan to add tests for a behavior change, follow TDD practices:
+  1. Write a test that verifies the desired behavior, which we expect to fail currently.
+  1. Verify that the new test fails.
+  1. Change the production code so that all tests pass.
 - When writing new test cases, avoid having t.Run have special-case behavior for particular inputs. Instead, use general purpose logic that doesn't assume particular inputs.
 - Do not attempt to run e2e tests
 
