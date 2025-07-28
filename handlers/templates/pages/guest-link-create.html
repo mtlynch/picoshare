@@ -112,12 +112,12 @@
       <div class="control">
         <div class="select">
           <select id="file-expiration-select">
-            {{ range .MaxFileLifetimeOptions }}
+            {{ range .FileLifetimeOptions }}
               <option
-                value="{{ formatLifetime .MaxFileLifetime }}"
+                value="{{ formatLifetime .FileLifetime }}"
                 {{ if .IsDefault }}selected{{ end }}
               >
-                {{ .MaxFileLifetime.FriendlyName }}
+                {{ .FileLifetime.FriendlyName }}
               </option>
             {{ end }}
           </select>
