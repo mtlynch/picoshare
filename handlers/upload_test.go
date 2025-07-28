@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -614,6 +615,111 @@ func TestGuestUpload(t *testing.T) {
 			}
 			if got, want := mustReadAll(entryFile), []byte(contents); !reflect.DeepEqual(got, want) {
 				t.Errorf("stored contents= %v, want=%v", got, want)
+			}
+		})
+	}
+}
+
+func TestGuestUploadAcceptHeader(t *testing.T) {
+	authenticator, err := shared_secret.New("dummypass")
+	if err != nil {
+		t.Fatalf("failed to create shared secret: %v", err)
+	}
+
+	for _, tt := range []struct {
+		explanation         string
+		acceptHeader        string
+		expectJSON          bool
+		expectedContentType string
+	}{
+		{
+			"no Accept header returns plain text URL",
+			"",
+			false,
+			"text/plain",
+		},
+		{
+			"Accept header with wildcard returns plain text URL",
+			"*/*",
+			false,
+			"text/plain",
+		},
+		{
+			"Accept header with application/json returns JSON",
+			"application/json",
+			true,
+			"application/json",
+		},
+		{
+			"Accept header with text/html returns plain text URL",
+			"text/html",
+			false,
+			"text/plain",
+		},
+	} {
+		t.Run(fmt.Sprintf("%s [%s]", tt.explanation, tt.acceptHeader), func(t *testing.T) {
+			dataStore := test_sqlite.New()
+			guestLink := picoshare.GuestLink{
+				ID:              picoshare.GuestLinkID("abcdefgh23456789"),
+				Created:         mustParseTime("2022-05-26T00:00:00Z"),
+				UrlExpires:      mustParseExpirationTime("2030-01-02T03:04:25Z"),
+				MaxFileLifetime: picoshare.FileLifetimeInfinite,
+			}
+			if err := dataStore.InsertGuestLink(guestLink); err != nil {
+				t.Fatalf("failed to insert dummy guest link: %v", err)
+			}
+
+			c := mockClock{mustParseTime("2024-01-01T00:00:00Z")}
+			s := handlers.New(authenticator, &dataStore, nilSpaceChecker, nilGarbageCollector, c)
+
+			filename := "dummyimage.png"
+			contents := "dummy bytes"
+			formData, contentType := createMultipartFormBody(filename, "", strings.NewReader(contents))
+
+			req, err := http.NewRequest("POST", "/api/guest/abcdefgh23456789", formData)
+			if err != nil {
+				t.Fatal(err)
+			}
+			req.Header.Add("Content-Type", contentType)
+			if tt.acceptHeader != "" {
+				req.Header.Add("Accept", tt.acceptHeader)
+			}
+
+			rec := httptest.NewRecorder()
+			s.Router().ServeHTTP(rec, req)
+			res := rec.Result()
+
+			if got, want := res.StatusCode, http.StatusOK; got != want {
+				t.Fatalf("status=%d, want=%d", got, want)
+			}
+
+			if got, want := res.Header.Get("Content-Type"), tt.expectedContentType; got != want {
+				t.Errorf("Content-Type=%v, want=%v", got, want)
+			}
+
+			body, err := io.ReadAll(res.Body)
+			if err != nil {
+				t.Fatalf("failed to read response body")
+			}
+
+			if tt.expectJSON {
+				var response handlers.EntryPostResponse
+				err = json.Unmarshal(body, &response)
+				if err != nil {
+					t.Fatalf("response is not valid JSON: %v", string(body))
+				}
+				if got, want := len(response.ID), 10; got != want {
+					t.Errorf("ID length=%d, want=%d", got, want)
+				}
+			} else {
+				// Should be plain text URL.
+				bodyStr := string(body)
+				if !strings.Contains(bodyStr, "http") {
+					t.Errorf("expected URL in response, got: %v", bodyStr)
+				}
+				if !strings.HasSuffix(bodyStr, "\r\n") {
+					t.Errorf("expected response to end with \\r\\n, got: %v", bodyStr)
+				}
 			}
 		})
 	}

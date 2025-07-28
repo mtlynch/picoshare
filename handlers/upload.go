@@ -151,9 +151,11 @@ func (s Server) guestEntryPost() http.HandlerFunc {
 			return
 		}
 
-		if clientAcceptsJson(r) {
+		if clientRequiresJson(r) {
 			respondJSON(w, EntryPostResponse{ID: id.String()})
 		} else {
+			// If client did not explicitly request JSON, assume this is a
+			// command-line client and return plaintext.
 			w.Header().Set("Content-Type", "text/plain")
 			if _, err := fmt.Fprintf(w, "%s/-%s\r\n", baseURLFromRequest(r), id.String()); err != nil {
 				log.Fatalf("failed to write HTTP response: %v", err)
@@ -331,9 +333,9 @@ func mibToBytes(i int64) int64 {
 	return i << 20
 }
 
-func clientAcceptsJson(r *http.Request) bool {
+func clientRequiresJson(r *http.Request) bool {
 	accepts := r.Header.Get("Accept")
-	return accepts == "*/*" || accepts == "application/json"
+	return accepts == "application/json"
 }
 
 func baseURLFromRequest(r *http.Request) string {
