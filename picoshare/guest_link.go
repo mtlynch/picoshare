@@ -11,15 +11,15 @@ type (
 	GuestUploadCountLimit   *int
 
 	GuestLink struct {
-		ID             GuestLinkID
-		Label          GuestLinkLabel
-		Created        time.Time
-		UrlExpires     ExpirationTime
-		FileLifetime   FileLifetime
-		MaxFileBytes   GuestUploadMaxFileBytes
-		MaxFileUploads GuestUploadCountLimit
-		IsDisabled     bool
-		FilesUploaded  int
+		ID              GuestLinkID
+		Label           GuestLinkLabel
+		Created         time.Time
+		UrlExpires      ExpirationTime
+		MaxFileLifetime FileLifetime
+		MaxFileBytes    GuestUploadMaxFileBytes
+		MaxFileUploads  GuestUploadCountLimit
+		IsDisabled      bool
+		FilesUploaded   int
 	}
 )
 

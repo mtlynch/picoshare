@@ -609,14 +609,14 @@ func (s Server) guestUploadGet() http.HandlerFunc {
 		// Filter options to only include those within the guest link's maximum.
 		validLifetimeOptions := []lifetimeOption{}
 		for _, lto := range baseLifetimeOptions {
-			if lto.Lifetime.Days() <= gl.FileLifetime.Days() {
+			if lto.Lifetime.Days() <= gl.MaxFileLifetime.Days() {
 				validLifetimeOptions = append(validLifetimeOptions, lto)
 			}
 		}
 
 		// Mark the guest link's file lifetime as the default.
 		for i, lto := range validLifetimeOptions {
-			if lto.Lifetime.Equal(gl.FileLifetime) {
+			if lto.Lifetime.Equal(gl.MaxFileLifetime) {
 				validLifetimeOptions[i].IsDefault = true
 				break
 			}
