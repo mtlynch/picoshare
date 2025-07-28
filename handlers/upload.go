@@ -151,7 +151,7 @@ func (s Server) guestEntryPost() http.HandlerFunc {
 			return
 		}
 
-		if clientAcceptsJson(r) {
+		if clientRequiresJson(r) {
 			respondJSON(w, EntryPostResponse{ID: id.String()})
 		} else {
 			w.Header().Set("Content-Type", "text/plain")
@@ -331,9 +331,9 @@ func mibToBytes(i int64) int64 {
 	return i << 20
 }
 
-func clientAcceptsJson(r *http.Request) bool {
+func clientRequiresJson(r *http.Request) bool {
 	accepts := r.Header.Get("Accept")
-	return accepts == "*/*" || accepts == "application/json"
+	return accepts == "application/json"
 }
 
 func baseURLFromRequest(r *http.Request) string {
