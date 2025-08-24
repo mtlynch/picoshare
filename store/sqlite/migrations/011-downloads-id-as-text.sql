@@ -15,7 +15,8 @@ SELECT
     download_timestamp,
     client_ip,
     user_agent
-FROM downloads;
+FROM downloads
+WHERE entry_id IN (SELECT id FROM entries);
 
 DROP TABLE downloads;
 
