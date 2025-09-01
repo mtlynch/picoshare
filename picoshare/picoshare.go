@@ -25,6 +25,9 @@ type (
 		Size          FileSize
 		GuestLink     GuestLink
 		DownloadCount uint64
+	// PassphraseKey stores a serialized kdf.DerivedKey if the uploader
+	// protected the file with a passphrase. Empty means no protection.
+	PassphraseKey string
 	}
 
 	DownloadRecord struct {

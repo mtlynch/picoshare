@@ -3,6 +3,7 @@ package handlers
 import (
 	"errors"
 	"fmt"
+	"html/template"
 	"log"
 	"mime"
 	"net"
@@ -11,6 +12,7 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/mtlynch/picoshare/v2/handlers/auth/shared_secret/kdf"
 
 	"github.com/mtlynch/picoshare/v2/picoshare"
 	"github.com/mtlynch/picoshare/v2/store"
@@ -33,6 +35,35 @@ func (s Server) entryGet() http.HandlerFunc {
 			log.Printf("error retrieving entry with id %v: %v", id, err)
 			http.Error(w, "failed to retrieve entry", http.StatusInternalServerError)
 			return
+		}
+
+		// If entry requires passphrase, and none provided or incorrect, prompt.
+		if entry.PassphraseKey != "" {
+			provided := r.URL.Query().Get("passphrase")
+			if provided == "" && r.Method == http.MethodPost {
+				if err := r.ParseForm(); err == nil {
+					provided = r.PostFormValue("passphrase")
+				}
+			}
+			if provided == "" {
+				renderPassphrasePrompt(w, r, id, entry)
+				return
+			}
+			derived, err := kdf.DeriveKeyFromSecret(provided)
+			if err != nil {
+				renderPassphrasePromptWithError(w, r, id, entry, "Invalid passphrase")
+				return
+			}
+			stored, err := kdf.DeserializeKey(entry.PassphraseKey)
+			if err != nil {
+				log.Printf("failed to deserialize stored passphrase key: %v", err)
+				http.Error(w, "failed to process request", http.StatusInternalServerError)
+				return
+			}
+			if !stored.Equal(derived) {
+				renderPassphrasePromptWithError(w, r, id, entry, "Incorrect passphrase")
+				return
+			}
 		}
 
 		if entry.Filename != "" {
@@ -60,6 +91,33 @@ func (s Server) entryGet() http.HandlerFunc {
 			log.Printf("failed to record download of file %s: %v", id.String(), err)
 		}
 	}
+}
+
+func renderPassphrasePrompt(w http.ResponseWriter, r *http.Request, id picoshare.EntryID, meta picoshare.UploadMetadata) {
+	renderPassphrasePromptWithError(w, r, id, meta, "")
+}
+
+func renderPassphrasePromptWithError(w http.ResponseWriter, r *http.Request, id picoshare.EntryID, meta picoshare.UploadMetadata, errorMsg string) {
+	// Minimal inline template to avoid adding static assets yet.
+	const tpl = `<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>PicoShare - Protected</title></head>
+<body>
+<h1>Enter passphrase</h1>
+{{if .Error}}<p style="color:red">{{.Error}}</p>{{end}}
+<form method="post" action="/-{{.ID}}">
+  <input type="password" name="passphrase" placeholder="Passphrase" required autofocus />
+  <button type="submit">View</button>
+  {{if .Filename}}<p>File: {{.Filename}}</p>{{end}}
+</form>
+</body>
+</html>`
+	t := template.Must(template.New("pp").Parse(tpl))
+	_ = t.Execute(w, struct {
+		ID       string
+		Filename string
+		Error    string
+	}{ID: id.String(), Filename: meta.Filename.String(), Error: errorMsg})
 }
 
 func inferContentTypeFromFilename(f picoshare.Filename) (picoshare.ContentType, error) {

@@ -22,7 +22,7 @@
       history.back();
     });
 
-    document.getElementById("edit-form").addEventListener("submit", (evt) => {
+  document.getElementById("edit-form").addEventListener("submit", (evt) => {
       evt.preventDefault();
       const id = document
         .getElementById("edit-form")
@@ -35,7 +35,25 @@
       hideElement(editForm);
       showElement(progressSpinner);
 
-      editFile(id, readFilename(), expirationPicker.value, readNote())
+      const ppInput = document.getElementById("passphrase");
+      const clearPP = document.getElementById("clear-passphrase").checked;
+
+      const payload = {
+        filename: readFilename(),
+        expiration: expirationPicker.value,
+        note: readNote(),
+      };
+      if (clearPP) {
+        payload.passphraseAction = "clear";
+      } else if (ppInput.value) {
+        payload.passphrase = ppInput.value;
+      }
+
+      fetch(`/api/entry/${encodeURIComponent(id)}`, {
+        method: "PUT",
+        credentials: "include",
+        body: JSON.stringify(payload),
+      })
         .then(() => {
           document.location = "/files";
         })
@@ -100,6 +118,24 @@
             disabled
           {{ end }}
         />
+      </div>
+
+      <div class="field my-5">
+        <label class="label">Passphrase</label>
+        <div class="control">
+          <input
+            id="passphrase"
+            class="input is-normal"
+            type="password"
+            placeholder="Set or change passphrase"
+            autocomplete="new-password"
+          />
+        </div>
+        <label class="checkbox mt-2">
+          <input type="checkbox" id="clear-passphrase" />
+          Clear existing passphrase
+        </label>
+        <p class="help">Leave empty to keep current. Check to clear protection.</p>
       </div>
 
       <div class="field my-5">

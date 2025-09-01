@@ -35,7 +35,8 @@
     const expirationSelect = document.getElementById("expiration-select");
     const expirationPicker = document.getElementById("expiration-picker");
     const noteInput = document.getElementById("note");
-    const uploadAnotherBtn = document.getElementById("upload-another-btn");
+  const uploadAnotherBtn = document.getElementById("upload-another-btn");
+  const passphraseInput = document.getElementById("passphrase");
 
     function getGuestLinkMetdata() {
       const el = document.getElementById("guest-link-metadata");
@@ -61,7 +62,7 @@
       return noteInput.value || null;
     }
 
-    function populateEditButton(entryId) {
+  function populateEditButton(entryId) {
       const btn = document.getElementById("edit-btn");
       // Button does not appear in guest mode.
       if (!btn) {
@@ -83,7 +84,7 @@
       }
     }
 
-    function doUpload(file) {
+  function doUpload(file) {
       const guestLinkMetadata = getGuestLinkMetdata();
 
       if (
@@ -103,7 +104,13 @@
       showElement(progressBar);
 
       let uploader = () => {
-        return uploadFile(file, readExpiration(), readNote(), updateProgress);
+        return uploadFile(
+          file,
+          readExpiration(),
+          readNote(),
+          passphraseInput ? passphraseInput.value : null,
+          updateProgress
+        );
       };
       if (guestLinkMetadata) {
         uploader = () => {
@@ -111,6 +118,7 @@
             file,
             guestLinkMetadata.id,
             readExpiration(),
+            passphraseInput ? passphraseInput.value : null,
             updateProgress
           );
         };
@@ -328,6 +336,20 @@
         <p class="help">Note is only visible to you</p>
       </div>
     {{ end }}
+
+    <div class="field my-5">
+      <label class="label">Passphrase <i>(optional)</i></label>
+      <div class="control">
+        <input
+          id="passphrase"
+          class="input is-normal"
+          type="password"
+          placeholder="Enter a passphrase to require before viewing"
+          autocomplete="new-password"
+        />
+      </div>
+      <p class="help">Viewers must enter this passphrase to access the file. The file content is not encrypted.</p>
+    </div>
   </div>
 
   <progress

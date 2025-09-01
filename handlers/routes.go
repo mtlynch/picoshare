@@ -61,6 +61,9 @@ func (s *Server) routes() {
 	views.HandleFunc("/login", s.authGet()).Methods(http.MethodGet)
 	views.PathPrefix("/-{id}").HandlerFunc(s.entryGet()).Methods(http.MethodGet)
 	views.PathPrefix("/-{id}/{filename}").HandlerFunc(s.entryGet()).Methods(http.MethodGet)
+	// Allow POST to same path to submit passphrase form
+	views.PathPrefix("/-{id}").HandlerFunc(s.entryGet()).Methods(http.MethodPost)
+	views.PathPrefix("/-{id}/{filename}").HandlerFunc(s.entryGet()).Methods(http.MethodPost)
 	// Legacy routes for entries. We stopped using them because the ! has
 	// unintended side effects within the bash shell.
 	views.PathPrefix("/!{id}").HandlerFunc(s.entryGet()).Methods(http.MethodGet)

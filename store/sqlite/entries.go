@@ -11,6 +11,13 @@ import (
 	"github.com/mtlynch/picoshare/v2/store/sqlite/file"
 )
 
+func nullIfEmpty(s string) any {
+	if s == "" {
+		return nil
+	}
+	return s
+}
+
 func (s Store) GetEntriesMetadata() ([]picoshare.UploadMetadata, error) {
 	rows, err := s.ctx.Query(`
 	SELECT
@@ -20,7 +27,8 @@ func (s Store) GetEntriesMetadata() ([]picoshare.UploadMetadata, error) {
 		entries.content_type AS content_type,
 		entries.upload_time AS upload_time,
 		entries.expiration_time AS expiration_time,
-		sizes.file_size AS file_size
+		sizes.file_size AS file_size,
+		entries.passphrase_key AS passphrase_key
 	FROM
 		entries
 	INNER JOIN
@@ -45,8 +53,9 @@ func (s Store) GetEntriesMetadata() ([]picoshare.UploadMetadata, error) {
 		var contentType string
 		var uploadTimeRaw string
 		var expirationTimeRaw string
-		var fileSizeRaw uint64
-		if err = rows.Scan(&id, &filename, &note, &contentType, &uploadTimeRaw, &expirationTimeRaw, &fileSizeRaw); err != nil {
+	var fileSizeRaw uint64
+	var passphraseKey *string
+	if err = rows.Scan(&id, &filename, &note, &contentType, &uploadTimeRaw, &expirationTimeRaw, &fileSizeRaw, &passphraseKey); err != nil {
 			return []picoshare.UploadMetadata{}, err
 		}
 
@@ -73,6 +82,7 @@ func (s Store) GetEntriesMetadata() ([]picoshare.UploadMetadata, error) {
 			Uploaded:    ut,
 			Expires:     picoshare.ExpirationTime(et),
 			Size:        fileSize,
+			PassphraseKey: func() string { if passphraseKey != nil { return *passphraseKey }; return "" }(),
 		})
 	}
 
@@ -96,6 +106,7 @@ func (s Store) GetEntryMetadata(id picoshare.EntryID) (picoshare.UploadMetadata,
 	var expirationTimeRaw string
 	var fileSizeRaw uint64
 	var guestLinkID *picoshare.GuestLinkID
+    var passphraseKey *string
 	err := s.ctx.QueryRow(`
 	SELECT
 		entries.filename AS filename,
@@ -104,7 +115,8 @@ func (s Store) GetEntryMetadata(id picoshare.EntryID) (picoshare.UploadMetadata,
 		entries.upload_time AS upload_time,
 		entries.expiration_time AS expiration_time,
 		sizes.file_size AS file_size,
-		entries.guest_link_id AS guest_link_id
+		entries.guest_link_id AS guest_link_id,
+		entries.passphrase_key AS passphrase_key
 	FROM
 		entries
 	INNER JOIN
@@ -118,7 +130,7 @@ func (s Store) GetEntryMetadata(id picoshare.EntryID) (picoshare.UploadMetadata,
 				id
 		) sizes ON entries.id = sizes.id
 	WHERE
-		entries.id = :entry_id`, sql.Named("entry_id", id)).Scan(&filename, &note, &contentType, &uploadTimeRaw, &expirationTimeRaw, &fileSizeRaw, &guestLinkID)
+		entries.id = :entry_id`, sql.Named("entry_id", id)).Scan(&filename, &note, &contentType, &uploadTimeRaw, &expirationTimeRaw, &fileSizeRaw, &guestLinkID, &passphraseKey)
 	if err == sql.ErrNoRows {
 		return picoshare.UploadMetadata{}, store.EntryNotFoundError{ID: id}
 	} else if err != nil {
@@ -156,7 +168,8 @@ func (s Store) GetEntryMetadata(id picoshare.EntryID) (picoshare.UploadMetadata,
 		ContentType: picoshare.ContentType(contentType),
 		Uploaded:    ut,
 		Expires:     picoshare.ExpirationTime(et),
-		Size:        fileSize,
+	Size:        fileSize,
+	PassphraseKey: func() string { if passphraseKey != nil { return *passphraseKey }; return "" }(),
 	}, nil
 }
 
@@ -187,9 +200,10 @@ func (s Store) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) 
 		note,
 		content_type,
 		upload_time,
-		expiration_time
+		expiration_time,
+		passphrase_key
 	)
-	VALUES(:entry_id, NULLIF(:guest_link_id, ''), :filename, :note, :content_type, :upload_time, :expiration_time)`,
+	VALUES(:entry_id, NULLIF(:guest_link_id, ''), :filename, :note, :content_type, :upload_time, :expiration_time, :passphrase_key)`,
 		sql.Named("entry_id", metadata.ID),
 		sql.Named("guest_link_id", metadata.GuestLink.ID),
 		sql.Named("filename", metadata.Filename),
@@ -197,6 +211,7 @@ func (s Store) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) 
 		sql.Named("content_type", metadata.ContentType),
 		sql.Named("upload_time", formatTime(metadata.Uploaded)),
 		sql.Named("expiration_time", formatExpirationTime(metadata.Expires)),
+		sql.Named("passphrase_key", nullIfEmpty(metadata.PassphraseKey)),
 	)
 	if err != nil {
 		log.Printf("insert into entries table failed, aborting transaction: %v", err)
@@ -233,6 +248,35 @@ func (s Store) UpdateEntryMetadata(id picoshare.EntryID, metadata picoshare.Uplo
 		return store.EntryNotFoundError{ID: id}
 	}
 
+	return nil
+}
+
+func (s Store) UpdateEntryPassphrase(id picoshare.EntryID, passphraseKeySerialized *string) error {
+	var err error
+	var res sql.Result
+	if passphraseKeySerialized == nil {
+		res, err = s.ctx.Exec(`
+			UPDATE entries
+			SET passphrase_key = NULL
+			WHERE id = :entry_id`, sql.Named("entry_id", id))
+	} else {
+		res, err = s.ctx.Exec(`
+			UPDATE entries
+			SET passphrase_key = :passphrase_key
+			WHERE id = :entry_id`,
+			sql.Named("passphrase_key", *passphraseKeySerialized),
+			sql.Named("entry_id", id))
+	}
+	if err != nil {
+		return err
+	}
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rows == 0 {
+		return store.EntryNotFoundError{ID: id}
+	}
 	return nil
 }
 
