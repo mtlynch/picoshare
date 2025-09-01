@@ -76,7 +76,9 @@
           ];
 
           shellHook = ''
-            export GOROOT="${go}/share/go"
+            # Avoid sharing GOPATH with other projects.
+            PROJECT_NAME="$(basename "$PWD")"
+            export GOPATH="$HOME/.local/share/go-workspaces/$PROJECT_NAME"
 
             export PLAYWRIGHT_BROWSERS_PATH=${playwright}
             export PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS=true
