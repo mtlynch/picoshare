@@ -35,8 +35,8 @@
     const expirationSelect = document.getElementById("expiration-select");
     const expirationPicker = document.getElementById("expiration-picker");
     const noteInput = document.getElementById("note");
-  const uploadAnotherBtn = document.getElementById("upload-another-btn");
-  const passphraseInput = document.getElementById("passphrase");
+    const uploadAnotherBtn = document.getElementById("upload-another-btn");
+    const passphraseInput = document.getElementById("passphrase");
 
     function getGuestLinkMetdata() {
       const el = document.getElementById("guest-link-metadata");
@@ -62,7 +62,7 @@
       return noteInput.value || null;
     }
 
-  function populateEditButton(entryId) {
+    function populateEditButton(entryId) {
       const btn = document.getElementById("edit-btn");
       // Button does not appear in guest mode.
       if (!btn) {
@@ -84,7 +84,7 @@
       }
     }
 
-  function doUpload(file) {
+    function doUpload(file) {
       const guestLinkMetadata = getGuestLinkMetdata();
 
       if (
@@ -337,6 +337,7 @@
       </div>
     {{ end }}
 
+
     <div class="field my-5">
       <label class="label">Passphrase <i>(optional)</i></label>
       <div class="control">
@@ -348,7 +349,10 @@
           autocomplete="new-password"
         />
       </div>
-      <p class="help">Viewers must enter this passphrase to access the file. The file content is not encrypted.</p>
+      <p class="help">
+        Viewers must enter this passphrase to access the file. The file content
+        is not encrypted.
+      </p>
     </div>
   </div>
 

@@ -44,7 +44,13 @@ function uploadFormData(url, formData, progressFn) {
     });
 }
 
-export async function uploadFile(file, expirationTime, note, passphrase, progressFn) {
+export async function uploadFile(
+  file,
+  expirationTime,
+  note,
+  passphrase,
+  progressFn
+) {
   const formData = new FormData();
   formData.append("file", file);
   if (note) {

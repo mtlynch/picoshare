@@ -22,7 +22,7 @@
       history.back();
     });
 
-  document.getElementById("edit-form").addEventListener("submit", (evt) => {
+    document.getElementById("edit-form").addEventListener("submit", (evt) => {
       evt.preventDefault();
       const id = document
         .getElementById("edit-form")
@@ -135,7 +135,9 @@
           <input type="checkbox" id="clear-passphrase" />
           Clear existing passphrase
         </label>
-        <p class="help">Leave empty to keep current. Check to clear protection.</p>
+        <p class="help">
+          Leave empty to keep current. Check to clear protection.
+        </p>
       </div>
 
       <div class="field my-5">
