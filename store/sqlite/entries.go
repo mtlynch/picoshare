@@ -53,9 +53,9 @@ func (s Store) GetEntriesMetadata() ([]picoshare.UploadMetadata, error) {
 		var contentType string
 		var uploadTimeRaw string
 		var expirationTimeRaw string
-	var fileSizeRaw uint64
-	var passphraseKey *string
-	if err = rows.Scan(&id, &filename, &note, &contentType, &uploadTimeRaw, &expirationTimeRaw, &fileSizeRaw, &passphraseKey); err != nil {
+		var fileSizeRaw uint64
+		var passphraseKey *string
+		if err = rows.Scan(&id, &filename, &note, &contentType, &uploadTimeRaw, &expirationTimeRaw, &fileSizeRaw, &passphraseKey); err != nil {
 			return []picoshare.UploadMetadata{}, err
 		}
 
@@ -82,7 +82,12 @@ func (s Store) GetEntriesMetadata() ([]picoshare.UploadMetadata, error) {
 			Uploaded:    ut,
 			Expires:     picoshare.ExpirationTime(et),
 			Size:        fileSize,
-			PassphraseKey: func() string { if passphraseKey != nil { return *passphraseKey }; return "" }(),
+			PassphraseKey: func() string {
+				if passphraseKey != nil {
+					return *passphraseKey
+				}
+				return ""
+			}(),
 		})
 	}
 
@@ -106,7 +111,7 @@ func (s Store) GetEntryMetadata(id picoshare.EntryID) (picoshare.UploadMetadata,
 	var expirationTimeRaw string
 	var fileSizeRaw uint64
 	var guestLinkID *picoshare.GuestLinkID
-    var passphraseKey *string
+	var passphraseKey *string
 	err := s.ctx.QueryRow(`
 	SELECT
 		entries.filename AS filename,
@@ -168,8 +173,13 @@ func (s Store) GetEntryMetadata(id picoshare.EntryID) (picoshare.UploadMetadata,
 		ContentType: picoshare.ContentType(contentType),
 		Uploaded:    ut,
 		Expires:     picoshare.ExpirationTime(et),
-	Size:        fileSize,
-	PassphraseKey: func() string { if passphraseKey != nil { return *passphraseKey }; return "" }(),
+		Size:        fileSize,
+		PassphraseKey: func() string {
+			if passphraseKey != nil {
+				return *passphraseKey
+			}
+			return ""
+		}(),
 	}, nil
 }
 

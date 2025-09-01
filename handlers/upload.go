@@ -81,11 +81,11 @@ func (s Server) entryPut() http.HandlerFunc {
 		// Passphrase change is specified with either passphrase (string) to set/update,
 		// or passphraseAction:"clear" to remove.
 		type editPayload struct {
-			Filename        string `json:"filename"`
-			Expiration      string `json:"expiration"`
-			Note            string `json:"note"`
-			Passphrase      *string `json:"passphrase"`
-			PassphraseAction string `json:"passphraseAction"`
+			Filename         string  `json:"filename"`
+			Expiration       string  `json:"expiration"`
+			Note             string  `json:"note"`
+			Passphrase       *string `json:"passphrase"`
+			PassphraseAction string  `json:"passphraseAction"`
 		}
 		var ep editPayload
 		if err := json.NewDecoder(r.Body).Decode(&ep); err != nil {
@@ -323,9 +323,9 @@ func (s Server) insertFileFromRequest(r *http.Request, expiration picoshare.Expi
 			GuestLink: picoshare.GuestLink{
 				ID: guestLinkID,
 			},
-			Uploaded: s.clock.Now(),
-			Expires:  expiration,
-			Size:     fileSize,
+			Uploaded:      s.clock.Now(),
+			Expires:       expiration,
+			Size:          fileSize,
 			PassphraseKey: serializedKey,
 		})
 	if err != nil {
