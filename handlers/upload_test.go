@@ -282,6 +282,67 @@ func TestEntryPut(t *testing.T) {
 	}
 }
 
+func TestEntryPut_PassphraseTransitions(t *testing.T) {
+	dataStore := test_sqlite.New()
+	s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceChecker, nilGarbageCollector, handlers.NewClock())
+
+	// Insert initial entry without passphrase
+	original := picoshare.UploadMetadata{
+		ID:          picoshare.EntryID("PPPPPPPPPP"),
+		Filename:    picoshare.Filename("protected.txt"),
+		ContentType: picoshare.ContentType("text/plain"),
+		Uploaded:    mustParseTime("2024-01-01T00:00:00Z"),
+		Expires:     picoshare.NeverExpire,
+		Note:        picoshare.FileNote{},
+		Size:        mustParseFileSize(len("data")),
+	}
+	if err := dataStore.InsertEntry(strings.NewReader("data"), original); err != nil {
+		t.Fatalf("failed to insert entry: %v", err)
+	}
+
+	// 1) Set a passphrase
+	body := `{"filename":"protected.txt","note":"","passphrase":"first"}`
+	req, _ := http.NewRequest("PUT", "/api/entry/PPPPPPPPPP", strings.NewReader(body))
+	req.Header.Add("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	s.Router().ServeHTTP(rec, req)
+	if rec.Result().StatusCode != http.StatusOK {
+		t.Fatalf("expected 200 when setting passphrase, got %d", rec.Result().StatusCode)
+	}
+	meta, _ := dataStore.GetEntryMetadata(original.ID)
+	if meta.PassphraseKey == "" {
+		t.Fatalf("expected passphrase key to be set")
+	}
+
+	// 2) Update to a new passphrase
+	body = `{"filename":"protected.txt","note":"","passphrase":"second"}`
+	req, _ = http.NewRequest("PUT", "/api/entry/PPPPPPPPPP", strings.NewReader(body))
+	req.Header.Add("Content-Type", "application/json")
+	rec = httptest.NewRecorder()
+	s.Router().ServeHTTP(rec, req)
+	if rec.Result().StatusCode != http.StatusOK {
+		t.Fatalf("expected 200 when updating passphrase, got %d", rec.Result().StatusCode)
+	}
+	meta2, _ := dataStore.GetEntryMetadata(original.ID)
+	if meta2.PassphraseKey == meta.PassphraseKey {
+		t.Fatalf("expected passphrase key to change when updated")
+	}
+
+	// 3) Clear passphrase with empty string
+	body = `{"filename":"protected.txt","note":"","passphrase":""}`
+	req, _ = http.NewRequest("PUT", "/api/entry/PPPPPPPPPP", strings.NewReader(body))
+	req.Header.Add("Content-Type", "application/json")
+	rec = httptest.NewRecorder()
+	s.Router().ServeHTTP(rec, req)
+	if rec.Result().StatusCode != http.StatusOK {
+		t.Fatalf("expected 200 when clearing passphrase, got %d", rec.Result().StatusCode)
+	}
+	meta3, _ := dataStore.GetEntryMetadata(original.ID)
+	if meta3.PassphraseKey != "" {
+		t.Fatalf("expected passphrase key to be cleared")
+	}
+}
+
 func TestGuestUpload(t *testing.T) {
 	authenticator, err := shared_secret.New("dummypass")
 	if err != nil {

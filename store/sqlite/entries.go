@@ -11,12 +11,6 @@ import (
 	"github.com/mtlynch/picoshare/v2/store/sqlite/file"
 )
 
-func nullIfEmpty(s string) any {
-	if s == "" {
-		return nil
-	}
-	return s
-}
 
 func (s Store) GetEntriesMetadata() ([]picoshare.UploadMetadata, error) {
 	rows, err := s.ctx.Query(`
@@ -213,7 +207,7 @@ func (s Store) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) 
 		expiration_time,
 		passphrase_key
 	)
-	VALUES(:entry_id, NULLIF(:guest_link_id, ''), :filename, :note, :content_type, :upload_time, :expiration_time, :passphrase_key)`,
+	VALUES(:entry_id, NULLIF(:guest_link_id, ''), :filename, :note, :content_type, :upload_time, :expiration_time, NULLIF(:passphrase_key, ''))`,
 		sql.Named("entry_id", metadata.ID),
 		sql.Named("guest_link_id", metadata.GuestLink.ID),
 		sql.Named("filename", metadata.Filename),
@@ -221,7 +215,7 @@ func (s Store) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) 
 		sql.Named("content_type", metadata.ContentType),
 		sql.Named("upload_time", formatTime(metadata.Uploaded)),
 		sql.Named("expiration_time", formatExpirationTime(metadata.Expires)),
-		sql.Named("passphrase_key", nullIfEmpty(metadata.PassphraseKey)),
+		sql.Named("passphrase_key", metadata.PassphraseKey),
 	)
 	if err != nil {
 		log.Printf("insert into entries table failed, aborting transaction: %v", err)

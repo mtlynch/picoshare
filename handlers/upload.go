@@ -197,11 +197,10 @@ type entryEdit struct {
 // by either a non-nil PassphraseSet (to set/update) or PassphraseClear=true to clear.
 func (s Server) entryEditFromRequest(r *http.Request) (entryEdit, error) {
 	var payload struct {
-		Filename         string  `json:"filename"`
-		Expiration       string  `json:"expiration"`
-		Note             string  `json:"note"`
-		Passphrase       *string `json:"passphrase"`
-		PassphraseAction string  `json:"passphraseAction"`
+		Filename   string  `json:"filename"`
+		Expiration string  `json:"expiration"`
+		Note       string  `json:"note"`
+		Passphrase *string `json:"passphrase"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
 		log.Printf("failed to decode JSON request: %v", err)
@@ -234,9 +233,7 @@ func (s Server) entryEditFromRequest(r *http.Request) (entryEdit, error) {
 		},
 	}
 
-	if payload.PassphraseAction == "clear" {
-		e.PassphraseClear = true
-	} else if payload.Passphrase != nil {
+	if payload.Passphrase != nil {
 		if *payload.Passphrase == "" {
 			e.PassphraseClear = true
 		} else {

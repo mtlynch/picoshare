@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/mtlynch/picoshare/v2/handlers"
+	"github.com/mtlynch/picoshare/v2/handlers/auth/shared_secret/kdf"
 	"github.com/mtlynch/picoshare/v2/picoshare"
 	"github.com/mtlynch/picoshare/v2/store/test_sqlite"
 )
@@ -149,4 +150,65 @@ func TestEntryGet(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestEntryAccessPost_PassphraseFlows(t *testing.T) {
+	dataStore := test_sqlite.New()
+	// Insert an entry with a passphrase key
+	entryID := picoshare.EntryID("PRTTTTTTTT")
+	// Derive a key for passphrase "secret"
+	derived, err := handlers_kdf_Derive("secret")
+	if err != nil {
+		t.Fatalf("failed to derive key: %v", err)
+	}
+	meta := picoshare.UploadMetadata{
+		ID:            entryID,
+		Filename:      picoshare.Filename("protected.txt"),
+		ContentType:   picoshare.ContentType("text/plain;charset=utf-8"),
+		Uploaded:      mustParseTime("2024-01-01T00:00:00Z"),
+		Expires:       picoshare.NeverExpire,
+		Size:          mustParseFileSize(len("data")),
+		PassphraseKey: derived,
+	}
+	if err := dataStore.InsertEntry(strings.NewReader("data"), meta); err != nil {
+		t.Fatalf("failed to insert entry: %v", err)
+	}
+
+	s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceChecker, nilGarbageCollector, handlers.NewClock())
+
+	// 1) Missing passphrase -> renders prompt (200 OK but HTML page)
+	req, _ := http.NewRequest("POST", "/-PRTTTTTTTT", strings.NewReader(""))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	rec := httptest.NewRecorder()
+	s.Router().ServeHTTP(rec, req)
+	if got, want := rec.Code, http.StatusOK; got != want {
+		t.Fatalf("expected %d for prompt, got %d", want, got)
+	}
+
+	// 2) Wrong passphrase -> shows error page
+	req, _ = http.NewRequest("POST", "/-PRTTTTTTTT", strings.NewReader("passphrase=wrong"))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	rec = httptest.NewRecorder()
+	s.Router().ServeHTTP(rec, req)
+	if got, want := rec.Code, http.StatusOK; got != want { // still 200 with error message
+		t.Fatalf("expected %d for error page, got %d", want, got)
+	}
+
+	// 3) Correct passphrase -> serves file
+	req, _ = http.NewRequest("POST", "/-PRTTTTTTTT", strings.NewReader("passphrase=secret"))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	rec = httptest.NewRecorder()
+	s.Router().ServeHTTP(rec, req)
+	if got, want := rec.Code, http.StatusOK; got != want {
+		t.Fatalf("expected %d for successful access, got %d", want, got)
+	}
+}
+
+// helpers
+func handlers_kdf_Derive(secret string) (string, error) {
+	k, err := kdf.DeriveKeyFromSecret(secret)
+	if err != nil {
+		return "", err
+	}
+	return k.Serialize(), nil
 }

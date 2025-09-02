@@ -147,6 +147,19 @@ PicoShare is easy to deploy to cloud hosting platforms:
 
 ## Tips and tricks
 
+### Passphrase protection (optional)
+
+You can optionally protect any upload with a passphrase:
+
+- At upload time, enter a passphrase in the new "Passphrase" field. PicoShare derives a key via a KDF and stores only that derived value alongside the file metadata. The file contents remain unencrypted (cleartext) on the server.
+- When someone opens the share link, PicoShare will prompt for the passphrase. Access is granted if the entered passphrase derives to the same key.
+- From the admin file edit screen, you can set a new passphrase or clear it. Leaving the passphrase field empty when saving clears the passphrase protection; omitting the field leaves it unchanged.
+
+Notes:
+
+- The passphrase is never stored in plaintext; only the derived key is stored.
+- For security, passphrases are submitted via form POST (not URL/query params).
+
 ### Reclaiming reserved database space
 
 Some users find it surprising that when they delete files from PicoShare, they don't gain back free space on their filesystem.

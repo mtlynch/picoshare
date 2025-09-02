@@ -39,16 +39,69 @@ func (s Server) entryGet() http.HandlerFunc {
 			return
 		}
 
-		// If entry requires passphrase, and none provided or incorrect, prompt.
+		// If entry requires passphrase, render prompt page.
 		if entry.PassphraseKey != "" {
-			provided := r.URL.Query().Get("passphrase")
-			if provided == "" && r.Method == http.MethodPost {
-				if err := r.ParseForm(); err == nil {
-					provided = r.PostFormValue("passphrase")
-				}
+			renderPassphrasePrompt(tPass, w, r, id, entry)
+			return
+		}
+
+		if entry.Filename != "" {
+			w.Header().Set("Content-Disposition", fmt.Sprintf(`filename="%s"`, entry.Filename))
+		}
+
+		contentType := entry.ContentType
+		if contentType == "" || contentType == "application/octet-stream" {
+			if inferred, err := inferContentTypeFromFilename(entry.Filename); err == nil {
+				contentType = inferred
 			}
+		}
+		w.Header().Set("Content-Type", contentType.String())
+
+		entryFile, err := s.getDB(r).ReadEntryFile(id)
+		if err != nil {
+			log.Printf("error retrieving entry data with id %v: %v", id, err)
+			http.Error(w, "failed to retrieve entry", http.StatusInternalServerError)
+			return
+		}
+
+		http.ServeContent(w, r, entry.Filename.String(), entry.Uploaded, entryFile)
+
+		if err := recordDownload(s.getDB(r), entry.ID, s.clock.Now(), r.RemoteAddr, r.Header.Get("User-Agent")); err != nil {
+			log.Printf("failed to record download of file %s: %v", id.String(), err)
+		}
+	}
+}
+
+// entryAccessPost handles POST submissions to access a protected entry via passphrase.
+func (s Server) entryAccessPost() http.HandlerFunc {
+	tPass := parseTemplates("templates/pages/file-protected.html")
+	return func(w http.ResponseWriter, r *http.Request) {
+		id, err := parseEntryID(mux.Vars(r)["id"])
+		if err != nil {
+			log.Printf("error parsing ID: %v", err)
+			http.Error(w, fmt.Sprintf("bad entry ID: %v", err), http.StatusBadRequest)
+			return
+		}
+
+		entry, err := s.getDB(r).GetEntryMetadata(id)
+		if _, ok := err.(store.EntryNotFoundError); ok {
+			http.Error(w, "entry not found", http.StatusNotFound)
+			return
+		} else if err != nil {
+			log.Printf("error retrieving entry with id %v: %v", id, err)
+			http.Error(w, "failed to retrieve entry", http.StatusInternalServerError)
+			return
+		}
+
+		// Parse form and validate passphrase when required.
+		if entry.PassphraseKey != "" {
+			if err := r.ParseForm(); err != nil {
+				renderPassphrasePromptWithError(tPass, w, r, id, entry, "Invalid form submission")
+				return
+			}
+			provided := r.PostFormValue("passphrase")
 			if provided == "" {
-				renderPassphrasePrompt(tPass, w, r, id, entry)
+				renderPassphrasePromptWithError(tPass, w, r, id, entry, "Passphrase required")
 				return
 			}
 			derived, err := kdf.DeriveKeyFromSecret(provided)
@@ -68,6 +121,7 @@ func (s Server) entryGet() http.HandlerFunc {
 			}
 		}
 
+		// Serve the content upon successful validation.
 		if entry.Filename != "" {
 			w.Header().Set("Content-Disposition", fmt.Sprintf(`filename="%s"`, entry.Filename))
 		}

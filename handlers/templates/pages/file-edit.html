@@ -15,7 +15,7 @@
     }
 
     function readNote() {
-      return document.getElementById("note").value || null;
+      return document.getElementById("note").value || "";
     }
 
     document.getElementById("cancel-btn").addEventListener("click", () => {
@@ -44,7 +44,7 @@
         note: readNote(),
       };
       if (clearPP) {
-        payload.passphraseAction = "clear";
+        payload.passphrase = ""; // empty string indicates clearing passphrase
       } else if (ppInput.value) {
         payload.passphrase = ppInput.value;
       }
