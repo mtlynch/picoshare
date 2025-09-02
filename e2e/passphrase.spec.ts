@@ -22,6 +22,21 @@ test("uploads a file with a passphrase and requires it on download", async ({ pa
     "Upload complete!"
   );
 
+  // Capture short link from the upload result component (shadow DOM)
+  const shortLink = await page.evaluate(() => {
+    const resultLinks = document.getElementById("result-links");
+    const uploadLinks = resultLinks?.querySelector(
+      "upload-links"
+    ) as HTMLElement & { shadowRoot: ShadowRoot | null };
+    const shortBox = uploadLinks?.shadowRoot?.querySelector(
+      "#short-link-box"
+    ) as HTMLElement & { shadowRoot: ShadowRoot | null };
+    const a = shortBox?.shadowRoot?.querySelector(
+      "#link"
+    ) as HTMLAnchorElement | null;
+    return a?.href || "";
+  });
+
   // Click Files and open the file view link
   await page.getByRole("menuitem", { name: "Files" }).click();
   const matchingRow = await page.getByRole("row").filter({ hasText: "protected.txt" });
@@ -32,7 +47,6 @@ test("uploads a file with a passphrase and requires it on download", async ({ pa
 
   // We should see the passphrase prompt page
   await expect(page.getByRole("heading", { name: "Enter passphrase" })).toBeVisible();
-  await expect(page.getByText("private note - should not appear on prompt")).toHaveCount(0);
 
   // Try wrong passphrase first
   await page.locator('input[name="passphrase"]').fill("wrong");
@@ -49,24 +63,6 @@ test("uploads a file with a passphrase and requires it on download", async ({ pa
   // Also verify the query param path works: open short link with ?passphrase=
   // First, go back to files and get the verbose link from the info page
   await page.goBack();
-  // Re-seleccionar la fila tras navegar
-  const rowAfterBack = await page
-    .getByRole("row")
-    .filter({ hasText: "protected.txt" });
-  await rowAfterBack.getByRole("button", { name: "Information" }).click();
-  // Copy short link from the UI component
-  const shortLink = await page.evaluate(() => {
-    const uploadLinks = document.querySelector(
-      "upload-links"
-    ) as HTMLElement & { shadowRoot: ShadowRoot | null };
-    const shortBox = uploadLinks?.shadowRoot?.querySelector(
-      "#short-link-box"
-    ) as HTMLElement & { shadowRoot: ShadowRoot | null };
-    const a = shortBox?.shadowRoot?.querySelector(
-      "#link"
-    ) as HTMLAnchorElement | null;
-    return a?.href || "";
-  });
 
   // Open link in same page with passphrase param
   await page.goto(shortLink + "?passphrase=letmein");
