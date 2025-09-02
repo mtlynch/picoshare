@@ -19,6 +19,8 @@ import (
 )
 
 func (s Server) entryGet() http.HandlerFunc {
+	// Template for passphrase prompt page (consistent with site layout/styles).
+	tPass := parseTemplates("templates/pages/file-protected.html")
 	return func(w http.ResponseWriter, r *http.Request) {
 		id, err := parseEntryID(mux.Vars(r)["id"])
 		if err != nil {
@@ -46,12 +48,12 @@ func (s Server) entryGet() http.HandlerFunc {
 				}
 			}
 			if provided == "" {
-				renderPassphrasePrompt(w, r, id, entry)
+				renderPassphrasePrompt(tPass, w, r, id, entry)
 				return
 			}
 			derived, err := kdf.DeriveKeyFromSecret(provided)
 			if err != nil {
-				renderPassphrasePromptWithError(w, r, id, entry, "Invalid passphrase")
+				renderPassphrasePromptWithError(tPass, w, r, id, entry, "Invalid passphrase")
 				return
 			}
 			stored, err := kdf.DeserializeKey(entry.PassphraseKey)
@@ -61,7 +63,7 @@ func (s Server) entryGet() http.HandlerFunc {
 				return
 			}
 			if !stored.Equal(derived) {
-				renderPassphrasePromptWithError(w, r, id, entry, "Incorrect passphrase")
+				renderPassphrasePromptWithError(tPass, w, r, id, entry, "Incorrect passphrase")
 				return
 			}
 		}
@@ -93,31 +95,23 @@ func (s Server) entryGet() http.HandlerFunc {
 	}
 }
 
-func renderPassphrasePrompt(w http.ResponseWriter, r *http.Request, id picoshare.EntryID, meta picoshare.UploadMetadata) {
-	renderPassphrasePromptWithError(w, r, id, meta, "")
+func renderPassphrasePrompt(tPass *template.Template, w http.ResponseWriter, r *http.Request, id picoshare.EntryID, meta picoshare.UploadMetadata) {
+	renderPassphrasePromptWithError(tPass, w, r, id, meta, "")
 }
 
-func renderPassphrasePromptWithError(w http.ResponseWriter, r *http.Request, id picoshare.EntryID, meta picoshare.UploadMetadata, errorMsg string) {
-	// Minimal inline template to avoid adding static assets yet.
-	const tpl = `<!doctype html>
-<html>
-<head><meta charset="utf-8"><title>PicoShare - Protected</title></head>
-<body>
-<h1>Enter passphrase</h1>
-{{if .Error}}<p style="color:red">{{.Error}}</p>{{end}}
-<form method="post" action="/-{{.ID}}">
-  <input type="password" name="passphrase" placeholder="Passphrase" required autofocus />
-  <button type="submit">View</button>
-  {{if .Filename}}<p>File: {{.Filename}}</p>{{end}}
-</form>
-</body>
-</html>`
-	t := template.Must(template.New("pp").Parse(tpl))
-	_ = t.Execute(w, struct {
-		ID       string
-		Filename string
+func renderPassphrasePromptWithError(tPass *template.Template, w http.ResponseWriter, r *http.Request, id picoshare.EntryID, meta picoshare.UploadMetadata, errorMsg string) {
+	// Use the same site layout/styles via templates.
+	_ = tPass.Execute(w, struct {
+		commonProps
+		PostURL  string
+		Filename picoshare.Filename
 		Error    string
-	}{ID: id.String(), Filename: meta.Filename.String(), Error: errorMsg})
+	}{
+		commonProps: makeCommonProps("PicoShare - Protected", r.Context()),
+		PostURL:     r.URL.Path,
+		Filename:    meta.Filename,
+		Error:       errorMsg,
+	})
 }
 
 func inferContentTypeFromFilename(f picoshare.Filename) (picoshare.ContentType, error) {

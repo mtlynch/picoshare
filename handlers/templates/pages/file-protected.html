@@ -1,0 +1,38 @@
+{{ define "content" }}
+  <h1 class="title">Enter passphrase</h1>
+
+  {{ if .Error }}
+    <div class="my-3">
+      <article class="message is-danger">
+        <div class="message-body">{{ .Error }}</div>
+      </article>
+    </div>
+  {{ end }}
+
+
+  <form method="post" action="{{ .PostURL }}" class="mb-2">
+    <div class="field">
+      <label class="label">Passphrase</label>
+      <div class="control">
+        <input
+          class="input"
+          name="passphrase"
+          type="password"
+          required
+          autofocus
+          placeholder="Passphrase"
+        />
+      </div>
+    </div>
+    {{ if .Filename }}
+      <p>File: <span class="has-text-grey-dark">{{ .Filename }}</span></p>
+    {{ end }}
+
+
+    <div class="field mt-4">
+      <div class="control">
+        <button class="button is-primary" type="submit">View</button>
+      </div>
+    </div>
+  </form>
+{{ end }}
