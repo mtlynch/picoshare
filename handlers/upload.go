@@ -9,7 +9,7 @@ import (
 	"os"
 
 	"github.com/gorilla/mux"
-	"github.com/mtlynch/picoshare/v2/handlers/auth/shared_secret/kdf"
+	"github.com/mtlynch/picoshare/v2/kdf"
 	"github.com/mtlynch/picoshare/v2/handlers/parse"
 	"github.com/mtlynch/picoshare/v2/picoshare"
 	"github.com/mtlynch/picoshare/v2/random"
@@ -101,7 +101,7 @@ func (s Server) entryPut() http.HandlerFunc {
 				http.Error(w, "Failed to update passphrase", http.StatusInternalServerError)
 				return
 			}
-		} else if edit.PassphraseSet != nil {
+	} else if edit.PassphraseSet != nil {
 			key, err := kdf.DeriveKeyFromSecret(*edit.PassphraseSet)
 			if err != nil {
 				http.Error(w, "Invalid passphrase", http.StatusBadRequest)
@@ -311,14 +311,14 @@ func (s Server) insertFileFromRequest(r *http.Request, expiration picoshare.Expi
 
 	// Optional passphrase for protecting downloads.
 	passphrase := r.FormValue("passphrase")
-	var serializedKey string
+	var derivedKey kdf.DerivedKey
 	if passphrase != "" {
 		// Reuse KDF used for shared secret auth.
 		userKey, err := kdf.DeriveKeyFromSecret(passphrase)
 		if err != nil {
 			return picoshare.EntryID(""), fmt.Errorf("invalid passphrase: %w", err)
 		}
-		serializedKey = userKey.Serialize()
+		derivedKey = userKey
 	}
 
 	id := generateEntryID()
@@ -334,7 +334,7 @@ func (s Server) insertFileFromRequest(r *http.Request, expiration picoshare.Expi
 			Uploaded:      s.clock.Now(),
 			Expires:       expiration,
 			Size:          fileSize,
-			PassphraseKey: serializedKey,
+			PassphraseKey: derivedKey,
 		})
 	if err != nil {
 		log.Printf("failed to save entry: %v", err)

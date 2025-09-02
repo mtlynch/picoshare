@@ -6,11 +6,11 @@ import (
 	"io"
 	"log"
 
+	"github.com/mtlynch/picoshare/v2/kdf"
 	"github.com/mtlynch/picoshare/v2/picoshare"
 	"github.com/mtlynch/picoshare/v2/store"
 	"github.com/mtlynch/picoshare/v2/store/sqlite/file"
 )
-
 
 func (s Store) GetEntriesMetadata() ([]picoshare.UploadMetadata, error) {
 	rows, err := s.ctx.Query(`
@@ -68,7 +68,7 @@ func (s Store) GetEntriesMetadata() ([]picoshare.UploadMetadata, error) {
 			return []picoshare.UploadMetadata{}, err
 		}
 
-		ee = append(ee, picoshare.UploadMetadata{
+		meta := picoshare.UploadMetadata{
 			ID:          picoshare.EntryID(id),
 			Filename:    picoshare.Filename(filename),
 			Note:        picoshare.FileNote{Value: note},
@@ -76,13 +76,13 @@ func (s Store) GetEntriesMetadata() ([]picoshare.UploadMetadata, error) {
 			Uploaded:    ut,
 			Expires:     picoshare.ExpirationTime(et),
 			Size:        fileSize,
-			PassphraseKey: func() string {
-				if passphraseKey != nil {
-					return *passphraseKey
-				}
-				return ""
-			}(),
-		})
+		}
+		if passphraseKey != nil {
+			if dk, err := kdf.DeserializeKey(*passphraseKey); err == nil {
+				meta.PassphraseKey = dk
+			}
+		}
+		ee = append(ee, meta)
 	}
 
 	return ee, nil
@@ -159,7 +159,7 @@ func (s Store) GetEntryMetadata(id picoshare.EntryID) (picoshare.UploadMetadata,
 		return picoshare.UploadMetadata{}, err
 	}
 
-	return picoshare.UploadMetadata{
+	meta := picoshare.UploadMetadata{
 		ID:          id,
 		Filename:    picoshare.Filename(filename),
 		GuestLink:   guestLink,
@@ -168,13 +168,13 @@ func (s Store) GetEntryMetadata(id picoshare.EntryID) (picoshare.UploadMetadata,
 		Uploaded:    ut,
 		Expires:     picoshare.ExpirationTime(et),
 		Size:        fileSize,
-		PassphraseKey: func() string {
-			if passphraseKey != nil {
-				return *passphraseKey
-			}
-			return ""
-		}(),
-	}, nil
+	}
+	if passphraseKey != nil {
+		if dk, err := kdf.DeserializeKey(*passphraseKey); err == nil {
+			meta.PassphraseKey = dk
+		}
+	}
+	return meta, nil
 }
 
 func (s Store) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) error {
@@ -215,7 +215,12 @@ func (s Store) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) 
 		sql.Named("content_type", metadata.ContentType),
 		sql.Named("upload_time", formatTime(metadata.Uploaded)),
 		sql.Named("expiration_time", formatExpirationTime(metadata.Expires)),
-		sql.Named("passphrase_key", metadata.PassphraseKey),
+		sql.Named("passphrase_key", func() string {
+			if metadata.PassphraseKey.IsZero() {
+				return ""
+			}
+			return metadata.PassphraseKey.Serialize()
+		}()),
 	)
 	if err != nil {
 		log.Printf("insert into entries table failed, aborting transaction: %v", err)

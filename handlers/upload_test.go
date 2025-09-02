@@ -310,7 +310,7 @@ func TestEntryPut_PassphraseTransitions(t *testing.T) {
 		t.Fatalf("expected 200 when setting passphrase, got %d", rec.Result().StatusCode)
 	}
 	meta, _ := dataStore.GetEntryMetadata(original.ID)
-	if meta.PassphraseKey == "" {
+	if meta.PassphraseKey.IsZero() {
 		t.Fatalf("expected passphrase key to be set")
 	}
 
@@ -324,7 +324,7 @@ func TestEntryPut_PassphraseTransitions(t *testing.T) {
 		t.Fatalf("expected 200 when updating passphrase, got %d", rec.Result().StatusCode)
 	}
 	meta2, _ := dataStore.GetEntryMetadata(original.ID)
-	if meta2.PassphraseKey == meta.PassphraseKey {
+	if meta2.PassphraseKey.Serialize() == meta.PassphraseKey.Serialize() {
 		t.Fatalf("expected passphrase key to change when updated")
 	}
 
@@ -338,7 +338,7 @@ func TestEntryPut_PassphraseTransitions(t *testing.T) {
 		t.Fatalf("expected 200 when clearing passphrase, got %d", rec.Result().StatusCode)
 	}
 	meta3, _ := dataStore.GetEntryMetadata(original.ID)
-	if meta3.PassphraseKey != "" {
+	if !meta3.PassphraseKey.IsZero() {
 		t.Fatalf("expected passphrase key to be cleared")
 	}
 }

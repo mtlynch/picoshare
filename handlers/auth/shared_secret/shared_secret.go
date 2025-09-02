@@ -5,7 +5,7 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/mtlynch/picoshare/v2/handlers/auth/shared_secret/kdf"
+	"github.com/mtlynch/picoshare/v2/kdf"
 )
 
 const authCookieName = "sharedSecret"

@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/mtlynch/picoshare/v2/handlers/auth/shared_secret/kdf"
+	"github.com/mtlynch/picoshare/v2/kdf"
 
 	"github.com/mtlynch/picoshare/v2/picoshare"
 	"github.com/mtlynch/picoshare/v2/store"
@@ -40,7 +40,7 @@ func (s Server) entryGet() http.HandlerFunc {
 		}
 
 		// If entry requires passphrase, render prompt page.
-		if entry.PassphraseKey != "" {
+	if !entry.PassphraseKey.IsZero() {
 			renderPassphrasePrompt(tPass, w, r, id, entry)
 			return
 		}
@@ -94,7 +94,7 @@ func (s Server) entryAccessPost() http.HandlerFunc {
 		}
 
 		// Parse form and validate passphrase when required.
-		if entry.PassphraseKey != "" {
+		if !entry.PassphraseKey.IsZero() {
 			if err := r.ParseForm(); err != nil {
 				renderPassphrasePromptWithError(tPass, w, r, id, entry, "Invalid form submission")
 				return
@@ -109,13 +109,7 @@ func (s Server) entryAccessPost() http.HandlerFunc {
 				renderPassphrasePromptWithError(tPass, w, r, id, entry, "Invalid passphrase")
 				return
 			}
-			stored, err := kdf.DeserializeKey(entry.PassphraseKey)
-			if err != nil {
-				log.Printf("failed to deserialize stored passphrase key: %v", err)
-				http.Error(w, "failed to process request", http.StatusInternalServerError)
-				return
-			}
-			if !stored.Equal(derived) {
+			if !entry.PassphraseKey.Equal(derived) {
 				renderPassphrasePromptWithError(tPass, w, r, id, entry, "Incorrect passphrase")
 				return
 			}

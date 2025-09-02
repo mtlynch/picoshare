@@ -3,6 +3,8 @@ package picoshare
 import (
 	"io"
 	"time"
+
+	"github.com/mtlynch/picoshare/v2/kdf"
 )
 
 type (
@@ -25,9 +27,9 @@ type (
 		Size          FileSize
 		GuestLink     GuestLink
 		DownloadCount uint64
-		// PassphraseKey stores a serialized kdf.DerivedKey if the uploader
-		// protected the file with a passphrase. Empty means no protection.
-		PassphraseKey string
+		// PassphraseKey stores a derived key if the uploader protected the file
+		// with a passphrase. Zero-value means no protection.
+		PassphraseKey kdf.DerivedKey
 	}
 
 	DownloadRecord struct {

@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/mtlynch/picoshare/v2/handlers"
-	"github.com/mtlynch/picoshare/v2/handlers/auth/shared_secret/kdf"
+	"github.com/mtlynch/picoshare/v2/kdf"
 	"github.com/mtlynch/picoshare/v2/picoshare"
 	"github.com/mtlynch/picoshare/v2/store/test_sqlite"
 )
@@ -205,10 +205,6 @@ func TestEntryAccessPost_PassphraseFlows(t *testing.T) {
 }
 
 // helpers
-func handlers_kdf_Derive(secret string) (string, error) {
-	k, err := kdf.DeriveKeyFromSecret(secret)
-	if err != nil {
-		return "", err
-	}
-	return k.Serialize(), nil
+func handlers_kdf_Derive(secret string) (kdf.DerivedKey, error) {
+	return kdf.DeriveKeyFromSecret(secret)
 }
