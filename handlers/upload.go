@@ -77,59 +77,14 @@ func (s Server) entryPut() http.HandlerFunc {
 			return
 		}
 
-		// We allow changing filename, expiration, note, and optionally passphrase.
-		// Passphrase change is specified with either passphrase (string) to set/update,
-		// or passphraseAction:"clear" to remove.
-		type editPayload struct {
-			Filename         string  `json:"filename"`
-			Expiration       string  `json:"expiration"`
-			Note             string  `json:"note"`
-			Passphrase       *string `json:"passphrase"`
-			PassphraseAction string  `json:"passphraseAction"`
-		}
-		var ep editPayload
-		if err := json.NewDecoder(r.Body).Decode(&ep); err != nil {
-			log.Printf("error decoding edit payload: %v", err)
-			http.Error(w, "Bad request", http.StatusBadRequest)
-			return
-		}
-
-		// Rebuild metadata from fields present.
-		filename, err := parse.Filename(ep.Filename)
-		if err != nil {
-			http.Error(w, fmt.Sprintf("Bad filename: %v", err), http.StatusBadRequest)
-			return
-		}
-
-		expiration := picoshare.NeverExpire
-		if ep.Expiration != "" {
-			expiration, err = parse.Expiration(ep.Expiration, s.clock.Now())
-			if err != nil {
-				http.Error(w, fmt.Sprintf("Bad expiration: %v", err), http.StatusBadRequest)
-				return
-			}
-		}
-
-		note, err := parse.FileNote(ep.Note)
-		if err != nil {
-			http.Error(w, fmt.Sprintf("Bad note: %v", err), http.StatusBadRequest)
-			return
-		}
-
-		metadata := picoshare.UploadMetadata{Filename: filename, Expires: expiration, Note: note}
-
+		edit, err := s.entryEditFromRequest(r)
 		if err != nil {
 			log.Printf("error parsing entry edit request: %v", err)
 			http.Error(w, fmt.Sprintf("Bad request: %v", err), http.StatusBadRequest)
 			return
 		}
 
-		if _, ok := err.(store.GuestLinkNotFoundError); ok {
-			http.Error(w, "Invalid guest link ID", http.StatusNotFound)
-			return
-		}
-
-		if err := s.getDB(r).UpdateEntryMetadata(id, metadata); err != nil {
+		if err := s.getDB(r).UpdateEntryMetadata(id, edit.Metadata); err != nil {
 			if _, ok := err.(store.EntryNotFoundError); ok {
 				http.Error(w, "Invalid entry ID", http.StatusNotFound)
 				return
@@ -140,32 +95,23 @@ func (s Server) entryPut() http.HandlerFunc {
 		}
 
 		// Handle passphrase changes.
-		if ep.PassphraseAction == "clear" {
+		if edit.PassphraseClear {
 			if err := s.getDB(r).UpdateEntryPassphrase(id, nil); err != nil {
 				log.Printf("error clearing passphrase: %v", err)
 				http.Error(w, "Failed to update passphrase", http.StatusInternalServerError)
 				return
 			}
-		} else if ep.Passphrase != nil {
-			if *ep.Passphrase == "" {
-				// Empty string means clear as well
-				if err := s.getDB(r).UpdateEntryPassphrase(id, nil); err != nil {
-					log.Printf("error clearing passphrase: %v", err)
-					http.Error(w, "Failed to update passphrase", http.StatusInternalServerError)
-					return
-				}
-			} else {
-				key, err := kdf.DeriveKeyFromSecret(*ep.Passphrase)
-				if err != nil {
-					http.Error(w, "Invalid passphrase", http.StatusBadRequest)
-					return
-				}
-				serialized := key.Serialize()
-				if err := s.getDB(r).UpdateEntryPassphrase(id, &serialized); err != nil {
-					log.Printf("error setting passphrase: %v", err)
-					http.Error(w, "Failed to update passphrase", http.StatusInternalServerError)
-					return
-				}
+		} else if edit.PassphraseSet != nil {
+			key, err := kdf.DeriveKeyFromSecret(*edit.PassphraseSet)
+			if err != nil {
+				http.Error(w, "Invalid passphrase", http.StatusBadRequest)
+				return
+			}
+			serialized := key.Serialize()
+			if err := s.getDB(r).UpdateEntryPassphrase(id, &serialized); err != nil {
+				log.Printf("error setting passphrase: %v", err)
+				http.Error(w, "Failed to update passphrase", http.StatusInternalServerError)
+				return
 			}
 		}
 	}
@@ -235,6 +181,71 @@ func (s Server) guestEntryPost() http.HandlerFunc {
 }
 
 // entryMetadataFromRequest was replaced with explicit parsing in entryPut to support passphrase edits.
+
+// entryEdit represents an edit request for an entry, including metadata changes
+// and optional passphrase updates.
+type entryEdit struct {
+	Metadata        picoshare.UploadMetadata
+	PassphraseClear bool
+	// PassphraseSet holds the raw passphrase to set when not clearing. If nil,
+	// then no passphrase change is requested unless PassphraseClear is true.
+	PassphraseSet *string
+}
+
+// entryEditFromRequest parses the JSON body of an entry edit request into an entryEdit.
+// It validates filename, expiration, and note. Passphrase updates are represented
+// by either a non-nil PassphraseSet (to set/update) or PassphraseClear=true to clear.
+func (s Server) entryEditFromRequest(r *http.Request) (entryEdit, error) {
+	var payload struct {
+		Filename         string  `json:"filename"`
+		Expiration       string  `json:"expiration"`
+		Note             string  `json:"note"`
+		Passphrase       *string `json:"passphrase"`
+		PassphraseAction string  `json:"passphraseAction"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		log.Printf("failed to decode JSON request: %v", err)
+		return entryEdit{}, err
+	}
+
+	filename, err := parse.Filename(payload.Filename)
+	if err != nil {
+		return entryEdit{}, fmt.Errorf("bad filename: %w", err)
+	}
+
+	expiration := picoshare.NeverExpire
+	if payload.Expiration != "" {
+		expiration, err = parse.Expiration(payload.Expiration, s.clock.Now())
+		if err != nil {
+			return entryEdit{}, fmt.Errorf("bad expiration: %w", err)
+		}
+	}
+
+	note, err := parse.FileNote(payload.Note)
+	if err != nil {
+		return entryEdit{}, fmt.Errorf("bad note: %w", err)
+	}
+
+	e := entryEdit{
+		Metadata: picoshare.UploadMetadata{
+			Filename: filename,
+			Expires:  expiration,
+			Note:     note,
+		},
+	}
+
+	if payload.PassphraseAction == "clear" {
+		e.PassphraseClear = true
+	} else if payload.Passphrase != nil {
+		if *payload.Passphrase == "" {
+			e.PassphraseClear = true
+		} else {
+			e.PassphraseSet = payload.Passphrase
+		}
+	}
+
+	return e, nil
+}
 
 func generateEntryID() picoshare.EntryID {
 	return picoshare.EntryID(random.String(EntryIDLength, entryIDCharacters))
