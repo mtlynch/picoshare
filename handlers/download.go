@@ -40,7 +40,7 @@ func (s Server) entryGet() http.HandlerFunc {
 		}
 
 		// If entry requires passphrase, render prompt page.
-	if !entry.PassphraseKey.IsZero() {
+		if !entry.PassphraseKey.IsZero() {
 			renderPassphrasePrompt(tPass, w, r, id, entry)
 			return
 		}

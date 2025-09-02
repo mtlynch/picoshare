@@ -9,8 +9,8 @@ import (
 	"os"
 
 	"github.com/gorilla/mux"
-	"github.com/mtlynch/picoshare/v2/kdf"
 	"github.com/mtlynch/picoshare/v2/handlers/parse"
+	"github.com/mtlynch/picoshare/v2/kdf"
 	"github.com/mtlynch/picoshare/v2/picoshare"
 	"github.com/mtlynch/picoshare/v2/random"
 	"github.com/mtlynch/picoshare/v2/store"
@@ -101,7 +101,7 @@ func (s Server) entryPut() http.HandlerFunc {
 				http.Error(w, "Failed to update passphrase", http.StatusInternalServerError)
 				return
 			}
-	} else if edit.PassphraseSet != nil {
+		} else if edit.PassphraseSet != nil {
 			key, err := kdf.DeriveKeyFromSecret(*edit.PassphraseSet)
 			if err != nil {
 				http.Error(w, "Invalid passphrase", http.StatusBadRequest)
