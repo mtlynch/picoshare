@@ -3,7 +3,7 @@ package handlers
 import (
 	"io"
 
-	"github.com/mtlynch/picoshare/v2/picoshare"
+	"github.com/mtlynch/picoshare/picoshare"
 )
 
 type Store interface {

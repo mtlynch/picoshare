@@ -3,8 +3,8 @@ package test_sqlite
 import (
 	"fmt"
 
-	"github.com/mtlynch/picoshare/v2/random"
-	"github.com/mtlynch/picoshare/v2/store/sqlite"
+	"github.com/mtlynch/picoshare/random"
+	"github.com/mtlynch/picoshare/store/sqlite"
 )
 
 const optimizeForLitestream = false

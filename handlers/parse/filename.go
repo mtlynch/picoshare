@@ -4,7 +4,7 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/mtlynch/picoshare/v2/picoshare"
+	"github.com/mtlynch/picoshare/picoshare"
 )
 
 // MaxFilenameBytes is the maximum number of bytes allowed for uploaded files

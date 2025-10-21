@@ -3,8 +3,8 @@ package parse_test
 import (
 	"testing"
 
-	"github.com/mtlynch/picoshare/v2/handlers/parse"
-	"github.com/mtlynch/picoshare/v2/picoshare"
+	"github.com/mtlynch/picoshare/handlers/parse"
+	"github.com/mtlynch/picoshare/picoshare"
 )
 
 func TestFileLifetime(t *testing.T) {

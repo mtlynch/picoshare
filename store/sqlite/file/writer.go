@@ -3,8 +3,8 @@ package file
 import (
 	"io"
 
-	"github.com/mtlynch/picoshare/v2/picoshare"
-	"github.com/mtlynch/picoshare/v2/store/sqlite/wrapped"
+	"github.com/mtlynch/picoshare/picoshare"
+	"github.com/mtlynch/picoshare/store/sqlite/wrapped"
 )
 
 type writer struct {

@@ -3,7 +3,7 @@ package kdf_test
 import (
 	"testing"
 
-	"github.com/mtlynch/picoshare/v2/handlers/auth/shared_secret/kdf"
+	"github.com/mtlynch/picoshare/handlers/auth/shared_secret/kdf"
 )
 
 func TestDeriveKeyFromSecret(t *testing.T) {

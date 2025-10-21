@@ -5,8 +5,8 @@ import (
 	"math"
 	"testing"
 
-	"github.com/mtlynch/picoshare/v2/picoshare"
-	"github.com/mtlynch/picoshare/v2/space/checkers"
+	"github.com/mtlynch/picoshare/picoshare"
+	"github.com/mtlynch/picoshare/space/checkers"
 )
 
 type mockDatabaseReader struct {

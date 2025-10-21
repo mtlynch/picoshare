@@ -1,4 +1,4 @@
-module github.com/mtlynch/picoshare/v2
+module github.com/mtlynch/picoshare
 
 go 1.24
 

@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mtlynch/picoshare/v2/picoshare"
-	"github.com/mtlynch/picoshare/v2/store/test_sqlite"
+	"github.com/mtlynch/picoshare/picoshare"
+	"github.com/mtlynch/picoshare/store/test_sqlite"
 )
 
 func TestInsertDeleteSingleEntry(t *testing.T) {

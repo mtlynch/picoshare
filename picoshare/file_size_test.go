@@ -4,7 +4,7 @@ import (
 	"math"
 	"testing"
 
-	"github.com/mtlynch/picoshare/v2/picoshare"
+	"github.com/mtlynch/picoshare/picoshare"
 )
 
 func TestFileSizeFromInt(t *testing.T) {
