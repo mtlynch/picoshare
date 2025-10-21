@@ -62,6 +62,6 @@ export CGO_ENABLED=1
 
 go build \
   -tags "${BUILD_TAGS_JOINED}" \
-  -ldflags "-w -extldflags '-static' -X 'github.com/mtlynch/picoshare/v2/build.Version=${PS_VERSION}' -X 'github.com/mtlynch/picoshare/v2/build.unixTime=$(date +%s)'" \
+  -ldflags "-w -extldflags '-static' -X 'github.com/mtlynch/picoshare/build.Version=${PS_VERSION}' -X 'github.com/mtlynch/picoshare/build.unixTime=$(date +%s)'" \
   -o "${BINARY}" \
   cmd/picoshare/main.go

@@ -4,7 +4,7 @@ import (
 	"errors"
 	"regexp"
 
-	"github.com/mtlynch/picoshare/v2/picoshare"
+	"github.com/mtlynch/picoshare/picoshare"
 )
 
 // MaxFileNoteBytes is the maximum number of bytes allowed in a file note.

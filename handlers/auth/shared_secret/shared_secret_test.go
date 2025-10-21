@@ -7,7 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/mtlynch/picoshare/v2/handlers/auth/shared_secret"
+	"github.com/mtlynch/picoshare/handlers/auth/shared_secret"
 )
 
 func TestStartSession(t *testing.T) {

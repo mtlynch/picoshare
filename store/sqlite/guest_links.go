@@ -5,8 +5,8 @@ import (
 	"database/sql"
 	"log"
 
-	"github.com/mtlynch/picoshare/v2/picoshare"
-	"github.com/mtlynch/picoshare/v2/store"
+	"github.com/mtlynch/picoshare/picoshare"
+	"github.com/mtlynch/picoshare/store"
 )
 
 func (s Store) GetGuestLink(id picoshare.GuestLinkID) (picoshare.GuestLink, error) {

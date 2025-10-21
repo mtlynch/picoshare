@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mtlynch/picoshare/v2/handlers/parse"
-	"github.com/mtlynch/picoshare/v2/picoshare"
+	"github.com/mtlynch/picoshare/handlers/parse"
+	"github.com/mtlynch/picoshare/picoshare"
 )
 
 func TestExpiration(t *testing.T) {

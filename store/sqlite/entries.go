@@ -6,9 +6,9 @@ import (
 	"io"
 	"log"
 
-	"github.com/mtlynch/picoshare/v2/picoshare"
-	"github.com/mtlynch/picoshare/v2/store"
-	"github.com/mtlynch/picoshare/v2/store/sqlite/file"
+	"github.com/mtlynch/picoshare/picoshare"
+	"github.com/mtlynch/picoshare/store"
+	"github.com/mtlynch/picoshare/store/sqlite/file"
 )
 
 func (s Store) GetEntriesMetadata() ([]picoshare.UploadMetadata, error) {
