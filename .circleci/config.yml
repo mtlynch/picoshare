@@ -233,6 +233,7 @@ jobs:
           name: Deploy to fly.io
           command: |
             "${HOME}/.fly/bin/flyctl" deploy \
+              --build-arg "PS_VERSION=$(git describe --tags)" \
               --access-token "${FLY_ACCESS_TOKEN}"
 workflows:
   version: 2
