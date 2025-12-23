@@ -215,16 +215,16 @@ jobs:
   deploy:
     executor: base
     resource_class: small
-    environment:
-      # The flyctl changes too much to use a specific version, so use the latest for the
-      # time being.
-      # https://github.com/superfly/flyctl/issues/394#issuecomment-815890166
-      FLYCTL_VERSION: "latest"
     steps:
       - checkout
       - run:
           name: Install flyctl
-          command: curl -L https://fly.io/install.sh | sh -s "${FLYCTL_VERSION}"
+          # The flyctl changes too much to use a specific version, so use the latest for the
+          # time being.
+          # https://github.com/superfly/flyctl/issues/394#issuecomment-815890166
+          command: |
+            curl -L https://fly.io/install.sh | \
+              sh -s -- --non-interactive latest
       - run:
           name: Print flyctl version
           command: |
@@ -233,7 +233,6 @@ jobs:
           name: Deploy to fly.io
           command: |
             "${HOME}/.fly/bin/flyctl" deploy \
-              --build-arg "PS_VERSION=$(git describe --tags)" \
               --access-token "${FLY_ACCESS_TOKEN}"
 workflows:
   version: 2
