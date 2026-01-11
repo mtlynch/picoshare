@@ -29,3 +29,5 @@ e2e-results/
 
 /reference
 /debug
+/.tmp-playwright/
+test-results/

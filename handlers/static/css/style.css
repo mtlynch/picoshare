@@ -36,36 +36,56 @@ form {
   }
 }
 
-.content h1 {
-  font-size: 2.1rem;
+.content h1,
+.content h2,
+.content h3,
+.content h4,
+.content h5,
+.content h6 {
+  color: #363636;
   font-weight: 600;
-  margin-bottom: 1.25rem;
+  line-height: 1.125;
+}
+
+.content h1 {
+  font-size: 2rem;
+  margin-bottom: 0.5em;
+}
+
+.content h1:not(:first-child) {
+  margin-top: 1em;
 }
 
 .content h2 {
-  font-size: 1.3rem;
-  font-weight: 600;
-  margin-top: 1rem;
-  margin-bottom: 0.75rem;
+  font-size: 1.75rem;
+  margin-bottom: 0.5714em;
+}
+
+.content h2:not(:first-child) {
+  margin-top: 1.1428em;
 }
 
 .content p,
 .content ul {
   font-size: 1rem;
-  line-height: 1.55;
-  margin-bottom: 1.25rem;
+  line-height: 1.5;
+  margin-bottom: 1em;
 }
 
 .content ul {
-  padding-left: 1.3rem;
+  list-style: disc outside;
+  margin-left: 2em;
+  margin-top: 1em;
+  padding-left: 0;
 }
 
 .content ul ul {
-  padding-left: 1.2rem;
+  list-style-type: circle;
+  margin-top: 0.5em;
 }
 
-.content li {
-  margin-bottom: 0.35rem;
+.content li + li {
+  margin-top: 0.25em;
 }
 
 .navbar {
