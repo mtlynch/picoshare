@@ -1,8 +1,14 @@
 <template id="expiration-picker-template">
-  <style nonce="{{ .CspNonce }}">
-    @import "/third-party/bootstrap@5.3.3/bootstrap.min.css";
-    @import "/third-party/js-datepicker@5.18.0/datepicker.min.css";
-  </style>
+  <link
+    rel="stylesheet"
+    type="text/css"
+    href="/third-party/bootstrap@5.3.3/bootstrap.min.css"
+  />
+  <link
+    rel="stylesheet"
+    type="text/css"
+    href="/third-party/js-datepicker@5.18.0/datepicker.min.css"
+  />
   <div class="mb-2">
     <input id="expiration" class="form-control" type="text" />
     <div class="form-text">Expiration date</div>
