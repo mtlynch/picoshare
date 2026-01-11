@@ -249,7 +249,7 @@ test("disables and enables a guest link, affecting access", async ({
 
     await guestPage.goto(guestLinkRoute);
     await expect(guestPage.locator("h1")).toContainText("Upload");
-    await expect(guestPage.locator(".file-input")).toBeVisible();
+    await expect(guestPage.locator(".file")).toBeVisible();
   }
 });
 

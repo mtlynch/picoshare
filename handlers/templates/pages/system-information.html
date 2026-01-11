@@ -2,6 +2,9 @@
   <style nonce="{{ .CspNonce }}">
     .progress {
       max-width: 70ch;
+      width: 100%;
+      height: 1.1rem;
+      border-radius: 999px;
     }
 
     .notification {
@@ -11,6 +14,11 @@
     .code {
       font-family: "Courier New", Courier, monospace;
       font-weight: bold;
+    }
+
+    .progress-bar {
+      background-color: #00d1b2;
+      border-radius: 999px;
     }
   </style>
 {{ end }}
@@ -27,9 +35,9 @@
         toggleShowElement(sizeDeltaNotification);
       });
 
-    document.querySelectorAll(".notification .delete").forEach((el) => {
+    document.querySelectorAll(".notification .btn-close").forEach((el) => {
       el.addEventListener("click", (evt) => {
-        const notificationEl = evt.target.parentElement;
+        const notificationEl = evt.target.closest(".notification");
         hideElement(notificationEl);
       });
     });
@@ -37,22 +45,30 @@
 {{ end }}
 
 {{ define "content" }}
-  <h1 class="title">System Information</h1>
+  {{ $usagePercent := percentage .UsedBytes .TotalBytes }}
+  <h1 class="h1">System Information</h1>
 
   <h2>Disk Usage</h2>
-  <progress
-    class="progress is-primary"
-    max="{{ .TotalBytes }}"
-    value="{{ .UsedBytes }}"
-  >
-    {{ percentage .UsedBytes .TotalBytes }}
-  </progress>
+  <div class="progress">
+    <div
+      class="progress-bar"
+      role="progressbar"
+      style="width: {{ $usagePercent }}; --bs-progress-bar-width: {{ $usagePercent }};"
+      aria-valuenow="{{ .UsedBytes }}"
+      aria-valuemin="0"
+      aria-valuemax="{{ .TotalBytes }}"
+    >
+      <span class="visually-hidden">
+        {{ $usagePercent }}
+      </span>
+    </div>
+  </div>
 
   <ul>
     <li>
       <strong>Server disk usage</strong>:
       {{ formatDiskUsage .UsedBytes }}
-      ({{ percentage .UsedBytes .TotalBytes }}) used of
+      ({{ $usagePercent }}) used of
       {{ formatDiskUsage .TotalBytes }} total
     </li>
     <li>
@@ -66,7 +82,7 @@
           <strong>Database files</strong>:
           {{ formatDiskUsage .DatabaseFileBytes }}
           <a id="file-size-information" href="#"
-            ><span class="icon has-text-info">
+            ><span class="text-info">
               <i class="fas fa-info-circle"></i> </span
           ></a>
         </li>
@@ -74,8 +90,8 @@
     </li>
   </ul>
 
-  <div class="notification is-info is-light is-hidden">
-    <button class="delete"></button>
+  <div class="notification alert alert-info d-none">
+    <button class="btn-close" type="button" aria-label="Close"></button>
     <p>
       PicoShare's database files occupy more disk space than the sum total of
       PicoShare's file uploads.

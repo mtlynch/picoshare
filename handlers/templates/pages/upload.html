@@ -1,8 +1,36 @@
 {{ define "style-tags" }}
   <style nonce="{{ .CspNonce }}">
-    .file.accepting-drop .file-label,
-    .file.accepting-drop .file-cta {
+    .file {
+      border: 1px dashed #ced4da;
+      border-radius: 0.5rem;
+      background: #f8f9fa;
+      padding: 1.5rem;
+      text-align: center;
+      cursor: pointer;
+    }
+
+    .file.accepting-drop {
       background: #dbf5ff;
+    }
+
+    .file-label {
+      display: block;
+      cursor: pointer;
+    }
+
+    .file-input {
+      display: none;
+    }
+
+    .file-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-weight: 600;
+    }
+
+    .file-icon {
+      display: inline-flex;
     }
 
     #pastebox {
@@ -12,7 +40,7 @@
       caret-color: transparent;
     }
 
-    .control {
+    .field-max-width {
       max-width: 70ch;
     }
   </style>
@@ -29,6 +57,7 @@
     const pasteEl = document.getElementById("pastebox");
     const errorContainer = document.getElementById("error");
     const progressBar = document.getElementById("upload-progress");
+    const progressBarFill = document.getElementById("upload-progress-bar");
     const progressSpinner = document.getElementById("progress-spinner");
     const uploadForm = document.getElementById("upload-form");
     const expirationContainer = document.querySelector(".expiration-container");
@@ -72,10 +101,11 @@
     }
 
     function updateProgress(bytesUploaded, bytesTotal) {
-      progressBar.value = bytesUploaded;
-      progressBar.max = bytesTotal;
-      const percentage =
-        ((bytesUploaded / bytesTotal) * 100.0).toFixed(0) + "%";
+      const percentageValue =
+        bytesTotal === 0 ? 0 : Math.round((bytesUploaded / bytesTotal) * 100);
+      const percentage = `${percentageValue}%`;
+      progressBarFill.style.width = percentage;
+      progressBarFill.setAttribute("aria-valuenow", percentageValue);
       document.title = "PicoShare ↑ " + percentage;
       if (bytesUploaded === bytesTotal) {
         document.title = "PicoShare - Complete";
@@ -271,10 +301,10 @@
 {{ end }}
 
 {{ define "content" }}
-  <h1 class="title">Upload</h1>
+  <h1 class="h1">Upload</h1>
 
   <div id="upload-form">
-    <div class="file is-boxed">
+    <div class="file">
       <label class="file-label">
         <input class="file-input" type="file" />
         <span class="file-cta">
@@ -286,93 +316,93 @@
       </label>
     </div>
 
-    <textarea id="pastebox" class="mt-5"></textarea>
+    <textarea
+      id="pastebox"
+      class="form-control mt-4 field-max-width"
+    ></textarea>
 
     {{ if gt (len .ExpirationOptions) 0 }}
-      <div class="field my-5 expiration-container">
-        <label class="label">Expiration</label>
-        <div class="control">
-          <div class="select">
-            <select id="expiration-select" autocomplete="off">
-              {{ range .ExpirationOptions }}
-                <option
-                  value="{{ formatExpiration .Expiration }}"
-                  {{ if .IsDefault }}selected{{ end }}
-                >
-                  {{- .FriendlyName -}}
-                </option>
-              {{ end }}
-            </select>
-          </div>
-        </div>
+      <div class="mb-4 expiration-container field-max-width">
+        <label class="form-label">Expiration</label>
+        <select
+          id="expiration-select"
+          class="form-select"
+          autocomplete="off"
+        >
+          {{ range .ExpirationOptions }}
+            <option
+              value="{{ formatExpiration .Expiration }}"
+              {{ if .IsDefault }}selected{{ end }}
+            >
+              {{- .FriendlyName -}}
+            </option>
+          {{ end }}
+        </select>
 
         <expiration-picker
           id="expiration-picker"
-          class="control is-hidden mt-3 is-block"
+          class="d-none mt-3 d-block"
         />
       </div>
     {{ end }}
 
     {{ if not .GuestLinkMetadata.ID }}
-      <div class="field my-5">
-        <label class="label">Note <i>(optional)</i></label>
-        <div class="control">
-          <input
-            id="note"
-            class="input is-normal"
-            type="text"
-            placeholder="For Joe at ExampleCo"
-            maxlength="{{ .MaxNoteLength }}"
-          />
-        </div>
-        <p class="help">Note is only visible to you</p>
+      <div class="mb-4 field-max-width">
+        <label class="form-label">Note <i>(optional)</i></label>
+        <input
+          id="note"
+          class="form-control"
+          type="text"
+          placeholder="For Joe at ExampleCo"
+          maxlength="{{ .MaxNoteLength }}"
+        />
+        <p class="form-text">Note is only visible to you</p>
       </div>
     {{ end }}
   </div>
 
-  <progress
-    id="upload-progress"
-    class="progress is-primary is-hidden"
-    max="100"
-    value="0"
-  >
-    0%
-  </progress>
+  <div id="upload-progress" class="progress d-none mt-3">
+    <div
+      id="upload-progress-bar"
+      class="progress-bar"
+      role="progressbar"
+      style="width: 0%"
+      aria-valuenow="0"
+      aria-valuemin="0"
+      aria-valuemax="100"
+    ></div>
+  </div>
 
-  <div id="progress-spinner" class="is-hidden">
-    <article class="message is-primary">
-      <div class="message-body">File uploaded! Processing...</div>
-    </article>
+  <div id="progress-spinner" class="d-none">
+    <div class="alert alert-primary" role="alert">
+      File uploaded! Processing...
+    </div>
 
     <div class="fa-3x">
       <i class="fas fa-spinner fa-spin"></i>
     </div>
   </div>
 
-  <div id="upload-result" class="is-hidden">
-    <article class="message is-primary">
+  <div id="upload-result" class="d-none">
+    <div class="alert alert-primary" role="alert">
       <div class="message-body">Upload complete!</div>
-    </article>
+    </div>
 
     <div id="result-links"></div>
 
-    <div class="field is-grouped my-6">
+    <div class="d-flex flex-wrap gap-2 my-4">
       {{ if not .GuestLinkMetadata.ID }}
-        <div class="control">
-          <a id="edit-btn" class="button is-link is-light">Edit</a>
-        </div>
+        <a id="edit-btn" class="btn btn-outline-primary">Edit</a>
       {{ end }}
-      <div class="control">
-        <button id="upload-another-btn" class="button is-success">
-          Upload Another
-        </button>
-      </div>
+      <button id="upload-another-btn" class="btn btn-success">
+        Upload Another
+      </button>
     </div>
   </div>
 
-  <div id="error" class="is-hidden my-3">
-    <article class="message is-danger">
-      <div id="error-message" class="message-body">Placeholder error.</div>
-    </article>
+  <div id="error" class="d-none my-3">
+    <div class="alert alert-danger" role="alert">
+      <div id="error-message">Placeholder error.</div>
+    </div>
   </div>
 {{ end }}

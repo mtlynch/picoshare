@@ -15,25 +15,17 @@ form {
   max-width: 70ch;
 }
 
-.navbar {
-  & .navbar-brand {
-    font-size: 1.6em;
+.navbar .navbar-brand {
+  font-size: 1.25rem;
 
-    @media screen and (min-width: 1024px) {
-      margin-left: 0 !important;
-      margin-right: 2rem;
-    }
-
-    @media screen and (min-width: 1024px) {
-      .navbar-item {
-        padding: 0;
-      }
-    }
+  @media screen and (min-width: 1024px) {
+    margin-left: 0 !important;
+    margin-right: 2rem;
   }
+}
 
-  .nav-item {
-    font-size: 1.3em;
-  }
+.navbar .nav-link {
+  font-size: 0.95rem;
 }
 
 .content {
@@ -42,4 +34,58 @@ form {
   @media screen and (min-width: 1024px) {
     padding: 3rem 0rem;
   }
+}
+
+.content h1 {
+  font-size: 2.1rem;
+  font-weight: 600;
+  margin-bottom: 1.25rem;
+}
+
+.content h2 {
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin-top: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.content p,
+.content ul {
+  font-size: 1rem;
+  line-height: 1.55;
+  margin-bottom: 1.25rem;
+}
+
+.content ul {
+  padding-left: 1.3rem;
+}
+
+.content ul ul {
+  padding-left: 1.2rem;
+}
+
+.content li {
+  margin-bottom: 0.35rem;
+}
+
+.navbar {
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+}
+
+.navbar .btn {
+  font-size: 0.9rem;
+  padding: 0.35rem 0.85rem;
+}
+
+.navbar-brand {
+  font-weight: 500;
+}
+
+.content.container {
+  max-width: 900px;
+}
+
+.navbar .dropdown:hover .dropdown-menu {
+  display: block;
 }

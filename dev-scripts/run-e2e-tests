@@ -25,5 +25,4 @@ if [[ "${REBUILD}" == "true" ]]; then
   PS_VERSION="$(git describe --tags)" ./dev-scripts/build-backend dev
 fi
 
-cd e2e
 npx playwright test "$@"

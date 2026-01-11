@@ -13,7 +13,7 @@
     const fileUploadLimitInput = document.getElementById("file-upload-limit");
     const createLinkForm = document.getElementById("create-guest-link-form");
     const createBtn = document.querySelector(
-      "#create-guest-link-form .button[type='submit']"
+      "#create-guest-link-form button[type='submit']"
     );
     const errorContainer = document.getElementById("error");
     const progressSpinner = document.getElementById("progress-spinner");
@@ -65,124 +65,103 @@
     });
 
     document
-      .querySelector("#error .delete")
-      .addEventListener("click", (evt) => {
+      .querySelector("#error .btn-close")
+      .addEventListener("click", () => {
         hideElement(errorContainer);
       });
   </script>
 {{ end }}
 
 {{ define "content" }}
-  <h1 class="title">Create Guest Link</h1>
+  <h1 class="h1">Create Guest Link</h1>
 
   <form id="create-guest-link-form">
-    <div class="field my-5">
-      <label class="label">Label <i>(optional)</i></label>
-      <div class="control">
+    <div class="mb-4">
+      <label class="form-label">Label <i>(optional)</i></label>
+      <input
+        id="label"
+        class="form-control"
+        type="text"
+        placeholder="For Joe at ExampleCo"
+      />
+      <p class="form-text">Label is not visible to guests</p>
+    </div>
+
+    <div class="mb-4">
+      <label class="form-label">Guest Link Expires</label>
+      <select id="expiration-select" class="form-select">
+        {{ range .ExpirationOptions }}
+          <option
+            value="{{ formatExpiration .Expiration }}"
+            {{ if .IsDefault }}selected{{ end }}
+          >
+            {{ .FriendlyName }}
+          </option>
+        {{ end }}
+      </select>
+    </div>
+
+    <div class="mb-4">
+      <label class="form-label">Guest Files Expire</label>
+      <select id="file-expiration-select" class="form-select">
+        {{ range .FileLifetimeOptions }}
+          <option
+            value="{{ formatLifetime .FileLifetime }}"
+            {{ if .IsDefault }}selected{{ end }}
+          >
+            {{ .FileLifetime.FriendlyName }}
+          </option>
+        {{ end }}
+      </select>
+    </div>
+
+    <div class="mb-4">
+      <label class="form-label">Max file size <i>(optional)</i></label>
+      <div class="input-group">
         <input
-          id="label"
-          class="input is-normal"
-          type="text"
-          placeholder="For Joe at ExampleCo"
+          id="max-file-size"
+          class="form-control"
+          type="number"
+          min="1"
+          placeholder="40"
         />
-      </div>
-      <p class="help">Label is not visible to guests</p>
-    </div>
-
-    <div class="field my-5">
-      <label class="label">Guest Link Expires</label>
-      <div class="control">
-        <div class="select">
-          <select id="expiration-select">
-            {{ range .ExpirationOptions }}
-              <option
-                value="{{ formatExpiration .Expiration }}"
-                {{ if .IsDefault }}selected{{ end }}
-              >
-                {{ .FriendlyName }}
-              </option>
-            {{ end }}
-          </select>
-        </div>
+        <span class="input-group-text">MB</span>
       </div>
     </div>
 
-    <div class="field my-5">
-      <label class="label">Guest Files Expire</label>
-      <div class="control">
-        <div class="select">
-          <select id="file-expiration-select">
-            {{ range .FileLifetimeOptions }}
-              <option
-                value="{{ formatLifetime .FileLifetime }}"
-                {{ if .IsDefault }}selected{{ end }}
-              >
-                {{ .FileLifetime.FriendlyName }}
-              </option>
-            {{ end }}
-          </select>
-        </div>
+    <div class="mb-4">
+      <label class="form-label">Upload limit <i>(optional)</i></label>
+      <div class="input-group">
+        <input
+          id="file-upload-limit"
+          class="form-control"
+          type="number"
+          min="1"
+          placeholder="5"
+        />
+        <span class="input-group-text">file uploads</span>
       </div>
     </div>
 
-    <div class="field my-5">
-      <label class="label">Max file size <i>(optional)</i></label>
-      <div class="control">
-        <div class="field has-addons my-3">
-          <div class="control">
-            <input
-              id="max-file-size"
-              class="input"
-              type="number"
-              min="1"
-              placeholder="40"
-            />
-          </div>
-          <p class="control">
-            <a class="button is-static">MB</a>
-          </p>
-        </div>
-      </div>
-    </div>
-
-    <div class="field my-5">
-      <label class="label">Upload limit <i>(optional)</i></label>
-      <div class="control">
-        <div class="field has-addons my-3">
-          <div class="control">
-            <input
-              id="file-upload-limit"
-              class="input"
-              type="number"
-              min="1"
-              placeholder="5"
-            />
-          </div>
-          <p class="control">
-            <a class="button is-static">file uploads</a>
-          </p>
-        </div>
-      </div>
-    </div>
-
-    <div class="field">
-      <div class="control">
-        <input type="submit" class="button is-primary" value="Create" />
-      </div>
+    <div>
+      <button type="submit" class="btn btn-primary">Create</button>
     </div>
   </form>
 
-  <div class="fa-3x is-hidden" id="progress-spinner">
+  <div class="fa-3x d-none" id="progress-spinner">
     <i class="fas fa-spinner fa-spin"></i>
   </div>
 
-  <div id="error" class="is-hidden my-5">
-    <article class="message is-danger">
-      <div class="message-header">
-        Error
-        <button class="delete" aria-label="delete"></button>
+  <div id="error" class="d-none my-5">
+    <div
+      class="alert alert-danger d-flex justify-content-between align-items-start"
+      role="alert"
+    >
+      <div>
+        <strong>Error</strong>
+        <div id="error-message" class="mt-1">Placeholder error.</div>
       </div>
-      <div id="error-message" class="message-body">Placeholder error.</div>
-    </article>
+      <button class="btn-close" type="button" aria-label="Close"></button>
+    </div>
   </div>
 {{ end }}

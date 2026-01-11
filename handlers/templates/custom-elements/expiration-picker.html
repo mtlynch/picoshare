@@ -1,11 +1,11 @@
 <template id="expiration-picker-template">
   <style nonce="{{ .CspNonce }}">
-    @import "/third-party/bulma@0.9.3/bulma.min.css";
+    @import "/third-party/bootstrap@5.3.3/bootstrap.min.css";
     @import "/third-party/js-datepicker@5.18.0/datepicker.min.css";
   </style>
-  <div class="control">
-    <input id="expiration" class="input is-normal" type="text" />
-    <p class="help">Expiration date</p>
+  <div class="mb-2">
+    <input id="expiration" class="form-control" type="text" />
+    <div class="form-text">Expiration date</div>
   </div>
 </template>
 
@@ -59,7 +59,7 @@
             template.content.cloneNode(true)
           );
           this.elements = {
-            container: this.shadowRoot.querySelector(".control"),
+            container: this.shadowRoot.querySelector(".mb-2"),
             expirationInput: this.shadowRoot.getElementById("expiration"),
           };
 
@@ -128,9 +128,9 @@
 
         _setVisibility(visible) {
           if (visible) {
-            this.elements.container.classList.add("is-invisible");
+            this.elements.container.classList.add("d-none");
           } else {
-            this.elements.container.classList.remove("is-invisible");
+            this.elements.container.classList.remove("d-none");
           }
         }
 
