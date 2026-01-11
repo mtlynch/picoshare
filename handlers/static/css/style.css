@@ -27,11 +27,7 @@ form {
 }
 
 .content {
-  padding: 3rem 1rem;
-
-  @media screen and (min-width: 1024px) {
-    padding: 3rem 0rem;
-  }
+  padding: 3rem 0;
 }
 
 .content h1,
@@ -100,9 +96,6 @@ form {
   font-weight: 500;
 }
 
-.content.container {
-  max-width: 900px;
-}
 
 .navbar .dropdown:hover .dropdown-menu {
   display: block;

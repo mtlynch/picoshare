@@ -1,5 +1,6 @@
 {{ define "style-tags" }}
   <style nonce="{{ .CspNonce }}">
+    {{ $usagePercent := percentage .UsedBytes .TotalBytes }}
     .progress {
       max-width: 70ch;
       width: 100%;
@@ -14,6 +15,9 @@
       font-weight: bold;
     }
 
+    #disk-usage-bar {
+      width: {{ $usagePercent }};
+    }
   </style>
 {{ end }}
 
@@ -45,9 +49,9 @@
   <h2>Disk Usage</h2>
   <div class="progress rounded-pill">
     <div
+      id="disk-usage-bar"
       class="progress-bar bg-success rounded-pill"
       role="progressbar"
-      style="width: {{ $usagePercent }};"
       aria-valuenow="{{ .UsedBytes }}"
       aria-valuemin="0"
       aria-valuemax="{{ .TotalBytes }}"

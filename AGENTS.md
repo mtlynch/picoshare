@@ -9,3 +9,8 @@
 - If the MCP server cannot find a browser, set
   `PLAYWRIGHT_BROWSERS_PATH` to the flake-provided path in
   `flake.nix` and retry.
+
+## Development
+
+- Set `GOCACHE` to `/tmp/go-cache` to avoid permission issues.
+- Set `GOPATH` to `/tmp/go-workspace` to avoid permission issues.
