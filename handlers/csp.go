@@ -39,6 +39,14 @@ func enforceContentSecurityPolicy(next http.Handler) http.Handler {
 				},
 			},
 			{
+				name: "style-src",
+				values: []string{
+					"'self'",
+					// Inline style attributes are used for progress updates.
+					"'unsafe-inline'",
+				},
+			},
+			{
 				name: "style-src-elem",
 				values: []string{
 					"'self'",
@@ -46,6 +54,14 @@ func enforceContentSecurityPolicy(next http.Handler) http.Handler {
 					// element, even if we specify a nonce:
 					// https://github.com/mtlynch/picoshare/issues/249
 					"'unsafe-inline'",
+				},
+			},
+			{
+				name: "img-src",
+				values: []string{
+					"'self'",
+					// Bootstrap uses data URIs for the navbar toggle icon.
+					"data:",
 				},
 			},
 			{

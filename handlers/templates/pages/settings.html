@@ -111,8 +111,10 @@
   <h1 class="h1">Settings</h1>
 
   <form id="settings-form">
-    <div class="mb-4">
-      <label class="form-label">Default File Expiration</label>
+    <fieldset class="border rounded p-3 mb-4">
+      <legend class="float-none w-auto px-2 fs-6 mb-0">
+        Default File Expiration
+      </legend>
 
       <div class="form-check my-3">
         <input
@@ -162,18 +164,18 @@
           </option>
         </select>
       </div>
-    </div>
+    </fieldset>
 
     <div>
       <button class="btn btn-primary" disabled type="submit">
-        <i class="fa fa-save me-2"></i>
+        <i class="fa-solid fa-floppy-disk me-2"></i>
         Save
       </button>
     </div>
   </form>
 
   <div class="fa-3x d-none" id="progress-spinner">
-    <i class="fas fa-spinner fa-spin"></i>
+    <i class="fa-solid fa-spinner fa-spin"></i>
   </div>
 
   <div id="error" class="d-none my-3">

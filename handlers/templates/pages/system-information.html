@@ -40,7 +40,7 @@
 
 {{ define "script-tags" }}
   <script type="module" nonce="{{ .CspNonce }}">
-    import { toggleShowElement, hideElement } from "/js/lib/bulma.js";
+    import { toggleShowElement } from "/js/lib/bulma.js";
 
     const sizeDeltaNotification = document.querySelector(".notification");
 
@@ -50,12 +50,6 @@
         toggleShowElement(sizeDeltaNotification);
       });
 
-    document.querySelectorAll(".notification .btn-close").forEach((el) => {
-      el.addEventListener("click", (evt) => {
-        const notificationEl = evt.target.closest(".notification");
-        hideElement(notificationEl);
-      });
-    });
   </script>
 {{ end }}
 
@@ -92,7 +86,7 @@
           {{ formatDiskUsage .DatabaseFileBytes }}
           <a id="file-size-information" href="#"
             ><span class="text-info">
-              <i class="fas fa-info-circle"></i> </span
+              <i class="fa-solid fa-circle-info"></i> </span
           ></a>
         </li>
       </ul>
@@ -100,7 +94,6 @@
   </ul>
 
   <div class="notification alert alert-info d-none">
-    <button class="btn-close" type="button" aria-label="Close"></button>
     <p>
       PicoShare's database files occupy more disk space than the sum total of
       PicoShare's file uploads.

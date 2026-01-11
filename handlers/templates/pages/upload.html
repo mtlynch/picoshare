@@ -41,7 +41,8 @@
     }
 
     .field-max-width {
-      max-width: 70ch;
+      max-width: 500px;
+      width: 100%;
     }
   </style>
 {{ end }}
@@ -304,12 +305,12 @@
   <h1 class="h1">Upload</h1>
 
   <div id="upload-form">
-    <div class="file">
+    <div class="file field-max-width">
       <label class="file-label">
         <input class="file-input" type="file" />
         <span class="file-cta">
           <span class="file-icon">
-            <i class="fas fa-upload"></i>
+            <i class="fa-solid fa-upload"></i>
           </span>
           <span class="file-label"> Choose a file… </span>
         </span>
@@ -379,7 +380,7 @@
     </div>
 
     <div class="fa-3x">
-      <i class="fas fa-spinner fa-spin"></i>
+      <i class="fa-solid fa-spinner fa-spin"></i>
     </div>
   </div>
 

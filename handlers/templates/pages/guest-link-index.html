@@ -134,10 +134,10 @@
               toggleBtn.closest("tr").classList.toggle("inactive");
 
               // Switch the button color and icon.
-              toggleBtn.classList.toggle("btn-success");
-              toggleBtn.classList.toggle("btn-warning");
+              toggleBtn.classList.toggle("btn-outline-success");
+              toggleBtn.classList.toggle("btn-outline-warning");
               toggleBtn.querySelector("i").classList.toggle("fa-ban");
-              toggleBtn.querySelector("i").classList.toggle("fa-check-square");
+              toggleBtn.querySelector("i").classList.toggle("fa-square-check");
 
               document
                 .querySelector("snackbar-notifications")
@@ -221,7 +221,7 @@
             <td class="align-middle">
               <div class="d-flex justify-content-end gap-2">
                 <button
-                  class="btn btn-info btn-sm"
+                  class="btn btn-outline-primary btn-sm"
                   aria-label="Copy"
                   pico-link-id="{{ .ID }}"
                 >
@@ -229,27 +229,27 @@
                 </button>
                 {{ if .IsDisabled }}
                   <button
-                    class="btn btn-success btn-sm"
+                    class="btn btn-outline-success btn-sm"
                     aria-label="Enable"
                     pico-link-id="{{ .ID }}"
                   >
-                    <i class="fas fa-check-square" aria-hidden="true"></i>
+                    <i class="fa-solid fa-square-check" aria-hidden="true"></i>
                   </button>
                 {{ else }}
                   <button
-                    class="btn btn-warning btn-sm"
+                    class="btn btn-outline-warning btn-sm"
                     aria-label="Disable"
                     pico-link-id="{{ .ID }}"
                   >
-                    <i class="fas fa-ban" aria-hidden="true"></i>
+                    <i class="fa-solid fa-ban" aria-hidden="true"></i>
                   </button>
                 {{ end }}
                 <button
-                  class="btn btn-danger btn-sm"
+                  class="btn btn-outline-danger btn-sm"
                   aria-label="Delete"
                   pico-link-id="{{ .ID }}"
                 >
-                  <i class="fa fa-trash" aria-hidden="true"></i>
+                  <i class="fa-solid fa-trash" aria-hidden="true"></i>
                 </button>
               </div>
             </td>

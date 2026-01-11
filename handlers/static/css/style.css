@@ -14,7 +14,8 @@ form {
 }
 
 .navbar .navbar-brand {
-  font-size: 1.25rem;
+  font-size: 1.35rem;
+  color: #555;
 
   @media screen and (min-width: 1024px) {
     margin-left: 0 !important;
@@ -23,7 +24,8 @@ form {
 }
 
 .navbar .nav-link {
-  font-size: 0.95rem;
+  font-size: 1rem;
+  color: #666;
 }
 
 .content {
@@ -86,12 +88,13 @@ form {
 }
 
 .navbar {
+  background-color: #f7f7f7;
   padding-top: 0.75rem;
   padding-bottom: 0.75rem;
 }
 
 .navbar .btn {
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   padding: 0.35rem 0.85rem;
 }
 
@@ -99,6 +102,19 @@ form {
   font-weight: 500;
 }
 
+.navbar .dropdown-item {
+  color: #666;
+}
+
+.navbar .dropdown-toggle {
+  color: #666;
+}
+
+.navbar .nav-link:hover,
+.navbar .dropdown-toggle:hover,
+.navbar .dropdown-item:hover {
+  color: #4b4b4b;
+}
 
 .navbar .dropdown:hover .dropdown-menu {
   display: block;
