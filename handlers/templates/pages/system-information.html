@@ -2,8 +2,29 @@
   <style nonce="{{ .CspNonce }}">
     {{ $usagePercent := percentage .UsedBytes .TotalBytes }}
     .progress {
+      appearance: none;
+      display: block;
       max-width: 70ch;
       width: 100%;
+      height: 0.75rem;
+      border-radius: var(--bs-border-radius-pill);
+      background-color: var(--bs-gray-200);
+      overflow: hidden;
+    }
+
+    .progress::-webkit-progress-bar {
+      background-color: var(--bs-gray-200);
+      border-radius: var(--bs-border-radius-pill);
+    }
+
+    .progress::-webkit-progress-value {
+      background-color: var(--bs-success);
+      border-radius: var(--bs-border-radius-pill);
+    }
+
+    .progress::-moz-progress-bar {
+      background-color: var(--bs-success);
+      border-radius: var(--bs-border-radius-pill);
     }
 
     .notification {
@@ -13,10 +34,6 @@
     .code {
       font-family: "Courier New", Courier, monospace;
       font-weight: bold;
-    }
-
-    #disk-usage-bar {
-      width: {{ $usagePercent }};
     }
   </style>
 {{ end }}
@@ -47,20 +64,14 @@
   <h1 class="h1">System Information</h1>
 
   <h2>Disk Usage</h2>
-  <div class="progress rounded-pill">
-    <div
-      id="disk-usage-bar"
-      class="progress-bar bg-success rounded-pill"
-      role="progressbar"
-      aria-valuenow="{{ .UsedBytes }}"
-      aria-valuemin="0"
-      aria-valuemax="{{ .TotalBytes }}"
-    >
-      <span class="visually-hidden">
-        {{ $usagePercent }}
-      </span>
-    </div>
-  </div>
+  <progress
+    class="progress rounded-pill"
+    value="{{ .UsedBytes }}"
+    max="{{ .TotalBytes }}"
+    aria-label="Disk usage"
+  >
+    {{ $usagePercent }}
+  </progress>
 
   <ul>
     <li>

@@ -28,6 +28,8 @@ form {
 
 .content {
   padding-bottom: 3rem;
+  padding-left: calc(var(--bs-gutter-x) * 0.5);
+  padding-right: calc(var(--bs-gutter-x) * 0.5);
   padding-top: 3rem;
 }
 
