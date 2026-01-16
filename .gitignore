@@ -1,5 +1,8 @@
 .direnv
 
+# Nix output
+/result*
+
 # Compiled binaries
 bin/
 dist/
@@ -24,3 +27,5 @@ node_modules/
 /e2e/playwright-report/
 /playwright/.cache/
 e2e/results/
+/e2e-results/
+/playwright-report/

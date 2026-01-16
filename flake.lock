@@ -82,22 +82,6 @@
         "type": "github"
       }
     },
-    "playwright-nixpkgs": {
-      "locked": {
-        "lastModified": 1701336116,
-        "narHash": "sha256-kEmpezCR/FpITc6yMbAh4WrOCiT2zg5pSjnKrq51h5Y=",
-        "owner": "NixOS",
-        "repo": "nixpkgs",
-        "rev": "f5c27c6136db4d76c30e533c20517df6864c46ee",
-        "type": "github"
-      },
-      "original": {
-        "owner": "NixOS",
-        "repo": "nixpkgs",
-        "rev": "f5c27c6136db4d76c30e533c20517df6864c46ee",
-        "type": "github"
-      }
-    },
     "root": {
       "inputs": {
         "flake-utils": "flake-utils",
@@ -105,7 +89,6 @@
         "go-nixpkgs": "go-nixpkgs",
         "litestream-nixpkgs": "litestream-nixpkgs",
         "nodejs-nixpkgs": "nodejs-nixpkgs",
-        "playwright-nixpkgs": "playwright-nixpkgs",
         "shellcheck-nixpkgs": "shellcheck-nixpkgs",
         "sqlfluff-nixpkgs": "sqlfluff-nixpkgs",
         "sqlite-nixpkgs": "sqlite-nixpkgs"

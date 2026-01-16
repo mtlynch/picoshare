@@ -19,9 +19,6 @@
     # 3.1.1 release
     sqlfluff-nixpkgs.url = "github:NixOS/nixpkgs/5629520edecb69630a3f4d17d3d33fc96c13f6fe";
 
-    # 1.40.0
-    playwright-nixpkgs.url = "github:NixOS/nixpkgs/f5c27c6136db4d76c30e533c20517df6864c46ee";
-
     # 0.1.131 release
     flyctl-nixpkgs.url = "github:NixOS/nixpkgs/09dc04054ba2ff1f861357d0e7e76d021b273cd7";
 
@@ -37,19 +34,42 @@
     nodejs-nixpkgs,
     shellcheck-nixpkgs,
     sqlfluff-nixpkgs,
-    playwright-nixpkgs,
     flyctl-nixpkgs,
     litestream-nixpkgs,
   } @ inputs:
     flake-utils.lib.eachDefaultSystem (system: let
-      go = go-nixpkgs.legacyPackages.${system}.go_1_24;
+      go-pkgs = go-nixpkgs.legacyPackages.${system};
+      go = go-pkgs.go_1_24;
       sqlite = sqlite-nixpkgs.legacyPackages.${system}.sqlite;
-      nodejs = nodejs-nixpkgs.legacyPackages.${system}.nodejs_20;
+      nodejs-pkgs = nodejs-nixpkgs.legacyPackages.${system};
+      nodejs = nodejs-pkgs.nodejs_20;
       shellcheck = shellcheck-nixpkgs.legacyPackages.${system}.shellcheck;
       sqlfluff = sqlfluff-nixpkgs.legacyPackages.${system}.sqlfluff;
-      playwright = playwright-nixpkgs.legacyPackages.${system}.playwright-driver.browsers;
       flyctl = flyctl-nixpkgs.legacyPackages.${system}.flyctl;
       litestream = litestream-nixpkgs.legacyPackages.${system}.litestream;
+      picoshare-dev = go-pkgs.buildGo124Module {
+        pname = "picoshare-dev";
+        version = "0.0.0";
+        src = go-pkgs.lib.cleanSource ./.;
+        subPackages = [ "cmd/picoshare" ];
+        tags = [ "netgo" "sqlite_omit_load_extension" "dev" ];
+        preBuild = ''
+          ulimit -u 4096 || true
+        '';
+        env = {
+          CGO_ENABLED = "1";
+          GOMAXPROCS = "1";
+          NIX_BUILD_CORES = "1";
+        };
+        GOFLAGS = [ "-mod=vendor" "-trimpath" "-p=1" ];
+        buildInputs = [ sqlite ];
+        ldflags = [
+          "-w"
+          "-X=github.com/mtlynch/picoshare/build.Version=dev"
+          "-X=github.com/mtlynch/picoshare/build.unixTime=0"
+        ];
+        vendorHash = "sha256-X2vrEhgEnKKNXRyLCtT+wBbunFHgkcyWZh6DMpQieQ0=";
+      };
     in {
       devShells.default =
         go-nixpkgs.legacyPackages.${system}.mkShell.override
@@ -70,7 +90,6 @@
             nodejs
             shellcheck
             sqlfluff
-            playwright
             flyctl
             litestream
           ];
@@ -79,9 +98,6 @@
             # Avoid sharing GOPATH with other projects.
             PROJECT_NAME="$(basename "$PWD")"
             export GOPATH="$HOME/.local/share/go-workspaces/$PROJECT_NAME"
-
-            export PLAYWRIGHT_BROWSERS_PATH=${playwright}
-            export PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS=true
 
             echo "shellcheck" "$(shellcheck --version | grep '^version:')"
             sqlfluff --version
@@ -95,5 +111,9 @@
         };
 
       formatter = go-nixpkgs.legacyPackages.${system}.alejandra;
+
+      packages = {
+        picoshare-dev = picoshare-dev;
+      };
     });
 }
