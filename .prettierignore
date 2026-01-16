@@ -1,4 +1,5 @@
 e2e/playwright-report/
 handlers/static/third-party
+dist/
 .coverage.html
 .direnv/
