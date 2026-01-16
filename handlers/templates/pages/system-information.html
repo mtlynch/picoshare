@@ -49,7 +49,6 @@
       .addEventListener("click", (evt) => {
         toggleShowElement(sizeDeltaNotification);
       });
-
   </script>
 {{ end }}
 
@@ -71,8 +70,7 @@
     <li>
       <strong>Server disk usage</strong>:
       {{ formatDiskUsage .UsedBytes }}
-      ({{ $usagePercent }}) used of
-      {{ formatDiskUsage .TotalBytes }} total
+      ({{ $usagePercent }}) used of {{ formatDiskUsage .TotalBytes }} total
     </li>
     <li>
       <strong>PicoShare usage</strong>

@@ -39,9 +39,11 @@
 
     const errorContainer = document.getElementById("error");
 
-    document.querySelector("#error .btn-close").addEventListener("click", () => {
-      hideElement(errorContainer);
-    });
+    document
+      .querySelector("#error .btn-close")
+      .addEventListener("click", () => {
+        hideElement(errorContainer);
+      });
 
     document.querySelectorAll('[aria-label="Copy"]').forEach((copyBtn) => {
       copyBtn.addEventListener("click", () => {

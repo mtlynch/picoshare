@@ -325,11 +325,7 @@
     {{ if gt (len .ExpirationOptions) 0 }}
       <div class="mb-4 expiration-container field-max-width">
         <label class="form-label">Expiration</label>
-        <select
-          id="expiration-select"
-          class="form-select"
-          autocomplete="off"
-        >
+        <select id="expiration-select" class="form-select" autocomplete="off">
           {{ range .ExpirationOptions }}
             <option
               value="{{ formatExpiration .Expiration }}"
@@ -340,10 +336,7 @@
           {{ end }}
         </select>
 
-        <expiration-picker
-          id="expiration-picker"
-          class="d-none mt-3 d-block"
-        />
+        <expiration-picker id="expiration-picker" class="d-none mt-3 d-block" />
       </div>
     {{ end }}
 
