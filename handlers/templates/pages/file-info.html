@@ -30,9 +30,11 @@
         });
 
       const uploadTimestamp = document.getElementById("upload-timestamp");
-      uploadTimestamp.innerText = dateToTime(
-        parseRfc3339(uploadTimestamp.innerText)
-      );
+      const rawTimestamp = (uploadTimestamp.textContent || "").trim();
+      const parsedTimestamp = parseRfc3339(rawTimestamp);
+      if (parsedTimestamp) {
+        uploadTimestamp.textContent = dateToTime(parsedTimestamp);
+      }
 
       document
         .querySelector("upload-links")

@@ -6,10 +6,10 @@ a {
   text-decoration: none;
 }
 
-p,
-ul,
-article,
-form {
+.content p,
+.content ul,
+.content article,
+.content form {
   max-width: 70ch;
 }
 
