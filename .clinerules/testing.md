@@ -6,6 +6,7 @@
   1. Verify that the new test fails.
   1. Change the production code so that all tests pass.
 - When writing new test cases, avoid having t.Run have special-case behavior for particular inputs. Instead, use general purpose logic that doesn't assume particular inputs.
+- Do not attempt to run e2e tests
 
 ## if got, want
 
