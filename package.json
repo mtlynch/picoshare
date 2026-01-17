@@ -14,7 +14,7 @@
   },
   "homepage": "https://pico.rocks",
   "devDependencies": {
-    "@playwright/test": "1.54.0",
+    "@playwright/test": "1.57.0",
     "@types/node": "^24.0.7",
     "eslint": "^8.11.0",
     "eslint-plugin-playwright": "^0.11.2",
