@@ -1,5 +1,9 @@
 import type { PlaywrightTestConfig } from "@playwright/test";
 import { devices } from "@playwright/test";
+import { fileURLToPath } from "url";
+const globalSetupPath = fileURLToPath(
+  new URL("./helpers/global-setup", import.meta.url),
+);
 
 const config: PlaywrightTestConfig = {
   testDir: "./",
@@ -13,7 +17,7 @@ const config: PlaywrightTestConfig = {
   retries: process.env.CI ? 2 : 0,
   workers: undefined,
   reporter: "html",
-  globalSetup: require.resolve("./helpers/global-setup"),
+  globalSetup: globalSetupPath,
   use: {
     baseURL: "http://localhost:6001",
     actionTimeout: 0,
