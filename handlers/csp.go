@@ -39,12 +39,6 @@ func enforceContentSecurityPolicy(next http.Handler) http.Handler {
 				},
 			},
 			{
-				name: "style-src",
-				values: []string{
-					"'self'",
-				},
-			},
-			{
 				name: "style-src-elem",
 				values: []string{
 					"'self'",
