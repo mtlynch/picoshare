@@ -44,6 +44,31 @@
       max-width: 500px;
       width: 100%;
     }
+
+    .upload-progress-bar {
+      appearance: none;
+      display: block;
+      width: 100%;
+      height: 0.75rem;
+      border-radius: var(--bs-border-radius-pill);
+      background-color: var(--bs-gray-200);
+      overflow: hidden;
+    }
+
+    .upload-progress-bar::-webkit-progress-bar {
+      background-color: var(--bs-gray-200);
+      border-radius: var(--bs-border-radius-pill);
+    }
+
+    .upload-progress-bar::-webkit-progress-value {
+      background-color: var(--bs-primary);
+      border-radius: var(--bs-border-radius-pill);
+    }
+
+    .upload-progress-bar::-moz-progress-bar {
+      background-color: var(--bs-primary);
+      border-radius: var(--bs-border-radius-pill);
+    }
   </style>
 {{ end }}
 
@@ -105,8 +130,9 @@
       const percentageValue =
         bytesTotal === 0 ? 0 : Math.round((bytesUploaded / bytesTotal) * 100);
       const percentage = `${percentageValue}%`;
-      progressBarFill.style.width = percentage;
+      progressBarFill.value = percentageValue;
       progressBarFill.setAttribute("aria-valuenow", percentageValue);
+      progressBarFill.textContent = percentage;
       document.title = "PicoShare ↑ " + percentage;
       if (bytesUploaded === bytesTotal) {
         document.title = "PicoShare - Complete";
@@ -355,16 +381,17 @@
     {{ end }}
   </div>
 
-  <div id="upload-progress" class="progress d-none mt-3">
-    <div
+  <div id="upload-progress" class="d-none mt-3">
+    <progress
       id="upload-progress-bar"
-      class="progress-bar"
-      role="progressbar"
-      style="width: 0%"
+      class="upload-progress-bar rounded-pill"
+      value="0"
+      max="100"
+      aria-label="Upload progress"
       aria-valuenow="0"
-      aria-valuemin="0"
-      aria-valuemax="100"
-    ></div>
+    >
+      0%
+    </progress>
   </div>
 
   <div id="progress-spinner" class="d-none">

@@ -42,8 +42,6 @@ func enforceContentSecurityPolicy(next http.Handler) http.Handler {
 				name: "style-src",
 				values: []string{
 					"'self'",
-					// Inline style attributes are used for progress updates.
-					"'unsafe-inline'",
 				},
 			},
 			{
