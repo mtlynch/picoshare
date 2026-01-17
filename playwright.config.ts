@@ -35,7 +35,7 @@ const config: PlaywrightTestConfig = {
   outputDir: "e2e-results/",
 
   webServer: {
-    command: "PS_SHARED_SECRET=dummypass PORT=6001 ./bin/picoshare-dev",
+    command: "PS_SHARED_SECRET=dummypass PORT=6001 TZ=UTC ./bin/picoshare-dev",
     port: 6001,
   },
 };
