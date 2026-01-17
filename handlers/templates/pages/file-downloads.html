@@ -27,25 +27,26 @@
 {{ end }}
 
 {{ define "content" }}
-  <h1 class="title">Downloads</h1>
+  <h1 class="h1">Downloads</h1>
 
   {{ with .Metadata }}
     <h2>{{ .Filename }}</h2>
   {{ end }}
 
   {{ if gt (len .Downloads) 0 }}
-    <div class="field">
-      <label class="checkbox">
-        <input
-          type="checkbox"
-          id="unique-ips-only"
-          {{ if .ShowUniqueOnly }}checked{{ end }}
-        />
+    <div class="form-check mb-3">
+      <input
+        class="form-check-input"
+        type="checkbox"
+        id="unique-ips-only"
+        {{ if .ShowUniqueOnly }}checked{{ end }}
+      />
+      <label class="form-check-label" for="unique-ips-only">
         Unique IPs only
       </label>
     </div>
 
-    <div class="table-container">
+    <div class="table-responsive">
       <table class="table">
         <thead>
           <tr>
@@ -77,9 +78,7 @@
   {{ end }}
 
 
-  <div class="field is-grouped">
-    <div class="control">
-      <button class="button is-link is-light" id="close-btn">Close</button>
-    </div>
+  <div class="mt-3">
+    <button class="btn btn-outline-primary" id="close-btn">Close</button>
   </div>
 {{ end }}

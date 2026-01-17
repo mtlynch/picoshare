@@ -21,7 +21,7 @@
     authForm.addEventListener("submit", (evt) => {
       evt.preventDefault();
       const secret = document.getElementById("secret").value;
-      errorContainer.classList.add("is-hidden");
+      errorContainer.classList.add("d-none");
       disableAuthForm();
       authenticate(secret)
         .then(() => {
@@ -30,7 +30,7 @@
         .catch((error) => {
           logOut();
           document.getElementById("error-message").innerText = error;
-          errorContainer.classList.remove("is-hidden");
+          errorContainer.classList.remove("d-none");
           enableAuthForm();
         });
     });
@@ -38,14 +38,14 @@
 {{ end }}
 
 {{ define "content" }}
-  <h1 class="title">Log In</h1>
+  <h1 class="h1">Log In</h1>
 
   <form id="auth-form" class="mb-2" action="/auth">
-    <div class="field">
-      <label class="label">Passphrase</label>
-      <div class="control">
+    <div class="mb-3">
+      <label class="form-label">Passphrase</label>
+      <div>
         <input
-          class="input"
+          class="form-control"
           id="secret"
           type="password"
           required
@@ -54,20 +54,18 @@
         />
       </div>
     </div>
-    <div class="field">
-      <div class="control">
-        <input class="button is-primary" type="submit" value="Authenticate" />
-      </div>
+    <div>
+      <input class="btn btn-primary" type="submit" value="Authenticate" />
     </div>
   </form>
 
-  <div id="error" class="is-hidden">
-    <article class="message is-danger">
-      <div id="error-message" class="message-body">Placeholder error.</div>
-    </article>
+  <div id="error" class="d-none">
+    <div class="alert alert-danger" role="alert">
+      <div id="error-message">Placeholder error.</div>
+    </div>
   </div>
 
-  <div class="mt-6">
+  <div class="mt-4">
     <h3>Don't know the password?</h3>
     <p>
       Visit our

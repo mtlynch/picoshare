@@ -30,9 +30,11 @@
         });
 
       const uploadTimestamp = document.getElementById("upload-timestamp");
-      uploadTimestamp.innerText = dateToTime(
-        parseRfc3339(uploadTimestamp.innerText)
-      );
+      const rawTimestamp = (uploadTimestamp.textContent || "").trim();
+      const parsedTimestamp = parseRfc3339(rawTimestamp);
+      if (parsedTimestamp) {
+        uploadTimestamp.textContent = dateToTime(parsedTimestamp);
+      }
 
       document
         .querySelector("upload-links")
@@ -51,7 +53,7 @@
 {{ end }}
 
 {{ define "content" }}
-  <h1 class="title">File Information</h1>
+  <h1 class="h1">File Information</h1>
 
   {{ $downloadCount := .DownloadCount }}
   {{ with .Metadata }}
@@ -120,16 +122,12 @@
       >
     </section>
 
-    <div class="field is-grouped">
-      <div class="control">
-        <button class="button is-link is-light" id="close-btn">Close</button>
-      </div>
-      <div class="control">
-        <a class="button is-link" role="button" href="/files/{{ .ID }}/edit">
-          <i class="fas fa-edit mr-2"></i>
-          Edit</a
-        >
-      </div>
+    <div class="d-flex flex-wrap gap-2">
+      <button class="btn btn-outline-primary" id="close-btn">Close</button>
+      <a class="btn btn-primary" role="button" href="/files/{{ .ID }}/edit">
+        <i class="fa-solid fa-pen-to-square me-2"></i>
+        Edit</a
+      >
     </div>
   {{ end }}
 {{ end }}

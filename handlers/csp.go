@@ -49,6 +49,14 @@ func enforceContentSecurityPolicy(next http.Handler) http.Handler {
 				},
 			},
 			{
+				name: "img-src",
+				values: []string{
+					"'self'",
+					// Bootstrap uses data URIs for the navbar toggle icon.
+					"data:",
+				},
+			},
+			{
 				name: "media-src",
 				values: []string{
 					"'self'",

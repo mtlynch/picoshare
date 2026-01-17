@@ -6,38 +6,116 @@ a {
   text-decoration: none;
 }
 
-p,
-ul,
-article,
-form {
+.content p,
+.content ul,
+.content article,
+.content form {
   max-width: 70ch;
 }
 
-.navbar {
-  & .navbar-brand {
-    font-size: 1.6em;
+.navbar .navbar-brand {
+  font-size: 1.35rem;
+  color: #555;
 
-    @media screen and (min-width: 1024px) {
-      margin-left: 0 !important;
-      margin-right: 2rem;
-    }
-
-    @media screen and (min-width: 1024px) {
-      .navbar-item {
-        padding: 0;
-      }
-    }
-  }
-
-  .nav-item {
-    font-size: 1.3em;
+  @media screen and (min-width: 1024px) {
+    margin-left: 0 !important;
+    margin-right: 2rem;
   }
 }
 
-.content {
-  padding: 3rem 1rem;
+.navbar .nav-link {
+  font-size: 1rem;
+  color: #666;
+}
 
-  @media screen and (min-width: 1024px) {
-    padding: 3rem 0rem;
-  }
+.content {
+  padding-bottom: 3rem;
+  padding-left: calc(var(--bs-gutter-x) * 0.5);
+  padding-right: calc(var(--bs-gutter-x) * 0.5);
+  padding-top: 3rem;
+}
+
+.content h1,
+.content h2,
+.content h3,
+.content h4,
+.content h5,
+.content h6 {
+  color: #363636;
+  font-weight: 600;
+  line-height: 1.125;
+}
+
+.content h1 {
+  font-size: 2rem;
+  margin-bottom: 0.5em;
+}
+
+.content h1:not(:first-child) {
+  margin-top: 1em;
+}
+
+.content h2 {
+  font-size: 1.75rem;
+  margin-bottom: 0.5714em;
+}
+
+.content h2:not(:first-child) {
+  margin-top: 1.1428em;
+}
+
+.content p,
+.content ul {
+  font-size: 1rem;
+  line-height: 1.5;
+  margin-bottom: 1em;
+}
+
+.content ul {
+  list-style: disc outside;
+  margin-left: 2em;
+  margin-top: 1em;
+  padding-left: 0;
+}
+
+.content ul ul {
+  list-style-type: circle;
+  margin-top: 0.5em;
+}
+
+.content li + li {
+  margin-top: 0.25em;
+}
+
+.navbar {
+  background-color: #f7f7f7;
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+}
+
+.navbar .btn {
+  font-size: 0.95rem;
+  padding: 0.35rem 0.85rem;
+}
+
+.navbar-brand {
+  font-weight: 500;
+}
+
+.navbar .dropdown-item {
+  color: #666;
+}
+
+.navbar .dropdown-toggle {
+  color: #666;
+}
+
+.navbar .nav-link:hover,
+.navbar .dropdown-toggle:hover,
+.navbar .dropdown-item:hover {
+  color: #4b4b4b;
+}
+
+.navbar .dropdown:hover .dropdown-menu {
+  display: block;
 }

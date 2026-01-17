@@ -39,9 +39,11 @@
 
     const errorContainer = document.getElementById("error");
 
-    document.querySelector("#error .delete").addEventListener("click", () => {
-      hideElement(errorContainer);
-    });
+    document
+      .querySelector("#error .btn-close")
+      .addEventListener("click", () => {
+        hideElement(errorContainer);
+      });
 
     document.querySelectorAll('[aria-label="Copy"]').forEach((copyBtn) => {
       copyBtn.addEventListener("click", () => {
@@ -64,9 +66,9 @@
 {{ end }}
 
 {{ define "content" }}
-  <h1 class="title">Files</h1>
+  <h1 class="h1">Files</h1>
 
-  <div class="table-container">
+  <div class="table-responsive">
     <table class="table">
       <thead>
         <tr>
@@ -81,10 +83,10 @@
       <tbody>
         {{ range .Files }}
           <tr test-data-filename="{{ .Filename }}">
-            <td class="is-vcentered">
+            <td class="align-middle">
               <a href="/-{{ .ID }}">{{ .Filename }}</a>
             </td>
-            <td class="is-vcentered">
+            <td class="align-middle">
               {{ if .Note.Value }}
                 <div class="tooltip">
                   <i class="fa-solid fa-note-sticky mx-auto"></i>
@@ -92,42 +94,36 @@
                 </div>
               {{ end }}
             </td>
-            <td class="is-vcentered">{{ formatFileSize .Size }}</td>
-            <td class="is-vcentered">{{ formatDate .Uploaded }}</td>
-            <td class="is-vcentered">
+            <td class="align-middle">{{ formatFileSize .Size }}</td>
+            <td class="align-middle">{{ formatDate .Uploaded }}</td>
+            <td class="align-middle">
               {{- formatExpiration .Expires -}}
             </td>
-            <td class="is-vcentered">
-              <div class="field is-grouped is-justify-content-flex-end">
-                <p class="control">
-                  <a
-                    class="button is-link"
-                    href="/files/{{ .ID }}/info"
-                    role="button"
-                    aria-label="Information"
-                  >
-                    <i class="fas fa-circle-info"></i>
-                  </a>
-                </p>
-                <p class="control">
-                  <a
-                    class="button is-link"
-                    href="/files/{{ .ID }}/edit"
-                    role="button"
-                    aria-label="Edit"
-                  >
-                    <i class="fas fa-edit"></i>
-                  </a>
-                </p>
-                <p class="control">
-                  <button
-                    class="button is-info"
-                    aria-label="Copy"
-                    pico-entry-id="{{ .ID }}"
-                  >
-                    <i class="fa-solid fa-copy"></i>
-                  </button>
-                </p>
+            <td class="align-middle">
+              <div class="d-flex justify-content-end gap-2">
+                <a
+                  class="btn btn-outline-primary btn-sm file-action-btn"
+                  href="/files/{{ .ID }}/info"
+                  role="button"
+                  aria-label="Information"
+                >
+                  <i class="fa-solid fa-circle-info"></i>
+                </a>
+                <a
+                  class="btn btn-outline-primary btn-sm file-action-btn"
+                  href="/files/{{ .ID }}/edit"
+                  role="button"
+                  aria-label="Edit"
+                >
+                  <i class="fa-solid fa-pen-to-square"></i>
+                </a>
+                <button
+                  class="btn btn-outline-primary btn-sm file-action-btn"
+                  aria-label="Copy"
+                  pico-entry-id="{{ .ID }}"
+                >
+                  <i class="fa-solid fa-copy"></i>
+                </button>
               </div>
             </td>
           </tr>
@@ -136,13 +132,16 @@
     </table>
   </div>
 
-  <div id="error" class="is-hidden my-3">
-    <article class="message is-danger">
-      <div class="message-header">
-        Error
-        <button class="delete" aria-label="delete"></button>
+  <div id="error" class="d-none my-3">
+    <div
+      class="alert alert-danger d-flex justify-content-between align-items-start"
+      role="alert"
+    >
+      <div>
+        <strong>Error</strong>
+        <div id="error-message" class="mt-1">Placeholder error.</div>
       </div>
-      <div id="error-message" class="message-body">Placeholder error.</div>
-    </article>
+      <button class="btn-close" type="button" aria-label="Close"></button>
+    </div>
   </div>
 {{ end }}
