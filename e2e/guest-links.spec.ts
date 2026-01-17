@@ -527,7 +527,8 @@ test("guest upload respects selected expiration time", async ({
   // Verify the expiration contains the expected date (7 days from now, not 30).
   const expectedDate = new Date();
   expectedDate.setDate(expectedDate.getDate() + 7);
-  expect(expirationText).toContain(expectedDate.toISOString().split("T")[0]);
-  expect(expirationText).toContain("(7 days)");
+  expect(expirationText).toContain(
+    expectedDate.toISOString().split("T")[0] + " (7 days)"
+  );
   expect(expirationText).not.toBe("Never");
 });
