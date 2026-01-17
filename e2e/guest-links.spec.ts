@@ -349,7 +349,12 @@ test("guest upload shows expiration dropdown with options limited by guest link"
   // Verify the expiration contains the expected date (7 days from now).
   const expectedDate = new Date();
   expectedDate.setDate(expectedDate.getDate() + 7);
-  expect(expirationText).toContain(expectedDate.toISOString().split("T")[0]);
+  const expectedDateString = expectedDate.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+  expect(expirationText).toContain(expectedDateString);
   expect(expirationText).toContain("(7 days)");
 });
 
