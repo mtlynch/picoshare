@@ -2,7 +2,7 @@ import type { PlaywrightTestConfig } from "@playwright/test";
 import { devices } from "@playwright/test";
 import { fileURLToPath } from "url";
 const globalSetupPath = fileURLToPath(
-  new URL("./helpers/global-setup", import.meta.url),
+  new URL("./helpers/global-setup", import.meta.url)
 );
 
 const config: PlaywrightTestConfig = {
