@@ -1,0 +1,34 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# Memory limit is passed via environment variable
+VM_MEMORY = ENV['VM_MEMORY'] || '512'
+
+Vagrant.configure("2") do |config|
+  config.vm.box = "generic/debian12"
+  config.vm.hostname = "picoshare-perf"
+
+  # Forward PicoShare port
+  config.vm.network "forwarded_port", guest: 4001, host: 4001
+
+  # Sync the binary into the VM
+  config.vm.synced_folder ".", "/vagrant", type: "rsync",
+    rsync__exclude: ["test-files/", "results/"]
+
+  config.vm.provider "virtualbox" do |vb|
+    vb.memory = VM_MEMORY
+    vb.cpus = 1
+    vb.name = "picoshare-perf-test"
+  end
+
+  config.vm.provider "libvirt" do |lv|
+    lv.memory = VM_MEMORY
+    lv.cpus = 1
+  end
+
+  # Minimal provisioning - just ensure we can run the binary
+  config.vm.provision "shell", inline: <<-SHELL
+    apt-get update -qq
+    apt-get install -y -qq procps
+  SHELL
+end

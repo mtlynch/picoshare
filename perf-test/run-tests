@@ -1,0 +1,396 @@
+#!/usr/bin/env bash
+#
+# PicoShare Performance Test Suite
+#
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+TEST_FILES_DIR="$SCRIPT_DIR/test-files"
+RESULTS_BASE_DIR="$SCRIPT_DIR/results"
+
+# Test matrix
+FILE_SIZES=("100M" "500M" "1G" "2G" "5G")
+MEMORY_LIMITS=("256" "512" "1024" "2048")
+
+# Test parameters
+TIMEOUT_SECONDS=3600
+PORT=4001
+PS_SHARED_SECRET="perftestpassword"
+
+# Results directory for this run
+TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+RESULTS_DIR="$RESULTS_BASE_DIR/$TIMESTAMP"
+
+log() {
+    echo "[$(date '+%H:%M:%S')] $*"
+}
+
+die() {
+    echo "ERROR: $*" >&2
+    exit 1
+}
+
+# Convert size string to bytes
+size_to_bytes() {
+    local size="$1"
+    local num="${size%[GMK]}"
+    local unit="${size: -1}"
+    case "$unit" in
+        G) echo $((num * 1024 * 1024 * 1024)) ;;
+        M) echo $((num * 1024 * 1024)) ;;
+        K) echo $((num * 1024)) ;;
+        *) echo "$size" ;;
+    esac
+}
+
+# Convert size string to MB count for dd
+size_to_mb() {
+    local size="$1"
+    local num="${size%[GMK]}"
+    local unit="${size: -1}"
+    case "$unit" in
+        G) echo $((num * 1024)) ;;
+        M) echo "$num" ;;
+        *) die "Unsupported size unit: $size" ;;
+    esac
+}
+
+# Generate test file if it doesn't exist
+generate_test_file() {
+    local size="$1"
+    local filepath="$TEST_FILES_DIR/${size}.bin"
+
+    if [[ -f "$filepath" ]]; then
+        log "Test file $filepath already exists"
+        return 0
+    fi
+
+    log "Generating test file: $filepath"
+    mkdir -p "$TEST_FILES_DIR"
+    local mb
+    mb=$(size_to_mb "$size")
+    dd if=/dev/urandom of="$filepath" bs=1M count="$mb" status=progress 2>&1
+}
+
+# Build PicoShare
+build_picoshare() {
+    log "Building PicoShare..."
+    cd "$PROJECT_ROOT"
+    PS_VERSION="perf-test-$(git rev-parse --short HEAD 2>/dev/null || echo 'unknown')" \
+        ./dev-scripts/build-backend
+    cp "$PROJECT_ROOT/bin/picoshare" "$SCRIPT_DIR/picoshare"
+}
+
+# Start VM with specified memory
+start_vm() {
+    local memory="$1"
+    log "Starting VM with ${memory}MB RAM..."
+    cd "$SCRIPT_DIR"
+    
+    # Destroy any existing VM
+    vagrant destroy -f 2>/dev/null || true
+    
+    # Start with specified memory
+    VM_MEMORY="$memory" vagrant up
+}
+
+# Stop VM
+stop_vm() {
+    log "Stopping VM..."
+    cd "$SCRIPT_DIR"
+    vagrant destroy -f 2>/dev/null || true
+}
+
+# Start PicoShare inside VM
+start_picoshare() {
+    log "Starting PicoShare inside VM..."
+    cd "$SCRIPT_DIR"
+    
+    # Copy binary to VM and start it
+    vagrant ssh -c "sudo pkill picoshare || true"
+    vagrant ssh -c "rm -rf /tmp/picoshare-data && mkdir -p /tmp/picoshare-data"
+    vagrant ssh -c "cd /vagrant && PS_SHARED_SECRET=$PS_SHARED_SECRET ./picoshare -db /tmp/picoshare-data/store.db &" -- -f
+    
+    # Wait for it to be ready
+    log "Waiting for PicoShare to be ready..."
+    local attempts=0
+    while [[ $attempts -lt 30 ]]; do
+        if curl -sf "http://localhost:$PORT/" > /dev/null 2>&1; then
+            log "PicoShare is ready"
+            return 0
+        fi
+        sleep 1
+        ((attempts++))
+    done
+    
+    die "PicoShare failed to start"
+}
+
+# Check if PicoShare is still running
+check_picoshare_alive() {
+    cd "$SCRIPT_DIR"
+    vagrant ssh -c "pgrep picoshare" > /dev/null 2>&1
+}
+
+# Check if OOM killer was invoked
+check_oom_killed() {
+    cd "$SCRIPT_DIR"
+    vagrant ssh -c "dmesg | grep -i 'out of memory' | tail -5" 2>/dev/null || true
+}
+
+# Get current memory usage from VM
+get_memory_usage() {
+    cd "$SCRIPT_DIR"
+    # Returns used memory in bytes
+    vagrant ssh -c "awk '/MemTotal/{total=\$2} /MemAvailable/{available=\$2} END{print (total-available)*1024}' /proc/meminfo" 2>/dev/null | tr -d '\r'
+}
+
+# Authenticate and save cookie
+authenticate() {
+    log "Authenticating..."
+    curl -sf -c "$RESULTS_DIR/cookies.txt" -X POST \
+        -H "Content-Type: application/json" \
+        -d "{\"sharedSecretKey\":\"$PS_SHARED_SECRET\"}" \
+        "http://localhost:$PORT/api/auth" > /dev/null
+}
+
+# Delete all entries (reset for next test)
+delete_all_entries() {
+    # Get list of entries and delete them
+    local entries
+    entries=$(curl -sf -b "$RESULTS_DIR/cookies.txt" "http://localhost:$PORT/api/entry" 2>/dev/null | grep -o '"id":"[^"]*"' | cut -d'"' -f4 || true)
+    for entry in $entries; do
+        curl -sf -b "$RESULTS_DIR/cookies.txt" -X DELETE "http://localhost:$PORT/api/entry/$entry" > /dev/null 2>&1 || true
+    done
+}
+
+# Run a single upload test
+run_upload_test() {
+    local file_size="$1"
+    local memory_limit="$2"
+    local test_file="$TEST_FILES_DIR/${file_size}.bin"
+    
+    log "Testing: file_size=$file_size, memory=${memory_limit}MB"
+    
+    local peak_memory=0
+    local monitor_pid
+    local monitor_file
+    monitor_file=$(mktemp)
+    
+    # Start memory monitoring in background
+    (
+        echo "0" > "$monitor_file"
+        while true; do
+            local mem
+            mem=$(get_memory_usage 2>/dev/null || echo "0")
+            local current_max
+            current_max=$(cat "$monitor_file" 2>/dev/null || echo "0")
+            if [[ -n "$mem" ]] && [[ "$mem" =~ ^[0-9]+$ ]] && [[ $mem -gt $current_max ]]; then
+                echo "$mem" > "$monitor_file"
+            fi
+            sleep 1
+        done
+    ) &
+    monitor_pid=$!
+    
+    # Run upload
+    local start_time end_time duration
+    local http_status="000"
+    local exit_reason="success"
+    
+    start_time=$(date +%s.%N)
+    
+    http_status=$(
+        timeout "$TIMEOUT_SECONDS" curl -s -o /dev/null -w "%{http_code}" \
+            -b "$RESULTS_DIR/cookies.txt" \
+            -X POST \
+            -F "file=@${test_file}" \
+            "http://localhost:$PORT/api/entry?expiration=2040-01-01T00:00:00Z" \
+            2>/dev/null
+    ) || true
+    
+    local curl_exit=$?
+    
+    end_time=$(date +%s.%N)
+    duration=$(awk "BEGIN {printf \"%.2f\", $end_time - $start_time}")
+    
+    # Stop memory monitor
+    kill $monitor_pid 2>/dev/null || true
+    wait $monitor_pid 2>/dev/null || true
+    peak_memory=$(cat "$monitor_file" 2>/dev/null || echo "0")
+    rm -f "$monitor_file"
+    
+    # Determine exit reason
+    if [[ $curl_exit -eq 124 ]]; then
+        exit_reason="timeout"
+    elif ! check_picoshare_alive; then
+        local oom_output
+        oom_output=$(check_oom_killed)
+        if [[ -n "$oom_output" ]]; then
+            exit_reason="oom_killed"
+            echo "$oom_output" >> "$RESULTS_DIR/failures.log"
+        else
+            exit_reason="crashed"
+        fi
+        # Log failure details
+        echo "" >> "$RESULTS_DIR/failures.log"
+        echo "=== FAILURE: file_size=$file_size, memory=${memory_limit}MB ===" >> "$RESULTS_DIR/failures.log"
+        echo "Exit reason: $exit_reason" >> "$RESULTS_DIR/failures.log"
+        vagrant ssh -c "dmesg | tail -20" >> "$RESULTS_DIR/failures.log" 2>&1 || true
+    elif [[ "$http_status" != "200" ]]; then
+        exit_reason="http_error_$http_status"
+    fi
+    
+    # Output result
+    echo "$file_size,${memory_limit}M,$duration,$peak_memory,$http_status,$exit_reason"
+    
+    # Clean up for next test
+    if [[ "$exit_reason" == "success" ]]; then
+        delete_all_entries
+    fi
+}
+
+# Generate report
+generate_report() {
+    local csv_file="$RESULTS_DIR/raw.csv"
+    local report_file="$RESULTS_DIR/report.md"
+    
+    cat > "$report_file" << EOF
+# PicoShare Performance Test Report
+
+**Date:** $(date)
+**Git commit:** $(cd "$PROJECT_ROOT" && git rev-parse --short HEAD 2>/dev/null || echo 'unknown')
+**Git branch:** $(cd "$PROJECT_ROOT" && git rev-parse --abbrev-ref HEAD 2>/dev/null || echo 'unknown')
+
+## Results
+
+| File Size | Memory | Duration (s) | Peak RAM | Status |
+|-----------|--------|--------------|----------|--------|
+EOF
+
+    tail -n +2 "$csv_file" | while IFS=, read -r file_size memory_limit duration peak_memory http_status exit_reason; do
+        # Convert peak memory to human readable
+        local peak_human
+        if [[ $peak_memory -gt $((1024*1024*1024)) ]]; then
+            peak_human=$(awk "BEGIN {printf \"%.0fMB\", $peak_memory/1024/1024}")
+        elif [[ $peak_memory -gt $((1024*1024)) ]]; then
+            peak_human=$(awk "BEGIN {printf \"%.0fMB\", $peak_memory/1024/1024}")
+        elif [[ $peak_memory -gt 0 ]]; then
+            peak_human=$(awk "BEGIN {printf \"%.0fKB\", $peak_memory/1024}")
+        else
+            peak_human="—"
+        fi
+        
+        local status
+        if [[ "$exit_reason" == "success" ]]; then
+            status="✅ success"
+        else
+            status="❌ $exit_reason"
+        fi
+        
+        echo "| $file_size | $memory_limit | $duration | $peak_human | $status |" >> "$report_file"
+    done
+    
+    # Summary
+    local total passed failed
+    total=$(tail -n +2 "$csv_file" | wc -l)
+    passed=$(tail -n +2 "$csv_file" | grep -c ',success$' || echo 0)
+    failed=$((total - passed))
+    
+    cat >> "$report_file" << EOF
+
+## Summary
+
+- **Total tests:** $total
+- **Passed:** $passed
+- **Failed:** $failed
+EOF
+
+    log "Report generated: $report_file"
+}
+
+# Save config
+save_config() {
+    cat > "$RESULTS_DIR/config.json" << EOF
+{
+    "timestamp": "$TIMESTAMP",
+    "file_sizes": $(printf '%s\n' "${FILE_SIZES[@]}" | jq -R . | jq -s .),
+    "memory_limits": $(printf '%s\n' "${MEMORY_LIMITS[@]}" | jq -R . | jq -s .),
+    "git_commit": "$(cd "$PROJECT_ROOT" && git rev-parse HEAD 2>/dev/null || echo 'unknown')",
+    "git_branch": "$(cd "$PROJECT_ROOT" && git rev-parse --abbrev-ref HEAD 2>/dev/null || echo 'unknown')"
+}
+EOF
+}
+
+# Main
+main() {
+    log "Starting PicoShare performance tests"
+    
+    # Check dependencies
+    command -v vagrant >/dev/null || die "vagrant not found"
+    command -v curl >/dev/null || die "curl not found"
+    command -v jq >/dev/null || die "jq not found"
+    
+    # Setup
+    mkdir -p "$RESULTS_DIR"
+    echo "# Failure log" > "$RESULTS_DIR/failures.log"
+    
+    # Save config
+    save_config
+    
+    # Initialize CSV
+    echo "file_size,memory_limit,duration_seconds,peak_memory_bytes,http_status,exit_reason" > "$RESULTS_DIR/raw.csv"
+    
+    # Build PicoShare
+    build_picoshare
+    
+    # Generate test files
+    log "Generating test files..."
+    for size in "${FILE_SIZES[@]}"; do
+        generate_test_file "$size"
+    done
+    
+    # Run tests
+    for memory in "${MEMORY_LIMITS[@]}"; do
+        log "=== Testing with ${memory}MB RAM ==="
+        
+        start_vm "$memory"
+        start_picoshare
+        authenticate
+        
+        for size in "${FILE_SIZES[@]}"; do
+            result=$(run_upload_test "$size" "$memory")
+            echo "$result" >> "$RESULTS_DIR/raw.csv"
+            
+            local exit_reason
+            exit_reason=$(echo "$result" | cut -d, -f6)
+            local duration
+            duration=$(echo "$result" | cut -d, -f3)
+            
+            if [[ "$exit_reason" == "success" ]]; then
+                log "  $size: SUCCESS (${duration}s)"
+            else
+                log "  $size: FAILED ($exit_reason)"
+                # Restart PicoShare if it died
+                if ! check_picoshare_alive; then
+                    log "  Restarting PicoShare..."
+                    start_picoshare
+                    authenticate
+                fi
+            fi
+        done
+        
+        stop_vm
+    done
+    
+    # Generate report
+    generate_report
+    
+    log "Tests complete!"
+    log "Results: $RESULTS_DIR"
+    echo ""
+    cat "$RESULTS_DIR/report.md"
+}
+
+main

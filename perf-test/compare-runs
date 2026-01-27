@@ -1,0 +1,103 @@
+#!/usr/bin/env bash
+#
+# Compare two performance test runs
+#
+set -euo pipefail
+
+if [[ $# -ne 2 ]]; then
+    echo "Usage: $0 <baseline-results-dir> <compare-results-dir>"
+    exit 1
+fi
+
+BASELINE_DIR="$1"
+COMPARE_DIR="$2"
+
+if [[ ! -f "$BASELINE_DIR/raw.csv" ]]; then
+    echo "ERROR: $BASELINE_DIR/raw.csv not found"
+    exit 1
+fi
+
+if [[ ! -f "$COMPARE_DIR/raw.csv" ]]; then
+    echo "ERROR: $COMPARE_DIR/raw.csv not found"
+    exit 1
+fi
+
+echo "# Performance Comparison"
+echo ""
+echo "**Baseline:** $BASELINE_DIR"
+echo "**Compare:** $COMPARE_DIR"
+echo ""
+
+# Get git info
+baseline_commit=$(jq -r '.git_commit' "$BASELINE_DIR/config.json" 2>/dev/null | head -c 7)
+compare_commit=$(jq -r '.git_commit' "$COMPARE_DIR/config.json" 2>/dev/null | head -c 7)
+echo "**Baseline commit:** $baseline_commit"
+echo "**Compare commit:** $compare_commit"
+echo ""
+
+echo "| File Size | Memory | Baseline | Compare | Delta | Status |"
+echo "|-----------|--------|----------|---------|-------|--------|"
+
+# Read baseline into associative array
+declare -A baseline_duration
+declare -A baseline_status
+
+while IFS=, read -r file_size memory_limit duration peak_memory http_status exit_reason; do
+    [[ "$file_size" == "file_size" ]] && continue
+    key="${file_size}_${memory_limit}"
+    baseline_duration[$key]="$duration"
+    baseline_status[$key]="$exit_reason"
+done < "$BASELINE_DIR/raw.csv"
+
+# Compare with new results
+while IFS=, read -r file_size memory_limit duration peak_memory http_status exit_reason; do
+    [[ "$file_size" == "file_size" ]] && continue
+    key="${file_size}_${memory_limit}"
+    
+    base_dur="${baseline_duration[$key]:-"—"}"
+    base_stat="${baseline_status[$key]:-"—"}"
+    
+    # Calculate delta
+    delta="—"
+    if [[ "$base_dur" != "—" ]] && [[ "$duration" != "0" ]] && [[ "$base_dur" != "0" ]]; then
+        delta=$(awk "BEGIN {d=$duration-$base_dur; printf \"%+.1fs\", d}")
+        pct=$(awk "BEGIN {printf \"(%+.0f%%)\", (($duration-$base_dur)/$base_dur)*100}")
+        delta="$delta $pct"
+    fi
+    
+    # Status comparison
+    status_cmp=""
+    if [[ "$base_stat" == "$exit_reason" ]]; then
+        if [[ "$exit_reason" == "success" ]]; then
+            status_cmp="✅ both pass"
+        else
+            status_cmp="❌ both fail"
+        fi
+    elif [[ "$exit_reason" == "success" ]]; then
+        status_cmp="🎉 fixed"
+    else
+        status_cmp="💥 regression"
+    fi
+    
+    echo "| $file_size | $memory_limit | ${base_dur}s | ${duration}s | $delta | $status_cmp |"
+done < "$COMPARE_DIR/raw.csv"
+
+echo ""
+
+# Summary
+baseline_passed=$(tail -n +2 "$BASELINE_DIR/raw.csv" | grep -c ',success$' || echo 0)
+compare_passed=$(tail -n +2 "$COMPARE_DIR/raw.csv" | grep -c ',success$' || echo 0)
+total=$(tail -n +2 "$BASELINE_DIR/raw.csv" | wc -l)
+
+echo "## Summary"
+echo ""
+echo "- Baseline: $baseline_passed/$total passed"
+echo "- Compare: $compare_passed/$total passed"
+
+if [[ $compare_passed -gt $baseline_passed ]]; then
+    echo "- **Improvement: +$((compare_passed - baseline_passed)) tests now passing**"
+elif [[ $compare_passed -lt $baseline_passed ]]; then
+    echo "- **Regression: $((baseline_passed - compare_passed)) tests now failing**"
+else
+    echo "- No change in pass/fail count"
+fi
