@@ -119,3 +119,10 @@ a {
 .navbar .dropdown:hover .dropdown-menu {
   display: block;
 }
+
+@media screen and (max-width: 991.98px) {
+  .navbar .nav-link,
+  .navbar .dropdown-toggle {
+    padding-left: 0.85rem;
+  }
+}
