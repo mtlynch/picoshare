@@ -1,3 +1,11 @@
+:root {
+  --heading-color: #363636;
+  --navbar-bg: #f7f7f7;
+  --navbar-brand-color: #555;
+  --navbar-link-color: #666;
+  --navbar-link-hover-color: #4b4b4b;
+}
+
 body {
   font-family: "Karla", sans-serif;
 }
@@ -25,7 +33,7 @@ a {
   h4,
   h5,
   h6 {
-    color: #363636;
+    color: var(--heading-color);
     font-weight: 600;
     line-height: 1.125;
   }
@@ -73,13 +81,13 @@ a {
 }
 
 .navbar {
-  background-color: #f7f7f7;
+  background-color: var(--navbar-bg);
   padding-top: 0.75rem;
   padding-bottom: 0.75rem;
 
   .navbar-brand {
     font-size: 1.35rem;
-    color: #555;
+    color: var(--navbar-brand-color);
 
     @media screen and (min-width: 768px) {
       margin-left: 0 !important;
@@ -89,7 +97,7 @@ a {
 
   .nav-link {
     font-size: 1rem;
-    color: #666;
+    color: var(--navbar-link-color);
   }
 
   .btn {
@@ -98,17 +106,17 @@ a {
   }
 
   .dropdown-item {
-    color: #666;
+    color: var(--navbar-link-color);
   }
 
   .dropdown-toggle {
-    color: #666;
+    color: var(--navbar-link-color);
   }
 
   .nav-link:hover,
   .dropdown-toggle:hover,
   .dropdown-item:hover {
-    color: #4b4b4b;
+    color: var(--navbar-link-hover-color);
   }
 
   .dropdown:hover .dropdown-menu {
