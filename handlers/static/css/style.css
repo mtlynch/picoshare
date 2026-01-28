@@ -120,9 +120,11 @@ a {
   display: block;
 }
 
-@media screen and (max-width: 991.98px) {
-  .navbar .nav-link,
-  .navbar .dropdown-toggle {
-    padding-left: 0.85rem;
+.navbar .nav-link,
+.navbar .dropdown-toggle {
+  padding-left: 0.85rem;
+
+  @media screen and (min-width: 768px) {
+    padding-left: unset;
   }
 }
