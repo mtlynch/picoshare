@@ -6,125 +6,125 @@ a {
   text-decoration: none;
 }
 
-.content p,
-.content ul,
-.content article,
-.content form {
-  max-width: 70ch;
-}
-
-.navbar .navbar-brand {
-  font-size: 1.35rem;
-  color: #555;
-
-  @media screen and (min-width: 1024px) {
-    margin-left: 0 !important;
-    margin-right: 2rem;
-  }
-}
-
-.navbar .nav-link {
-  font-size: 1rem;
-  color: #666;
-}
-
 .content {
   padding-bottom: 3rem;
   padding-left: calc(var(--bs-gutter-x) * 0.5);
   padding-right: calc(var(--bs-gutter-x) * 0.5);
   padding-top: 3rem;
-}
 
-.content h1,
-.content h2,
-.content h3,
-.content h4,
-.content h5,
-.content h6 {
-  color: #363636;
-  font-weight: 600;
-  line-height: 1.125;
-}
+  p,
+  ul,
+  article,
+  form {
+    max-width: 70ch;
+  }
 
-.content h1 {
-  font-size: 2rem;
-  margin-bottom: 0.5em;
-}
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    color: #363636;
+    font-weight: 600;
+    line-height: 1.125;
+  }
 
-.content h1:not(:first-child) {
-  margin-top: 1em;
-}
+  h1 {
+    font-size: 2rem;
+    margin-bottom: 0.5em;
 
-.content h2 {
-  font-size: 1.75rem;
-  margin-bottom: 0.5714em;
-}
+    &:not(:first-child) {
+      margin-top: 1em;
+    }
+  }
 
-.content h2:not(:first-child) {
-  margin-top: 1.1428em;
-}
+  h2 {
+    font-size: 1.75rem;
+    margin-bottom: 0.5714em;
 
-.content p,
-.content ul {
-  font-size: 1rem;
-  line-height: 1.5;
-  margin-bottom: 1em;
-}
+    &:not(:first-child) {
+      margin-top: 1.1428em;
+    }
+  }
 
-.content ul {
-  list-style: disc outside;
-  margin-left: 2em;
-  margin-top: 1em;
-  padding-left: 0;
-}
+  p,
+  ul {
+    font-size: 1rem;
+    line-height: 1.5;
+    margin-bottom: 1em;
+  }
 
-.content ul ul {
-  list-style-type: circle;
-  margin-top: 0.5em;
-}
+  ul {
+    list-style: disc outside;
+    margin-left: 2em;
+    margin-top: 1em;
+    padding-left: 0;
 
-.content li + li {
-  margin-top: 0.25em;
+    ul {
+      list-style-type: circle;
+      margin-top: 0.5em;
+    }
+  }
+
+  li + li {
+    margin-top: 0.25em;
+  }
 }
 
 .navbar {
   background-color: #f7f7f7;
   padding-top: 0.75rem;
   padding-bottom: 0.75rem;
-}
 
-.navbar .btn {
-  font-size: 0.95rem;
-  padding: 0.35rem 0.85rem;
+  .navbar-brand {
+    font-size: 1.35rem;
+    color: #555;
+
+    @media screen and (min-width: 1024px) {
+      margin-left: 0 !important;
+      margin-right: 2rem;
+    }
+  }
+
+  .nav-link {
+    font-size: 1rem;
+    color: #666;
+  }
+
+  .btn {
+    font-size: 0.95rem;
+    padding: 0.35rem 0.85rem;
+  }
+
+  .dropdown-item {
+    color: #666;
+  }
+
+  .dropdown-toggle {
+    color: #666;
+  }
+
+  .nav-link:hover,
+  .dropdown-toggle:hover,
+  .dropdown-item:hover {
+    color: #4b4b4b;
+  }
+
+  .dropdown:hover .dropdown-menu {
+    display: block;
+  }
+
+  .nav-link,
+  .dropdown-toggle {
+    padding-left: 0.85rem;
+
+    @media screen and (min-width: 768px) {
+      padding-left: unset;
+    }
+  }
 }
 
 .navbar-brand {
   font-weight: 500;
-}
-
-.navbar .dropdown-item {
-  color: #666;
-}
-
-.navbar .dropdown-toggle {
-  color: #666;
-}
-
-.navbar .nav-link:hover,
-.navbar .dropdown-toggle:hover,
-.navbar .dropdown-item:hover {
-  color: #4b4b4b;
-}
-
-.navbar .dropdown:hover .dropdown-menu {
-  display: block;
-}
-
-.navbar .nav-link,
-.navbar .dropdown-toggle {
-  padding-left: 0.85rem;
-
-  @media screen and (min-width: 768px) {
-    padding-left: unset;
-  }
 }
