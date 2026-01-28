@@ -6,9 +6,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/mtlynch/picoshare/v2/handlers"
-	"github.com/mtlynch/picoshare/v2/picoshare"
-	"github.com/mtlynch/picoshare/v2/store/test_sqlite"
+	"github.com/mtlynch/picoshare/handlers"
+	"github.com/mtlynch/picoshare/picoshare"
+	"github.com/mtlynch/picoshare/store/test_sqlite"
 )
 
 type mockEntry struct {

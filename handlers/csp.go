@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/mtlynch/picoshare/v2/random"
+	"github.com/mtlynch/picoshare/random"
 )
 
 type contextKey struct {
@@ -46,6 +46,14 @@ func enforceContentSecurityPolicy(next http.Handler) http.Handler {
 					// element, even if we specify a nonce:
 					// https://github.com/mtlynch/picoshare/issues/249
 					"'unsafe-inline'",
+				},
+			},
+			{
+				name: "img-src",
+				values: []string{
+					"'self'",
+					// Bootstrap uses data URIs for the navbar toggle icon.
+					"data:",
 				},
 			},
 			{

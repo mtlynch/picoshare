@@ -82,9 +82,11 @@
       });
     });
 
-    document.querySelector("#error .delete").addEventListener("click", () => {
-      hideElement(errorContainer);
-    });
+    document
+      .querySelector("#error .btn-close")
+      .addEventListener("click", () => {
+        hideElement(errorContainer);
+      });
 
     document.querySelectorAll('[aria-label="Copy"]').forEach((copyBtn) => {
       copyBtn.addEventListener("click", () => {
@@ -134,10 +136,10 @@
               toggleBtn.closest("tr").classList.toggle("inactive");
 
               // Switch the button color and icon.
-              toggleBtn.classList.toggle("is-success");
-              toggleBtn.classList.toggle("is-warning");
+              toggleBtn.classList.toggle("btn-outline-info");
+              toggleBtn.classList.toggle("btn-outline-secondary");
               toggleBtn.querySelector("i").classList.toggle("fa-ban");
-              toggleBtn.querySelector("i").classList.toggle("fa-check-square");
+              toggleBtn.querySelector("i").classList.toggle("fa-square-check");
 
               document
                 .querySelector("snackbar-notifications")
@@ -161,27 +163,25 @@
 {{ end }}
 
 {{ define "content" }}
-  <h1 class="title">Guest Links</h1>
+  <h1 class="h1">Guest Links</h1>
 
-  <article class="message is-link">
-    <div class="message-body">
-      <p>
-        Guest links allow other users to upload files to this PicoShare server
-        without signing in.
-      </p>
+  <div class="alert alert-primary" role="alert">
+    <p>
+      Guest links allow other users to upload files to this PicoShare server
+      without signing in.
+    </p>
 
-      <p>
-        Share a guest link with someone if you want an easy way for them to
-        share a file with you.
-      </p>
-    </div>
-  </article>
+    <p>
+      Share a guest link with someone if you want an easy way for them to share
+      a file with you.
+    </p>
+  </div>
 
-  <a class="button is-primary" role="button" href="/guest-links/new"
+  <a class="btn btn-primary" role="button" href="/guest-links/new"
     >Create new</a
   >
 
-  <div class="table-container mt-5">
+  <div class="table-responsive mt-4">
     <table class="table">
       <thead>
         <tr>
@@ -191,13 +191,13 @@
           <th>File Expiration</th>
           <th>Max Upload Size</th>
           <th>Uploads</th>
-          <th class="has-text-right">Actions</th>
+          <th class="text-end">Actions</th>
         </tr>
       </thead>
       <tbody>
         {{ range .GuestLinks }}
           <tr {{ if not .IsActive }}class="inactive"{{ end }}>
-            <td class="is-vcentered">
+            <td class="align-middle">
               {{ if .IsActive }}
                 <a href="/g/{{ .ID }}">
                   {{ template "label-formatted" . }}
@@ -206,61 +206,53 @@
                 {{ template "label-formatted" . }}
               {{ end }}
             </td>
-            <td class="is-vcentered">{{ formatDate .Created }}</td>
-            <td class="is-vcentered expiration">
+            <td class="align-middle">{{ formatDate .Created }}</td>
+            <td class="align-middle expiration">
               {{ formatExpiration .UrlExpires }}
             </td>
-            <td class="is-vcentered expiration">
-              {{ .FileLifetime.FriendlyName }}
+            <td class="align-middle expiration">
+              {{ .MaxFileLifetime.FriendlyName }}
             </td>
-            <td class="is-vcentered">
+            <td class="align-middle">
               {{ formatSizeLimit .MaxFileBytes }}
             </td>
-            <td class="is-vcentered">
+            <td class="align-middle">
               {{ .FilesUploaded }} /
               {{ formatCountLimit .MaxFileUploads }}
             </td>
-            <td class="is-vcentered">
-              <div class="field is-grouped is-justify-content-flex-end">
-                <p class="control">
-                  <button
-                    class="button is-info"
-                    aria-label="Copy"
-                    pico-link-id="{{ .ID }}"
-                  >
-                    <i class="fa-solid fa-copy"></i>
-                  </button>
-                </p>
+            <td class="align-middle">
+              <div class="d-flex justify-content-end gap-2">
+                <button
+                  class="btn btn-outline-primary btn-sm"
+                  aria-label="Copy"
+                  pico-link-id="{{ .ID }}"
+                >
+                  <i class="fa-solid fa-copy"></i>
+                </button>
                 {{ if .IsDisabled }}
-                  <p class="control">
-                    <button
-                      class="button is-success"
-                      aria-label="Enable"
-                      pico-link-id="{{ .ID }}"
-                    >
-                      <i class="fas fa-check-square" aria-hidden="true"></i>
-                    </button>
-                  </p>
-                {{ else }}
-                  <p class="control">
-                    <button
-                      class="button is-warning"
-                      aria-label="Disable"
-                      pico-link-id="{{ .ID }}"
-                    >
-                      <i class="fas fa-ban" aria-hidden="true"></i>
-                    </button>
-                  </p>
-                {{ end }}
-                <p class="control">
                   <button
-                    class="button is-danger"
-                    aria-label="Delete"
+                    class="btn btn-outline-info btn-sm"
+                    aria-label="Enable"
                     pico-link-id="{{ .ID }}"
                   >
-                    <i class="fa fa-trash" aria-hidden="true"></i>
+                    <i class="fa-solid fa-square-check" aria-hidden="true"></i>
                   </button>
-                </p>
+                {{ else }}
+                  <button
+                    class="btn btn-outline-secondary btn-sm"
+                    aria-label="Disable"
+                    pico-link-id="{{ .ID }}"
+                  >
+                    <i class="fa-solid fa-ban" aria-hidden="true"></i>
+                  </button>
+                {{ end }}
+                <button
+                  class="btn btn-outline-danger btn-sm"
+                  aria-label="Delete"
+                  pico-link-id="{{ .ID }}"
+                >
+                  <i class="fa-solid fa-trash" aria-hidden="true"></i>
+                </button>
               </div>
             </td>
           </tr>
@@ -269,13 +261,16 @@
     </table>
   </div>
 
-  <div id="error" class="is-hidden my-3">
-    <article class="message is-danger">
-      <div class="message-header">
-        Error
-        <button class="delete" aria-label="delete"></button>
+  <div id="error" class="d-none my-3">
+    <div
+      class="alert alert-danger d-flex justify-content-between align-items-start"
+      role="alert"
+    >
+      <div>
+        <strong>Error</strong>
+        <div id="error-message" class="mt-1">Placeholder error.</div>
       </div>
-      <div id="error-message" class="message-body">Placeholder error.</div>
-    </article>
+      <button class="btn-close" type="button" aria-label="Close"></button>
+    </div>
   </div>
 {{ end }}

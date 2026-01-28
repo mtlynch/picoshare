@@ -1,58 +1,79 @@
 {{ define "navbar" }}
-  <nav class="navbar" role="navigation">
+  <nav class="navbar navbar-expand-lg navbar-light bg-light" role="navigation">
     <div class="container">
-      <div class="navbar-brand">
-        <a class="navbar-item" href="/">PicoShare</a>
-        <a
-          role="button"
-          class="navbar-burger"
-          aria-label="menu"
-          aria-expanded="false"
-          data-target="navbar-links"
-        >
-          <span aria-hidden="true"></span>
-          <span aria-hidden="true"></span>
-          <span aria-hidden="true"></span>
-        </a>
-      </div>
-      <div id="navbar-links" class="navbar-menu">
+      <a class="navbar-brand" href="/">PicoShare</a>
+      <button
+        class="navbar-toggler"
+        type="button"
+        data-bs-toggle="collapse"
+        data-bs-target="#navbar-links"
+        aria-controls="navbar-links"
+        aria-expanded="false"
+        aria-label="Toggle navigation"
+      >
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div id="navbar-links" class="collapse navbar-collapse">
         {{ if .IsAuthenticated }}
-          <div class="navbar-start">
-            <div class="navbar-item">
-              <a class="button is-primary is-success" role="menuitem" href="/"
+          <ul class="navbar-nav me-auto mb-2 mb-lg-0 align-items-lg-center">
+            <li class="nav-item">
+              <a class="btn btn-success me-lg-2" role="menuitem" href="/"
                 >Upload</a
               >
-            </div>
-            <a class="navbar-item" role="menuitem" href="/files">Files</a>
-            <a class="navbar-item" role="menuitem" href="/guest-links"
-              >Guest Links</a
-            >
-          </div>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" role="menuitem" href="/files">Files</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" role="menuitem" href="/guest-links"
+                >Guest Links</a
+              >
+            </li>
+          </ul>
         {{ end }}
-        <div class="navbar-end">
+        <ul class="navbar-nav ms-auto mb-2 mb-lg-0 align-items-lg-center">
           {{ if .IsAuthenticated }}
-            <div class="navbar-item has-dropdown is-hoverable">
-              <a class="navbar-link" role="menuitem">System</a>
-              <div class="navbar-dropdown">
-                <a class="navbar-item" role="menuitem" href="/information"
-                  >Information</a
-                >
-                <a class="navbar-item" role="menuitem" href="/settings"
-                  >Settings</a
-                >
-                <a id="navbar-log-out" class="navbar-item" role="menuitem"
-                  >Log Out</a
-                >
-              </div>
-            </div>
+            <li class="nav-item dropdown">
+              <a
+                class="nav-link dropdown-toggle"
+                href="#"
+                role="menuitem"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
+              >
+                System
+              </a>
+              <ul class="dropdown-menu dropdown-menu-end">
+                <li>
+                  <a class="dropdown-item" role="menuitem" href="/information"
+                    >Information</a
+                  >
+                </li>
+                <li>
+                  <a class="dropdown-item" role="menuitem" href="/settings"
+                    >Settings</a
+                  >
+                </li>
+                <li>
+                  <button
+                    id="navbar-log-out"
+                    class="dropdown-item"
+                    role="menuitem"
+                    type="button"
+                  >
+                    Log Out
+                  </button>
+                </li>
+              </ul>
+            </li>
           {{ else }}
-            <div class="navbar-item">
-              <a class="button is-primary" role="menuitem" href="/login">
+            <li class="nav-item">
+              <a class="btn btn-primary" role="menuitem" href="/login">
                 Log In
               </a>
-            </div>
+            </li>
           {{ end }}
-        </div>
+        </ul>
       </div>
     </div>
   </nav>

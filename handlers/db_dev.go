@@ -8,8 +8,8 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/mtlynch/picoshare/v2/random"
-	"github.com/mtlynch/picoshare/v2/store/test_sqlite"
+	"github.com/mtlynch/picoshare/random"
+	"github.com/mtlynch/picoshare/store/test_sqlite"
 )
 
 // addDevRoutes adds debug routes that we only use during development or e2e

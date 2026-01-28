@@ -43,7 +43,7 @@
 {{ end }}
 
 {{ define "content" }}
-  <h1 class="title">Delete File</h1>
+  <h1 class="h1">Delete File</h1>
 
   {{ with .Metadata }}
 
@@ -51,29 +51,25 @@
       <input type="hidden" name="entry-id" value="{{ .ID }}" />
       <p>Permanently delete <span class="filename">{{ .Filename }}</span>?</p>
 
-      <div class="field is-grouped is-flex is-justify-content-flex-end my-5">
-        <div class="control">
-          <a class="button is-link is-light" href="/files/{{ .ID }}/edit">
-            Cancel
-          </a>
-        </div>
-        <div class="control">
-          <button class="button is-danger" id="delete-btn" type="submit">
-            <i class="fa fa-trash mr-2"></i>
-            Delete
-          </button>
-        </div>
+      <div class="d-flex justify-content-end gap-2 my-4">
+        <a class="btn btn-outline-primary" href="/files/{{ .ID }}/edit">
+          Cancel
+        </a>
+        <button class="btn btn-danger" id="delete-btn" type="submit">
+          <i class="fa-solid fa-trash me-2"></i>
+          Delete
+        </button>
       </div>
     </form>
 
-    <div class="fa-3x is-hidden" id="progress-spinner">
-      <i class="fas fa-spinner fa-spin"></i>
+    <div class="fa-3x d-none" id="progress-spinner">
+      <i class="fa-solid fa-spinner fa-spin"></i>
     </div>
 
-    <div id="error" class="is-hidden my-3">
-      <article class="message is-danger">
-        <div id="error-message" class="message-body">Placeholder error.</div>
-      </article>
+    <div id="error" class="d-none my-3">
+      <div class="alert alert-danger" role="alert">
+        <div id="error-message">Placeholder error.</div>
+      </div>
     </div>
   {{ end }}
 {{ end }}

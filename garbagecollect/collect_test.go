@@ -9,9 +9,9 @@ import (
 
 	"github.com/go-test/deep"
 
-	"github.com/mtlynch/picoshare/v2/garbagecollect"
-	"github.com/mtlynch/picoshare/v2/picoshare"
-	"github.com/mtlynch/picoshare/v2/store/test_sqlite"
+	"github.com/mtlynch/picoshare/garbagecollect"
+	"github.com/mtlynch/picoshare/picoshare"
+	"github.com/mtlynch/picoshare/store/test_sqlite"
 )
 
 func TestCollectDoesNothingWhenStoreIsEmpty(t *testing.T) {
@@ -43,6 +43,13 @@ func TestCollectExpiredFile(t *testing.T) {
 			Uploaded: mustParseTime("2023-01-01T00:00:00Z"),
 			Expires:  mustParseExpirationTime("2024-01-01T00:00:00Z"),
 			Size:     mustParseFileSize(len(d)),
+		})
+	dataStore.InsertEntryDownload(
+		picoshare.EntryID("AAAAAAAAAAAA"),
+		picoshare.DownloadRecord{
+			Time:      mustParseTime("2023-06-01T12:00:00Z"),
+			ClientIP:  "192.168.1.1",
+			UserAgent: "test-agent",
 		})
 	dataStore.InsertEntry(strings.NewReader(d),
 		picoshare.UploadMetadata{

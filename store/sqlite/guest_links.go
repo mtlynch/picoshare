@@ -5,8 +5,8 @@ import (
 	"database/sql"
 	"log"
 
-	"github.com/mtlynch/picoshare/v2/picoshare"
-	"github.com/mtlynch/picoshare/v2/store"
+	"github.com/mtlynch/picoshare/picoshare"
+	"github.com/mtlynch/picoshare/store"
 )
 
 func (s Store) GetGuestLink(id picoshare.GuestLinkID) (picoshare.GuestLink, error) {
@@ -92,7 +92,7 @@ func (s *Store) InsertGuestLink(guestLink picoshare.GuestLink) error {
 		sql.Named("max_file_uploads", guestLink.MaxFileUploads),
 		sql.Named("creation_time", formatTime(guestLink.Created)),
 		sql.Named("url_expiration_time", formatExpirationTime(guestLink.UrlExpires)),
-		sql.Named("file_expiration_time", formatFileLifetime(guestLink.FileLifetime))); err != nil {
+		sql.Named("file_expiration_time", formatFileLifetime(guestLink.MaxFileLifetime))); err != nil {
 		return err
 	}
 
@@ -213,14 +213,14 @@ func guestLinkFromRow(row rowScanner) (picoshare.GuestLink, error) {
 	}
 
 	return picoshare.GuestLink{
-		ID:             id,
-		Label:          label,
-		IsDisabled:     isDisabled,
-		MaxFileBytes:   maxFileBytes,
-		MaxFileUploads: maxFileUploads,
-		FilesUploaded:  filesUploaded,
-		Created:        ct,
-		UrlExpires:     picoshare.ExpirationTime(uet),
-		FileLifetime:   fileLifetime,
+		ID:              id,
+		Label:           label,
+		IsDisabled:      isDisabled,
+		MaxFileBytes:    maxFileBytes,
+		MaxFileUploads:  maxFileUploads,
+		FilesUploaded:   filesUploaded,
+		Created:         ct,
+		UrlExpires:      picoshare.ExpirationTime(uet),
+		MaxFileLifetime: fileLifetime,
 	}, nil
 }

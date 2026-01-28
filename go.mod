@@ -1,8 +1,9 @@
-module github.com/mtlynch/picoshare/v2
+module github.com/mtlynch/picoshare
 
 go 1.24
 
 require (
+	codeberg.org/mtlynch/go-evolutionary-migrate v0.0.1
 	github.com/go-test/deep v1.1.1
 	github.com/gorilla/mux v1.8.0
 	github.com/mileusna/useragent v1.3.3

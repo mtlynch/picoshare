@@ -77,12 +77,19 @@ jobs:
       - checkout
       - attach_workspace:
           at: ./
+      - restore_cache:
+          keys:
+            - go-mod-v3-{{ checksum "go.sum" }}
       - run:
           name: Compile production backend
           command: PS_VERSION="$(git describe --tags)" dev-scripts/build-backend
       - run:
           name: Compile dev backend
           command: PS_VERSION="$(git describe --tags)" dev-scripts/build-backend dev
+      - save_cache:
+          key: go-mod-v3-{{ checksum "go.sum" }}
+          paths:
+            - ~/go/pkg/mod
       - persist_to_workspace:
           root: ./
           paths:
@@ -90,7 +97,7 @@ jobs:
             - ./bin/picoshare-dev
   e2e:
     docker:
-      - image: mcr.microsoft.com/playwright:v1.40.0-focal
+      - image: mcr.microsoft.com/playwright:v1.57.0
     environment:
       NODE_ENV: development
     steps:
@@ -208,16 +215,16 @@ jobs:
   deploy:
     executor: base
     resource_class: small
-    environment:
-      # The flyctl changes too much to use a specific version, so use the latest for the
-      # time being.
-      # https://github.com/superfly/flyctl/issues/394#issuecomment-815890166
-      FLYCTL_VERSION: "latest"
     steps:
       - checkout
       - run:
           name: Install flyctl
-          command: curl -L https://fly.io/install.sh | sh -s "${FLYCTL_VERSION}"
+          # The flyctl changes too much to use a specific version, so use the latest for the
+          # time being.
+          # https://github.com/superfly/flyctl/issues/394#issuecomment-815890166
+          command: |
+            curl -L https://fly.io/install.sh | \
+              sh -s -- --non-interactive latest
       - run:
           name: Print flyctl version
           command: |

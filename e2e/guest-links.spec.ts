@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
-import { login } from "./helpers/login.js";
-import { readDbTokenCookie } from "./helpers/db.js";
+import { login } from "./helpers/login";
+import { readDbTokenCookie } from "./helpers/db";
 
 const labelColumn = 0;
 const expiresColumn = 4;
@@ -40,9 +40,10 @@ test("creates a guest link and uploads a file as a guest", async ({
     const guestContext = await browser.newContext();
 
     // Share database across users
-    await guestContext.addCookies([
-      readDbTokenCookie(await page.context().cookies()),
-    ]);
+    const dbCookie = readDbTokenCookie(await page.context().cookies());
+    if (dbCookie) {
+      await guestContext.addCookies([dbCookie]);
+    }
 
     const guestPage = await guestContext.newPage();
 
@@ -117,9 +118,10 @@ test("files uploaded through guest link remain accessible after guest link is de
     const guestContext = await browser.newContext();
 
     // Share database across users.
-    await guestContext.addCookies([
-      readDbTokenCookie(await page.context().cookies()),
-    ]);
+    const dbCookie = readDbTokenCookie(await page.context().cookies());
+    if (dbCookie) {
+      await guestContext.addCookies([dbCookie]);
+    }
 
     const guestPage = await guestContext.newPage();
 
@@ -214,9 +216,10 @@ test("disables and enables a guest link, affecting access", async ({
     const guestContext = await browser.newContext();
 
     // Share database across users.
-    await guestContext.addCookies([
-      readDbTokenCookie(await page.context().cookies()),
-    ]);
+    const dbCookie = readDbTokenCookie(await page.context().cookies());
+    if (dbCookie) {
+      await guestContext.addCookies([dbCookie]);
+    }
 
     const guestPage = await guestContext.newPage();
 
@@ -237,14 +240,290 @@ test("disables and enables a guest link, affecting access", async ({
     const guestContext = await browser.newContext();
 
     // Share database across users.
-    await guestContext.addCookies([
-      readDbTokenCookie(await page.context().cookies()),
-    ]);
+    const dbCookie = readDbTokenCookie(await page.context().cookies());
+    if (dbCookie) {
+      await guestContext.addCookies([dbCookie]);
+    }
 
     const guestPage = await guestContext.newPage();
 
     await guestPage.goto(guestLinkRoute);
     await expect(guestPage.locator("h1")).toContainText("Upload");
-    await expect(guestPage.locator(".file-input")).toBeVisible();
+    await expect(guestPage.locator(".file")).toBeVisible();
   }
+});
+
+test("guest upload shows expiration dropdown with options limited by guest link", async ({
+  page,
+  browser,
+}) => {
+  await login(page);
+
+  await page.getByRole("menuitem", { name: "Guest Links" }).click();
+
+  await page.getByRole("button", { name: "Create new" }).click();
+
+  await expect(page).toHaveURL("/guest-links/new");
+  await page.locator("#label").fill("7-day expiration test");
+  await page.locator("#file-upload-limit").fill("5");
+
+  await page.locator("#file-expiration-select").selectOption("7 days");
+
+  await page.getByRole("button", { name: "Create" }).click();
+
+  await expect(page).toHaveURL("/guest-links");
+  const guestLinkRow = await page
+    .getByRole("row")
+    .filter({ hasText: "7-day expiration test" });
+  await expect(guestLinkRow).toBeVisible();
+
+  // Get the guest link URL.
+  const guestLinkRouteValue = await guestLinkRow
+    .getByRole("cell")
+    .nth(labelColumn)
+    .getByRole("link")
+    .getAttribute("href");
+  expect(guestLinkRouteValue).not.toBeNull();
+  const guestLinkRoute = String(guestLinkRouteValue);
+
+  {
+    const guestContext = await browser.newContext();
+
+    // Share database across users.
+    const dbCookie = readDbTokenCookie(await page.context().cookies());
+    if (dbCookie) {
+      await guestContext.addCookies([dbCookie]);
+    }
+
+    const guestPage = await guestContext.newPage();
+
+    await guestPage.goto(guestLinkRoute);
+
+    // Check that the expiration dropdown is visible.
+    await expect(guestPage.locator("#expiration-select")).toBeVisible();
+
+    // Check that only options up to 7 days are available.
+    const expirationOptions = await guestPage
+      .locator("#expiration-select option")
+      .allTextContents();
+
+    expect(expirationOptions).toContain("1 day");
+    expect(expirationOptions).toContain("7 days");
+    expect(expirationOptions).not.toContain("30 days");
+    expect(expirationOptions).not.toContain("1 year");
+    expect(expirationOptions).not.toContain("Never");
+
+    // Check that 7 days is selected by default.
+    const defaultSelected = await guestPage
+      .locator("#expiration-select option[selected]")
+      .textContent();
+    expect(defaultSelected).toBe("7 days");
+
+    // Upload a file to verify the default expiration is applied correctly.
+    await guestPage.locator(".file-input").setInputFiles([
+      {
+        name: "7-day-default-test.txt",
+        mimeType: "text/plain",
+        buffer: Buffer.from("testing 7-day default expiration"),
+      },
+    ]);
+
+    await expect(guestPage.locator("#upload-result .message-body")).toHaveText(
+      "Upload complete!"
+    );
+  }
+
+  // Check that the file has the correct expiration (7 days).
+  await page.getByRole("menuitem", { name: "Files" }).click();
+
+  const fileRow = page
+    .getByRole("row")
+    .filter({ hasText: "7-day-default-test.txt" });
+  await expect(fileRow).toBeVisible();
+
+  const expirationText = await fileRow
+    .getByRole("cell")
+    .nth(expiresColumn)
+    .textContent();
+
+  // Verify the expiration contains the expected date (7 days from now).
+  const expectedDate = new Date();
+  expectedDate.setDate(expectedDate.getDate() + 7);
+  const expectedDateString = expectedDate.toISOString().split("T")[0];
+  expect(expirationText).toContain(`${expectedDateString} (7 days)`);
+});
+
+test("guest upload with infinite file lifetime shows all expiration options", async ({
+  page,
+  browser,
+}) => {
+  await login(page);
+
+  await page.getByRole("menuitem", { name: "Guest Links" }).click();
+
+  await page.getByRole("button", { name: "Create new" }).click();
+
+  await expect(page).toHaveURL("/guest-links/new");
+  await page.locator("#label").fill("Infinite expiration test");
+  await page.locator("#file-upload-limit").fill("5");
+  await page.locator("#file-expiration-select").selectOption("Never");
+  await page.getByRole("button", { name: "Create" }).click();
+
+  await expect(page).toHaveURL("/guest-links");
+  const guestLinkRow = await page
+    .getByRole("row")
+    .filter({ hasText: "Infinite expiration test" });
+  await expect(guestLinkRow).toBeVisible();
+
+  // Get the guest link URL.
+  const guestLinkRouteValue = await guestLinkRow
+    .getByRole("cell")
+    .nth(labelColumn)
+    .getByRole("link")
+    .getAttribute("href");
+  expect(guestLinkRouteValue).not.toBeNull();
+  const guestLinkRoute = String(guestLinkRouteValue);
+
+  {
+    const guestContext = await browser.newContext();
+
+    // Share database across users.
+    const dbCookie = readDbTokenCookie(await page.context().cookies());
+    if (dbCookie) {
+      await guestContext.addCookies([dbCookie]);
+    }
+
+    const guestPage = await guestContext.newPage();
+
+    await guestPage.goto(guestLinkRoute);
+
+    // Check that the expiration dropdown is visible.
+    await expect(guestPage.locator("#expiration-select")).toBeVisible();
+
+    // Check that all expiration options are available.
+    const expirationOptions = await guestPage
+      .locator("#expiration-select option")
+      .allTextContents();
+
+    expect(expirationOptions).toContain("1 day");
+    expect(expirationOptions).toContain("7 days");
+    expect(expirationOptions).toContain("30 days");
+    expect(expirationOptions).toContain("1 year");
+    expect(expirationOptions).toContain("Never");
+
+    // Check that Never is selected by default.
+    const defaultSelected = await guestPage
+      .locator("#expiration-select option[selected]")
+      .textContent();
+    expect(defaultSelected).toBe("Never");
+
+    // Upload a file to verify the default "Never" expiration is applied correctly.
+    await guestPage.locator(".file-input").setInputFiles([
+      {
+        name: "infinite-default-test.txt",
+        mimeType: "text/plain",
+        buffer: Buffer.from("testing infinite default expiration"),
+      },
+    ]);
+
+    await expect(guestPage.locator("#upload-result .message-body")).toHaveText(
+      "Upload complete!"
+    );
+  }
+
+  // Check that the file has the correct expiration (Never).
+  await page.getByRole("menuitem", { name: "Files" }).click();
+
+  const fileRow = page
+    .getByRole("row")
+    .filter({ hasText: "infinite-default-test.txt" });
+  await expect(fileRow).toBeVisible();
+
+  // Verify the expiration is "Never".
+  await expect(fileRow.getByRole("cell").nth(expiresColumn)).toHaveText(
+    "Never"
+  );
+});
+
+test("guest upload respects selected expiration time", async ({
+  page,
+  browser,
+}) => {
+  await login(page);
+
+  await page.getByRole("menuitem", { name: "Guest Links" }).click();
+
+  await page.getByRole("button", { name: "Create new" }).click();
+
+  await expect(page).toHaveURL("/guest-links/new");
+  await page.locator("#label").fill("Custom expiration test");
+  await page.locator("#file-upload-limit").fill("5");
+  await page.locator("#file-expiration-select").selectOption("30 days");
+  await page.getByRole("button", { name: "Create" }).click();
+
+  await expect(page).toHaveURL("/guest-links");
+  const guestLinkRow = await page
+    .getByRole("row")
+    .filter({ hasText: "Custom expiration test" });
+  await expect(guestLinkRow).toBeVisible();
+
+  // Get the guest link URL.
+  const guestLinkRouteValue = await guestLinkRow
+    .getByRole("cell")
+    .nth(labelColumn)
+    .getByRole("link")
+    .getAttribute("href");
+  expect(guestLinkRouteValue).not.toBeNull();
+  const guestLinkRoute = String(guestLinkRouteValue);
+
+  {
+    const guestContext = await browser.newContext();
+
+    // Share database across users.
+    const dbCookie = readDbTokenCookie(await page.context().cookies());
+    if (dbCookie) {
+      await guestContext.addCookies([dbCookie]);
+    }
+
+    const guestPage = await guestContext.newPage();
+
+    await guestPage.goto(guestLinkRoute);
+
+    // Select 7 days instead of the default 30 days.
+    await guestPage.locator("#expiration-select").selectOption("7 days");
+
+    // Upload a file.
+    await guestPage.locator(".file-input").setInputFiles([
+      {
+        name: "custom-expiration-test.txt",
+        mimeType: "text/plain",
+        buffer: Buffer.from("testing custom expiration"),
+      },
+    ]);
+
+    await expect(guestPage.locator("#upload-result .message-body")).toHaveText(
+      "Upload complete!"
+    );
+  }
+
+  // Check that the file has the correct expiration (7 days, not 30).
+  await page.getByRole("menuitem", { name: "Files" }).click();
+
+  const fileRow = page
+    .getByRole("row")
+    .filter({ hasText: "custom-expiration-test.txt" });
+  await expect(fileRow).toBeVisible();
+
+  const expirationText = await fileRow
+    .getByRole("cell")
+    .nth(expiresColumn)
+    .textContent();
+
+  // Verify the expiration contains the expected date (7 days from now, not 30).
+  const expectedDate = new Date();
+  expectedDate.setDate(expectedDate.getDate() + 7);
+  expect(expirationText).toContain(
+    expectedDate.toISOString().split("T")[0] + " (7 days)"
+  );
+  expect(expirationText).not.toBe("Never");
 });

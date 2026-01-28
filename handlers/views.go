@@ -13,10 +13,10 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/mileusna/useragent"
-	"github.com/mtlynch/picoshare/v2/build"
-	"github.com/mtlynch/picoshare/v2/handlers/parse"
-	"github.com/mtlynch/picoshare/v2/picoshare"
-	"github.com/mtlynch/picoshare/v2/store"
+	"github.com/mtlynch/picoshare/build"
+	"github.com/mtlynch/picoshare/handlers/parse"
+	"github.com/mtlynch/picoshare/picoshare"
+	"github.com/mtlynch/picoshare/store"
 )
 
 //go:embed templates
@@ -355,6 +355,22 @@ func (s Server) fileDownloadsGet() http.HandlerFunc {
 			return
 		}
 
+		showUniqueOnly := r.URL.Query().Get("unique") == "true"
+
+		filteredDownloads := downloads
+		if showUniqueOnly {
+			seen := make(map[string]bool)
+			var uniqueDownloads []picoshare.DownloadRecord
+
+			for _, download := range downloads {
+				if !seen[download.ClientIP] {
+					seen[download.ClientIP] = true
+					uniqueDownloads = append(uniqueDownloads, download)
+				}
+			}
+			filteredDownloads = uniqueDownloads
+		}
+
 		// Convert raw downloads to display-friendly information.
 		type downloadRecord struct {
 			Time     time.Time
@@ -362,8 +378,8 @@ func (s Server) fileDownloadsGet() http.HandlerFunc {
 			Browser  string
 			Platform string
 		}
-		records := make([]downloadRecord, len(downloads))
-		for i, d := range downloads {
+		records := make([]downloadRecord, len(filteredDownloads))
+		for i, d := range filteredDownloads {
 			agent := useragent.Parse(d.UserAgent)
 			records[i] = downloadRecord{
 				Time:     d.Time,
@@ -375,12 +391,14 @@ func (s Server) fileDownloadsGet() http.HandlerFunc {
 
 		if err := t.Execute(w, struct {
 			commonProps
-			Metadata  picoshare.UploadMetadata
-			Downloads []downloadRecord
+			Metadata       picoshare.UploadMetadata
+			Downloads      []downloadRecord
+			ShowUniqueOnly bool
 		}{
-			commonProps: makeCommonProps("PicoShare - Downloads", r.Context()),
-			Metadata:    metadata,
-			Downloads:   records,
+			commonProps:    makeCommonProps("PicoShare - Downloads", r.Context()),
+			Metadata:       metadata,
+			Downloads:      records,
+			ShowUniqueOnly: showUniqueOnly,
 		}); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -569,12 +587,63 @@ func (s Server) guestUploadGet() http.HandlerFunc {
 			return
 		}
 
+		// Generate expiration options up to the guest link's maximum file lifetime.
+		type lifetimeOption struct {
+			Lifetime  picoshare.FileLifetime
+			IsDefault bool
+		}
+		type expirationOption struct {
+			FriendlyName string
+			Expiration   time.Time
+			IsDefault    bool
+		}
+
+		baseLifetimeOptions := []lifetimeOption{
+			{picoshare.NewFileLifetimeInDays(1), false},
+			{picoshare.NewFileLifetimeInDays(7), false},
+			{picoshare.NewFileLifetimeInDays(30), false},
+			{picoshare.NewFileLifetimeInYears(1), false},
+			{picoshare.FileLifetimeInfinite, false},
+		}
+
+		// Filter options to only include those within the guest link's maximum.
+		validLifetimeOptions := []lifetimeOption{}
+		for _, lto := range baseLifetimeOptions {
+			if lto.Lifetime.Days() <= gl.MaxFileLifetime.Days() {
+				validLifetimeOptions = append(validLifetimeOptions, lto)
+			}
+		}
+
+		// Mark the guest link's file lifetime as the default.
+		for i, lto := range validLifetimeOptions {
+			if lto.Lifetime.Equal(gl.MaxFileLifetime) {
+				validLifetimeOptions[i].IsDefault = true
+				break
+			}
+		}
+
+		// Convert to expiration options.
+		expirationOptions := []expirationOption{}
+		for _, lto := range validLifetimeOptions {
+			friendlyName := lto.Lifetime.FriendlyName()
+			expiration := lto.Lifetime.ExpirationFromTime(s.clock.Now())
+			if lto.Lifetime.Equal(picoshare.FileLifetimeInfinite) {
+				expiration = picoshare.NeverExpire
+			}
+			expirationOptions = append(expirationOptions, expirationOption{
+				FriendlyName: friendlyName,
+				Expiration:   expiration.Time(),
+				IsDefault:    lto.IsDefault,
+			})
+		}
+
 		if err := t.Execute(w, struct {
 			commonProps
-			ExpirationOptions []interface{}
+			ExpirationOptions []expirationOption
 			GuestLinkMetadata picoshare.GuestLink
 		}{
 			commonProps:       makeCommonProps("PicoShare - Upload", r.Context()),
+			ExpirationOptions: expirationOptions,
 			GuestLinkMetadata: gl,
 		}); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)

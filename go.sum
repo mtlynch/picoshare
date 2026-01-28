@@ -1,3 +1,5 @@
+codeberg.org/mtlynch/go-evolutionary-migrate v0.0.1 h1:7DmKtylee2przvZYbTN3Aj7XR80qSktGAnObE5HIZOA=
+codeberg.org/mtlynch/go-evolutionary-migrate v0.0.1/go.mod h1:BFt+t6bxMTbgcVMV0r8yKnXoIBXgatx+nF3Mnt8IzcQ=
 github.com/felixge/httpsnoop v1.0.1 h1:lvB5Jl89CsZtGIWuTcDM1E/vkVs49/Ml7JJe07l8SPQ=
 github.com/felixge/httpsnoop v1.0.1/go.mod h1:m8KPJKqk1gH5J9DgRY2ASl2lWCfGKXixSwevea8zH2U=
 github.com/go-test/deep v1.1.1 h1:0r/53hagsehfO4bzD2Pgr/+RgHqhmf+k1Bpse2cTu1U=

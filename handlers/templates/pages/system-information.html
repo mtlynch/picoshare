@@ -1,7 +1,30 @@
 {{ define "style-tags" }}
   <style nonce="{{ .CspNonce }}">
+    {{ $usagePercent := percentage .UsedBytes .TotalBytes }}
     .progress {
+      appearance: none;
+      display: block;
       max-width: 70ch;
+      width: 100%;
+      height: 0.75rem;
+      border-radius: var(--bs-border-radius-pill);
+      background-color: var(--bs-gray-200);
+      overflow: hidden;
+    }
+
+    .progress::-webkit-progress-bar {
+      background-color: var(--bs-gray-200);
+      border-radius: var(--bs-border-radius-pill);
+    }
+
+    .progress::-webkit-progress-value {
+      background-color: var(--bs-success);
+      border-radius: var(--bs-border-radius-pill);
+    }
+
+    .progress::-moz-progress-bar {
+      background-color: var(--bs-success);
+      border-radius: var(--bs-border-radius-pill);
     }
 
     .notification {
@@ -17,7 +40,7 @@
 
 {{ define "script-tags" }}
   <script type="module" nonce="{{ .CspNonce }}">
-    import { toggleShowElement, hideElement } from "/js/lib/bulma.js";
+    import { toggleShowElement } from "/js/lib/bulma.js";
 
     const sizeDeltaNotification = document.querySelector(".notification");
 
@@ -26,34 +49,28 @@
       .addEventListener("click", (evt) => {
         toggleShowElement(sizeDeltaNotification);
       });
-
-    document.querySelectorAll(".notification .delete").forEach((el) => {
-      el.addEventListener("click", (evt) => {
-        const notificationEl = evt.target.parentElement;
-        hideElement(notificationEl);
-      });
-    });
   </script>
 {{ end }}
 
 {{ define "content" }}
-  <h1 class="title">System Information</h1>
+  {{ $usagePercent := percentage .UsedBytes .TotalBytes }}
+  <h1 class="h1">System Information</h1>
 
   <h2>Disk Usage</h2>
   <progress
-    class="progress is-primary"
-    max="{{ .TotalBytes }}"
+    class="progress rounded-pill"
     value="{{ .UsedBytes }}"
+    max="{{ .TotalBytes }}"
+    aria-label="Disk usage"
   >
-    {{ percentage .UsedBytes .TotalBytes }}
+    {{ $usagePercent }}
   </progress>
 
   <ul>
     <li>
       <strong>Server disk usage</strong>:
       {{ formatDiskUsage .UsedBytes }}
-      ({{ percentage .UsedBytes .TotalBytes }}) used of
-      {{ formatDiskUsage .TotalBytes }} total
+      ({{ $usagePercent }}) used of {{ formatDiskUsage .TotalBytes }} total
     </li>
     <li>
       <strong>PicoShare usage</strong>
@@ -66,16 +83,15 @@
           <strong>Database files</strong>:
           {{ formatDiskUsage .DatabaseFileBytes }}
           <a id="file-size-information" href="#"
-            ><span class="icon has-text-info">
-              <i class="fas fa-info-circle"></i> </span
+            ><span class="text-info">
+              <i class="fa-solid fa-circle-info"></i> </span
           ></a>
         </li>
       </ul>
     </li>
   </ul>
 
-  <div class="notification is-info is-light is-hidden">
-    <button class="delete"></button>
+  <div class="notification alert alert-info d-none">
     <p>
       PicoShare's database files occupy more disk space than the sum total of
       PicoShare's file uploads.

@@ -9,7 +9,7 @@ import (
 	_ "github.com/ncruces/go-sqlite3/embed"
 	"github.com/ncruces/go-sqlite3/ext/blobio"
 
-	"github.com/mtlynch/picoshare/v2/picoshare"
+	"github.com/mtlynch/picoshare/picoshare"
 )
 
 const (

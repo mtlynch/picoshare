@@ -3,7 +3,7 @@ package parse
 import (
 	"fmt"
 
-	"github.com/mtlynch/picoshare/v2/picoshare"
+	"github.com/mtlynch/picoshare/picoshare"
 )
 
 // Arbitrary limit to prevent too-long labels in the UI.

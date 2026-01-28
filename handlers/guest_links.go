@@ -9,9 +9,9 @@ import (
 	"strings"
 
 	"github.com/gorilla/mux"
-	"github.com/mtlynch/picoshare/v2/handlers/parse"
-	"github.com/mtlynch/picoshare/v2/picoshare"
-	"github.com/mtlynch/picoshare/v2/random"
+	"github.com/mtlynch/picoshare/handlers/parse"
+	"github.com/mtlynch/picoshare/picoshare"
+	"github.com/mtlynch/picoshare/random"
 )
 
 const (
@@ -137,11 +137,11 @@ func (s Server) guestLinkFromRequest(r *http.Request) (picoshare.GuestLink, erro
 	}
 
 	return picoshare.GuestLink{
-		Label:          label,
-		UrlExpires:     urlExpiration,
-		FileLifetime:   fileExpiration,
-		MaxFileBytes:   maxFileBytes,
-		MaxFileUploads: maxFileUploads,
+		Label:           label,
+		UrlExpires:      urlExpiration,
+		MaxFileLifetime: fileExpiration,
+		MaxFileBytes:    maxFileBytes,
+		MaxFileUploads:  maxFileUploads,
 	}, nil
 }
 
