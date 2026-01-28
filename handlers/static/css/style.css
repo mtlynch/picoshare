@@ -119,3 +119,12 @@ a {
 .navbar .dropdown:hover .dropdown-menu {
   display: block;
 }
+
+.navbar .nav-link,
+.navbar .dropdown-toggle {
+  padding-left: 0.85rem;
+
+  @media screen and (min-width: 768px) {
+    padding-left: unset;
+  }
+}
