@@ -1,0 +1,128 @@
+#!/usr/bin/env bash
+#
+# Quick Performance Test - runs a subset of tests for fast results
+#
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$( cd "$SCRIPT_DIR/.." && pwd)"
+
+# Quick test matrix - just one memory config and smaller files
+FILE_SIZES=("100M" "500M" "1G")
+MEMORY=2048
+
+# Test parameters
+TIMEOUT_SECONDS=600
+PORT=4001
+PS_SHARED_SECRET="perftestpassword"
+
+# Results
+TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+RESULTS_DIR="$SCRIPT_DIR/results/$TIMESTAMP"
+mkdir -p "$RESULTS_DIR"
+
+log() {
+    echo "[$(date '+%H:%M:%S')] $*"
+}
+
+die() {
+    echo "ERROR: $*" >&2
+    exit 1
+}
+
+log "Starting Quick Performance Test"
+log "Memory: ${MEMORY}MB, Files: ${FILE_SIZES[*]}"
+
+# Build PicoShare
+log "Building PicoShare..."
+cd "$PROJECT_ROOT"
+PS_VERSION="perf-test-$(git rev-parse --short HEAD 2>/dev/null || echo 'unknown')" \
+    ./dev-scripts/build-backend >/dev/null 2>&1
+cp "$PROJECT_ROOT/bin/picoshare" "$SCRIPT_DIR/picoshare"
+
+# Generate test files
+log "Generating test files..."
+mkdir -p "$SCRIPT_DIR/test-files"
+for size in "${FILE_SIZES[@]}"; do
+    filepath="$SCRIPT_DIR/test-files/${size}.bin"
+    if [[ ! -f "$filepath" ]]; then
+        num="${size%[GMK]}"
+        unit="${size: -1}"
+        case "$unit" in
+            G) mb=$((num * 1024)) ;;
+            M) mb=$num ;;
+        esac
+        log "Creating $size test file..."
+        dd if=/dev/urandom of="$filepath" bs=1M count="$mb" status=none
+    fi
+done
+
+# Start VM
+log "Starting VM with ${MEMORY}MB RAM..."
+cd "$SCRIPT_DIR"
+vagrant destroy -f 2>/dev/null || true
+VM_MEMORY="$MEMORY" vagrant up
+
+# Start PicoShare
+log "Starting PicoShare..."
+vagrant ssh -c "sudo pkill picoshare || true"
+vagrant ssh -c "rm -rf /tmp/picoshare-data && mkdir -p /tmp/picoshare-data"
+vagrant ssh -c "cd /vagrant && PS_SHARED_SECRET=$PS_SHARED_SECRET nohup ./picoshare -db /tmp/picoshare-data/store.db > /tmp/picoshare.log 2>&1 &"
+
+# Wait for readiness
+log "Waiting for PicoShare..."
+attempts=0
+while [[ $attempts -lt 30 ]]; do
+    if curl -sf "http://localhost:$PORT/" > /dev/null 2>&1; then
+        log "PicoShare is ready!"
+        break
+    fi
+    sleep 1
+    ((attempts++))
+done
+
+if [[ $attempts -eq 30 ]]; then
+    die "PicoShare failed to start"
+fi
+
+# Authenticate
+log "Authenticating..."
+curl -sf -c "$RESULTS_DIR/cookies.txt" -X POST \
+    -H "Content-Type: application/json" \
+    -d "{\"sharedSecretKey\":\"$PS_SHARED_SECRET\"}" \
+    "http://localhost:$PORT/api/auth" > /dev/null
+
+# CSV header
+echo "file_size,memory_limit,duration_seconds,http_status" > "$RESULTS_DIR/results.csv"
+
+# Run tests
+for size in "${FILE_SIZES[@]}"; do
+    log "Testing $size upload..."
+    test_file="$SCRIPT_DIR/test-files/${size}.bin"
+
+    start=$(date +%s.%N)
+    http_status=$(
+        timeout "$TIMEOUT_SECONDS" curl -s -o /dev/null -w "%{http_code}" \
+            -b "$RESULTS_DIR/cookies.txt" \
+            -X POST \
+            -F "file=@${test_file}" \
+            "http://localhost:$PORT/api/entry?expiration=2040-01-01T00:00:00Z" \
+            2>/dev/null
+    ) || http_status="000"
+    end=$(date +%s.%N)
+
+    duration=$(awk "BEGIN {printf \"%.2f\", $end - $start}")
+
+    echo "$size,${MEMORY}M,$duration,$http_status" >> "$RESULTS_DIR/results.csv"
+    log "  Result: $duration seconds, HTTP $http_status"
+done
+
+# Cleanup
+log "Cleaning up..."
+vagrant destroy -f
+
+# Show results
+log "Results:"
+column -t -s, "$RESULTS_DIR/results.csv"
+
+log "Test complete! Results saved to: $RESULTS_DIR/results.csv"

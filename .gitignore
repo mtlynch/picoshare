@@ -24,3 +24,10 @@ node_modules/
 /playwright-report/
 /playwright/.cache/
 e2e/results/
+
+# Performance test artifacts
+perf-test/results/
+perf-test/test-files/*.bin
+perf-test/picoshare
+
+.vagrant
