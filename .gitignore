@@ -29,5 +29,9 @@ e2e/results/
 perf-test/results/
 perf-test/test-files/*.bin
 perf-test/picoshare
+perf-test/*.log
+perf-test/*.csv
 
+# Vagrant
 .vagrant
+.vagrant/

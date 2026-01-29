@@ -12,7 +12,8 @@ Vagrant.configure("2") do |config|
   config.vm.network "forwarded_port", guest: 4001, host: 4001
 
   # Use rsync for synced folder (doesn't require NFS)
-  config.vm.synced_folder ".", "/vagrant", type: "rsync", rsync__exclude: [".git/", "test-files/", ".vagrant/"]
+  # Note: test-files are synced but large, so initial sync may take time
+  config.vm.synced_folder ".", "/vagrant", type: "rsync", rsync__exclude: [".git/", ".vagrant/"]
 
   config.vm.provider "virtualbox" do |vb|
     vb.memory = VM_MEMORY
@@ -28,9 +29,9 @@ Vagrant.configure("2") do |config|
     lv.qemu_use_agent = true
   end
 
-  # Minimal provisioning - just ensure we can run the binary
+  # Minimal provisioning - install required tools
   config.vm.provision "shell", inline: <<-SHELL
     apt-get update -qq
-    apt-get install -y -qq procps curl
+    apt-get install -y -qq procps curl screen
   SHELL
 end

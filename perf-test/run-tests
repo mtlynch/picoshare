@@ -9,8 +9,8 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 TEST_FILES_DIR="$SCRIPT_DIR/test-files"
 RESULTS_BASE_DIR="$SCRIPT_DIR/results"
 
-# Test matrix (largest to smallest)
-FILE_SIZES=("5G" "2G" "1G" "500M" "100M")
+# Test matrix (full - descending RAM, ascending file size)
+FILE_SIZES=("100M" "500M" "1G" "2G" "5G")
 MEMORY_LIMITS=("2048" "1024" "512" "256")
 
 # Test parameters

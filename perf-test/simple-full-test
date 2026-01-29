@@ -1,0 +1,114 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PORT=4001
+PS_SHARED_SECRET="perftestpassword"
+
+# Test matrix
+FILE_SIZES=("100M" "500M" "1G" "2G" "5G")
+MEMORY_LIMITS=("2048" "1024" "512" "256")
+
+TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+RESULTS_FILE="$SCRIPT_DIR/results-$TIMESTAMP.csv"
+
+log() {
+    echo "[$(date '+%H:%M:%S')] $*"
+}
+
+# Initialize results
+echo "memory_mb,file_size,duration_seconds,throughput_mbps,http_status" > "$RESULTS_FILE"
+
+log "=== PERFORMANCE TEST MATRIX ==="
+log "Tests: ${#MEMORY_LIMITS[@]} memory configs × ${#FILE_SIZES[@]} file sizes = $((${#MEMORY_LIMITS[@]} * ${#FILE_SIZES[@]})) tests"
+log ""
+
+test_count=0
+total_tests=$((${#MEMORY_LIMITS[@]} * ${#FILE_SIZES[@]}))
+
+for memory in "${MEMORY_LIMITS[@]}"; do
+    log "================================================"
+    log "Testing with ${memory}MB RAM"
+    log "================================================"
+
+    # Restart VM with new memory
+    cd "$SCRIPT_DIR"
+    vagrant destroy -f 2>/dev/null || true
+    VM_MEMORY="$memory" vagrant up > /tmp/vagrant-up.log 2>&1
+
+    # Start PicoShare
+    vagrant ssh -c "sudo pkill picoshare || true" >/dev/null 2>&1
+    vagrant ssh -c "rm -rf /tmp/picoshare-data && mkdir -p /tmp/picoshare-data" >/dev/null 2>&1
+    vagrant ssh -c "cd /vagrant && nohup env PS_SHARED_SECRET=$PS_SHARED_SECRET ./picoshare -db /tmp/picoshare-data/store.db > /tmp/picoshare.log 2>&1 < /dev/null &" >/dev/null 2>&1
+    sleep 2
+
+    # Wait for readiness
+    attempts=0
+    while [[ $attempts -lt 30 ]]; do
+        if curl -sf "http://localhost:$PORT/" > /dev/null 2>&1; then
+            break
+        fi
+        sleep 1
+        ((attempts++))
+    done
+
+    if [[ $attempts -eq 30 ]]; then
+        log "ERROR: PicoShare failed to start"
+        continue
+    fi
+
+    # Authenticate
+    curl -sf -c /tmp/cookies.txt -X POST \
+        -H "Content-Type: application/json" \
+        -d "{\"sharedSecretKey\":\"$PS_SHARED_SECRET\"}" \
+        "http://localhost:$PORT/api/auth" > /dev/null 2>&1
+
+    # Run tests for each file size
+    for size in "${FILE_SIZES[@]}"; do
+        ((test_count++))
+        log ""
+        log "Test $test_count/$total_tests: ${size} upload"
+
+        start=$(date +%s.%N)
+        http_status=$(timeout 600 curl -s -o /dev/null -w "%{http_code}" \
+            -b /tmp/cookies.txt \
+            -X POST \
+            -F "file=@./test-files/${size}.bin" \
+            "http://localhost:$PORT/api/entry?expiration=2040-01-01T00:00:00Z" 2>&1) || http_status="timeout"
+        end=$(date +%s.%N)
+
+        duration=$(awk "BEGIN {printf \"%.2f\", $end - $start}")
+
+        # Calculate throughput
+        size_mb=$(echo "$size" | sed 's/M$//' | sed 's/G$/000/' | bc)
+        throughput=$(awk "BEGIN {printf \"%.2f\", $size_mb / $duration}")
+
+        # Save result
+        echo "$memory,$size,$duration,$throughput,$http_status" >> "$RESULTS_FILE"
+
+        if [[ "$http_status" == "200" ]]; then
+            log "  ✅ PASS: ${duration}s (${throughput} MB/s)"
+        else
+            log "  ❌ FAIL: HTTP $http_status"
+        fi
+
+        # Clean up entry to avoid disk fill
+        curl -s -b /tmp/cookies.txt "http://localhost:$PORT/api/entry" 2>/dev/null | \
+            grep -o '"id":"[^"]*"' | cut -d'"' -f4 | while read id; do
+                curl -s -b /tmp/cookies.txt -X DELETE "http://localhost:$PORT/api/entry/$id" >/dev/null 2>&1 || true
+            done
+    done
+done
+
+# Cleanup
+log ""
+log "================================================"
+log "All tests complete!"
+log "Results saved to: $RESULTS_FILE"
+log "================================================"
+log ""
+
+# Display results table
+column -t -s, "$RESULTS_FILE"
+
+vagrant destroy -f >/dev/null 2>&1 || true

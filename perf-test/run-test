@@ -1,0 +1,346 @@
+#!/usr/bin/env bash
+#
+# Run a single PicoShare performance test
+#
+# Usage: ./run-test --ram 2048 --file-size 100M
+#
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+# Defaults
+RAM_MB=""
+FILE_SIZE=""
+TIMEOUT_SECONDS=600
+PORT=4001
+PS_SHARED_SECRET="perftestpassword"
+RESULTS_DIR="$SCRIPT_DIR/results"
+KEEP_VM=false
+
+usage() {
+    cat <<EOF
+Usage: $0 --ram <MB> --file-size <SIZE>
+
+Required:
+  --ram MB          RAM limit in MB (e.g., 2048, 1024, 512, 256)
+  --file-size SIZE  File size to test (e.g., 100M, 500M, 1G, 2G, 5G)
+
+Optional:
+  --timeout SEC     Upload timeout in seconds (default: 600)
+  --keep-vm         Don't destroy VM after test
+  --results-dir DIR Directory for results (default: ./results)
+  --help            Show this help
+
+Example:
+  $0 --ram 2048 --file-size 100M
+  $0 --ram 512 --file-size 5G --timeout 1200
+EOF
+    exit 1
+}
+
+log() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" >&2
+}
+
+die() {
+    log "ERROR: $*"
+    exit 1
+}
+
+# Parse arguments
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --ram)
+            RAM_MB="$2"
+            shift 2
+            ;;
+        --file-size)
+            FILE_SIZE="$2"
+            shift 2
+            ;;
+        --timeout)
+            TIMEOUT_SECONDS="$2"
+            shift 2
+            ;;
+        --keep-vm)
+            KEEP_VM=true
+            shift
+            ;;
+        --results-dir)
+            RESULTS_DIR="$2"
+            shift 2
+            ;;
+        --help)
+            usage
+            ;;
+        *)
+            log "Unknown option: $1"
+            usage
+            ;;
+    esac
+done
+
+# Validate required arguments
+[[ -z "$RAM_MB" ]] && die "Missing required argument: --ram"
+[[ -z "$FILE_SIZE" ]] && die "Missing required argument: --file-size"
+
+# Validate RAM is a number
+[[ "$RAM_MB" =~ ^[0-9]+$ ]] || die "RAM must be a number: $RAM_MB"
+
+# Validate file size format
+[[ "$FILE_SIZE" =~ ^[0-9]+[MGK]$ ]] || die "Invalid file size format: $FILE_SIZE (expected: 100M, 1G, etc.)"
+
+TEST_FILE="$SCRIPT_DIR/test-files/${FILE_SIZE}.bin"
+[[ -f "$TEST_FILE" ]] || die "Test file not found: $TEST_FILE"
+
+mkdir -p "$RESULTS_DIR"
+TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+RESULT_FILE="$RESULTS_DIR/result-${RAM_MB}MB-${FILE_SIZE}-${TIMESTAMP}.json"
+
+log "=== PicoShare Performance Test ==="
+log "RAM: ${RAM_MB}MB"
+log "File: $FILE_SIZE"
+log "Timeout: ${TIMEOUT_SECONDS}s"
+log ""
+
+# Cleanup function
+cleanup() {
+    local exit_code=$?
+    log "Cleaning up..."
+
+    if [[ "$KEEP_VM" == "false" ]]; then
+        log "Destroying VM..."
+        cd "$SCRIPT_DIR"
+        vagrant destroy -f >/dev/null 2>&1 || true
+    fi
+
+    # Kill any background processes
+    jobs -p | xargs -r kill 2>/dev/null || true
+
+    exit $exit_code
+}
+
+trap cleanup EXIT INT TERM
+
+# Ensure PicoShare binary exists
+PICOSHARE_BIN="$SCRIPT_DIR/picoshare"
+if [[ ! -f "$PICOSHARE_BIN" ]]; then
+    log "Building PicoShare..."
+    cd "$PROJECT_ROOT"
+
+    # Use build script if available
+    if [[ -f "dev-scripts/build-backend" ]]; then
+        ./dev-scripts/build-backend --output "$PICOSHARE_BIN"
+    else
+        # Fallback to direct go build
+        go build -o "$PICOSHARE_BIN" cmd/picoshare/main.go
+    fi
+fi
+
+# Start VM
+log "Starting VM with ${RAM_MB}MB RAM..."
+cd "$SCRIPT_DIR"
+
+# Wait for any existing vagrant locks to clear
+log "Checking for vagrant locks..."
+attempts=0
+while [[ $attempts -lt 10 ]]; do
+    if vagrant status >/dev/null 2>&1; then
+        break
+    fi
+    log "Vagrant is locked, waiting... (attempt $((attempts + 1))/10)"
+    sleep 2
+    attempts=$((attempts + 1))
+done
+
+if [[ $attempts -eq 10 ]]; then
+    log "WARNING: Vagrant appears locked after 20 seconds, attempting to clear locks"
+    rm -rf .vagrant/machines/default/*/action_* 2>/dev/null || true
+fi
+
+# Check if VM is already running
+if vagrant status 2>/dev/null | grep -q "running"; then
+    log "VM already running, checking memory configuration..."
+    # For simplicity, destroy and recreate to ensure correct memory
+    vagrant destroy -f >/dev/null 2>&1 || true
+    sleep 2
+fi
+
+export VM_MEMORY="$RAM_MB"
+log "Starting vagrant up (this may take 3-4 minutes)..."
+vagrant up > /tmp/vagrant-up-$$.log 2>&1 || {
+    log "VM failed to start. Log:"
+    tail -50 /tmp/vagrant-up-$$.log >&2
+    die "vagrant up failed"
+}
+
+log "VM started successfully"
+
+# Start PicoShare using screen (avoids SSH backgrounding issues)
+log "Starting PicoShare in VM..."
+
+vagrant ssh -c "sudo pkill picoshare || true" >/dev/null 2>&1
+vagrant ssh -c "rm -rf /tmp/picoshare-data && mkdir -p /tmp/picoshare-data" >/dev/null 2>&1
+
+# Use screen to properly daemonize PicoShare
+vagrant ssh -c "screen -dmS picoshare bash -c 'cd /vagrant && PS_SHARED_SECRET=$PS_SHARED_SECRET ./picoshare -db /tmp/picoshare-data/store.db > /tmp/picoshare.log 2>&1'" >/dev/null 2>&1
+
+# Wait for PicoShare to be ready
+log "Waiting for PicoShare to be ready..."
+attempts=0
+max_attempts=30
+ready=false
+
+log "DEBUG: Starting readiness loop, max_attempts=$max_attempts"
+while [[ $attempts -lt $max_attempts ]]; do
+    log "DEBUG: Readiness check attempt $((attempts + 1))/$max_attempts"
+
+    if curl -sf "http://localhost:$PORT/" > /dev/null 2>&1; then
+        log "PicoShare is ready (attempt $((attempts + 1)))"
+        ready=true
+        break
+    fi
+
+    log "DEBUG: Not ready yet, sleeping..."
+    sleep 1
+    attempts=$((attempts + 1))
+done
+
+log "DEBUG: Exited readiness loop, ready=$ready, attempts=$attempts"
+
+if [[ "$ready" == "false" ]]; then
+    log "ERROR: PicoShare failed to become ready after ${max_attempts}s"
+    log "Checking if PicoShare process is running..."
+    if vagrant ssh -c "pgrep -f picoshare" >/dev/null 2>&1; then
+        log "PicoShare process is running but not responding to HTTP"
+    else
+        log "PicoShare process is not running"
+    fi
+    log "PicoShare logs:"
+    vagrant ssh -c "cat /tmp/picoshare.log" 2>/dev/null || log "Could not read logs"
+    log "Screen sessions:"
+    vagrant ssh -c "screen -ls" 2>/dev/null || log "Could not list screen sessions"
+    die "PicoShare failed to start"
+fi
+
+# Verify PicoShare is actually running in VM
+log "Verifying PicoShare process..."
+if ! vagrant ssh -c "pgrep -f picoshare" >/dev/null 2>&1; then
+    die "PicoShare process not found in VM"
+fi
+log "PicoShare process verified"
+
+# Authenticate
+log "Authenticating..."
+COOKIE_FILE="/tmp/picoshare-cookie-$$.txt"
+if ! curl -sf -c "$COOKIE_FILE" -X POST \
+    -H "Content-Type: application/json" \
+    -d "{\"sharedSecretKey\":\"$PS_SHARED_SECRET\"}" \
+    "http://localhost:$PORT/api/auth" > /dev/null 2>&1; then
+    die "Authentication failed"
+fi
+
+# Get initial memory usage
+initial_memory=$(vagrant ssh -c "awk '/MemTotal/{total=\$2} /MemAvailable/{available=\$2} END{print (total-available)*1024}' /proc/meminfo" 2>/dev/null | tr -d '\r' || echo "0")
+
+# Run upload test
+log "Uploading ${FILE_SIZE} file..."
+start_time=$(date +%s.%N)
+
+# Monitor memory in background
+peak_memory=$initial_memory
+monitor_file=$(mktemp)
+(
+    while true; do
+        mem=$(vagrant ssh -c "awk '/MemTotal/{total=\$2} /MemAvailable/{available=\$2} END{print (total-available)*1024}' /proc/meminfo" 2>/dev/null | tr -d '\r' || echo "0")
+        echo "$mem" >> "$monitor_file"
+        sleep 0.5
+    done
+) &
+monitor_pid=$!
+
+# Perform upload
+http_status=$(timeout "$TIMEOUT_SECONDS" curl -s -o /dev/null -w "%{http_code}" \
+    -b "$COOKIE_FILE" \
+    -X POST \
+    -F "file=@${TEST_FILE}" \
+    "http://localhost:$PORT/api/entry?expiration=2040-01-01T00:00:00Z" 2>&1) || http_status="timeout"
+
+end_time=$(date +%s.%N)
+
+# Stop memory monitor
+kill $monitor_pid 2>/dev/null || true
+wait $monitor_pid 2>/dev/null || true
+
+# Calculate peak memory
+if [[ -f "$monitor_file" ]]; then
+    peak_memory=$(sort -n "$monitor_file" | tail -1)
+    rm -f "$monitor_file"
+fi
+
+duration=$(awk "BEGIN {printf \"%.2f\", $end_time - $start_time}")
+
+# Check if PicoShare is still alive
+exit_reason="success"
+if ! vagrant ssh -c "pgrep -f picoshare" >/dev/null 2>&1; then
+    exit_reason="process_died"
+    log "WARNING: PicoShare process died during upload"
+
+    # Check for OOM
+    if vagrant ssh -c "dmesg | grep -i 'out of memory'" >/dev/null 2>&1; then
+        exit_reason="oom_killed"
+        log "PicoShare was OOM killed"
+    fi
+elif [[ "$http_status" == "timeout" ]]; then
+    exit_reason="timeout"
+elif [[ "$http_status" != "200" ]]; then
+    exit_reason="http_error"
+fi
+
+# Calculate throughput (MB/s)
+size_mb=$(echo "$FILE_SIZE" | sed 's/M$//' | sed 's/G$/000/' | bc)
+throughput=$(awk "BEGIN {printf \"%.2f\", $size_mb / $duration}")
+
+peak_memory_mb=$(awk "BEGIN {printf \"%.0f\", $peak_memory/1024/1024}")
+
+# Generate result JSON
+cat > "$RESULT_FILE" <<EOF
+{
+  "timestamp": "$(date -Iseconds)",
+  "ram_mb": $RAM_MB,
+  "file_size": "$FILE_SIZE",
+  "file_size_mb": $size_mb,
+  "duration_seconds": $duration,
+  "throughput_mbps": $throughput,
+  "initial_memory_bytes": $initial_memory,
+  "peak_memory_bytes": $peak_memory,
+  "peak_memory_mb": $peak_memory_mb,
+  "http_status": "$http_status",
+  "exit_reason": "$exit_reason",
+  "success": $([ "$exit_reason" = "success" ] && echo "true" || echo "false")
+}
+EOF
+
+# Display result
+log ""
+if [[ "$exit_reason" == "success" ]]; then
+    log "✅ TEST PASSED"
+    log "   Duration: ${duration}s"
+    log "   Throughput: ${throughput} MB/s"
+    log "   Peak Memory: ${peak_memory_mb}MB / ${RAM_MB}MB"
+    log "   HTTP Status: $http_status"
+else
+    log "❌ TEST FAILED"
+    log "   Exit Reason: $exit_reason"
+    log "   Duration: ${duration}s"
+    log "   HTTP Status: $http_status"
+    log "   Peak Memory: ${peak_memory_mb}MB / ${RAM_MB}MB"
+fi
+log ""
+log "Results saved to: $RESULT_FILE"
+
+# Output result file path to stdout for parsing by orchestrator
+echo "$RESULT_FILE"
+
+exit $([ "$exit_reason" = "success" ] && echo 0 || echo 1)

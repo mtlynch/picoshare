@@ -1,0 +1,131 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+PORT=4001
+PS_SHARED_SECRET="perftestpassword"
+
+log() {
+    echo "[$(date '+%H:%M:%S')] $*"
+}
+
+die() {
+    echo "ERROR: $*" >&2
+    exit 1
+}
+
+log "=== DEBUG TEST: 100MB upload with 2GB RAM ==="
+
+# Build PicoShare
+log "Building PicoShare..."
+cd "$PROJECT_ROOT"
+PS_VERSION="perf-test-$(git rev-parse --short HEAD 2>/dev/null || echo 'unknown')" \
+    ./dev-scripts/build-backend
+cp "$PROJECT_ROOT/bin/picoshare" "$SCRIPT_DIR/picoshare"
+
+# Ensure test file exists
+if [[ ! -f "$SCRIPT_DIR/test-files/100M.bin" ]]; then
+    log "Creating 100M test file..."
+    mkdir -p "$SCRIPT_DIR/test-files"
+    dd if=/dev/urandom of="$SCRIPT_DIR/test-files/100M.bin" bs=1M count=100 status=progress
+fi
+
+# Start VM
+log "Starting VM..."
+cd "$SCRIPT_DIR"
+vagrant destroy -f 2>/dev/null || true
+VM_MEMORY="2048" vagrant up
+
+# Start PicoShare
+log "Starting PicoShare in VM..."
+vagrant ssh -c "sudo pkill picoshare || true"
+vagrant ssh -c "rm -rf /tmp/picoshare-data && mkdir -p /tmp/picoshare-data"
+
+# Start PicoShare in foreground mode to see output
+log "Starting PicoShare server..."
+vagrant ssh -c "cd /vagrant && PS_SHARED_SECRET=$PS_SHARED_SECRET ./picoshare -db /tmp/picoshare-data/store.db > /tmp/picoshare.log 2>&1 &"
+
+# Wait for it to be ready
+log "Waiting for PicoShare to be ready..."
+attempts=0
+while [[ $attempts -lt 30 ]]; do
+    if curl -sf "http://localhost:$PORT/" > /dev/null 2>&1; then
+        log "✓ PicoShare is ready!"
+        break
+    fi
+    sleep 1
+    ((attempts++))
+done
+
+if [[ $attempts -eq 30 ]]; then
+    log "PicoShare failed to start. Checking logs..."
+    vagrant ssh -c "cat /tmp/picoshare.log" || true
+    die "PicoShare failed to start"
+fi
+
+# Check PicoShare logs
+log "PicoShare logs:"
+vagrant ssh -c "tail -10 /tmp/picoshare.log"
+
+# Test authentication
+log ""
+log "Step 1: Testing authentication..."
+auth_response=$(curl -s -c /tmp/cookies.txt -X POST \
+    -H "Content-Type: application/json" \
+    -d "{\"sharedSecretKey\":\"$PS_SHARED_SECRET\"}" \
+    -w "\nHTTP_CODE:%{http_code}" \
+    "http://localhost:$PORT/api/auth")
+
+http_code=$(echo "$auth_response" | grep "HTTP_CODE:" | cut -d: -f2)
+log "Auth HTTP code: $http_code"
+
+if [[ "$http_code" != "200" ]]; then
+    log "Auth response: $auth_response"
+    die "Authentication failed with HTTP $http_code"
+fi
+log "✓ Authentication successful"
+
+# Check cookie file
+log ""
+log "Cookie file contents:"
+cat /tmp/cookies.txt
+
+# Test a simple GET request with auth
+log ""
+log "Step 2: Testing authenticated GET /api/entry..."
+entries=$(curl -s -b /tmp/cookies.txt "http://localhost:$PORT/api/entry")
+log "Entries response: $entries"
+
+# Check file accessibility in VM
+log ""
+log "Step 3: Checking file in VM..."
+vagrant ssh -c "ls -lh /vagrant/test-files/100M.bin"
+vagrant ssh -c "file /vagrant/test-files/100M.bin"
+
+# Try upload with verbose curl
+log ""
+log "Step 4: Attempting file upload (verbose)..."
+log "File path: $SCRIPT_DIR/test-files/100M.bin"
+ls -lh "$SCRIPT_DIR/test-files/100M.bin"
+
+# First, copy file to VM explicitly to avoid rsync issues
+log "Copying test file to VM..."
+vagrant ssh -c "cp /vagrant/test-files/100M.bin /tmp/test-100M.bin"
+vagrant ssh -c "ls -lh /tmp/test-100M.bin"
+
+# Upload from within the VM using vagrant ssh
+log ""
+log "Step 5: Uploading from within VM..."
+vagrant ssh <<'EOF'
+set -x
+cd /tmp
+curl -v -b <(echo "sharedSecret=test") -X POST \
+    -F "file=@/tmp/test-100M.bin" \
+    "http://localhost:4001/api/entry?expiration=2040-01-01T00:00:00Z" 2>&1 | head -100
+EOF
+
+log ""
+log "Test complete. Checking PicoShare logs..."
+vagrant ssh -c "tail -50 /tmp/picoshare.log"
