@@ -66,11 +66,11 @@ for memory in "${MEMORY_LIMITS[@]}"; do
 
         # Run test and capture output
         if sudo "$SCRIPT_DIR/run-test" "$memory" "$size" 2>&1 | tee "$RUN_DIR/test-${memory}MB-${size}.log"; then
-            result_file=$(tail -1 "$RUN_DIR/test-${memory}MB-${size}.log")
+            result_file=$(grep '^/.*\.json$' "$RUN_DIR/test-${memory}MB-${size}.log" | tail -1)
             ((passed_tests++))
             test_status="PASS"
         else
-            result_file=$(tail -1 "$RUN_DIR/test-${memory}MB-${size}.log")
+            result_file=$(grep '^/.*\.json$' "$RUN_DIR/test-${memory}MB-${size}.log" | tail -1)
             ((failed_tests++))
             test_status="FAIL"
         fi
