@@ -192,22 +192,15 @@ attempts=0
 max_attempts=30
 ready=false
 
-log "DEBUG: Starting readiness loop, max_attempts=$max_attempts"
 while [[ $attempts -lt $max_attempts ]]; do
-    log "DEBUG: Readiness check attempt $((attempts + 1))/$max_attempts"
-
     if curl -sf "http://localhost:$PORT/" > /dev/null 2>&1; then
         log "PicoShare is ready (attempt $((attempts + 1)))"
         ready=true
         break
     fi
-
-    log "DEBUG: Not ready yet, sleeping..."
     sleep 1
     attempts=$((attempts + 1))
 done
-
-log "DEBUG: Exited readiness loop, ready=$ready, attempts=$attempts"
 
 if [[ "$ready" == "false" ]]; then
     log "ERROR: PicoShare failed to become ready after ${max_attempts}s"
