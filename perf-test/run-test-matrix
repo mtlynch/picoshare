@@ -28,18 +28,18 @@ build_binary() {
     # Check if we're using ncruces2 driver (pure Go, no CGO)
     if grep -q 'github.com/ncruces/go-sqlite3' go.mod 2>/dev/null; then
         log "Detected ncruces2 driver - building with CGO_ENABLED=0"
-        CGO_ENABLED=0 /usr/local/go/bin/go build -o "$PROJECT_ROOT/picoshare" ./cmd/picoshare
+        CGO_ENABLED=0 /usr/local/go/bin/go build -o picoshare-bin ./cmd/picoshare
     else
         log "Building with standard Go (CGO enabled for mattn driver)"
-        /usr/local/go/bin/go build -o "$PROJECT_ROOT/picoshare" ./cmd/picoshare
+        /usr/local/go/bin/go build -o picoshare-bin ./cmd/picoshare
     fi
 
-    if [[ ! -f "$PROJECT_ROOT/picoshare" ]]; then
-        log "ERROR: Build failed - picoshare binary not found"
+    if [[ ! -f "$PROJECT_ROOT/picoshare-bin" ]]; then
+        log "ERROR: Build failed - picoshare-bin binary not found"
         exit 1
     fi
 
-    log "✓ Build complete: $(ls -lh "$PROJECT_ROOT/picoshare" | awk '{print $5}')"
+    log "✓ Build complete: $(ls -lh "$PROJECT_ROOT/picoshare-bin" | awk '{print $5}')"
     log ""
 }
 
@@ -61,7 +61,7 @@ update_vm_image() {
     sudo mount -o loop "$rootfs" "$mount_point"
 
     log "Copying binary to /usr/local/bin/picoshare..."
-    sudo cp "$PROJECT_ROOT/picoshare" "$mount_point/usr/local/bin/picoshare"
+    sudo cp "$PROJECT_ROOT/picoshare-bin" "$mount_point/usr/local/bin/picoshare"
 
     log "Unmounting..."
     sudo umount "$mount_point"
