@@ -1,11 +1,8 @@
 #!/usr/bin/env bash
 #
-# Run the full PicoShare performance test matrix
+# Run the full PicoShare performance test matrix with Firecracker
 #
-# This script orchestrates multiple run-test invocations for
-# different combinations of RAM and file sizes.
-#
-set -euo pipefail
+set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -13,102 +10,30 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 FILE_SIZES=("100M" "500M" "1G" "2G" "5G")
 MEMORY_LIMITS=("2048" "1024" "512" "256")
 
-# Options
-TIMEOUT_SECONDS=600
 RESULTS_BASE_DIR="$SCRIPT_DIR/results"
-PARALLEL=false
-STOP_ON_FAILURE=false
-
-usage() {
-    cat <<EOF
-Usage: $0 [OPTIONS]
-
-Run the full PicoShare performance test matrix.
-
-Test Matrix:
-  RAM:   2048MB, 1024MB, 512MB, 256MB (descending)
-  Files: 100M, 500M, 1G, 2G, 5G (ascending)
-  Total: ${#MEMORY_LIMITS[@]} × ${#FILE_SIZES[@]} = $((${#MEMORY_LIMITS[@]} * ${#FILE_SIZES[@]})) tests
-
-Options:
-  --timeout SEC         Timeout per test in seconds (default: 600)
-  --results-dir DIR     Base directory for results (default: ./results)
-  --parallel            Run tests in parallel (experimental, requires multiple VMs)
-  --stop-on-failure     Stop entire matrix on first failure
-  --memory-limits LIST  Override memory limits (comma-separated, e.g., "2048,1024")
-  --file-sizes LIST     Override file sizes (comma-separated, e.g., "100M,500M,1G")
-  --help                Show this help
-
-Examples:
-  $0
-  $0 --stop-on-failure
-  $0 --memory-limits "2048,1024" --file-sizes "100M,500M"
-  $0 --timeout 1200
-EOF
-    exit 1
-}
 
 log() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"
 }
 
-# Parse arguments
-while [[ $# -gt 0 ]]; do
-    case $1 in
-        --timeout)
-            TIMEOUT_SECONDS="$2"
-            shift 2
-            ;;
-        --results-dir)
-            RESULTS_BASE_DIR="$2"
-            shift 2
-            ;;
-        --parallel)
-            PARALLEL=true
-            shift
-            ;;
-        --stop-on-failure)
-            STOP_ON_FAILURE=true
-            shift
-            ;;
-        --memory-limits)
-            IFS=',' read -ra MEMORY_LIMITS <<< "$2"
-            shift 2
-            ;;
-        --file-sizes)
-            IFS=',' read -ra FILE_SIZES <<< "$2"
-            shift 2
-            ;;
-        --help)
-            usage
-            ;;
-        *)
-            log "Unknown option: $1"
-            usage
-            ;;
-    esac
-done
-
 # Create results directory
 TIMESTAMP=$(date +%Y%m%d-%H%M%S)
-RUN_DIR="$RESULTS_BASE_DIR/matrix-$TIMESTAMP"
+RUN_DIR="$RESULTS_BASE_DIR/matrix-fc-$TIMESTAMP"
 mkdir -p "$RUN_DIR"
 
 SUMMARY_FILE="$RUN_DIR/summary.txt"
 CSV_FILE="$RUN_DIR/matrix-results.csv"
 
 # Initialize CSV
-echo "ram_mb,file_size,duration_seconds,throughput_mbps,peak_memory_mb,http_status,exit_reason,success,result_file" > "$CSV_FILE"
+echo "ram_mb,file_size,boot_time_seconds,duration_seconds,throughput_mbps,http_status,exit_reason,success" > "$CSV_FILE"
 
 log "==================================================="
-log "PicoShare Performance Test Matrix"
+log "PicoShare Firecracker Performance Test Matrix"
 log "==================================================="
 log "Memory configs: ${MEMORY_LIMITS[*]}"
 log "File sizes: ${FILE_SIZES[*]}"
 log "Total tests: $((${#MEMORY_LIMITS[@]} * ${#FILE_SIZES[@]}))"
 log "Results directory: $RUN_DIR"
-log "Parallel mode: $PARALLEL"
-log "Stop on failure: $STOP_ON_FAILURE"
 log ""
 
 # Statistics
@@ -117,6 +42,10 @@ current_test=0
 passed_tests=0
 failed_tests=0
 start_time=$(date +%s)
+
+# Clean up any stale routes before starting
+log "Cleaning up stale network routes..."
+sudo ip route del 172.16.0.0/24 2>/dev/null || true
 
 # Run tests
 for memory in "${MEMORY_LIMITS[@]}"; do
@@ -129,27 +58,21 @@ for memory in "${MEMORY_LIMITS[@]}"; do
         ((current_test++))
         log "[$current_test/$total_tests] Running: ${memory}MB RAM, ${size} file"
 
+        # Clean up route before each test
+        sudo ip route del 172.16.0.0/24 2>/dev/null || true
+
         # Run single test
         test_start=$(date +%s)
 
-        if result_file=$("$SCRIPT_DIR/run-test" \
-            --ram "$memory" \
-            --file-size "$size" \
-            --timeout "$TIMEOUT_SECONDS" \
-            --results-dir "$RUN_DIR" \
-            2>&1 | tee "$RUN_DIR/test-${memory}MB-${size}.log" | tail -1); then
-
+        # Run test and capture output
+        if sudo "$SCRIPT_DIR/run-test" "$memory" "$size" 2>&1 | tee "$RUN_DIR/test-${memory}MB-${size}.log"; then
+            result_file=$(tail -1 "$RUN_DIR/test-${memory}MB-${size}.log")
             ((passed_tests++))
             test_status="PASS"
         else
+            result_file=$(tail -1 "$RUN_DIR/test-${memory}MB-${size}.log")
             ((failed_tests++))
             test_status="FAIL"
-
-            if [[ "$STOP_ON_FAILURE" == "true" ]]; then
-                log ""
-                log "❌ Test failed and --stop-on-failure is set. Aborting matrix."
-                break 2
-            fi
         fi
 
         test_end=$(date +%s)
@@ -157,29 +80,11 @@ for memory in "${MEMORY_LIMITS[@]}"; do
 
         # Extract result data and append to CSV
         if [[ -f "$result_file" ]] && command -v jq >/dev/null 2>&1; then
-            jq -r '[
-                .ram_mb,
-                .file_size,
-                .duration_seconds,
-                .throughput_mbps,
-                .peak_memory_mb,
-                .http_status,
-                .exit_reason,
-                .success,
-                input_filename
-            ] | @csv' "$result_file" | sed 's/"//g' | \
-            sed "s|$||" | \
-            awk -v f="$result_file" '{print $0","f}' >> "$CSV_FILE"
+            jq -r '[.ram_mb, .file_size, .boot_time_seconds, .duration_seconds, .throughput_mbps, .http_status, .exit_reason, .success] | @csv' "$result_file" >> "$CSV_FILE"
         fi
 
-        # Display summary for this test
         log "[$current_test/$total_tests] $test_status (took ${test_duration}s)"
         log ""
-
-        # Destroy VM between tests to ensure clean state
-        # (run-test cleanup should handle this, but be explicit)
-        cd "$SCRIPT_DIR"
-        vagrant destroy -f >/dev/null 2>&1 || true
 
         # Brief pause between tests
         sleep 2
@@ -192,7 +97,7 @@ total_duration=$((end_time - start_time))
 # Generate summary
 {
     echo "==================================================="
-    echo "PicoShare Performance Test Matrix Summary"
+    echo "PicoShare Firecracker Performance Test Matrix Summary"
     echo "==================================================="
     echo ""
     echo "Timestamp: $(date -Iseconds)"
@@ -206,11 +111,7 @@ total_duration=$((end_time - start_time))
     if [[ -f "$CSV_FILE" ]] && command -v column >/dev/null 2>&1; then
         echo "Results:"
         echo ""
-        column -t -s',' "$CSV_FILE" | head -20
-        if [[ $(wc -l < "$CSV_FILE") -gt 20 ]]; then
-            echo "..."
-            echo "(Full results in $CSV_FILE)"
-        fi
+        column -t -s',' "$CSV_FILE"
     fi
 } | tee "$SUMMARY_FILE"
 
@@ -222,9 +123,6 @@ log "  Failed: $failed_tests"
 log "  Total:  $current_test"
 log ""
 log "Results saved to: $RUN_DIR"
-log "Summary: $SUMMARY_FILE"
-log "CSV: $CSV_FILE"
 log "==================================================="
 
-# Exit with error if any tests failed
 exit $( [[ $failed_tests -eq 0 ]] && echo 0 || echo 1 )

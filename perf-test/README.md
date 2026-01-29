@@ -1,337 +1,237 @@
 # PicoShare Performance Testing
 
-This directory contains tools for performance testing PicoShare with varying memory constraints and file sizes.
+This directory contains scripts for running performance tests on PicoShare using Firecracker microVMs.
 
 ## Quick Start
 
-### Run a Single Test
+### 1. Initial Setup
+
+Run the setup script to download and configure all necessary components:
 
 ```bash
-./run-test --ram 2048 --file-size 100M
+./setup-test-environment
 ```
 
-### Run the Full Test Matrix
+This will:
+- Download Firecracker v1.7.0
+- Download Linux kernel (vmlinux.bin)
+- Download Ubuntu 22.04 base image
+- Create an 8GB VM image with PicoShare installed
+- Generate test files (100M, 500M, 1G, 2G, 5G)
 
+**Note**: Setup requires sudo access for:
+- Installing Firecracker to `/usr/local/bin`
+- Adding your user to the `kvm` group
+- Mounting/modifying the VM filesystem
+
+### 2. Run Tests
+
+Single test:
+```bash
+sudo ./run-test 2048 100M
+```
+
+Full test matrix:
 ```bash
 ./run-test-matrix
 ```
 
-This runs 20 tests (4 memory configs × 5 file sizes):
+## Test Configuration
 
-- **Memory**: 2048MB, 1024MB, 512MB, 256MB (descending)
-- **File sizes**: 100M, 500M, 1G, 2G, 5G (ascending)
+### Test Matrix
 
-## Test Scripts
+By default, tests run with the following configurations:
 
-### `run-test`
+- **RAM limits**: 2048MB, 1024MB, 512MB, 256MB
+- **File sizes**: 100M, 500M, 1G, 2G, 5G
+- **Total tests**: 20 (4 RAM × 5 file sizes)
 
-Runs a single performance test with specified RAM and file size.
-
-**Usage:**
-
-```bash
-./run-test --ram <MB> --file-size <SIZE> [OPTIONS]
-
-Required:
-  --ram MB          RAM limit in MB (e.g., 2048, 1024, 512, 256)
-  --file-size SIZE  File size to test (e.g., 100M, 500M, 1G, 2G, 5G)
-
-Optional:
-  --timeout SEC     Upload timeout in seconds (default: 600)
-  --keep-vm         Don't destroy VM after test
-  --results-dir DIR Directory for results (default: ./results)
-```
-
-**Output:**
-
-- Test results logged to stderr
-- Result file path printed to stdout (JSON format)
-- Exit code 0 on success, non-zero on failure
-
-**Example:**
+### Test Parameters
 
 ```bash
-$ ./run-test --ram 512 --file-size 1G
-[2026-01-29 12:00:00] === PicoShare Performance Test ===
-[2026-01-29 12:00:00] RAM: 512MB
-[2026-01-29 12:00:00] File: 1G
-...
-[2026-01-29 12:05:30] ✅ TEST PASSED
-[2026-01-29 12:05:30]    Duration: 320.45s
-[2026-01-29 12:05:30]    Throughput: 3.12 MB/s
-[2026-01-29 12:05:30]    Peak Memory: 487MB / 512MB
-[2026-01-29 12:05:30]    HTTP Status: 200
-./results/result-512MB-1G-20260129-120000.json
+./run-test <RAM_MB> <FILE_SIZE>
 ```
 
-### `run-test-matrix`
+Examples:
+```bash
+sudo ./run-test 2048 100M   # 2GB RAM, 100MB file
+sudo ./run-test 1024 500M   # 1GB RAM, 500MB file
+sudo ./run-test 512 1G      # 512MB RAM, 1GB file
+```
 
-Orchestrates multiple `run-test` invocations for the full test matrix.
+## Results
 
-**Usage:**
+Test results are saved to `results/` in JSON format:
 
 ```bash
-./run-test-matrix [OPTIONS]
+# View latest result
+cat results/result-fc-*.json | jq .
 
-Options:
-  --timeout SEC         Timeout per test (default: 600)
-  --stop-on-failure     Stop entire matrix on first failure
-  --memory-limits LIST  Override memory limits (comma-separated)
-  --file-sizes LIST     Override file sizes (comma-separated)
+# List all results
+ls -lt results/
+
+# View test matrix summary
+cat results/matrix-fc-*/summary.txt
 ```
 
-**Output:**
+### Result Format
 
-- Individual test logs in results directory
-- CSV summary: `results/matrix-TIMESTAMP/matrix-results.csv`
-- Text summary: `results/matrix-TIMESTAMP/summary.txt`
-
-**Example:**
-
-```bash
-$ ./run-test-matrix --memory-limits "2048,1024" --file-sizes "100M,500M"
-[2026-01-29 12:00:00] PicoShare Performance Test Matrix
-[2026-01-29 12:00:00] Memory configs: 2048 1024
-[2026-01-29 12:00:00] File sizes: 100M 500M
-[2026-01-29 12:00:00] Total tests: 4
-...
-[2026-01-29 12:15:30] Test matrix complete!
-[2026-01-29 12:15:30]   Passed: 4
-[2026-01-29 12:15:30]   Failed: 0
-```
-
-## Prerequisites
-
-### System Requirements
-
-- Vagrant ≥ 2.4.0
-- libvirt provider for Vagrant
-- KVM support
-- At least 4GB available RAM
-- At least 150GB free disk space (for test files and VMs)
-
-### Installed Tools
-
-- `curl` - for HTTP requests
-- `jq` - for JSON parsing
-- `bc` - for calculations
-- `awk` - for text processing
-
-### One-Time Setup
-
-1. **Install dependencies:**
-
-   ```bash
-   # On Debian/Ubuntu:
-   sudo apt-get install vagrant vagrant-libvirt qemu-kvm libvirt-daemon-system jq bc
-   ```
-
-2. **Generate test files:**
-
-   ```bash
-   ./generate-test-files
-   ```
-
-   This creates binary test files (100M, 500M, 1G, 2G, 5G) in `test-files/`.
-   Total size: ~8.6GB
-
-3. **Verify Vagrant setup:**
-   ```bash
-   vagrant status
-   ```
-
-## Test Results
-
-Results are stored in `results/` directory (git-ignored).
-
-### Single Test Result (JSON)
+Each test produces a JSON file with:
 
 ```json
 {
   "timestamp": "2026-01-29T12:00:00+00:00",
+  "platform": "firecracker",
   "ram_mb": 2048,
-  "file_size": "1G",
-  "file_size_mb": 1024,
-  "duration_seconds": 89.23,
-  "throughput_mbps": 11.48,
-  "initial_memory_bytes": 157286400,
-  "peak_memory_bytes": 524288000,
-  "peak_memory_mb": 500,
+  "file_size": "100M",
+  "file_size_mb": 100,
+  "boot_time_seconds": 0.10,
+  "duration_seconds": 0.80,
+  "throughput_mbps": 125.00,
   "http_status": "200",
   "exit_reason": "success",
   "success": true
 }
 ```
 
-### Matrix Results (CSV)
+## Performance
 
-```csv
-ram_mb,file_size,duration_seconds,throughput_mbps,peak_memory_mb,http_status,exit_reason,success,result_file
-2048,100M,8.74,11.44,245,200,success,true,./results/result-2048MB-100M-...json
-2048,500M,45.12,11.08,312,200,success,true,./results/result-2048MB-500M-...json
-...
+### Firecracker Advantages
+
+- **Boot time**: ~0.10 seconds (590x faster than traditional VMs)
+- **Memory overhead**: ~5MB per VM (100x more efficient)
+- **Test duration**: ~15 seconds per test (total ~5 minutes for full matrix)
+- **Isolation**: Each test runs in a fresh microVM
+
+### Typical Test Timing
+
+- VM boot: 0.10s
+- PicoShare startup: 10s
+- File upload: varies by size (0.7s for 100M, 4s for 1G, 20s for 5G)
+- Total per test: 11-35s depending on file size
+
+## Troubleshooting
+
+### Network Issues
+
+If you see "No route to host" errors:
+
+```bash
+# Clean up stale routes
+sudo ip route del 172.16.0.0/24 2>/dev/null || true
+
+# Then retry the test
+sudo ./run-test 2048 100M
+```
+
+### KVM Access
+
+If you get "Permission denied" for `/dev/kvm`:
+
+```bash
+# Add your user to kvm group
+sudo usermod -aG kvm $USER
+
+# Log out and back in, then verify
+groups | grep kvm
+```
+
+### Disk Space
+
+The VM image is 8GB to support uploads up to 5GB. If tests fail with "no space left on device", ensure:
+
+- Your host has enough space in `/home/mike/picoshare/perf-test/`
+- The VM image hasn't been corrupted (re-run `./setup-test-environment`)
+
+### Debug Mode
+
+To see detailed VM console output:
+
+```bash
+# Console logs are written to /tmp/fc-console-*.log during test execution
+tail -f /tmp/fc-console-*.log
 ```
 
 ## Architecture
 
-### Test Workflow
+### Components
 
-1. **VM Lifecycle**: Each test runs in an isolated Vagrant VM with specified RAM
-2. **PicoShare Startup**: Binary is synced to VM and started in a screen session
-3. **Upload Test**: File is uploaded via HTTP POST, measuring duration and memory
-4. **Result Collection**: Peak memory, throughput, and status are recorded
-5. **Cleanup**: VM is destroyed to ensure clean state for next test
+```
+firecracker-images/
+├── vmlinux.bin              # Linux kernel (5.10)
+├── ubuntu-22.04.ext4        # Base Ubuntu rootfs (300MB)
+└── rootfs-working.ext4      # Modified VM image (8GB)
+    ├── /usr/local/bin/picoshare
+    └── /sbin/init-picoshare
 
-### Why Screen?
+test-files/
+├── 100M.bin
+├── 500M.bin
+├── 1G.bin
+├── 2G.bin
+└── 5G.bin
+```
 
-PicoShare is started in a screen session (`screen -dmS picoshare ...`) because:
+### Network Configuration
 
-- SSH backgrounding (`vagrant ssh -c "command &" -- -f`) leaves SSH session hung
-- Screen properly daemonizes the process
-- Allows inspecting PicoShare if test fails (`vagrant ssh` then `screen -r picoshare`)
+- Host TAP device: `fc-tap-<PID>`
+- Host IP: 172.16.0.1/24
+- Guest IP: 172.16.0.2/24
+- PicoShare port: 4001
 
-See `FLAKINESS.md` for detailed analysis of testing challenges.
+### Custom Init
 
-## Troubleshooting
+The VM uses a custom init script (`/sbin/init-picoshare`) that:
+1. Mounts essential filesystems (proc, sys, dev)
+2. Configures network interfaces
+3. Starts PicoShare with test credentials
+4. Keeps running as PID 1
 
-### VM Won't Start
+## Advanced Usage
+
+### Modify Test Matrix
+
+Edit `run-test-matrix` to customize:
 
 ```bash
-# Check Vagrant status
-vagrant status
-
-# View detailed VM logs
-vagrant up
-
-# Destroy and retry
-vagrant destroy -f
-```
-
-### PicoShare Won't Start
-
-```bash
-# SSH into VM
-vagrant ssh
-
-# Check if PicoShare is running
-ps aux | grep picoshare
-
-# View PicoShare logs
-cat /tmp/picoshare.log
-
-# List screen sessions
-screen -ls
-
-# Attach to PicoShare screen
-screen -r picoshare
-```
-
-### Test Hangs or Times Out
-
-- Default timeout is 600 seconds (10 minutes) per test
-- Increase with `--timeout` flag
-- Check if VM has enough memory
-- Monitor VM: `vagrant ssh` then `top` or `free -h`
-
-### Vagrant Lock Error
-
-```
-An action 'up' was attempted on the machine 'default',
-but another process is already executing an action...
-```
-
-**Solution:**
-
-```bash
-# Find vagrant processes
-ps aux | grep vagrant
-
-# Kill them
-pkill -9 vagrant
-
-# Clean up lock files
-rm -rf .vagrant/machines/default/*/action_*
-```
-
-## Known Issues
-
-See `FLAKINESS.md` for comprehensive documentation of:
-
-- SSH backgrounding problems
-- Rsync performance with large files
-- Test retry strategies
-- Recommendations for PicoShare improvements
-
-## File Structure
-
-```
-perf-test/
-├── README.md              # This file
-├── FLAKINESS.md           # Testing challenges and solutions
-├── Vagrantfile            # VM configuration
-├── run-test               # Single test script
-├── run-test-matrix        # Matrix orchestrator
-├── generate-test-files    # Create test files
-├── test-files/            # Binary test files (git-ignored)
-│   ├── 100M.bin
-│   ├── 500M.bin
-│   ├── 1G.bin
-│   ├── 2G.bin
-│   └── 5G.bin
-└── results/               # Test results (git-ignored)
-    └── matrix-TIMESTAMP/
-        ├── result-*.json
-        ├── test-*.log
-        ├── matrix-results.csv
-        └── summary.txt
-```
-
-## Development
-
-### Testing the Test Scripts
-
-Run a quick single test:
-
-```bash
-./run-test --ram 2048 --file-size 100M --keep-vm
-```
-
-The `--keep-vm` flag preserves the VM for debugging.
-
-### Adding New Test Configurations
-
-Edit the arrays in `run-test-matrix`:
-
-```bash
-FILE_SIZES=("100M" "500M" "1G" "2G" "5G")
+# Change RAM configurations
 MEMORY_LIMITS=("2048" "1024" "512" "256")
+
+# Change file sizes
+FILE_SIZES=("100M" "500M" "1G" "2G" "5G")
 ```
 
-### Debugging
+### Rebuild VM Image
 
-Enable verbose Vagrant output:
+If you update PicoShare or need to modify the VM:
 
 ```bash
-VAGRANT_LOG=debug ./run-test --ram 2048 --file-size 100M
+# Remove old image
+rm firecracker-images/rootfs-working.ext4
+
+# Re-run setup
+./setup-test-environment
 ```
 
-Enable bash tracing:
+### Parallel Testing
 
-```bash
-bash -x ./run-test --ram 2048 --file-size 100M
-```
+While Firecracker supports running multiple VMs simultaneously, the current scripts run tests sequentially to avoid network conflicts. For parallel execution, you would need to:
 
-## Contributing
+1. Assign unique TAP devices and IPs per VM
+2. Use different ports for each PicoShare instance
+3. Coordinate cleanup across parallel test runners
 
-When adding new test scripts or modifying existing ones:
+## Requirements
 
-1. Follow the error handling pattern (`set -euo pipefail`)
-2. Use the `log()` function for all user-facing messages
-3. Use the `die()` function for fatal errors
-4. Always clean up resources in trap handlers
-5. Document new flags in usage() function
-6. Add examples to this README
+- Linux x86_64 host
+- KVM support (`/dev/kvm` accessible)
+- 10GB+ free disk space
+- Packages: `qemu-utils`, `curl`, `wget`, `jq`
+- Sudo access for Firecracker and network setup
 
-## License
+## Files
 
-Same as PicoShare main project.
+- `setup-test-environment` - Initial setup script
+- `run-test` - Single test runner
+- `run-test-matrix` - Full matrix test runner
+- `FIRECRACKER-FINAL-SUMMARY.md` - Implementation details and results

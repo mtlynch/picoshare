@@ -38,30 +38,31 @@ Firecracker-based performance testing is now working and ready for production us
 
 ### Known Limitations
 
-1. **Disk Space**: Current 1GB rootfs supports up to ~400MB uploads
+1. **Disk Space**: Current 8GB rootfs supports uploads up to 5GB
 
-   - Solution: Resize rootfs to 2GB+ for larger files (same resize process used before)
+   - VM image sized to handle largest test file (5GB) plus 50% slack
 
 2. **Route Cleanup**: Stale network routes can interfere with tests
    - Solution: Script includes automatic cleanup (`sudo ip route del 172.16.0.0/24`)
 
 ## Implementation Details
 
-### Files Created/Modified
+### Files
 
 ```
 perf-test/
-├── run-test-firecracker              # Single test script
-├── run-test-matrix-firecracker      # Matrix test script (needs debug)
-├── FIRECRACKER-SUCCESS.md           # Implementation details
+├── setup-test-environment           # Initial setup script
+├── run-test                         # Single test script
+├── run-test-matrix                  # Matrix test script
+├── README.md                        # Complete documentation
 └── FIRECRACKER-FINAL-SUMMARY.md     # This file
 
 firecracker-images/
-├── vmlinux.bin                      # Linux 4.14 kernel (21MB)
+├── vmlinux.bin                      # Linux kernel (21MB)
 ├── ubuntu-22.04.ext4                # Original rootfs (300MB)
-└── rootfs-working.ext4              # Modified rootfs (1GB)
+└── rootfs-working.ext4              # Modified VM image (8GB)
     ├── /usr/local/bin/picoshare     # PicoShare binary (16MB)
-    └── /sbin/init-picoshare-debug   # Custom init script
+    └── /sbin/init-picoshare         # Custom init script
 ```
 
 ### Issues Resolved During Implementation
@@ -106,23 +107,13 @@ firecracker-images/
 
 ```bash
 cd /home/mike/picoshare/perf-test
-sudo ./run-test-firecracker 2048 100M
+sudo ./run-test 2048 100M
 ```
 
-### Run Multiple Tests
+### Run Full Test Matrix
 
 ```bash
-# Clean routes first
-sudo ip route del 172.16.0.0/24 2>/dev/null || true
-
-# Test 1
-sudo ./run-test-firecracker 2048 100M
-
-# Clean between tests
-sudo ip route del 172.16.0.0/24 2>/dev/null || true
-
-# Test 2
-sudo ./run-test-firecracker 1024 100M
+./run-test-matrix
 ```
 
 ### View Results
@@ -134,22 +125,7 @@ cat results/result-fc-*.json | jq .
 
 ## Next Steps (Optional Enhancements)
 
-### Short Term
-
-1. **Expand Rootfs to 2GB** for 500MB+ file uploads
-
-   ```bash
-   cd firecracker-images
-   qemu-img resize rootfs-working.ext4 2G
-   sudo e2fsck -f -y rootfs-working.ext4
-   sudo resize2fs rootfs-working.ext4
-   ```
-
-2. **Debug Matrix Script** - The run-test-matrix-firecracker script needs debugging
-   - Currently exits silently after header
-   - Manual tests work perfectly as demonstrated
-
-### Long Term
+### Future Improvements
 
 1. **Parallel Execution**: Run multiple VMs simultaneously
 

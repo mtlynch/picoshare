@@ -1,0 +1,238 @@
+#!/usr/bin/env bash
+#
+# Setup PicoShare Firecracker Performance Test Environment
+#
+# This script downloads and configures all necessary components for
+# running PicoShare performance tests with Firecracker.
+#
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+FC_DIR="$SCRIPT_DIR/firecracker-images"
+KERNEL_URL="https://s3.amazonaws.com/spec.ccfc.min/firecracker-ci/v1.7/x86_64/vmlinux-5.10.217"
+ROOTFS_URL="https://s3.amazonaws.com/spec.ccfc.min/firecracker-ci/v1.7/x86_64/ubuntu-22.04.ext4"
+FIRECRACKER_VERSION="1.7.0"
+FIRECRACKER_URL="https://github.com/firecracker-microvm/firecracker/releases/download/v${FIRECRACKER_VERSION}/firecracker-v${FIRECRACKER_VERSION}-x86_64.tgz"
+
+# VM configuration
+ROOTFS_SIZE="12G"  # Large enough for 5G upload + 50% slack + OS overhead
+
+log() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"
+}
+
+error() {
+    log "ERROR: $*" >&2
+    exit 1
+}
+
+check_dependencies() {
+    log "Checking dependencies..."
+
+    local missing_deps=()
+
+    for cmd in curl wget qemu-img kvm; do
+        if ! command -v "$cmd" &> /dev/null; then
+            missing_deps+=("$cmd")
+        fi
+    done
+
+    if [[ ${#missing_deps[@]} -gt 0 ]]; then
+        error "Missing dependencies: ${missing_deps[*]}"$'\n'"Please install: sudo apt-get install qemu-utils curl wget"
+    fi
+
+    # Check KVM access
+    if [[ ! -r /dev/kvm ]] || [[ ! -w /dev/kvm ]]; then
+        log "Warning: No KVM access. Adding user to kvm group..."
+        sudo usermod -aG kvm "$USER"
+        log "You may need to log out and back in for KVM access to take effect"
+    fi
+
+    log "Dependencies OK"
+}
+
+download_firecracker() {
+    log "Downloading Firecracker v${FIRECRACKER_VERSION}..."
+
+    if [[ -f /usr/local/bin/firecracker ]]; then
+        local version=$(firecracker --version 2>&1 | head -1 || echo "unknown")
+        if [[ "$version" == *"${FIRECRACKER_VERSION}"* ]]; then
+            log "Firecracker v${FIRECRACKER_VERSION} already installed"
+            return
+        fi
+    fi
+
+    local tmp_dir=$(mktemp -d)
+    cd "$tmp_dir"
+
+    wget -q "$FIRECRACKER_URL" -O firecracker.tgz
+    tar -xzf firecracker.tgz
+
+    sudo cp release-v${FIRECRACKER_VERSION}-x86_64/firecracker-v${FIRECRACKER_VERSION}-x86_64 /usr/local/bin/firecracker
+    sudo chmod +x /usr/local/bin/firecracker
+
+    cd - > /dev/null
+    rm -rf "$tmp_dir"
+
+    log "Firecracker installed: $(firecracker --version | head -1)"
+}
+
+download_kernel() {
+    log "Downloading Linux kernel..."
+
+    mkdir -p "$FC_DIR"
+
+    if [[ -f "$FC_DIR/vmlinux.bin" ]]; then
+        log "Kernel already exists"
+        return
+    fi
+
+    wget -q "$KERNEL_URL" -O "$FC_DIR/vmlinux.bin"
+    log "Kernel downloaded ($(du -h "$FC_DIR/vmlinux.bin" | cut -f1))"
+}
+
+download_rootfs() {
+    log "Downloading Ubuntu 22.04 rootfs..."
+
+    if [[ -f "$FC_DIR/ubuntu-22.04.ext4" ]]; then
+        log "Base rootfs already exists"
+    else
+        wget -q "$ROOTFS_URL" -O "$FC_DIR/ubuntu-22.04.ext4"
+        log "Base rootfs downloaded ($(du -h "$FC_DIR/ubuntu-22.04.ext4" | cut -f1))"
+    fi
+}
+
+create_working_rootfs() {
+    log "Creating working rootfs..."
+
+    if [[ -f "$FC_DIR/rootfs-working.ext4" ]]; then
+        log "Removing existing working rootfs..."
+        rm -f "$FC_DIR/rootfs-working.ext4"
+    fi
+
+    # Copy base rootfs
+    cp "$FC_DIR/ubuntu-22.04.ext4" "$FC_DIR/rootfs-working.ext4"
+
+    # Resize to 8GB for large file uploads
+    log "Resizing rootfs to ${ROOTFS_SIZE}..."
+    qemu-img resize "$FC_DIR/rootfs-working.ext4" "$ROOTFS_SIZE"
+    sudo e2fsck -f -y "$FC_DIR/rootfs-working.ext4"
+    sudo resize2fs "$FC_DIR/rootfs-working.ext4"
+
+    log "Rootfs resized to $(qemu-img info "$FC_DIR/rootfs-working.ext4" | grep 'virtual size')"
+}
+
+install_picoshare_in_rootfs() {
+    log "Installing PicoShare in rootfs..."
+
+    # Build PicoShare if not already built
+    if [[ ! -f "$SCRIPT_DIR/../build/picoshare" ]]; then
+        log "Building PicoShare..."
+        cd "$SCRIPT_DIR/.."
+        ./dev-scripts/build-backend
+        cd "$SCRIPT_DIR"
+    fi
+
+    # Mount rootfs
+    local mount_point="$FC_DIR/mnt"
+    mkdir -p "$mount_point"
+
+    sudo mount "$FC_DIR/rootfs-working.ext4" "$mount_point"
+
+    # Copy PicoShare binary
+    sudo cp "$SCRIPT_DIR/../build/picoshare" "$mount_point/usr/local/bin/picoshare"
+    sudo chmod +x "$mount_point/usr/local/bin/picoshare"
+
+    # Create custom init script
+    sudo tee "$mount_point/sbin/init-picoshare" > /dev/null << 'EOF'
+#!/bin/sh
+# PicoShare init script for Firecracker VM
+
+# Mount essential filesystems
+mount -t proc proc /proc
+mount -t sysfs sys /sys
+mount -t devtmpfs devtmpfs /dev 2>/dev/null || true
+
+# Setup network
+ip link set lo up
+ip link set eth0 up
+sleep 3
+
+# Start PicoShare
+mkdir -p /tmp/picoshare-data
+cd /tmp/picoshare-data
+export PS_SHARED_SECRET=perftestpassword
+/usr/local/bin/picoshare -db /tmp/picoshare-data/store.db > /tmp/picoshare.log 2>&1 &
+
+# Keep init alive (PID 1 must not exit)
+while true; do sleep 3600; done
+EOF
+
+    sudo chmod +x "$mount_point/sbin/init-picoshare"
+
+    # Unmount
+    sudo umount "$mount_point"
+
+    log "PicoShare installed in rootfs"
+}
+
+create_test_files() {
+    log "Creating test files..."
+
+    local test_files_dir="$SCRIPT_DIR/test-files"
+    mkdir -p "$test_files_dir"
+
+    local sizes=("100M" "500M" "1G" "2G" "5G")
+
+    for size in "${sizes[@]}"; do
+        local file="$test_files_dir/${size}.bin"
+        if [[ -f "$file" ]]; then
+            log "Test file ${size}.bin already exists"
+        else
+            log "Creating ${size}.bin test file..."
+            # Convert size to bytes for dd
+            local size_bytes
+            case "$size" in
+                100M) size_bytes="100" ;;
+                500M) size_bytes="500" ;;
+                1G) size_bytes="1024" ;;
+                2G) size_bytes="2048" ;;
+                5G) size_bytes="5120" ;;
+            esac
+            dd if=/dev/urandom of="$file" bs=1M count="$size_bytes" status=progress 2>&1 | grep -v records || true
+            log "Created ${size}.bin ($(du -h "$file" | cut -f1))"
+        fi
+    done
+}
+
+main() {
+    log "=========================================="
+    log "PicoShare Firecracker Test Environment Setup"
+    log "=========================================="
+    log ""
+
+    check_dependencies
+    download_firecracker
+    download_kernel
+    download_rootfs
+    create_working_rootfs
+    install_picoshare_in_rootfs
+    create_test_files
+
+    log ""
+    log "=========================================="
+    log "Setup Complete!"
+    log "=========================================="
+    log ""
+    log "Next steps:"
+    log "  1. Run a single test:  sudo ./run-test 2048 100M"
+    log "  2. Run full matrix:    ./run-test-matrix"
+    log ""
+    log "Files created:"
+    log "  - Kernel:     $FC_DIR/vmlinux.bin"
+    log "  - VM image:   $FC_DIR/rootfs-working.ext4 (${ROOTFS_SIZE})"
+    log "  - Test files: $SCRIPT_DIR/test-files/*.bin"
+    log ""
+}
+
+main "$@"
