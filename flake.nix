@@ -30,6 +30,9 @@
 
     # 0.3.13 release
     litestream-nixpkgs.url = "github:NixOS/nixpkgs/a343533bccc62400e8a9560423486a3b6c11a23b";
+
+    # 1.61.7 release
+    air-nixpkgs.url = "github:NixOS/nixpkgs/678af34d5e4d198fcd948a7db8b89a618d8e62fa";
   };
 
   outputs = {
@@ -43,6 +46,7 @@
     playwright-nixpkgs,
     flyctl-nixpkgs,
     litestream-nixpkgs,
+    air-nixpkgs,
   } @ inputs:
     flake-utils.lib.eachDefaultSystem (system: let
       go = go-nixpkgs.legacyPackages.${system}.go_1_24;
@@ -53,6 +57,7 @@
       playwright = playwright-nixpkgs.legacyPackages.${system}.playwright-driver.browsers;
       flyctl = flyctl-nixpkgs.legacyPackages.${system}.flyctl;
       litestream = litestream-nixpkgs.legacyPackages.${system}.litestream;
+      air = air-nixpkgs.legacyPackages.${system}.air;
     in {
       devShells.default =
         go-nixpkgs.legacyPackages.${system}.mkShell.override
@@ -76,6 +81,7 @@
             playwright
             flyctl
             litestream
+            air
           ];
 
           shellHook = ''
