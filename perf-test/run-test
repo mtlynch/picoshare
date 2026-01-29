@@ -93,7 +93,7 @@ cat > /tmp/fc-config-$$.json << EOF
 {
   "boot-source": {
     "kernel_image_path": "$FC_KERNEL",
-    "boot_args": "console=ttyS0 reboot=k panic=1 pci=off ip=${GUEST_IP}::${TAP_IP}:255.255.255.0::eth0:off init=/sbin/init-picoshare"
+    "boot_args": "console=ttyS0 reboot=k panic=1 pci=off ip=${GUEST_IP}::${TAP_IP}:255.255.255.0::eth0:off init=/sbin/init-picoshare random.trust_cpu=on"
   },
   "drives": [
     {
@@ -113,7 +113,8 @@ cat > /tmp/fc-config-$$.json << EOF
       "guest_mac": "AA:FC:00:00:00:01",
       "host_dev_name": "$TAP_DEV"
     }
-  ]
+  ],
+  "entropy": null
 }
 EOF
 
