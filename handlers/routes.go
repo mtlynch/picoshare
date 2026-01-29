@@ -3,30 +3,29 @@ package handlers
 import "net/http"
 
 func (s *Server) routes() {
-	s.router.HandleFunc("/api/auth", s.authPost()).Methods(http.MethodPost)
-	s.router.HandleFunc("/api/auth", s.authDelete()).Methods(http.MethodDelete)
-	s.router.Use(s.checkAuthentication)
+	// Public auth API routes
+	s.router.HandleFunc("POST /api/auth", s.authPost())
+	s.router.HandleFunc("DELETE /api/auth", s.authDelete())
 
-	authenticatedApis := s.router.PathPrefix("/api").Subrouter()
-	authenticatedApis.Use(s.requireAuthentication)
-	authenticatedApis.HandleFunc("/entry", s.entryPost()).Methods(http.MethodPost)
-	authenticatedApis.HandleFunc("/entry/{id}", s.entryPut()).Methods(http.MethodPut)
-	authenticatedApis.HandleFunc("/entry/{id}", s.entryDelete()).Methods(http.MethodDelete)
-	authenticatedApis.HandleFunc("/guest-links", s.guestLinksPost()).Methods(http.MethodPost)
-	authenticatedApis.HandleFunc("/guest-links/{id}", s.guestLinksDelete()).Methods(http.MethodDelete)
-	authenticatedApis.HandleFunc("/guest-links/{id}/enable", s.guestLinksEnableDisable()).Methods(http.MethodPut)
-	authenticatedApis.HandleFunc("/guest-links/{id}/disable", s.guestLinksEnableDisable()).Methods(http.MethodPut)
-	authenticatedApis.HandleFunc("/settings", s.settingsPut()).Methods(http.MethodPut)
+	// Authenticated API routes
+	s.router.Handle("POST /api/entry", s.authMiddleware(s.entryPost()))
+	s.router.Handle("PUT /api/entry/{id}", s.authMiddleware(s.entryPut()))
+	s.router.Handle("DELETE /api/entry/{id}", s.authMiddleware(s.entryDelete()))
+	s.router.Handle("POST /api/guest-links", s.authMiddleware(s.guestLinksPost()))
+	s.router.Handle("DELETE /api/guest-links/{id}", s.authMiddleware(s.guestLinksDelete()))
+	s.router.Handle("PUT /api/guest-links/{id}/enable", s.authMiddleware(s.guestLinksEnableDisable()))
+	s.router.Handle("PUT /api/guest-links/{id}/disable", s.authMiddleware(s.guestLinksEnableDisable()))
+	s.router.Handle("PUT /api/settings", s.authMiddleware(s.settingsPut()))
 
-	publicApis := s.router.PathPrefix("/api").Subrouter()
-	publicApis.HandleFunc("/guest/{guestLinkID}", s.guestEntryPost()).Methods(http.MethodPost)
+	// Public API routes
+	s.router.Handle("POST /api/guest/{guestLinkID}", s.checkAuthentication(s.guestEntryPost()))
 
-	static := s.router.PathPrefix("/").Subrouter()
-	static.PathPrefix("/css/").HandlerFunc(serveStaticResource()).Methods(http.MethodGet)
-	static.PathPrefix("/js/").HandlerFunc(serveStaticResource()).Methods(http.MethodGet)
-	static.PathPrefix("/third-party/").HandlerFunc(serveStaticResource()).Methods(http.MethodGet)
+	// Static file routes
+	s.router.Handle("GET /css/", serveStaticResource())
+	s.router.Handle("GET /js/", serveStaticResource())
+	s.router.Handle("GET /third-party/", serveStaticResource())
 
-	// Add all the root-level static resources.
+	// Root-level static resources
 	for _, f := range []string{
 		"/android-chrome-192x192.png",
 		"/android-chrome-384x384.png",
@@ -39,34 +38,41 @@ func (s *Server) routes() {
 		"/safari-pinned-tab.svg",
 		"/site.webmanifest",
 	} {
-		static.Path(f).HandlerFunc(serveStaticResource()).Methods(http.MethodGet)
+		s.router.Handle("GET "+f, serveStaticResource())
 	}
 
-	authenticatedViews := s.router.PathPrefix("/").Subrouter()
-	authenticatedViews.Use(s.requireAuthentication)
-	authenticatedViews.Use(enforceContentSecurityPolicy)
-	authenticatedViews.HandleFunc("/information", s.systemInformationGet()).Methods(http.MethodGet)
-	authenticatedViews.HandleFunc("/files", s.fileIndexGet()).Methods(http.MethodGet)
-	authenticatedViews.HandleFunc("/files/{id}/downloads", s.fileDownloadsGet()).Methods(http.MethodGet)
-	authenticatedViews.HandleFunc("/files/{id}/edit", s.fileEditGet()).Methods(http.MethodGet)
-	authenticatedViews.HandleFunc("/files/{id}/info", s.fileInfoGet()).Methods(http.MethodGet)
-	authenticatedViews.HandleFunc("/files/{id}/confirm-delete", s.fileConfirmDeleteGet()).Methods(http.MethodGet)
-	authenticatedViews.HandleFunc("/guest-links", s.guestLinkIndexGet()).Methods(http.MethodGet)
-	authenticatedViews.HandleFunc("/guest-links/new", s.guestLinksNewGet()).Methods(http.MethodGet)
-	authenticatedViews.HandleFunc("/settings", s.settingsGet()).Methods(http.MethodGet)
+	// Authenticated view routes
+	s.router.Handle("GET /information", s.authViewMiddleware(s.systemInformationGet()))
+	s.router.Handle("GET /files", s.authViewMiddleware(s.fileIndexGet()))
+	s.router.Handle("GET /files/{id}/downloads", s.authViewMiddleware(s.fileDownloadsGet()))
+	s.router.Handle("GET /files/{id}/edit", s.authViewMiddleware(s.fileEditGet()))
+	s.router.Handle("GET /files/{id}/info", s.authViewMiddleware(s.fileInfoGet()))
+	s.router.Handle("GET /files/{id}/confirm-delete", s.authViewMiddleware(s.fileConfirmDeleteGet()))
+	s.router.Handle("GET /guest-links", s.authViewMiddleware(s.guestLinkIndexGet()))
+	s.router.Handle("GET /guest-links/new", s.authViewMiddleware(s.guestLinksNewGet()))
+	s.router.Handle("GET /settings", s.authViewMiddleware(s.settingsGet()))
 
-	views := s.router.PathPrefix("/").Subrouter()
-	views.Use(upgradeToHttps)
-	views.Use(enforceContentSecurityPolicy)
-	views.HandleFunc("/login", s.authGet()).Methods(http.MethodGet)
-	views.PathPrefix("/-{id}").HandlerFunc(s.entryGet()).Methods(http.MethodGet)
-	views.PathPrefix("/-{id}/{filename}").HandlerFunc(s.entryGet()).Methods(http.MethodGet)
-	// Legacy routes for entries. We stopped using them because the ! has
-	// unintended side effects within the bash shell.
-	views.PathPrefix("/!{id}").HandlerFunc(s.entryGet()).Methods(http.MethodGet)
-	views.PathPrefix("/!{id}/{filename}").HandlerFunc(s.entryGet()).Methods(http.MethodGet)
-	views.PathPrefix("/g/{guestLinkID}").HandlerFunc(s.guestUploadGet()).Methods(http.MethodGet)
-	views.HandleFunc("/", s.indexGet()).Methods(http.MethodGet)
+	// Public view routes (with upgradeToHttps and CSP)
+	viewMiddleware := func(h http.Handler) http.Handler {
+		return s.checkAuthentication(enforceContentSecurityPolicy(upgradeToHttps(h)))
+	}
+	s.router.Handle("GET /login", viewMiddleware(s.authGet()))
+	s.router.Handle("GET /g/{guestLinkID}", viewMiddleware(s.guestUploadGet()))
+	s.router.Handle("GET /{$}", viewMiddleware(s.indexGet()))
+
+	// Entry routes: /-{id} and /!{id} patterns can't use ServeMux wildcards
+	// directly since wildcards must be entire path segments. Handle with catch-all.
+	s.router.Handle("GET /{path...}", viewMiddleware(s.entryPathHandler()))
 
 	s.addDevRoutes()
+}
+
+// authMiddleware applies checkAuthentication and requireAuthentication to a handler.
+func (s *Server) authMiddleware(h http.Handler) http.Handler {
+	return s.checkAuthentication(s.requireAuthentication(h))
+}
+
+// authViewMiddleware applies checkAuthentication, requireAuthentication, and CSP to a view handler.
+func (s *Server) authViewMiddleware(h http.Handler) http.Handler {
+	return s.checkAuthentication(s.requireAuthentication(enforceContentSecurityPolicy(h)))
 }

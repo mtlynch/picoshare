@@ -15,9 +15,8 @@ import (
 // addDevRoutes adds debug routes that we only use during development or e2e
 // tests.
 func (s *Server) addDevRoutes() {
-	s.router.Use(assignSessionDB)
-	s.router.HandleFunc("/api/debug/db/cleanup", s.cleanupPost()).Methods(http.MethodPost)
-	s.router.HandleFunc("/api/debug/db/per-session", dbPerSessionPost()).Methods(http.MethodPost)
+	s.router.Handle("POST /api/debug/db/cleanup", assignSessionDB(s.cleanupPost()))
+	s.router.Handle("POST /api/debug/db/per-session", assignSessionDB(dbPerSessionPost()))
 }
 
 const dbTokenCookieName = "db-token"
