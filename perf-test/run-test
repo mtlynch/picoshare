@@ -177,6 +177,11 @@ vagrant up > /tmp/vagrant-up-$$.log 2>&1 || {
 
 log "VM started successfully"
 
+# Copy PicoShare binary to VM
+log "Copying PicoShare binary to VM..."
+vagrant scp "$PICOSHARE_BIN" :~/picoshare >/dev/null 2>&1
+vagrant ssh -c "chmod +x ~/picoshare" >/dev/null 2>&1
+
 # Start PicoShare using screen (avoids SSH backgrounding issues)
 log "Starting PicoShare in VM..."
 
@@ -184,7 +189,7 @@ vagrant ssh -c "sudo pkill picoshare || true" >/dev/null 2>&1
 vagrant ssh -c "rm -rf /tmp/picoshare-data && mkdir -p /tmp/picoshare-data" >/dev/null 2>&1
 
 # Use screen to properly daemonize PicoShare
-vagrant ssh -c "screen -dmS picoshare bash -c 'cd /vagrant && PS_SHARED_SECRET=$PS_SHARED_SECRET ./picoshare -db /tmp/picoshare-data/store.db > /tmp/picoshare.log 2>&1'" >/dev/null 2>&1
+vagrant ssh -c "screen -dmS picoshare bash -c 'cd ~ && PS_SHARED_SECRET=$PS_SHARED_SECRET ./picoshare -db /tmp/picoshare-data/store.db > /tmp/picoshare.log 2>&1'" >/dev/null 2>&1
 
 # Wait for PicoShare to be ready
 log "Waiting for PicoShare to be ready..."

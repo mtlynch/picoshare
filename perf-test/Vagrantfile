@@ -11,9 +11,8 @@ Vagrant.configure("2") do |config|
   # Forward PicoShare port
   config.vm.network "forwarded_port", guest: 4001, host: 4001
 
-  # Use rsync for synced folder (doesn't require NFS)
-  # Note: test-files are synced but large, so initial sync may take time
-  config.vm.synced_folder ".", "/vagrant", type: "rsync", rsync__exclude: [".git/", ".vagrant/"]
+  # Disable synced folder - we'll copy just the binary via SCP
+  config.vm.synced_folder ".", "/vagrant", disabled: true
 
   config.vm.provider "virtualbox" do |vb|
     vb.memory = VM_MEMORY
