@@ -31,6 +31,7 @@ perf-test/test-files/*.bin
 perf-test/picoshare
 perf-test/*.log
 perf-test/*.csv
+perf-test/firecracker-images/
 
 # Vagrant
 .vagrant

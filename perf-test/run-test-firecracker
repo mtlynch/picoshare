@@ -1,0 +1,243 @@
+#!/usr/bin/env bash
+#
+# Run a single PicoShare performance test with Firecracker
+#
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Defaults
+RAM_MB="${1:-2048}"
+FILE_SIZE="${2:-100M}"
+TIMEOUT_SECONDS=600
+PORT=4001
+PS_SHARED_SECRET="perftestpassword"
+RESULTS_DIR="$SCRIPT_DIR/results"
+
+# Firecracker paths
+FC_KERNEL="$SCRIPT_DIR/firecracker-images/vmlinux.bin"
+FC_ROOTFS="$SCRIPT_DIR/firecracker-images/rootfs-working.ext4"
+FC_SOCKET="/tmp/firecracker-$$.sock"
+TAP_DEV="fc-tap-$$"
+TAP_IP="172.16.0.1"
+GUEST_IP="172.16.0.2"
+GUEST_MASK="24"
+
+log() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" >&2
+}
+
+die() {
+    log "ERROR: $*"
+    exit 1
+}
+
+cleanup() {
+    local exit_code=$?
+    log "Cleaning up..."
+
+    # Stop Firecracker
+    if [[ -S "$FC_SOCKET" ]]; then
+        curl -s -X PUT --unix-socket "$FC_SOCKET" \
+            http://localhost/actions \
+            -H "Content-Type: application/json" \
+            -d '{"action_type": "SendCtrlAltDel"}' 2>/dev/null || true
+        sleep 1
+        rm -f "$FC_SOCKET"
+    fi
+
+    # Remove TAP device and route
+    sudo ip route del 172.16.0.0/24 dev "$TAP_DEV" 2>/dev/null || true
+    sudo ip link del "$TAP_DEV" 2>/dev/null || true
+
+    # Kill any background processes
+    jobs -p | xargs -r kill 2>/dev/null || true
+
+    exit $exit_code
+}
+
+trap cleanup EXIT INT TERM
+
+# Validate inputs
+[[ ! -f "$FC_KERNEL" ]] && die "Kernel not found: $FC_KERNEL"
+[[ ! -f "$FC_ROOTFS" ]] && die "Rootfs not found: $FC_ROOTFS"
+TEST_FILE="$SCRIPT_DIR/test-files/${FILE_SIZE}.bin"
+[[ ! -f "$TEST_FILE" ]] && die "Test file not found: $TEST_FILE"
+
+mkdir -p "$RESULTS_DIR"
+TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+RESULT_FILE="$RESULTS_DIR/result-fc-${RAM_MB}MB-${FILE_SIZE}-${TIMESTAMP}.json"
+
+log "=== PicoShare Firecracker Performance Test ==="
+log "RAM: ${RAM_MB}MB"
+log "File: $FILE_SIZE"
+log ""
+
+# Create TAP device
+log "Setting up network..."
+sudo ip tuntap add "$TAP_DEV" mode tap
+sudo ip addr add "${TAP_IP}/${GUEST_MASK}" dev "$TAP_DEV"
+sudo ip link set "$TAP_DEV" up
+
+# Enable IP forwarding
+sudo sysctl -w net.ipv4.ip_forward=1 >/dev/null
+
+# Set up NAT (so guest can reach internet if needed)
+sudo iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE 2>/dev/null || true
+sudo iptables -A FORWARD -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT 2>/dev/null || true
+sudo iptables -A FORWARD -i "$TAP_DEV" -o eth0 -j ACCEPT 2>/dev/null || true
+
+# Create Firecracker config
+log "Creating VM config..."
+cat > /tmp/fc-config-$$.json << EOF
+{
+  "boot-source": {
+    "kernel_image_path": "$FC_KERNEL",
+    "boot_args": "console=ttyS0 reboot=k panic=1 pci=off ip=${GUEST_IP}::${TAP_IP}:255.255.255.0::eth0:off init=/sbin/init-picoshare-debug"
+  },
+  "drives": [
+    {
+      "drive_id": "rootfs",
+      "path_on_host": "$FC_ROOTFS",
+      "is_root_device": true,
+      "is_read_only": false
+    }
+  ],
+  "machine-config": {
+    "vcpu_count": 1,
+    "mem_size_mib": ${RAM_MB}
+  },
+  "network-interfaces": [
+    {
+      "iface_id": "eth0",
+      "guest_mac": "AA:FC:00:00:00:01",
+      "host_dev_name": "$TAP_DEV"
+    }
+  ]
+}
+EOF
+
+# Start Firecracker
+log "Starting Firecracker VM..."
+start_time=$(date +%s.%N)
+
+rm -f "$FC_SOCKET"
+firecracker --api-sock "$FC_SOCKET" --config-file /tmp/fc-config-$$.json > /tmp/fc-console-$$.log 2>&1 &
+FC_PID=$!
+
+# Wait for API socket
+attempts=0
+while [[ ! -S "$FC_SOCKET" ]] && [[ $attempts -lt 50 ]]; do
+    sleep 0.1
+    attempts=$((attempts + 1))
+done
+
+[[ ! -S "$FC_SOCKET" ]] && die "Firecracker API socket not created"
+
+boot_end=$(date +%s.%N)
+boot_time=$(awk "BEGIN {printf \"%.2f\", $boot_end - $start_time}")
+log "VM booted in ${boot_time}s"
+
+# Wait for network to be ready
+log "Waiting for guest to boot..."
+sleep 10
+log "Guest should be ready (boot time ~0.1s + init ~10s)"
+
+# Wait for PicoShare to start
+log "Waiting for PicoShare..."
+log "Network state:"
+ip addr show "$TAP_DEV" || log "TAP device not found!"
+ip route | grep 172.16.0 || log "No route to guest!"
+
+attempts=0
+while [[ $attempts -lt 60 ]]; do
+    if curl -sf -m 10 "http://${GUEST_IP}:4001/" > /dev/null 2>&1; then
+        log "PicoShare is ready"
+        break
+    fi
+    sleep 1
+    attempts=$((attempts + 1))
+done
+
+[[ $attempts -eq 60 ]] && die "PicoShare not ready after 60s"
+
+# Authenticate
+log "Authenticating..."
+COOKIE_FILE="/tmp/fc-cookie-$$.txt"
+if ! curl -sf -c "$COOKIE_FILE" -X POST \
+    -H "Content-Type: application/json" \
+    -d "{\"sharedSecretKey\":\"$PS_SHARED_SECRET\"}" \
+    "http://${GUEST_IP}:4001/api/auth" > /dev/null 2>&1; then
+    die "Authentication failed"
+fi
+
+# Run upload test
+log "Uploading ${FILE_SIZE} file..."
+upload_start=$(date +%s.%N)
+
+# Save response to file to capture body
+response_file="/tmp/upload-response-$$.txt"
+http_status=$(timeout "$TIMEOUT_SECONDS" curl -w "%{http_code}" -b "$COOKIE_FILE" -X POST \
+    -F "file=@${TEST_FILE}" \
+    -o "$response_file" \
+    "http://${GUEST_IP}:4001/api/entry?expiration=2040-01-01T00:00:00Z" 2>&1 | tail -1) || http_status="timeout"
+
+if [[ "$http_status" != "200" ]]; then
+    log "Upload failed with HTTP $http_status"
+    log "Error response body:"
+    cat "$response_file"
+    log ""
+fi
+rm -f "$response_file"
+
+upload_end=$(date +%s.%N)
+duration=$(awk "BEGIN {printf \"%.2f\", $upload_end - $upload_start}")
+
+# Calculate throughput
+size_mb=$(echo "$FILE_SIZE" | sed 's/M$//' | sed 's/G$/000/' | bc)
+throughput=$(awk "BEGIN {printf \"%.2f\", $size_mb / $duration}")
+
+# Determine exit reason
+exit_reason="success"
+if [[ "$http_status" == "timeout" ]]; then
+    exit_reason="timeout"
+elif [[ "$http_status" != "200" ]]; then
+    exit_reason="http_error"
+fi
+
+# Generate result JSON
+cat > "$RESULT_FILE" << EOF
+{
+  "timestamp": "$(date -Iseconds)",
+  "platform": "firecracker",
+  "ram_mb": $RAM_MB,
+  "file_size": "$FILE_SIZE",
+  "file_size_mb": $size_mb,
+  "boot_time_seconds": $boot_time,
+  "duration_seconds": $duration,
+  "throughput_mbps": $throughput,
+  "http_status": "$http_status",
+  "exit_reason": "$exit_reason",
+  "success": $([ "$exit_reason" = "success" ] && echo "true" || echo "false")
+}
+EOF
+
+# Display result
+log ""
+if [[ "$exit_reason" == "success" ]]; then
+    log "✅ TEST PASSED"
+    log "   Boot Time: ${boot_time}s"
+    log "   Upload Duration: ${duration}s"
+    log "   Throughput: ${throughput} MB/s"
+    log "   HTTP Status: $http_status"
+else
+    log "❌ TEST FAILED"
+    log "   Exit Reason: $exit_reason"
+    log "   Duration: ${duration}s"
+    log "   HTTP Status: $http_status"
+fi
+log ""
+log "Results saved to: $RESULT_FILE"
+
+echo "$RESULT_FILE"
+exit $([ "$exit_reason" = "success" ] && echo 0 || echo 1)
