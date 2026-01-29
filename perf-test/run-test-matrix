@@ -53,7 +53,7 @@ start_time=$(date +%s)
 
 # Clean up any stale routes before starting
 log "Cleaning up stale network routes..."
-sudo ip route del 172.16.0.0/24 2>/dev/null || true
+"$SCRIPT_DIR/cleanup-network"
 
 # Run tests
 for memory in "${MEMORY_LIMITS[@]}"; do
@@ -67,7 +67,7 @@ for memory in "${MEMORY_LIMITS[@]}"; do
         log "[$current_test/$total_tests] Running: ${memory}MB RAM, ${size} file"
 
         # Clean up route before each test
-        sudo ip route del 172.16.0.0/24 2>/dev/null || true
+        "$SCRIPT_DIR/cleanup-network"
 
         # Run single test
         test_start=$(date +%s)

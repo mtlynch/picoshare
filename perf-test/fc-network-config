@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+#
+# Firecracker network configuration - source this file to get network variables
+#
+
+# Network configuration
+FC_NETWORK="172.16.0.0/24"
+FC_TAP_IP="172.16.0.1"
+FC_GUEST_IP="172.16.0.2"
+FC_GUEST_MASK="24"

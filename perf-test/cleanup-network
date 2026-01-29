@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+#
+# Clean up Firecracker network routes
+#
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Source network configuration
+source "$SCRIPT_DIR/fc-network-config"
+
+# Clean up stale routes
+sudo ip route del "$FC_NETWORK" 2>/dev/null || true

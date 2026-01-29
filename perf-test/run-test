@@ -6,6 +6,9 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# Source network configuration
+source "$SCRIPT_DIR/fc-network-config"
+
 # Defaults
 RAM_MB="${1:-2048}"
 FILE_SIZE="${2:-100M}"
@@ -19,9 +22,6 @@ FC_KERNEL="$SCRIPT_DIR/firecracker-images/vmlinux.bin"
 FC_ROOTFS="$SCRIPT_DIR/firecracker-images/rootfs-working.ext4"
 FC_SOCKET="/tmp/firecracker-$$.sock"
 TAP_DEV="fc-tap-$$"
-TAP_IP="172.16.0.1"
-GUEST_IP="172.16.0.2"
-GUEST_MASK="24"
 
 log() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" >&2
@@ -98,7 +98,7 @@ cleanup() {
     fi
 
     # Remove TAP device and route
-    sudo ip route del 172.16.0.0/24 dev "$TAP_DEV" 2>/dev/null || true
+    sudo ip route del "$FC_NETWORK" dev "$TAP_DEV" 2>/dev/null || true
     sudo ip link del "$TAP_DEV" 2>/dev/null || true
 
     # Kill any background processes
@@ -131,7 +131,7 @@ log ""
 # Create TAP device
 log "Setting up network..."
 sudo ip tuntap add "$TAP_DEV" mode tap
-sudo ip addr add "${TAP_IP}/${GUEST_MASK}" dev "$TAP_DEV"
+sudo ip addr add "${FC_TAP_IP}/${FC_GUEST_MASK}" dev "$TAP_DEV"
 sudo ip link set "$TAP_DEV" up
 
 # Enable IP forwarding
@@ -148,7 +148,7 @@ cat > /tmp/fc-config-$$.json << EOF
 {
   "boot-source": {
     "kernel_image_path": "$FC_KERNEL",
-    "boot_args": "console=ttyS0 reboot=k panic=1 pci=off ip=${GUEST_IP}::${TAP_IP}:255.255.255.0::eth0:off init=/sbin/init-picoshare random.trust_cpu=on"
+    "boot_args": "console=ttyS0 reboot=k panic=1 pci=off ip=${FC_GUEST_IP}::${FC_TAP_IP}:255.255.255.0::eth0:off init=/sbin/init-picoshare random.trust_cpu=on"
   },
   "drives": [
     {
@@ -203,11 +203,11 @@ log "Guest should be ready (boot time ~0.1s + init ~10s)"
 log "Waiting for PicoShare..."
 log "Network state:"
 ip addr show "$TAP_DEV" || log "TAP device not found!"
-ip route | grep 172.16.0 || log "No route to guest!"
+ip route | grep "${FC_NETWORK%/*}" || log "No route to guest!"
 
 attempts=0
 while [[ $attempts -lt 60 ]]; do
-    if curl -sf -m 10 "http://${GUEST_IP}:4001/" > /dev/null 2>&1; then
+    if curl -sf -m 10 "http://${FC_GUEST_IP}:4001/" > /dev/null 2>&1; then
         log "PicoShare is ready"
         break
     fi
@@ -223,7 +223,7 @@ COOKIE_FILE="/tmp/fc-cookie-$$.txt"
 if ! curl -sf -c "$COOKIE_FILE" -X POST \
     -H "Content-Type: application/json" \
     -d "{\"sharedSecretKey\":\"$PS_SHARED_SECRET\"}" \
-    "http://${GUEST_IP}:4001/api/auth" > /dev/null 2>&1; then
+    "http://${FC_GUEST_IP}:4001/api/auth" > /dev/null 2>&1; then
     die "Authentication failed"
 fi
 
@@ -236,7 +236,7 @@ response_file="/tmp/upload-response-$$.txt"
 http_status=$(timeout "$TIMEOUT_SECONDS" curl -w "%{http_code}" -b "$COOKIE_FILE" -X POST \
     -F "file=@${TEST_FILE}" \
     -o "$response_file" \
-    "http://${GUEST_IP}:4001/api/entry?expiration=2040-01-01T00:00:00Z" 2>&1 | tail -1) || http_status="timeout"
+    "http://${FC_GUEST_IP}:4001/api/entry?expiration=2040-01-01T00:00:00Z" 2>&1 | tail -1) || http_status="timeout"
 
 if [[ "$http_status" != "200" ]]; then
     log "Upload failed with HTTP $http_status"
