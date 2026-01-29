@@ -32,6 +32,57 @@ die() {
     exit 1
 }
 
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+# Build PicoShare binary using dev-scripts/build-backend
+build_binary() {
+    log "==================================================="
+    log "Building PicoShare binary..."
+    log "==================================================="
+
+    cd "$PROJECT_ROOT"
+
+    # Set version for build script
+    export PS_VERSION="${PS_VERSION:-dev}"
+
+    "$PROJECT_ROOT/dev-scripts/build-backend"
+
+    if [[ ! -f "$PROJECT_ROOT/bin/picoshare" ]]; then
+        log "ERROR: Build failed - picoshare binary not found"
+        exit 1
+    fi
+
+    log "✓ Build complete: $(ls -lh "$PROJECT_ROOT/bin/picoshare" | awk '{print $5}')"
+    log ""
+}
+
+# Update VM image with new binary
+update_vm_image() {
+    log "==================================================="
+    log "Updating VM image with new binary..."
+    log "==================================================="
+
+    local rootfs="$SCRIPT_DIR/firecracker-images/rootfs-working.ext4"
+    local mount_point="/mnt"
+
+    if [[ ! -f "$rootfs" ]]; then
+        log "ERROR: VM rootfs not found at $rootfs"
+        exit 1
+    fi
+
+    log "Mounting $rootfs..."
+    sudo mount -o loop "$rootfs" "$mount_point"
+
+    log "Copying binary to /usr/local/bin/picoshare..."
+    sudo cp "$PROJECT_ROOT/bin/picoshare" "$mount_point/usr/local/bin/picoshare"
+
+    log "Unmounting..."
+    sudo umount "$mount_point"
+
+    log "✓ VM image updated"
+    log ""
+}
+
 cleanup() {
     local exit_code=$?
     log "Cleaning up..."
@@ -63,6 +114,10 @@ trap cleanup EXIT INT TERM
 [[ ! -f "$FC_ROOTFS" ]] && die "Rootfs not found: $FC_ROOTFS"
 TEST_FILE="$SCRIPT_DIR/test-files/${FILE_SIZE}.bin"
 [[ ! -f "$TEST_FILE" ]] && die "Test file not found: $TEST_FILE"
+
+# Build and update VM before running test
+build_binary
+update_vm_image
 
 mkdir -p "$RESULTS_DIR"
 TIMESTAMP=$(date +%Y%m%d-%H%M%S)

@@ -5,7 +5,6 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 # Test matrix configuration
 FILE_SIZES=("100M" "500M" "1G" "2G" "5G")
@@ -17,69 +16,12 @@ log() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"
 }
 
-# Build PicoShare binary
-build_binary() {
-    log "==================================================="
-    log "Building PicoShare binary..."
-    log "==================================================="
-
-    cd "$PROJECT_ROOT"
-
-    # Check if we're using ncruces2 driver (pure Go, no CGO)
-    if grep -q 'github.com/ncruces/go-sqlite3' go.mod 2>/dev/null; then
-        log "Detected ncruces2 driver - building with CGO_ENABLED=0"
-        CGO_ENABLED=0 /usr/local/go/bin/go build -o "$PROJECT_ROOT/picoshare" ./cmd/picoshare
-    else
-        log "Building with standard Go (CGO enabled for mattn driver)"
-        /usr/local/go/bin/go build -o "$PROJECT_ROOT/picoshare" ./cmd/picoshare
-    fi
-
-    if [[ ! -f "$PROJECT_ROOT/picoshare" ]]; then
-        log "ERROR: Build failed - picoshare binary not found"
-        exit 1
-    fi
-
-    log "✓ Build complete: $(ls -lh "$PROJECT_ROOT/picoshare" | awk '{print $5}')"
-    log ""
-}
-
-# Update VM image with new binary
-update_vm_image() {
-    log "==================================================="
-    log "Updating VM image with new binary..."
-    log "==================================================="
-
-    local rootfs="$SCRIPT_DIR/firecracker-images/rootfs-working.ext4"
-    local mount_point="/mnt"
-
-    if [[ ! -f "$rootfs" ]]; then
-        log "ERROR: VM rootfs not found at $rootfs"
-        exit 1
-    fi
-
-    log "Mounting $rootfs..."
-    sudo mount -o loop "$rootfs" "$mount_point"
-
-    log "Copying binary to /usr/local/bin/picoshare..."
-    sudo cp "$PROJECT_ROOT/picoshare" "$mount_point/usr/local/bin/picoshare"
-
-    log "Unmounting..."
-    sudo umount "$mount_point"
-
-    log "✓ VM image updated"
-    log ""
-}
-
-# Build and update VM before running tests
 log "==================================================="
 log "Pre-test preparation"
 log "==================================================="
 log "Branch: $(git branch --show-current)"
 log "Commit: $(git rev-parse --short HEAD)"
 log ""
-
-build_binary
-update_vm_image
 
 # Create results directory with branch name
 TIMESTAMP=$(date +%Y%m%d-%H%M%S)
