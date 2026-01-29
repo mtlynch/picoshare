@@ -30,12 +30,12 @@ results/result-fc-*.json
 
 ## Test Results
 
-| Configuration | Result | Boot Time | Upload Time | Throughput |
-|---------------|--------|-----------|-------------|------------|
-| 2048MB / 100M | ✅ PASS | 0.10s | 0.80s | 125 MB/s |
-| 1024MB / 100M | ✅ PASS | 0.10s | 0.78s | 128 MB/s |
-| 2048MB / 500M | ❌ FAIL | 0.10s | - | Disk space* |
-| 512MB / 100M | ✅ PASS | 0.10s | 0.74s | 135 MB/s |
+| Configuration | Result  | Boot Time | Upload Time | Throughput   |
+| ------------- | ------- | --------- | ----------- | ------------ |
+| 2048MB / 100M | ✅ PASS | 0.10s     | 0.80s       | 125 MB/s     |
+| 1024MB / 100M | ✅ PASS | 0.10s     | 0.78s       | 128 MB/s     |
+| 2048MB / 500M | ❌ FAIL | 0.10s     | -           | Disk space\* |
+| 512MB / 100M  | ✅ PASS | 0.10s     | 0.74s       | 135 MB/s     |
 
 \* Needs larger rootfs for 500MB+ uploads
 

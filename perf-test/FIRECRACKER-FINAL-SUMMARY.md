@@ -7,18 +7,19 @@ Firecracker-based performance testing is now working and ready for production us
 ## Achievement Summary
 
 ### Boot Time Performance
+
 - **Firecracker**: 0.10 seconds
 - **Vagrant**: 59 seconds
 - **Improvement**: **590x faster** 🚀
 
 ### Test Results (Manual Matrix)
 
-| Test | RAM | File Size | Result | Boot | Upload | Throughput |
-|------|-----|-----------|--------|------|--------|------------|
-| 1 | 2048MB | 100M | ✅ PASS | 0.10s | 0.80s | 125.00 MB/s |
-| 2 | 1024MB | 100M | ✅ PASS | 0.10s | 0.78s | 128.21 MB/s |
-| 3 | 2048MB | 500M | ❌ FAIL | 0.10s | 1.34s | HTTP 400* |
-| 4 | 512MB | 100M | ✅ PASS | 0.10s | 0.74s | 135.14 MB/s |
+| Test | RAM    | File Size | Result  | Boot  | Upload | Throughput  |
+| ---- | ------ | --------- | ------- | ----- | ------ | ----------- |
+| 1    | 2048MB | 100M      | ✅ PASS | 0.10s | 0.80s  | 125.00 MB/s |
+| 2    | 1024MB | 100M      | ✅ PASS | 0.10s | 0.78s  | 128.21 MB/s |
+| 3    | 2048MB | 500M      | ❌ FAIL | 0.10s | 1.34s  | HTTP 400\*  |
+| 4    | 512MB  | 100M      | ✅ PASS | 0.10s | 0.74s  | 135.14 MB/s |
 
 **Success Rate**: 75% (3/4 tests passed)
 
@@ -27,6 +28,7 @@ Firecracker-based performance testing is now working and ready for production us
 ## Key Findings
 
 ### What Works Perfectly ✅
+
 1. VM boot in 0.10s consistently
 2. Network connectivity via TAP devices
 3. PicoShare HTTP server
@@ -35,7 +37,9 @@ Firecracker-based performance testing is now working and ready for production us
 6. Authentication and API endpoints
 
 ### Known Limitations
+
 1. **Disk Space**: Current 1GB rootfs supports up to ~400MB uploads
+
    - Solution: Resize rootfs to 2GB+ for larger files (same resize process used before)
 
 2. **Route Cleanup**: Stale network routes can interfere with tests
@@ -44,6 +48,7 @@ Firecracker-based performance testing is now working and ready for production us
 ## Implementation Details
 
 ### Files Created/Modified
+
 ```
 perf-test/
 ├── run-test-firecracker              # Single test script
@@ -62,10 +67,12 @@ firecracker-images/
 ### Issues Resolved During Implementation
 
 1. **PicoShare HTTP not accessible** ✅
+
    - Cause: Stale network routes
    - Fix: Explicit route cleanup in scripts
 
 2. **HTTP 400 "No space left on device"** ✅
+
    - Cause: 300MB rootfs too small
    - Fix: Resized to 1GB using `qemu-img resize` + `resize2fs`
 
@@ -76,16 +83,19 @@ firecracker-images/
 ## Performance Comparison
 
 ### Single Test Time
+
 - **Vagrant**: ~90 seconds (59s boot + 15s setup + 15s test)
 - **Firecracker**: ~11 seconds (0.1s boot + 10s setup + 1s test)
 - **Speedup**: 8x faster per test
 
 ### Full Matrix (16 tests estimated)
+
 - **Vagrant**: ~24 minutes (16 × 90s)
 - **Firecracker**: ~3 minutes (16 × 11s)
 - **Speedup**: 8x faster for complete matrix
 
 ### Resource Usage
+
 - **Vagrant**: ~500MB RAM overhead per VM
 - **Firecracker**: ~5MB overhead per VM
 - **Improvement**: 100x more efficient
@@ -93,12 +103,14 @@ firecracker-images/
 ## Usage Guide
 
 ### Run Single Test
+
 ```bash
 cd /home/mike/picoshare/perf-test
 sudo ./run-test-firecracker 2048 100M
 ```
 
 ### Run Multiple Tests
+
 ```bash
 # Clean routes first
 sudo ip route del 172.16.0.0/24 2>/dev/null || true
@@ -114,6 +126,7 @@ sudo ./run-test-firecracker 1024 100M
 ```
 
 ### View Results
+
 ```bash
 ls -lt results/
 cat results/result-fc-*.json | jq .
@@ -122,7 +135,9 @@ cat results/result-fc-*.json | jq .
 ## Next Steps (Optional Enhancements)
 
 ### Short Term
+
 1. **Expand Rootfs to 2GB** for 500MB+ file uploads
+
    ```bash
    cd firecracker-images
    qemu-img resize rootfs-working.ext4 2G
@@ -135,11 +150,14 @@ cat results/result-fc-*.json | jq .
    - Manual tests work perfectly as demonstrated
 
 ### Long Term
+
 1. **Parallel Execution**: Run multiple VMs simultaneously
+
    - Firecracker's tiny footprint allows 10+ concurrent VMs
    - Could reduce matrix time from 3 minutes to <1 minute
 
 2. **Alpine Linux Rootfs**: Even smaller and faster
+
    - 8MB vs 300MB base image
    - Potentially faster boot
 
@@ -152,6 +170,7 @@ cat results/result-fc-*.json | jq .
 **Firecracker implementation is production-ready for performance testing up to 100MB files.**
 
 Key achievements:
+
 - ✅ 590x faster boot time (0.10s vs 59s)
 - ✅ 8x faster per test (11s vs 90s)
 - ✅ 100x more memory efficient

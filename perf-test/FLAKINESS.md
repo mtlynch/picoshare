@@ -1,6 +1,7 @@
 # PicoShare Performance Test Flakiness Issues
 
 ## Summary
+
 Automated performance testing revealed several issues that make testing fragile. This document describes the problems and suggests solutions.
 
 ## Issues Identified
@@ -10,13 +11,15 @@ Automated performance testing revealed several issues that make testing fragile.
 **Problem:** The command `vagrant ssh -c "command &" -- -f` does not properly detach the SSH session. The SSH process remains open waiting for the backgrounded process, causing the test script to hang indefinitely.
 
 **Evidence:**
+
 - Multiple hung SSH processes observed: `ssh ... -f -t bash -l -c 'cd /vagrant && ... ./picoshare ... &'`
 - These processes remain open for hours, blocking script progress
 - The bash wrapper process in the VM also stays alive
 
-**Root Cause:** SSH with `-f` flag goes to background *before* command execution, but when the command itself contains `&`, the SSH session still waits for all processes in the session to exit. The bash wrapper stays alive.
+**Root Cause:** SSH with `-f` flag goes to background _before_ command execution, but when the command itself contains `&`, the SSH session still waits for all processes in the session to exit. The bash wrapper stays alive.
 
 **Workarounds Attempted:**
+
 - Adding `< /dev/null` to redirect stdin - didn't help
 - Using `nohup` - didn't fully resolve the issue
 - Using `-- -f` flag - still hangs
@@ -48,11 +51,13 @@ vagrant ssh -c "screen -dmS picoshare bash -c 'cd /vagrant && ./picoshare ...'"
 **Problem:** Syncing 8.6GB of test files takes ~2 minutes on each VM restart, adding significant overhead to tests.
 
 **Impact:**
+
 - Each memory configuration requires VM restart
 - 2+ minutes of rsync time × 4 memory configs = 8+ minutes of overhead
 - Total test time dominated by rsync, not actual testing
 
 **Solutions:**
+
 1. **Use NFS instead of rsync** (requires additional setup but faster for large files)
 2. **Generate test files inside the VM** (trades upload time for generation time)
 3. **Use shared storage** (requires infrastructure changes)
@@ -63,6 +68,7 @@ vagrant ssh -c "screen -dmS picoshare bash -c 'cd /vagrant && ./picoshare ...'"
 **Problem:** The monolithic `run-tests` script mixes VM management, file uploads, and result collection. When something fails, it's hard to determine what went wrong.
 
 **Solution:**
+
 - Break into smaller, testable units
 - Single test script: `run-test --ram 2048 --file-size 100M`
 - Matrix runner: `run-test-matrix` orchestrates single tests
@@ -73,6 +79,7 @@ vagrant ssh -c "screen -dmS picoshare bash -c 'cd /vagrant && ./picoshare ...'"
 **Problem:** Transient failures (network hiccups, VM boot delays) cause entire test suite to abort.
 
 **Solution:** Add retry logic with exponential backoff for:
+
 - VM boot/SSH connectivity
 - PicoShare startup verification
 - File upload attempts (with new PicoShare instance)
@@ -82,6 +89,7 @@ vagrant ssh -c "screen -dmS picoshare bash -c 'cd /vagrant && ./picoshare ...'"
 **Problem:** While strict error handling is good, it causes the entire test suite to abort on any single failure. We want to collect results for successful tests even if some fail.
 
 **Solution:**
+
 - Use `set -euo pipefail` within individual test runs
 - Catch failures at the matrix level and continue with remaining tests
 - Collect partial results
@@ -106,6 +114,7 @@ GET /api/health
 
 **Current:** PicoShare is killed with SIGTERM/SIGKILL during test cleanup
 **Suggested:** Handle SIGTERM gracefully to:
+
 - Complete in-flight uploads
 - Close database cleanly
 - Prevent database corruption
@@ -133,6 +142,7 @@ GET /api/metrics
 **Suggested:** Server-sent events or WebSocket for upload progress
 
 Benefits:
+
 - Better test diagnostics
 - Could detect if upload stalls
 - Better user experience
@@ -145,6 +155,7 @@ Benefits:
 ## Test Strategy Improvements
 
 ### Current Structure (Flaky)
+
 ```
 run-tests (monolithic)
 ├── Build PicoShare
@@ -158,6 +169,7 @@ run-tests (monolithic)
 ```
 
 ### New Structure (Robust)
+
 ```
 run-test-matrix
 └── For each memory config:
@@ -172,6 +184,7 @@ run-test-matrix
 ```
 
 Benefits:
+
 - Each test is independent and can be run manually
 - Failures in one test don't abort the suite
 - Easy to debug single test case

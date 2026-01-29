@@ -17,6 +17,7 @@ This directory contains tools for performance testing PicoShare with varying mem
 ```
 
 This runs 20 tests (4 memory configs × 5 file sizes):
+
 - **Memory**: 2048MB, 1024MB, 512MB, 256MB (descending)
 - **File sizes**: 100M, 500M, 1G, 2G, 5G (ascending)
 
@@ -27,6 +28,7 @@ This runs 20 tests (4 memory configs × 5 file sizes):
 Runs a single performance test with specified RAM and file size.
 
 **Usage:**
+
 ```bash
 ./run-test --ram <MB> --file-size <SIZE> [OPTIONS]
 
@@ -41,11 +43,13 @@ Optional:
 ```
 
 **Output:**
+
 - Test results logged to stderr
 - Result file path printed to stdout (JSON format)
 - Exit code 0 on success, non-zero on failure
 
 **Example:**
+
 ```bash
 $ ./run-test --ram 512 --file-size 1G
 [2026-01-29 12:00:00] === PicoShare Performance Test ===
@@ -65,6 +69,7 @@ $ ./run-test --ram 512 --file-size 1G
 Orchestrates multiple `run-test` invocations for the full test matrix.
 
 **Usage:**
+
 ```bash
 ./run-test-matrix [OPTIONS]
 
@@ -76,11 +81,13 @@ Options:
 ```
 
 **Output:**
+
 - Individual test logs in results directory
 - CSV summary: `results/matrix-TIMESTAMP/matrix-results.csv`
 - Text summary: `results/matrix-TIMESTAMP/summary.txt`
 
 **Example:**
+
 ```bash
 $ ./run-test-matrix --memory-limits "2048,1024" --file-sizes "100M,500M"
 [2026-01-29 12:00:00] PicoShare Performance Test Matrix
@@ -96,6 +103,7 @@ $ ./run-test-matrix --memory-limits "2048,1024" --file-sizes "100M,500M"
 ## Prerequisites
 
 ### System Requirements
+
 - Vagrant ≥ 2.4.0
 - libvirt provider for Vagrant
 - KVM support
@@ -103,6 +111,7 @@ $ ./run-test-matrix --memory-limits "2048,1024" --file-sizes "100M,500M"
 - At least 150GB free disk space (for test files and VMs)
 
 ### Installed Tools
+
 - `curl` - for HTTP requests
 - `jq` - for JSON parsing
 - `bc` - for calculations
@@ -111,15 +120,18 @@ $ ./run-test-matrix --memory-limits "2048,1024" --file-sizes "100M,500M"
 ### One-Time Setup
 
 1. **Install dependencies:**
+
    ```bash
    # On Debian/Ubuntu:
    sudo apt-get install vagrant vagrant-libvirt qemu-kvm libvirt-daemon-system jq bc
    ```
 
 2. **Generate test files:**
+
    ```bash
    ./generate-test-files
    ```
+
    This creates binary test files (100M, 500M, 1G, 2G, 5G) in `test-files/`.
    Total size: ~8.6GB
 
@@ -173,6 +185,7 @@ ram_mb,file_size,duration_seconds,throughput_mbps,peak_memory_mb,http_status,exi
 ### Why Screen?
 
 PicoShare is started in a screen session (`screen -dmS picoshare ...`) because:
+
 - SSH backgrounding (`vagrant ssh -c "command &" -- -f`) leaves SSH session hung
 - Screen properly daemonizes the process
 - Allows inspecting PicoShare if test fails (`vagrant ssh` then `screen -r picoshare`)
@@ -182,6 +195,7 @@ See `FLAKINESS.md` for detailed analysis of testing challenges.
 ## Troubleshooting
 
 ### VM Won't Start
+
 ```bash
 # Check Vagrant status
 vagrant status
@@ -194,6 +208,7 @@ vagrant destroy -f
 ```
 
 ### PicoShare Won't Start
+
 ```bash
 # SSH into VM
 vagrant ssh
@@ -212,18 +227,21 @@ screen -r picoshare
 ```
 
 ### Test Hangs or Times Out
+
 - Default timeout is 600 seconds (10 minutes) per test
 - Increase with `--timeout` flag
 - Check if VM has enough memory
 - Monitor VM: `vagrant ssh` then `top` or `free -h`
 
 ### Vagrant Lock Error
+
 ```
 An action 'up' was attempted on the machine 'default',
 but another process is already executing an action...
 ```
 
 **Solution:**
+
 ```bash
 # Find vagrant processes
 ps aux | grep vagrant
@@ -238,6 +256,7 @@ rm -rf .vagrant/machines/default/*/action_*
 ## Known Issues
 
 See `FLAKINESS.md` for comprehensive documentation of:
+
 - SSH backgrounding problems
 - Rsync performance with large files
 - Test retry strategies
@@ -272,6 +291,7 @@ perf-test/
 ### Testing the Test Scripts
 
 Run a quick single test:
+
 ```bash
 ./run-test --ram 2048 --file-size 100M --keep-vm
 ```
@@ -281,6 +301,7 @@ The `--keep-vm` flag preserves the VM for debugging.
 ### Adding New Test Configurations
 
 Edit the arrays in `run-test-matrix`:
+
 ```bash
 FILE_SIZES=("100M" "500M" "1G" "2G" "5G")
 MEMORY_LIMITS=("2048" "1024" "512" "256")
@@ -289,11 +310,13 @@ MEMORY_LIMITS=("2048" "1024" "512" "256")
 ### Debugging
 
 Enable verbose Vagrant output:
+
 ```bash
 VAGRANT_LOG=debug ./run-test --ram 2048 --file-size 100M
 ```
 
 Enable bash tracing:
+
 ```bash
 bash -x ./run-test --ram 2048 --file-size 100M
 ```
@@ -301,6 +324,7 @@ bash -x ./run-test --ram 2048 --file-size 100M
 ## Contributing
 
 When adding new test scripts or modifying existing ones:
+
 1. Follow the error handling pattern (`set -euo pipefail`)
 2. Use the `log()` function for all user-facing messages
 3. Use the `die()` function for fatal errors
