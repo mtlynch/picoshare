@@ -11,7 +11,6 @@ import (
 	"sort"
 	"time"
 
-	"github.com/gorilla/mux"
 	"github.com/mileusna/useragent"
 	"github.com/mtlynch/picoshare/build"
 	"github.com/mtlynch/picoshare/handlers/parse"
@@ -224,7 +223,7 @@ func (s Server) fileEditGet() http.HandlerFunc {
 		"templates/pages/file-edit.html")
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		id, err := parseEntryID(mux.Vars(r)["id"])
+		id, err := parseEntryID(r.PathValue("id"))
 		if err != nil {
 			log.Printf("error parsing ID: %v", err)
 			http.Error(w, fmt.Sprintf("bad entry ID: %v", err), http.StatusBadRequest)
@@ -278,7 +277,7 @@ func (s Server) fileInfoGet() http.HandlerFunc {
 		"templates/pages/file-info.html")
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		id, err := parseEntryID(mux.Vars(r)["id"])
+		id, err := parseEntryID(r.PathValue("id"))
 		if err != nil {
 			log.Printf("error parsing ID: %v", err)
 			http.Error(w, fmt.Sprintf("bad entry ID: %v", err), http.StatusBadRequest)
@@ -329,7 +328,7 @@ func (s Server) fileDownloadsGet() http.HandlerFunc {
 	t := parseTemplatesWithFuncs(fns, "templates/pages/file-downloads.html")
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		id, err := parseEntryID(mux.Vars(r)["id"])
+		id, err := parseEntryID(r.PathValue("id"))
 		if err != nil {
 			log.Printf("error parsing ID: %v", err)
 			http.Error(w, fmt.Sprintf("bad entry ID: %v", err), http.StatusBadRequest)
@@ -410,7 +409,7 @@ func (s Server) fileConfirmDeleteGet() http.HandlerFunc {
 	t := parseTemplates("templates/pages/file-delete.html")
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		id, err := parseEntryID(mux.Vars(r)["id"])
+		id, err := parseEntryID(r.PathValue("id"))
 		if err != nil {
 			log.Printf("error parsing ID: %v", err)
 			http.Error(w, fmt.Sprintf("bad entry ID: %v", err), http.StatusBadRequest)
@@ -558,7 +557,7 @@ func (s Server) guestUploadGet() http.HandlerFunc {
 	tInactive := parseTemplates("templates/pages/guest-link-inactive.html")
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		guestLinkID, err := parseGuestLinkID(mux.Vars(r)["guestLinkID"])
+		guestLinkID, err := parseGuestLinkID(r.PathValue("guestLinkID"))
 		if err != nil {
 			log.Printf("error parsing guest link ID: %v", err)
 			http.Error(w, fmt.Sprintf("Invalid guest link ID: %v", err), http.StatusBadRequest)

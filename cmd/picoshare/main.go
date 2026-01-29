@@ -12,8 +12,6 @@ import (
 	"syscall"
 	"time"
 
-	gorilla "github.com/mtlynch/gorilla-handlers"
-
 	"github.com/mtlynch/picoshare/garbagecollect"
 	"github.com/mtlynch/picoshare/handlers"
 	"github.com/mtlynch/picoshare/handlers/auth/shared_secret"
@@ -49,10 +47,11 @@ func main() {
 
 	server := handlers.New(authenticator, &store, spaceChecker, &collector, &clock)
 
-	h := gorilla.LoggingHandler(os.Stdout, server.Router())
+	var h http.Handler = server.Router()
 	if os.Getenv("PS_BEHIND_PROXY") != "" {
-		h = gorilla.ProxyIPHeadersHandler(h)
+		h = handlers.ProxyIPHeadersHandler(h)
 	}
+	h = handlers.LoggingHandler(h)
 
 	port := os.Getenv("PORT")
 	if port == "" {

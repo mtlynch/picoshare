@@ -4,8 +4,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/gorilla/mux"
-
 	"github.com/mtlynch/picoshare/garbagecollect"
 	"github.com/mtlynch/picoshare/space"
 )
@@ -26,7 +24,7 @@ type (
 	}
 
 	Server struct {
-		router        *mux.Router
+		router        *http.ServeMux
 		authenticator Authenticator
 		store         Store
 		spaceChecker  SpaceChecker
@@ -36,7 +34,7 @@ type (
 )
 
 // Router returns the underlying router interface for the server.
-func (s Server) Router() *mux.Router {
+func (s Server) Router() *http.ServeMux {
 	return s.router
 }
 
@@ -44,7 +42,7 @@ func (s Server) Router() *mux.Router {
 // requests.
 func New(authenticator Authenticator, store Store, spaceChecker SpaceChecker, collector *garbagecollect.Collector, clock Clock) Server {
 	s := Server{
-		router:        mux.NewRouter(),
+		router:        http.NewServeMux(),
 		authenticator: authenticator,
 		store:         store,
 		spaceChecker:  spaceChecker,

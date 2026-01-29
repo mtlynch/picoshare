@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/gorilla/mux"
 	"github.com/mtlynch/picoshare/handlers/parse"
 	"github.com/mtlynch/picoshare/picoshare"
 	"github.com/mtlynch/picoshare/random"
@@ -49,9 +48,9 @@ func (s Server) guestLinksPost() http.HandlerFunc {
 
 func (s Server) guestLinksDelete() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		id, err := parseGuestLinkID(mux.Vars(r)["id"])
+		id, err := parseGuestLinkID(r.PathValue("id"))
 		if err != nil {
-			log.Printf("failed to parse guest link ID %s: %v", mux.Vars(r)["id"], err)
+			log.Printf("failed to parse guest link ID %s: %v", r.PathValue("id"), err)
 			http.Error(w, fmt.Sprintf("Invalid guest link ID: %v", err), http.StatusBadRequest)
 			return
 		}
@@ -66,16 +65,16 @@ func (s Server) guestLinksDelete() http.HandlerFunc {
 
 func (s *Server) guestLinksEnableDisable() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		id, err := parseGuestLinkID(mux.Vars(r)["id"])
+		id, err := parseGuestLinkID(r.PathValue("id"))
 		if err != nil {
-			log.Printf("failed to parse guest link ID %s: %v", mux.Vars(r)["id"], err)
+			log.Printf("failed to parse guest link ID %s: %v", r.PathValue("id"), err)
 			http.Error(w, fmt.Sprintf("Invalid guest link ID: %v", err), http.StatusBadRequest)
 			return
 		}
 
 		if _, err := s.getDB(r).GetGuestLink(id); err != nil {
-			log.Printf("failed to get guest link ID %s: %v", mux.Vars(r)["id"], err)
-			http.Error(w, fmt.Sprintf("Guest link with ID %s not found: %v", mux.Vars(r)["id"], err), http.StatusNotFound)
+			log.Printf("failed to get guest link ID %s: %v", r.PathValue("id"), err)
+			http.Error(w, fmt.Sprintf("Guest link with ID %s not found: %v", r.PathValue("id"), err), http.StatusNotFound)
 			return
 		}
 

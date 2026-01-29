@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/gorilla/mux"
 	"github.com/mtlynch/picoshare/handlers/parse"
 	"github.com/mtlynch/picoshare/picoshare"
 	"github.com/mtlynch/picoshare/random"
@@ -69,7 +68,7 @@ func (s Server) entryPost() http.HandlerFunc {
 
 func (s Server) entryPut() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		id, err := parseEntryID(mux.Vars(r)["id"])
+		id, err := parseEntryID(r.PathValue("id"))
 		if err != nil {
 			log.Printf("error parsing ID: %v", err)
 			http.Error(w, fmt.Sprintf("bad entry ID: %v", err), http.StatusBadRequest)
@@ -103,7 +102,7 @@ func (s Server) entryPut() http.HandlerFunc {
 
 func (s Server) guestEntryPost() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		guestLinkID, err := parseGuestLinkID(mux.Vars(r)["guestLinkID"])
+		guestLinkID, err := parseGuestLinkID(r.PathValue("guestLinkID"))
 		if err != nil {
 			log.Printf("error parsing guest link ID: %v", err)
 			http.Error(w, fmt.Sprintf("Invalid guest link ID: %v", err), http.StatusBadRequest)
