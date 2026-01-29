@@ -111,8 +111,6 @@ jobs:
           name: Run end-to-end tests
           command: ./dev-scripts/run-e2e-tests --skip-build
       - store_artifacts:
-          path: e2e/playwright-report
-      - store_artifacts:
           path: e2e/results
   package_release:
     executor: base
