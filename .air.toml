@@ -1,0 +1,20 @@
+root = "."
+tmp_dir = "/tmp/air"
+
+[build]
+  cmd = "PS_VERSION=\"$(git describe --tags)\" dev-scripts/build-backend dev"
+  bin = "./bin/picoshare-dev"
+  full_bin = "PS_SHARED_SECRET=somepassword ./bin/picoshare-dev -db data/store.db"
+  include_ext = ["go", "html", "js", "css"]
+  exclude_dir = ["bin", "data", "dev-scripts", "dist", "e2e", "node_modules", "reference", "vendor"]
+  exclude_regex = ["_test\\.go$"]
+  delay = 1000
+  stop_on_error = true
+  send_interrupt = true
+  kill_delay = 500
+
+[log]
+  time = false
+
+[misc]
+  clean_on_exit = true

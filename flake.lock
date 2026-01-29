@@ -1,5 +1,21 @@
 {
   "nodes": {
+    "air-nixpkgs": {
+      "locked": {
+        "lastModified": 1737332832,
+        "narHash": "sha256-Qs5piKqQSE/ql001ZK1kAXF9ebfJBivgNjkG8THQ4iI=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "678af34d5e4d198fcd948a7db8b89a618d8e62fa",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "678af34d5e4d198fcd948a7db8b89a618d8e62fa",
+        "type": "github"
+      }
+    },
     "flake-utils": {
       "inputs": {
         "systems": "systems"
@@ -100,6 +116,7 @@
     },
     "root": {
       "inputs": {
+        "air-nixpkgs": "air-nixpkgs",
         "flake-utils": "flake-utils",
         "flyctl-nixpkgs": "flyctl-nixpkgs",
         "go-nixpkgs": "go-nixpkgs",

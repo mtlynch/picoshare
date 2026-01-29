@@ -7,5 +7,5 @@ dist/
 .env*
 *.test.js
 fly.toml
-modd.conf
+.air.toml
 Dockerfile
