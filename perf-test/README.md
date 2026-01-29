@@ -14,9 +14,9 @@ Run the setup script to download and configure all necessary components:
 
 This will:
 - Download Firecracker v1.7.0
-- Download Linux kernel (vmlinux.bin)
+- Download Linux kernel 5.10.245 (vmlinux.bin)
 - Download Ubuntu 22.04 base image
-- Create an 8GB VM image with PicoShare installed
+- Create a 12GB VM image with PicoShare installed
 - Generate test files (100M, 500M, 1G, 2G, 5G)
 
 **Note**: Setup requires sudo access for:
@@ -26,6 +26,8 @@ This will:
 
 ### 2. Run Tests
 
+**After logging out and back in** (to activate kvm group membership):
+
 Single test:
 ```bash
 sudo ./run-test 2048 100M
@@ -34,6 +36,12 @@ sudo ./run-test 2048 100M
 Full test matrix:
 ```bash
 ./run-test-matrix
+```
+
+**Before logging out**, use this wrapper:
+```bash
+sg kvm -c "sudo ./run-test 2048 100M"
+sg kvm -c "./run-test-matrix"
 ```
 
 ## Test Configuration
@@ -106,9 +114,12 @@ Each test produces a JSON file with:
 ### Typical Test Timing
 
 - VM boot: 0.10s
-- PicoShare startup: 10s
-- File upload: varies by size (0.7s for 100M, 4s for 1G, 20s for 5G)
-- Total per test: 11-35s depending on file size
+- Kernel CRNG initialization: <0.02s (via `random.trust_cpu=on`)
+- PicoShare startup: ~10s
+- File upload: varies by size (0.7s for 100M, 8s for 1G, 120s for 5G)
+- Total per test: 11-150s depending on file size
+
+**Note**: The kernel parameter `random.trust_cpu=on` is critical for fast startup. Without it, CRNG initialization takes ~3 minutes, blocking all cryptographic operations.
 
 ## Troubleshooting
 
@@ -129,19 +140,25 @@ sudo ./run-test 2048 100M
 If you get "Permission denied" for `/dev/kvm`:
 
 ```bash
-# Add your user to kvm group
+# Add your user to kvm group (setup script does this automatically)
 sudo usermod -aG kvm $USER
 
-# Log out and back in, then verify
+# Option 1: Log out and back in, then verify
 groups | grep kvm
+
+# Option 2: Use sg wrapper without logging out
+sg kvm -c "sudo ./run-test 2048 100M"
 ```
+
+The setup script automatically adds you to the kvm group, but you need to either log out/in or use the `sg kvm -c` wrapper for the group membership to take effect.
 
 ### Disk Space
 
-The VM image is 8GB to support uploads up to 5GB. If tests fail with "no space left on device", ensure:
+The VM image is 12GB to support uploads up to 5GB with adequate overhead. If tests fail with "no space left on device", ensure:
 
 - Your host has enough space in `/home/mike/picoshare/perf-test/`
 - The VM image hasn't been corrupted (re-run `./setup-test-environment`)
+- The init script is cleaning `/tmp` on each boot (built into the VM image)
 
 ### Debug Mode
 
@@ -158,9 +175,9 @@ tail -f /tmp/fc-console-*.log
 
 ```
 firecracker-images/
-├── vmlinux.bin              # Linux kernel (5.10)
+├── vmlinux.bin              # Linux kernel 5.10.245 with random.trust_cpu support
 ├── ubuntu-22.04.ext4        # Base Ubuntu rootfs (300MB)
-└── rootfs-working.ext4      # Modified VM image (8GB)
+└── rootfs-working.ext4      # Modified VM image (12GB)
     ├── /usr/local/bin/picoshare
     └── /sbin/init-picoshare
 
