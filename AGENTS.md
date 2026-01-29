@@ -52,11 +52,6 @@ If you learned that methods shouldn't be exported just for testing, add to `AGEN
 
 "Don't export methods just for testing - test through public APIs instead."
 
-# Development
-
-- Set `GOCACHE` to `/tmp/go-cache` to avoid permission issues.
-- Set `GOPATH` to `/tmp/go-workspace` to avoid permission issues.
-
 # Playwright (MCP)
 
 - Start PicoShare before driving the UI:
@@ -122,7 +117,6 @@ If you learned that methods shouldn't be exported just for testing, add to `AGEN
 - Never use `time.Now` in tests. Use a hardcoded fixed time.
 - Go tests should be in a separate `_test` package so they don't test non-exported interfaces.
 - Test HTTP handlers by sending requests to the relevant routes. Minimize test coupling by avoiding tests that call HTTP handler functions directly.
-- Do not attempt to run e2e tests.
 
 ## if got, want
 
