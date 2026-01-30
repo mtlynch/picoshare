@@ -126,9 +126,11 @@ install_picoshare_in_rootfs() {
     log "Installing PicoShare in rootfs..."
 
     # Build PicoShare if not already built
-    if [[ ! -f "$SCRIPT_DIR/../build/picoshare" ]]; then
+    if [[ ! -f "$SCRIPT_DIR/../bin/picoshare" ]]; then
         log "Building PicoShare..."
         cd "$SCRIPT_DIR/.."
+        # Use Go 1.24 from /usr/local/go (required for slices package and ncruces2)
+        export PATH="/usr/local/go/bin:$PATH"
         ./dev-scripts/build-backend
         cd "$SCRIPT_DIR"
     fi
@@ -140,7 +142,7 @@ install_picoshare_in_rootfs() {
     sudo mount "$FC_DIR/rootfs-working.ext4" "$mount_point"
 
     # Copy PicoShare binary
-    sudo cp "$SCRIPT_DIR/../build/picoshare" "$mount_point/usr/local/bin/picoshare"
+    sudo cp "$SCRIPT_DIR/../bin/picoshare" "$mount_point/usr/local/bin/picoshare"
     sudo chmod +x "$mount_point/usr/local/bin/picoshare"
 
     # Create custom init script
