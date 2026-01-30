@@ -3,9 +3,13 @@ package sqlite
 import (
 	"database/sql"
 	"log"
+	"os"
+	"path/filepath"
 	"time"
 
-	_ "github.com/mattn/go-sqlite3"
+	"github.com/ncruces/go-sqlite3/driver"
+	_ "github.com/ncruces/go-sqlite3/embed"
+	"github.com/ncruces/go-sqlite3/ext/blobio"
 
 	"github.com/mtlynch/picoshare/picoshare"
 )
@@ -35,7 +39,7 @@ func New(path string, optimizeForLitestream bool) Store {
 // chunk size for writing files. Most callers should just use New().
 func NewWithChunkSize(path string, chunkSize uint64, optimizeForLitestream bool) Store {
 	log.Printf("reading DB from %s", path)
-	ctx, err := sql.Open("sqlite3", path)
+	ctx, err := driver.Open(path, blobio.Register)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -102,5 +106,22 @@ func (s Store) ClearAll() error {
 	// Reset SQLite autoincrement sequences (if table exists)
 	// Note: sqlite_sequence only exists if tables use AUTOINCREMENT
 	_, _ = s.ctx.Exec("DELETE FROM sqlite_sequence")
+
+	// Clean up /tmp to prevent disk space issues during repeated large uploads
+	tmpDir, err := os.Open("/tmp")
+	if err == nil {
+		defer tmpDir.Close()
+		entries, err := tmpDir.Readdirnames(-1)
+		if err == nil {
+			for _, entry := range entries {
+				// Skip protected directories
+				if entry == "." || entry == ".." || entry == "picoshare-data" {
+					continue
+				}
+				_ = os.RemoveAll(filepath.Join("/tmp", entry))
+			}
+		}
+	}
+
 	return nil
 }
