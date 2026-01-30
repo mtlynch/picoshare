@@ -20,6 +20,9 @@ node_modules/
 # System files
 .DS_Store
 
+# Log files in repo root
+/*.log
+
 # Playwright output
 /playwright-report/
 /playwright/.cache/
