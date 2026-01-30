@@ -9,8 +9,13 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.22
 	github.com/mileusna/useragent v1.3.3
 	github.com/mtlynch/gorilla-handlers v1.5.2
-	golang.org/x/crypto v0.0.0-20220331220935-ae2d96664a29
+	github.com/ncruces/go-sqlite3 v0.22.0
+	golang.org/x/crypto v0.32.0
 	golang.org/x/sys v0.29.0
 )
 
-require github.com/felixge/httpsnoop v1.0.1 // indirect
+require (
+	github.com/felixge/httpsnoop v1.0.1 // indirect
+	github.com/ncruces/julianday v1.0.0 // indirect
+	github.com/tetratelabs/wazero v1.8.2 // indirect
+)
