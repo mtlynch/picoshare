@@ -105,11 +105,5 @@ func (s Store) ClearAll() error {
 	// Note: sqlite_sequence only exists if tables use AUTOINCREMENT
 	_, _ = s.ctx.Exec("DELETE FROM sqlite_sequence")
 
-	// Reclaim disk space by running VACUUM
-	// This is critical for preventing "disk I/O error" during repeated large uploads
-	if _, err := s.ctx.Exec("VACUUM"); err != nil {
-		log.Printf("VACUUM failed (non-fatal): %v", err)
-	}
-
 	return nil
 }
