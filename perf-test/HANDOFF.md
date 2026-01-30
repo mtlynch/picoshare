@@ -2,6 +2,64 @@
 
 This document explains how to run comprehensive performance tests across the baseline and all optimization branches.
 
+## Current Status
+
+**Last Updated**: 2026-01-30
+
+**Status**: ✅ READY FOR FULL TEST SUITE
+
+All critical issues have been identified and resolved. The test environment is fully operational and validated.
+
+### Recent Fixes Applied (2026-01-30)
+
+1. **Kernel Entropy Issue** - VMs were hanging waiting for random number generation
+   - **Root Cause**: Old v1.7 kernel lacked entropy support
+   - **Fix**: Downloaded v1.14 kernel (vmlinux-5.10.245) with `random.trust_cpu=on` support
+   - **Status**: ✅ Verified with SHA256 hash
+
+2. **Go Version Mismatch** - Build failures due to missing `slices` package
+   - **Root Cause**: System using Go 1.19 instead of required Go 1.24
+   - **Fix**: Added `PATH=/usr/local/go/bin` to both `run-test` and `setup-test-environment`
+   - **Status**: ✅ Builds completing successfully
+
+3. **Missing VM Init Script** - VM couldn't start PicoShare service
+   - **Root Cause**: Incorrect binary path in setup script (build/ vs bin/)
+   - **Fix**: Corrected path and re-ran full VM setup
+   - **Status**: ✅ Init script installed and verified
+
+4. **Test Suite Resilience** - Tests continued after failures, wasting time
+   - **Root Cause**: No abort-on-failure logic in run-test-matrix
+   - **Fix**: Added immediate exit with clear error messaging on first test failure
+   - **Status**: ✅ Committed to all branches
+
+### Validation Test Results
+
+**Test**: 256MB RAM, 100M file, 10 iterations
+**Date**: 2026-01-30 17:02:03
+**Result**: ✅ PASSED
+
+- Boot time: 0.10s
+- PicoShare ready: <60s (previously hung indefinitely)
+- Success rate: 10/10 iterations (100%)
+- Median throughput: 102.04 MB/s
+- Avg throughput: 103.08 ± 7.45 MB/s
+
+### Branch Status
+
+All branches synchronized with latest fixes:
+- ✅ `perf-test` (baseline)
+- ✅ `perf/batch-chunk-reading`
+- ✅ `perf/connection-pool-tuning`
+- ✅ `perf/denormalize-file-size`
+- ✅ `perf/downloads-index`
+- ✅ `perf/larger-chunk-size`
+- ✅ `perf/ncruces2-combined`
+
+**Commits Applied**:
+- `c156837` - Fix Go 1.24 PATH and binary location in setup-test-environment
+- `dff59cc` - Use Go 1.24 for builds in run-test
+- `df77642` - Abort test suite on first failure
+
 ## Overview
 
 We're comparing the baseline (`perf-test` branch) against 6 performance optimization branches:
