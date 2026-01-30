@@ -46,6 +46,9 @@ build_binary() {
     # Set version for build script
     export PS_VERSION="${PS_VERSION:-dev}"
 
+    # Use Go 1.24 from /usr/local/go (required for slices package and ncruces2)
+    export PATH="/usr/local/go/bin:$PATH"
+
     "$PROJECT_ROOT/dev-scripts/build-backend"
 
     if [[ ! -f "$PROJECT_ROOT/bin/picoshare" ]]; then
