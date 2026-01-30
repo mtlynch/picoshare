@@ -15,7 +15,7 @@ FIRECRACKER_VERSION="1.7.0"
 FIRECRACKER_URL="https://github.com/firecracker-microvm/firecracker/releases/download/v${FIRECRACKER_VERSION}/firecracker-v${FIRECRACKER_VERSION}-x86_64.tgz"
 
 # VM configuration
-ROOTFS_SIZE="12G"  # Large enough for 5G upload + 50% slack + OS overhead
+ROOTFS_SIZE="50G"  # Plenty of space for repeated large file uploads and testing
 
 log() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"
