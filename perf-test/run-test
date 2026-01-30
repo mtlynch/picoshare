@@ -180,7 +180,7 @@ log "Starting Firecracker VM..."
 start_time=$(date +%s.%N)
 
 rm -f "$FC_SOCKET"
-firecracker --api-sock "$FC_SOCKET" --config-file /tmp/fc-config-$$.json > /tmp/fc-console-$$.log 2>&1 &
+/usr/local/bin/firecracker --api-sock "$FC_SOCKET" --config-file /tmp/fc-config-$$.json > /tmp/fc-console-$$.log 2>&1 &
 FC_PID=$!
 
 # Wait for API socket
