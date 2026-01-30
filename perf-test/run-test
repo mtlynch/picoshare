@@ -16,6 +16,7 @@ TIMEOUT_SECONDS=600
 PORT=4001
 PS_SHARED_SECRET="perftestpassword"
 RESULTS_DIR="$SCRIPT_DIR/results"
+NUM_ITERATIONS="${NUM_ITERATIONS:-10}"  # Number of upload repetitions
 
 # Firecracker paths
 FC_KERNEL="$SCRIPT_DIR/firecracker-images/vmlinux.bin"
@@ -126,6 +127,7 @@ RESULT_FILE="$RESULTS_DIR/result-fc-${RAM_MB}MB-${FILE_SIZE}-${TIMESTAMP}.json"
 log "=== PicoShare Firecracker Performance Test ==="
 log "RAM: ${RAM_MB}MB"
 log "File: $FILE_SIZE"
+log "Iterations: $NUM_ITERATIONS"
 log ""
 
 # Create TAP device
@@ -227,41 +229,124 @@ if ! curl -sf -c "$COOKIE_FILE" -X POST \
     die "Authentication failed"
 fi
 
-# Run upload test
-log "Uploading ${FILE_SIZE} file..."
-upload_start=$(date +%s.%N)
+# Arrays to store results from all iterations
+declare -a durations
+declare -a throughputs
+declare -a http_statuses
 
-# Save response to file to capture body
-response_file="/tmp/upload-response-$$.txt"
-http_status=$(timeout "$TIMEOUT_SECONDS" curl -w "%{http_code}" -b "$COOKIE_FILE" -X POST \
-    -F "file=@${TEST_FILE}" \
-    -o "$response_file" \
-    "http://${FC_GUEST_IP}:4001/api/entry?expiration=2040-01-01T00:00:00Z" 2>&1 | tail -1) || http_status="timeout"
-
-if [[ "$http_status" != "200" ]]; then
-    log "Upload failed with HTTP $http_status"
-    log "Error response body:"
-    cat "$response_file"
-    log ""
-fi
-rm -f "$response_file"
-
-upload_end=$(date +%s.%N)
-duration=$(awk "BEGIN {printf \"%.2f\", $upload_end - $upload_start}")
-
-# Calculate throughput
+# Calculate file size once
 size_mb=$(echo "$FILE_SIZE" | sed 's/M$//' | sed 's/G$/000/' | bc)
-throughput=$(awk "BEGIN {printf \"%.2f\", $size_mb / $duration}")
 
-# Determine exit reason
+# Run upload test multiple times
+for i in $(seq 1 $NUM_ITERATIONS); do
+    log "Upload iteration $i/$NUM_ITERATIONS..."
+
+    # Clear database before upload (except first iteration - fresh VM)
+    if [[ $i -gt 1 ]]; then
+        clear_response=$(curl -s -b "$COOKIE_FILE" -w "\n%{http_code}" -X POST \
+            "http://${FC_GUEST_IP}:4001/api/debug/db/clear" 2>&1)
+        clear_status=$(echo "$clear_response" | tail -1)
+        clear_body=$(echo "$clear_response" | head -n -1)
+
+        if [[ "$clear_status" != "200" ]]; then
+            log "WARNING: Database clear failed for iteration $i (HTTP $clear_status)"
+            [[ -n "$clear_body" ]] && log "  Error: $clear_body"
+        fi
+        sleep 0.5  # Brief pause after clear
+    fi
+
+    upload_start=$(date +%s.%N)
+
+    # Save response to file to capture body
+    response_file="/tmp/upload-response-$$-$i.txt"
+    http_status=$(timeout "$TIMEOUT_SECONDS" curl -w "%{http_code}" -b "$COOKIE_FILE" -X POST \
+        -F "file=@${TEST_FILE}" \
+        -o "$response_file" \
+        "http://${FC_GUEST_IP}:4001/api/entry?expiration=2040-01-01T00:00:00Z" 2>&1 | tail -1) || http_status="timeout"
+
+    if [[ "$http_status" != "200" ]]; then
+        log "  Upload failed with HTTP $http_status"
+        if [[ -f "$response_file" ]]; then
+            log "  Error response: $(cat "$response_file")"
+        fi
+    fi
+    rm -f "$response_file"
+
+    upload_end=$(date +%s.%N)
+    duration=$(awk "BEGIN {printf \"%.2f\", $upload_end - $upload_start}")
+
+    # Calculate throughput
+    throughput=$(awk "BEGIN {printf \"%.2f\", $size_mb / $duration}")
+
+    # Store results
+    durations[$((i-1))]=$duration
+    throughputs[$((i-1))]=$throughput
+    http_statuses[$((i-1))]=$http_status
+
+    log "  Iteration $i: ${duration}s, ${throughput} MB/s (HTTP $http_status)"
+done
+
+# Calculate statistics
+calc_median() {
+    local arr=("$@")
+    local sorted=($(printf '%s\n' "${arr[@]}" | sort -n))
+    local count=${#sorted[@]}
+    local mid=$((count / 2))
+
+    if [[ $((count % 2)) -eq 0 ]]; then
+        # Even number of elements - average the two middle values
+        echo $(awk "BEGIN {printf \"%.2f\", (${sorted[$((mid-1))]} + ${sorted[$mid]}) / 2}")
+    else
+        # Odd number of elements - return middle value
+        echo "${sorted[$mid]}"
+    fi
+}
+
+calc_avg() {
+    local arr=("$@")
+    local sum=0
+    for val in "${arr[@]}"; do
+        sum=$(awk "BEGIN {printf \"%.2f\", $sum + $val}")
+    done
+    echo $(awk "BEGIN {printf \"%.2f\", $sum / ${#arr[@]}}")
+}
+
+calc_stddev() {
+    local arr=("$@")
+    local avg=$1; shift
+    arr=("$@")
+
+    local sum_sq=0
+    for val in "${arr[@]}"; do
+        local diff=$(awk "BEGIN {printf \"%.2f\", $val - $avg}")
+        sum_sq=$(awk "BEGIN {printf \"%.2f\", $sum_sq + ($diff * $diff)}")
+    done
+
+    echo $(awk "BEGIN {printf \"%.2f\", sqrt($sum_sq / ${#arr[@]})}")
+}
+
+median_duration=$(calc_median "${durations[@]}")
+median_throughput=$(calc_median "${throughputs[@]}")
+avg_duration=$(calc_avg "${durations[@]}")
+avg_throughput=$(calc_avg "${throughputs[@]}")
+stddev_duration=$(calc_stddev "$avg_duration" "${durations[@]}")
+stddev_throughput=$(calc_stddev "$avg_throughput" "${throughputs[@]}")
+
+# Count successful uploads
+success_count=0
+for status in "${http_statuses[@]}"; do
+    [[ "$status" == "200" ]] && success_count=$((success_count + 1))
+done
+
+# Determine overall exit reason
 exit_reason="success"
-if [[ "$http_status" == "timeout" ]]; then
-    exit_reason="timeout"
-elif [[ "$http_status" != "200" ]]; then
-    exit_reason="http_error"
+if [[ $success_count -eq 0 ]]; then
+    exit_reason="all_failed"
+elif [[ $success_count -lt $NUM_ITERATIONS ]]; then
+    exit_reason="partial_success"
 fi
 
-# Generate result JSON
+# Generate result JSON with all measurements
 cat > "$RESULT_FILE" << EOF
 {
   "timestamp": "$(date -Iseconds)",
@@ -270,9 +355,33 @@ cat > "$RESULT_FILE" << EOF
   "file_size": "$FILE_SIZE",
   "file_size_mb": $size_mb,
   "boot_time_seconds": $boot_time,
-  "duration_seconds": $duration,
-  "throughput_mbps": $throughput,
-  "http_status": "$http_status",
+  "num_iterations": $NUM_ITERATIONS,
+  "iterations": [
+EOF
+
+for i in $(seq 0 $((NUM_ITERATIONS - 1))); do
+    cat >> "$RESULT_FILE" << EOF
+    {
+      "iteration": $((i + 1)),
+      "duration_seconds": ${durations[$i]},
+      "throughput_mbps": ${throughputs[$i]},
+      "http_status": "${http_statuses[$i]}"
+    }$([[ $i -lt $((NUM_ITERATIONS - 1)) ]] && echo "," || echo "")
+EOF
+done
+
+cat >> "$RESULT_FILE" << EOF
+  ],
+  "stats": {
+    "median_duration_seconds": $median_duration,
+    "median_throughput_mbps": $median_throughput,
+    "avg_duration_seconds": $avg_duration,
+    "avg_throughput_mbps": $avg_throughput,
+    "stddev_duration_seconds": $stddev_duration,
+    "stddev_throughput_mbps": $stddev_throughput,
+    "success_count": $success_count,
+    "failure_count": $((NUM_ITERATIONS - success_count))
+  },
   "exit_reason": "$exit_reason",
   "success": $([ "$exit_reason" = "success" ] && echo "true" || echo "false")
 }
@@ -281,17 +390,21 @@ EOF
 # Display result
 log ""
 if [[ "$exit_reason" == "success" ]]; then
-    log "✅ TEST PASSED"
-    log "   Boot Time: ${boot_time}s"
-    log "   Upload Duration: ${duration}s"
-    log "   Throughput: ${throughput} MB/s"
-    log "   HTTP Status: $http_status"
+    log "✅ TEST PASSED (all $NUM_ITERATIONS iterations successful)"
+elif [[ "$exit_reason" == "partial_success" ]]; then
+    log "⚠️  TEST PARTIAL ($success_count/$NUM_ITERATIONS iterations successful)"
 else
-    log "❌ TEST FAILED"
-    log "   Exit Reason: $exit_reason"
-    log "   Duration: ${duration}s"
-    log "   HTTP Status: $http_status"
+    log "❌ TEST FAILED (0/$NUM_ITERATIONS iterations successful)"
 fi
+
+log "   Boot Time: ${boot_time}s"
+log "   Iterations: $NUM_ITERATIONS"
+log "   Successful: $success_count"
+log ""
+log "   Median Throughput: ${median_throughput} MB/s"
+log "   Avg Throughput: ${avg_throughput} ± ${stddev_throughput} MB/s"
+log "   Median Duration: ${median_duration}s"
+log "   Avg Duration: ${avg_duration} ± ${stddev_duration}s"
 log ""
 log "Results saved to: $RESULT_FILE"
 
