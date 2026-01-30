@@ -3,8 +3,6 @@ package sqlite
 import (
 	"database/sql"
 	"log"
-	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/ncruces/go-sqlite3/driver"
@@ -106,22 +104,6 @@ func (s Store) ClearAll() error {
 	// Reset SQLite autoincrement sequences (if table exists)
 	// Note: sqlite_sequence only exists if tables use AUTOINCREMENT
 	_, _ = s.ctx.Exec("DELETE FROM sqlite_sequence")
-
-	// Clean up /tmp to prevent disk space issues during repeated large uploads
-	tmpDir, err := os.Open("/tmp")
-	if err == nil {
-		defer tmpDir.Close()
-		entries, err := tmpDir.Readdirnames(-1)
-		if err == nil {
-			for _, entry := range entries {
-				// Skip protected directories
-				if entry == "." || entry == ".." || entry == "picoshare-data" {
-					continue
-				}
-				_ = os.RemoveAll(filepath.Join("/tmp", entry))
-			}
-		}
-	}
 
 	return nil
 }
