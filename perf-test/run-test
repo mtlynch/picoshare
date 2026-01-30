@@ -77,10 +77,13 @@ update_vm_image() {
     log "Copying binary to /usr/local/bin/picoshare..."
     sudo cp "$PROJECT_ROOT/bin/picoshare" "$mount_point/usr/local/bin/picoshare"
 
+    log "Cleaning /tmp to free disk space..."
+    sudo rm -rf "$mount_point"/tmp/* 2>/dev/null || true
+
     log "Unmounting..."
     sudo umount "$mount_point"
 
-    log "✓ VM image updated"
+    log "✓ VM image updated and cleaned"
     log ""
 }
 
