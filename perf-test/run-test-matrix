@@ -126,6 +126,16 @@ for memory in "${MEMORY_LIMITS[@]}"; do
             result_file=$(grep '^/.*\.json$' "$RUN_DIR/test-${memory}MB-${size}.log" | tail -1)
             failed_tests=$((failed_tests + 1))
             test_status="FAIL"
+
+            log ""
+            log "==================================================="
+            log "TEST FAILED - ABORTING TEST SUITE"
+            log "==================================================="
+            log "Failed test: ${memory}MB RAM, ${size} file"
+            log "See log: $RUN_DIR/test-${memory}MB-${size}.log"
+            log "Tests passed before failure: $passed_tests"
+            log "==================================================="
+            exit 1
         fi
 
         test_end=$(date +%s)
