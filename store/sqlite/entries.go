@@ -3,8 +3,11 @@ package sqlite
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"io"
 	"log"
+
+	"github.com/ncruces/go-sqlite3"
 
 	"github.com/mtlynch/picoshare/picoshare"
 	"github.com/mtlynch/picoshare/store"
@@ -163,21 +166,12 @@ func (s Store) GetEntryMetadata(id picoshare.EntryID) (picoshare.UploadMetadata,
 func (s Store) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) error {
 	log.Printf("saving new entry %s", metadata.ID)
 
-	// Note: We deliberately don't use a transaction here, as it bloats memory, so
-	// we can end up in a state with orphaned entries data. We clean it up in
-	// Purge().
-	// See: https://github.com/mtlynch/picoshare/issues/284
-	w := file.NewWriter(s.ctx, metadata.ID, s.chunkSize)
-	if _, err := io.Copy(w, reader); err != nil {
+	tx, err := s.ctx.BeginTx(context.Background(), nil)
+	if err != nil {
 		return err
 	}
 
-	// Close() flushes the buffer, and it can fail.
-	if err := w.Close(); err != nil {
-		return err
-	}
-
-	_, err := s.ctx.Exec(`
+	_, err = tx.Exec(`
 	INSERT INTO
 		entries
 	(
@@ -203,7 +197,59 @@ func (s Store) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) 
 		return err
 	}
 
-	return nil
+	log.Printf("saved metadata for %v", metadata.ID) // DEBUG
+
+	// Drop index before bulk insert
+	_, err = tx.Exec(`DROP INDEX IF EXISTS idx_entries_data_length`)
+	if err != nil {
+		return fmt.Errorf("failed to drop index: %v", err)
+	}
+
+	// Calculate number of chunks needed
+	numChunks := (metadata.Size.UInt64() + defaultChunkSize - 1) / defaultChunkSize
+
+	log.Printf("numChunks=%d", numChunks) // DEBUG
+
+	for idx := uint64(0); idx < numChunks; idx++ {
+		chunkSize := defaultChunkSize
+		if idx == numChunks-1 {
+			chunkSize = metadata.Size.UInt64() - (idx * defaultChunkSize)
+		}
+
+		// Initialize chunk with zeroblob
+		res, err := tx.Exec(`
+			INSERT INTO entries_data (id, chunk_index, chunk)
+			VALUES(:id, :chunk_index, :chunk)`,
+			sql.Named("id", metadata.ID),
+			sql.Named("chunk_index", idx),
+			sql.Named("chunk", sqlite3.ZeroBlob(int(chunkSize))))
+		if err != nil {
+			return fmt.Errorf("failed to initialize chunk %d: %v", idx, err)
+		}
+
+		rowid, err := res.LastInsertId()
+		if err != nil {
+			return err
+		}
+
+		limitedReader := io.LimitReader(reader, int64(chunkSize))
+
+		_, err = tx.Exec(`SELECT writeblob('main', 'entries_data', 'chunk', :rowid, :offset, :data)`,
+			sql.Named("rowid", rowid),
+			sql.Named("offset", 0),
+			sql.Named("data", sqlite3.Pointer(limitedReader)))
+		if err != nil {
+			return fmt.Errorf("failed to write chunk %d: %v", idx, err)
+		}
+	}
+
+	// Recreate index
+	_, err = tx.Exec(`CREATE INDEX idx_entries_data_length ON entries_data (id, LENGTH(chunk))`)
+	if err != nil {
+		return fmt.Errorf("failed to recreate index: %v", err)
+	}
+
+	return tx.Commit()
 }
 
 func (s Store) UpdateEntryMetadata(id picoshare.EntryID, metadata picoshare.UploadMetadata) error {
