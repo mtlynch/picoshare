@@ -7,8 +7,8 @@
     # Use https://www.nixhub.io/ to find the right nixpkgs commit for the
     # specific package version we want.
 
-    # 1.24.0 release
-    go-nixpkgs.url = "github:NixOS/nixpkgs/83a2581c81ff5b06f7c1a4e7cc736a455dfcf7b4";
+    # 1.26.0 release
+    go-nixpkgs.url = "github:NixOS/nixpkgs/a82ccc39b39b621151d6732718e3e250109076fa";
 
     # 3.44.2 release
     sqlite-nixpkgs.url = "github:NixOS/nixpkgs/5ad9903c16126a7d949101687af0aa589b1d7d3d";
@@ -49,7 +49,7 @@
     air-nixpkgs,
   } @ inputs:
     flake-utils.lib.eachDefaultSystem (system: let
-      go = go-nixpkgs.legacyPackages.${system}.go_1_24;
+      go = go-nixpkgs.legacyPackages.${system}.go_1_26;
       sqlite = sqlite-nixpkgs.legacyPackages.${system}.sqlite;
       nodejs = nodejs-nixpkgs.legacyPackages.${system}.nodejs_20;
       shellcheck = shellcheck-nixpkgs.legacyPackages.${system}.shellcheck;
