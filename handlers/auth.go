@@ -5,7 +5,7 @@ import (
 	"net/http"
 )
 
-var contextKeyIsAuthenticated = &contextKey{"is-authenticated"}
+var contextKeyIsAuthenticated = new(contextKey{name: "is-authenticated"})
 
 func (s Server) authPost() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {

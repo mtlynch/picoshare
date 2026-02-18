@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"embed"
+	"errors"
 	"fmt"
 	"html/template"
 	"log"
@@ -232,7 +233,7 @@ func (s Server) fileEditGet() http.HandlerFunc {
 		}
 
 		metadata, err := s.getDB(r).GetEntryMetadata(id)
-		if _, ok := err.(store.EntryNotFoundError); ok {
+		if _, ok := errors.AsType[store.EntryNotFoundError](err); ok {
 			http.Error(w, "entry not found", http.StatusNotFound)
 			return
 		} else if err != nil {
@@ -286,7 +287,7 @@ func (s Server) fileInfoGet() http.HandlerFunc {
 		}
 
 		metadata, err := s.getDB(r).GetEntryMetadata(id)
-		if _, ok := err.(store.EntryNotFoundError); ok {
+		if _, ok := errors.AsType[store.EntryNotFoundError](err); ok {
 			http.Error(w, "entry not found", http.StatusNotFound)
 			return
 		} else if err != nil {
@@ -339,7 +340,7 @@ func (s Server) fileDownloadsGet() http.HandlerFunc {
 		db := s.getDB(r)
 
 		metadata, err := db.GetEntryMetadata(id)
-		if _, ok := err.(store.EntryNotFoundError); ok {
+		if _, ok := errors.AsType[store.EntryNotFoundError](err); ok {
 			http.Error(w, "entry not found", http.StatusNotFound)
 			return
 		} else if err != nil {
@@ -418,7 +419,7 @@ func (s Server) fileConfirmDeleteGet() http.HandlerFunc {
 		}
 
 		metadata, err := s.getDB(r).GetEntryMetadata(id)
-		if _, ok := err.(store.EntryNotFoundError); ok {
+		if _, ok := errors.AsType[store.EntryNotFoundError](err); ok {
 			http.Error(w, "entry not found", http.StatusNotFound)
 			return
 		} else if err != nil {
@@ -566,7 +567,7 @@ func (s Server) guestUploadGet() http.HandlerFunc {
 		}
 
 		gl, err := s.getDB(r).GetGuestLink(guestLinkID)
-		if _, ok := err.(store.GuestLinkNotFoundError); ok {
+		if _, ok := errors.AsType[store.GuestLinkNotFoundError](err); ok {
 			http.Error(w, "Invalid guest link ID", http.StatusNotFound)
 			return
 		} else if err != nil {
