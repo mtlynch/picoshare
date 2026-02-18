@@ -25,7 +25,7 @@ type (
 
 var errMockSqlFailure = errors.New("fake SQL error")
 
-func (db *mockSqlDB) Exec(query string, args ...interface{}) (sql.Result, error) {
+func (db *mockSqlDB) Exec(query string, args ...any) (sql.Result, error) {
 	chunk := args[2].([]byte)
 	chunkCopy := make([]byte, len(chunk))
 	copy(chunkCopy, chunk)

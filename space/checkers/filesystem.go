@@ -161,7 +161,7 @@ func (fsc FileSystemChecker) measureDbFileUsage() (uint64, error) {
 	return bigIntToUint64(totalSize)
 }
 
-func intToInt64(v interface{}) int64 {
+func intToInt64(v any) int64 {
 	if iv, ok := v.(int32); ok {
 		return int64(iv)
 	}

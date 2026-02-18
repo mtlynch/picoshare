@@ -23,7 +23,7 @@ type (
 	}
 
 	rowScanner interface {
-		Scan(...interface{}) error
+		Scan(...any) error
 	}
 )
 

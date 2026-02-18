@@ -14,7 +14,7 @@ type contextKey struct {
 	name string
 }
 
-var contextKeyCSPNonce = &contextKey{"csp-nonce"}
+var contextKeyCSPNonce = new(contextKey{name: "csp-nonce"})
 
 func enforceContentSecurityPolicy(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
