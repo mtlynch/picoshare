@@ -12,7 +12,7 @@
   "bugs": {
     "url": "https://github.com/mtlynch/picoshare/issues"
   },
-  "homepage": "https://pico.rocks",
+  "homepage": "https://github.com/mtlynch/picoshare",
   "devDependencies": {
     "@playwright/test": "1.57.0",
     "@types/node": "^24.0.7",
