@@ -12,12 +12,15 @@
   "bugs": {
     "url": "https://github.com/mtlynch/picoshare/issues"
   },
-  "homepage": "https://pico.rocks",
+  "homepage": "https://github.com/mtlynch/picoshare",
   "devDependencies": {
+    "@playwright/test": "1.57.0",
+    "@types/node": "^24.0.7",
     "eslint": "^8.11.0",
     "eslint-plugin-playwright": "^0.11.2",
     "mocha": "^10.2.0",
     "prettier": "^2.6.0",
-    "prettier-plugin-go-template": "0.0.13"
+    "prettier-plugin-go-template": "0.0.13",
+    "typescript": "^5.8.3"
   }
 }

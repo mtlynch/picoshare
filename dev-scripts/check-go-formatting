@@ -1,10 +1,7 @@
 #!/usr/bin/env bash
 
-# Exit build script on first failure.
+# Exit on first failure.
 set -e
-
-# Echo commands to stdout.
-set -x
 
 # Exit on unset variable.
 set -u
@@ -14,4 +11,4 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 readonly SCRIPT_DIR
 cd "${SCRIPT_DIR}/.."
 
-test -z "$(gofmt -d .)"
+test -z "$(gofmt -s -d .)"

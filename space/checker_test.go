@@ -4,8 +4,8 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/mtlynch/picoshare/v2/space"
-	"github.com/mtlynch/picoshare/v2/space/checkers"
+	"github.com/mtlynch/picoshare/space"
+	"github.com/mtlynch/picoshare/space/checkers"
 )
 
 type mockFileSystemChecker struct {

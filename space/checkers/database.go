@@ -5,7 +5,7 @@ import (
 	"math"
 	"math/big"
 
-	"github.com/mtlynch/picoshare/v2/picoshare"
+	"github.com/mtlynch/picoshare/picoshare"
 )
 
 type (
@@ -32,7 +32,7 @@ func (dbc DatabaseChecker) TotalSize() (uint64, error) {
 	}
 
 	for _, entry := range entries {
-		bigSize, err := uint64ToBigInt(entry.Size)
+		bigSize, err := uint64ToBigInt(entry.Size.UInt64())
 		if err != nil {
 			return 0, err
 		}

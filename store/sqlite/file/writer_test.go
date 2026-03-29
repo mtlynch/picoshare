@@ -6,8 +6,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/mtlynch/picoshare/v2/picoshare"
-	"github.com/mtlynch/picoshare/v2/store/sqlite/file"
+	"github.com/mtlynch/picoshare/picoshare"
+	"github.com/mtlynch/picoshare/store/sqlite/file"
 )
 
 type (
@@ -25,7 +25,7 @@ type (
 
 var errMockSqlFailure = errors.New("fake SQL error")
 
-func (db *mockSqlDB) Exec(query string, args ...interface{}) (sql.Result, error) {
+func (db *mockSqlDB) Exec(query string, args ...any) (sql.Result, error) {
 	chunk := args[2].([]byte)
 	chunkCopy := make([]byte, len(chunk))
 	copy(chunkCopy, chunk)
@@ -42,7 +42,7 @@ func TestWriteFile(t *testing.T) {
 		explanation  string
 		id           picoshare.EntryID
 		data         []byte
-		chunkSize    int
+		chunkSize    uint64
 		sqlExecErr   error
 		errExpected  error
 		rowsExpected []mockChunkRow

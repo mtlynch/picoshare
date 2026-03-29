@@ -8,7 +8,9 @@ dist/
 data/
 
 # Environment variables, which may contain secrets
-.env*
+.env.*
+# .env.example is an exception as it only contains dummy secrets.
+!.env.example
 
 # Unit test code coverage output
 .coverage.*
@@ -19,6 +21,6 @@ node_modules/
 .DS_Store
 
 # Playwright output
-/e2e/playwright-report/
+/playwright-report/
 /playwright/.cache/
 e2e/results/

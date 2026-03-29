@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+
+# Run static analysis on bash scripts.
+
+# Exit on first failing command.
+set -e
+
+# Exit on unset variable.
+set -u
+
+# Echo commands before executing them, by default to stderr.
+set -x
+
+# Change directory to repository root.
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+readonly SCRIPT_DIR
+cd "${SCRIPT_DIR}/.."
+
+
+sqlfluff lint \
+  --disable-progress-bar \
+  --dialect sqlite \
+  store/sqlite/migrations

@@ -10,5 +10,5 @@ set -x
 set -u
 
 ./node_modules/.bin/prettier --check .
-./node_modules/.bin/eslint ./**/*.js
+./node_modules/.bin/eslint "handlers/static/js/**/*.js"
 ./node_modules/.bin/mocha --recursive handlers/static/js/.tests/*.test.js

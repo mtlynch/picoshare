@@ -1,11 +1,11 @@
-import { test, expect } from "@playwright/test";
-import { login } from "./helpers/login.js";
+import { test, expect, Page } from "@playwright/test";
+import { login } from "./helpers/login";
 
 const noteColumn = 1;
 
 // Playwright can't yet copy to clipboard, so this is a workaround.
 // https://github.com/microsoft/playwright/issues/15860
-async function clipboardCopy(page, text) {
+async function clipboardCopy(page: Page, text: string): Promise<void> {
   await page.locator("#note").fill(text);
   await page.locator("#note").focus();
   await page.keyboard.press(`Control+KeyA`);
@@ -15,7 +15,7 @@ async function clipboardCopy(page, text) {
 
 // Playwright can't yet paste from clipboard, so this is a workaround.
 // https://github.com/microsoft/playwright/issues/15860
-async function clipboardPaste(page) {
+async function clipboardPaste(page: Page): Promise<void> {
   await page.keyboard.press(`Control+KeyV`);
 }
 

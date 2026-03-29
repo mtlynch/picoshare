@@ -10,12 +10,12 @@ The steps below show you how to quickly set up a development environment for Pic
 
 ### Requirements
 
-- Golang 1.17 or higher
-- Node.js 16.x or higher
+- Golang 1.23 or higher
+- Node.js 20.x or higher
 
-### Install prettier
+### Install frontend dev dependencies
 
-PicoShare uses the Prettier npm package to verify consistent formatting.
+PicoShare uses the several Node.js packages to format and perform static analysis of the code. To install those dependencies, run:
 
 ```bash
 npm install
@@ -47,6 +47,23 @@ To run PicoShare locally with hot-reloading, run:
 
 The default password is `demo`.
 
+## Run e2e tests
+
+To run the e2e tests, first install the dependencies for Playwright:
+
+```bash
+pushd e2e && \
+  npm install && \
+  npx playwright install --with-deps chromium firefox && \
+  popd
+```
+
+After installing Playwright, to run the e2e tests, run the following script:
+
+```bash
+./dev-scripts/run-e2e-tests
+```
+
 ## Code style conventions
 
 PicoShare follows Google code style conventions:
@@ -65,7 +82,7 @@ go fmt ./...
 ### Formatting JavaScript/HTML/CSS
 
 ```bash
-npm run format
+./dev-scripts/format-frontend
 ```
 
 ## Proposing changes
@@ -80,7 +97,7 @@ npm run format
   - Good: `Fix dropped keystrokes on Firefox`
   - Bad: `Fix issue`
 - If your PR is not ready for review, mark it as "draft."
-- [Rebase your changes](https://www.atlassian.com/git/tutorials/rewriting-history/git-rebase) onto the latest `master` commit so that there are no merge conflicts.
+- Merge or [rebase](https://www.atlassian.com/git/tutorials/rewriting-history/git-rebase) your changes with the latest `master` commit so that there are no merge conflicts.
 - Your PR must pass build checks in CI before it will be considered for merge.
   - You'll see a green checkmark or red X next to your PR depending on whether your build passed or failed.
   - You are responsible for fixing formatting and tests to ensure that your code passes build checks in CI.

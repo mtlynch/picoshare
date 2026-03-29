@@ -3,5 +3,5 @@ CREATE TABLE downloads (
     download_timestamp TEXT,
     client_ip TEXT,
     user_agent TEXT,
-    FOREIGN KEY(entry_id) REFERENCES entries(id)
+    FOREIGN KEY (entry_id) REFERENCES entries (id)
 );

@@ -3,7 +3,7 @@ package picoshare_test
 import (
 	"testing"
 
-	"github.com/mtlynch/picoshare/v2/picoshare"
+	"github.com/mtlynch/picoshare/picoshare"
 )
 
 func TestFileLifetime(t *testing.T) {
@@ -55,6 +55,11 @@ func TestFileLifetime(t *testing.T) {
 			years:            10,
 			isOnYearBoundary: false,
 			friendlyName:     "10 years",
+		},
+		{
+			lifetime:         picoshare.FileLifetimeInfinite,
+			isOnYearBoundary: false,
+			friendlyName:     "Never",
 		},
 	} {
 		t.Run(tt.friendlyName, func(t *testing.T) {

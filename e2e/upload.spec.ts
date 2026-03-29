@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { login } from "./helpers/login.js";
+import { login } from "./helpers/login";
 
 const noteColumn = 1;
 const expirationColumn = 4;
@@ -116,6 +116,20 @@ test("uploads a file and deletes it", async ({ page }) => {
   );
 
   await page.getByRole("menuitem", { name: "Files" }).click();
+
+  // View the file's contents. We want to register at least one view to ensure
+  // that deletion also deletes the view history.
+  await page
+    .getByRole("row")
+    .filter({ hasText: "upload-for-deletion.txt" })
+    .getByRole("link", { name: "upload-for-deletion.txt" })
+    .click();
+  await expect(page.locator("pre")).toHaveText(
+    "I'm an upload that will soon be deleted"
+  );
+
+  // Delete the file.
+  await page.goBack();
 
   await page
     .getByRole("row")

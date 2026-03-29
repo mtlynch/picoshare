@@ -14,13 +14,11 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 readonly SCRIPT_DIR
 cd "${SCRIPT_DIR}/.."
 
-# Install modd if it's not present.
-MODD_PATH="$(go env GOPATH)/bin/modd"
-readonly MODD_PATH
-readonly MODD_VERSION="v0.0.0-20211215124449-6083f9d1c171"
-if [[ ! -f "${MODD_PATH}" ]]; then
-    go install "github.com/cortesi/modd/cmd/modd@${MODD_VERSION}"
+# Install air if it's not present.
+if ! command -v air &> /dev/null; then
+    readonly AIR_VERSION="v1.61.7"
+    go install "github.com/air-verse/air@${AIR_VERSION}"
 fi
 
-# Run modd for hot reloading.
-$MODD_PATH
+# Run air for hot reloading.
+air

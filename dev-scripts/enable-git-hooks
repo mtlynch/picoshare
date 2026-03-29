@@ -1,10 +1,13 @@
 #!/usr/bin/env bash
 
-# Run this to enable all git hooks for this project.
-
-set -x
+# Exit on first failure.
 set -e
+
+# Exit on unset variable.
 set -u
+
+# Echo commands before executing them, by default to stderr.
+set -x
 
 # Change directory to repository root.
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
@@ -23,4 +26,4 @@ then
   rm -rf .git/hooks
 fi
 
-ln -s -f ../dev-scripts/git-hooks .git/hooks
+ln --symbolic --force ../dev-scripts/git-hooks .git/hooks

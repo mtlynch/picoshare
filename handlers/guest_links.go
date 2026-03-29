@@ -6,11 +6,12 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/gorilla/mux"
-	"github.com/mtlynch/picoshare/v2/handlers/parse"
-	"github.com/mtlynch/picoshare/v2/picoshare"
-	"github.com/mtlynch/picoshare/v2/random"
+	"github.com/mtlynch/picoshare/handlers/parse"
+	"github.com/mtlynch/picoshare/picoshare"
+	"github.com/mtlynch/picoshare/random"
 )
 
 const (
@@ -48,10 +49,44 @@ func (s Server) guestLinksDelete() http.HandlerFunc {
 	}
 }
 
-func guestLinkFromRequest(r *http.Request) (picoshare.GuestLink, error) {
+func (s *Server) guestLinksEnableDisable() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id, err := parseGuestLinkID(mux.Vars(r)["id"])
+		if err != nil {
+			log.Printf("failed to parse guest link ID %s: %v", mux.Vars(r)["id"], err)
+			http.Error(w, fmt.Sprintf("Invalid guest link ID: %v", err), http.StatusBadRequest)
+			return
+		}
+
+		if _, err := s.getDB(r).GetGuestLink(id); err != nil {
+			log.Printf("failed to get guest link ID %s: %v", mux.Vars(r)["id"], err)
+			http.Error(w, fmt.Sprintf("Guest link with ID %s not found: %v", mux.Vars(r)["id"], err), http.StatusNotFound)
+			return
+		}
+
+		// Determine if client is enabling or disabling link.
+		var dbFn func(picoshare.GuestLinkID) error
+		if strings.HasSuffix(r.URL.Path, "/enable") {
+			dbFn = s.getDB(r).EnableGuestLink
+		} else {
+			dbFn = s.getDB(r).DisableGuestLink
+		}
+
+		if err := dbFn(id); err != nil {
+			log.Printf("failed to change guest link enabled state: %v", err)
+			http.Error(w, fmt.Sprintf("Failed to change guest link enabled state: %v", err), http.StatusInternalServerError)
+			return
+		}
+
+		w.WriteHeader(http.StatusNoContent)
+	}
+}
+
+func (s Server) guestLinkFromRequest(r *http.Request) (picoshare.GuestLink, error) {
 	var payload struct {
 		Label          string  `json:"label"`
-		Expiration     string  `json:"expirationTime"`
+		UrlExpiration  string  `json:"urlExpirationTime"`
+		FileExpiration string  `json:"fileLifetime"`
 		MaxFileBytes   *uint64 `json:"maxFileBytes"`
 		MaxFileUploads *int    `json:"maxFileUploads"`
 	}
@@ -66,7 +101,12 @@ func guestLinkFromRequest(r *http.Request) (picoshare.GuestLink, error) {
 		return picoshare.GuestLink{}, err
 	}
 
-	expiration, err := parse.Expiration(payload.Expiration)
+	urlExpiration, err := parse.Expiration(payload.UrlExpiration, s.clock.Now())
+	if err != nil {
+		return picoshare.GuestLink{}, err
+	}
+
+	fileExpiration, err := parse.FileLifetimeFromString(payload.FileExpiration)
 	if err != nil {
 		return picoshare.GuestLink{}, err
 	}
@@ -82,10 +122,11 @@ func guestLinkFromRequest(r *http.Request) (picoshare.GuestLink, error) {
 	}
 
 	return picoshare.GuestLink{
-		Label:          label,
-		Expires:        expiration,
-		MaxFileBytes:   maxFileBytes,
-		MaxFileUploads: maxFileUploads,
+		Label:           label,
+		UrlExpires:      urlExpiration,
+		MaxFileLifetime: fileExpiration,
+		MaxFileBytes:    maxFileBytes,
+		MaxFileUploads:  maxFileUploads,
 	}, nil
 }
 

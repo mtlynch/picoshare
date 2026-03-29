@@ -2,6 +2,7 @@ package sqlite
 
 import (
 	"context"
+	"database/sql"
 	"log"
 	"time"
 )
@@ -28,31 +29,53 @@ func (s Store) deleteExpiredEntries() error {
 		return err
 	}
 
+	defer func() {
+		if err := tx.Rollback(); err != nil && err != sql.ErrTxDone {
+			log.Printf("failed to rollback delete expired entries: %v", err)
+		}
+	}()
+
 	currentTime := formatTime(time.Now())
 
 	if _, err = tx.Exec(`
-	DELETE FROM
-		entries_data
-	WHERE
-		id IN (
-			SELECT
-				id
-			FROM
-				entries
-			WHERE
-				entries.expiration_time IS NOT NULL AND
-				entries.expiration_time < ?
-		);`, currentTime); err != nil {
+   DELETE FROM
+   	downloads
+   WHERE
+   	entry_id IN (
+   		SELECT
+   			id
+   		FROM
+   			entries
+   		WHERE
+   			entries.expiration_time IS NOT NULL AND
+   			entries.expiration_time < :current_time
+   	);`, sql.Named("current_time", currentTime)); err != nil {
 		return err
 	}
 
 	if _, err = tx.Exec(`
-	DELETE FROM
-		entries
-	WHERE
-		entries.expiration_time IS NOT NULL AND
-		entries.expiration_time < ?;
-	`, currentTime); err != nil {
+   DELETE FROM
+   	entries_data
+   WHERE
+   	id IN (
+   		SELECT
+   			id
+   		FROM
+   			entries
+   		WHERE
+   			entries.expiration_time IS NOT NULL AND
+   			entries.expiration_time < :current_time
+   	);`, sql.Named("current_time", currentTime)); err != nil {
+		return err
+	}
+
+	if _, err = tx.Exec(`
+   DELETE FROM
+   	entries
+   WHERE
+   	entries.expiration_time IS NOT NULL AND
+   	entries.expiration_time < :current_time;
+   `, sql.Named("current_time", currentTime)); err != nil {
 		return err
 	}
 
@@ -64,24 +87,30 @@ func (s Store) deleteOrphanedRows() error {
 
 	// Delete rows from entries_data if they don't reference valid rows in
 	// entries. This can happen if the entry insertion fails partway through.
-	if _, err := s.ctx.Exec(`
-		DELETE FROM
-			entries_data
-		WHERE
-		id IN (
-			SELECT
-				DISTINCT entries_data.id AS entry_id
-			FROM
-				entries_data
-			LEFT JOIN
-				entries ON entries_data.id = entries.id
-			WHERE
-				entries.id IS NULL
-			)`); err != nil {
+	rows, err := s.ctx.Exec(`
+   	DELETE FROM
+   		entries_data
+   	WHERE
+   	id IN (
+   		SELECT
+   			DISTINCT entries_data.id AS entry_id
+   		FROM
+   			entries_data
+   		LEFT JOIN
+   			entries ON entries_data.id = entries.id
+   		WHERE
+   			entries.id IS NULL
+   		)`)
+	if err != nil {
 		return err
 	}
 
-	log.Printf("purge completed successfully")
+	ra, err := rows.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	log.Printf("purge completed successfully (%d rows affected)", ra)
 
 	return nil
 }

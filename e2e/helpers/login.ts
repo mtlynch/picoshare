@@ -1,6 +1,6 @@
-import { expect } from "@playwright/test";
+import { expect, Page } from "@playwright/test";
 
-export async function login(page) {
+export async function login(page: Page): Promise<void> {
   await page.goto("/");
   await page.getByRole("menuitem", { name: "Log In" }).click();
 

@@ -1,11 +1,11 @@
 export function hideElement(el) {
-  el.classList.add("is-hidden");
+  el.classList.add("d-none");
 }
 
 export function showElement(el) {
-  el.classList.remove("is-hidden");
+  el.classList.remove("d-none");
 }
 
 export function toggleShowElement(el) {
-  el.classList.toggle("is-hidden");
+  el.classList.toggle("d-none");
 }

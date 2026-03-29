@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/mtlynch/picoshare/v2/space/checkers"
+	"github.com/mtlynch/picoshare/space/checkers"
 )
 
 type mockFileSizer struct {

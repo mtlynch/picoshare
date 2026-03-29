@@ -55,7 +55,7 @@ if [[ "${IS_LITESTREAM_ENABLED}" == 'true' ]]; then
   else
     echo "No existing database found"
     # Restore database from remote storage.
-    /app/litestream restore -if-replica-exists -v "${DB_PATH}"
+    /app/litestream restore -if-replica-exists "${DB_PATH}"
   fi
 
   # Let Litestream start PicoShare as a child process

@@ -14,15 +14,15 @@ import (
 
 	gorilla "github.com/mtlynch/gorilla-handlers"
 
-	"github.com/mtlynch/picoshare/v2/garbagecollect"
-	"github.com/mtlynch/picoshare/v2/handlers"
-	"github.com/mtlynch/picoshare/v2/handlers/auth/shared_secret"
-	"github.com/mtlynch/picoshare/v2/space"
-	"github.com/mtlynch/picoshare/v2/store/sqlite"
+	"github.com/mtlynch/picoshare/garbagecollect"
+	"github.com/mtlynch/picoshare/handlers"
+	"github.com/mtlynch/picoshare/handlers/auth/shared_secret"
+	"github.com/mtlynch/picoshare/space"
+	"github.com/mtlynch/picoshare/store/sqlite"
 )
 
 func main() {
-	log.SetFlags(log.LstdFlags | log.Lshortfile)
+	log.SetFlags(log.LstdFlags | log.Llongfile)
 	log.Print("starting picoshare server")
 
 	dbPath := flag.String("db", "data/store.db", "path to database")
@@ -45,7 +45,9 @@ func main() {
 	gc := garbagecollect.NewScheduler(&collector, 1*time.Minute)
 	gc.StartAsync()
 
-	server := handlers.New(authenticator, &store, spaceChecker, &collector)
+	clock := handlers.NewClock()
+
+	server := handlers.New(authenticator, &store, spaceChecker, &collector, &clock)
 
 	h := gorilla.LoggingHandler(os.Stdout, server.Router())
 	if os.Getenv("PS_BEHIND_PROXY") != "" {
@@ -61,7 +63,7 @@ func main() {
 	httpSrv := http.Server{Addr: fmt.Sprintf(":%s", port), Handler: h}
 	go func() {
 		log.Printf("listening on %s", port)
-		log.Fatal(httpSrv.ListenAndServe())
+		log.Printf("http server exit: %s", httpSrv.ListenAndServe())
 	}()
 	<-stop
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
