@@ -4,8 +4,11 @@
   inputs = {
     flake-utils.url = "github:numtide/flake-utils";
 
-    # 1.24.0 release
-    go-nixpkgs.url = "github:NixOS/nixpkgs/83a2581c81ff5b06f7c1a4e7cc736a455dfcf7b4";
+    # Use https://www.nixhub.io/ to find the right nixpkgs commit for the
+    # specific package version we want.
+
+    # 1.26.0 release
+    go-nixpkgs.url = "github:NixOS/nixpkgs/a82ccc39b39b621151d6732718e3e250109076fa";
 
     # 3.44.2 release
     sqlite-nixpkgs.url = "github:NixOS/nixpkgs/5ad9903c16126a7d949101687af0aa589b1d7d3d";
@@ -27,6 +30,9 @@
 
     # 0.3.13 release
     litestream-nixpkgs.url = "github:NixOS/nixpkgs/a343533bccc62400e8a9560423486a3b6c11a23b";
+
+    # 1.61.7 release
+    air-nixpkgs.url = "github:NixOS/nixpkgs/678af34d5e4d198fcd948a7db8b89a618d8e62fa";
   };
 
   outputs = {
@@ -40,9 +46,10 @@
     playwright-nixpkgs,
     flyctl-nixpkgs,
     litestream-nixpkgs,
+    air-nixpkgs,
   } @ inputs:
     flake-utils.lib.eachDefaultSystem (system: let
-      go = go-nixpkgs.legacyPackages.${system}.go_1_24;
+      go = go-nixpkgs.legacyPackages.${system}.go_1_26;
       sqlite = sqlite-nixpkgs.legacyPackages.${system}.sqlite;
       nodejs = nodejs-nixpkgs.legacyPackages.${system}.nodejs_20;
       shellcheck = shellcheck-nixpkgs.legacyPackages.${system}.shellcheck;
@@ -50,6 +57,7 @@
       playwright = playwright-nixpkgs.legacyPackages.${system}.playwright-driver.browsers;
       flyctl = flyctl-nixpkgs.legacyPackages.${system}.flyctl;
       litestream = litestream-nixpkgs.legacyPackages.${system}.litestream;
+      air = air-nixpkgs.legacyPackages.${system}.air;
     in {
       devShells.default =
         go-nixpkgs.legacyPackages.${system}.mkShell.override
@@ -73,6 +81,7 @@
             playwright
             flyctl
             litestream
+            air
           ];
 
           shellHook = ''

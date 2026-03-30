@@ -26,7 +26,7 @@ func (s Server) entryGet() http.HandlerFunc {
 		}
 
 		entry, err := s.getDB(r).GetEntryMetadata(id)
-		if _, ok := err.(store.EntryNotFoundError); ok {
+		if _, ok := errors.AsType[store.EntryNotFoundError](err); ok {
 			http.Error(w, "entry not found", http.StatusNotFound)
 			return
 		} else if err != nil {

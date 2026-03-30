@@ -1,6 +1,6 @@
 module github.com/mtlynch/picoshare
 
-go 1.24
+go 1.26
 
 require (
 	codeberg.org/mtlynch/go-evolutionary-migrate v0.0.1

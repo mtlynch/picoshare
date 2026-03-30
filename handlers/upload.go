@@ -55,8 +55,7 @@ func (s Server) entryPost() http.HandlerFunc {
 		// any size they want.
 		id, err := s.insertFileFromRequest(r, expiration, picoshare.GuestLinkID(""))
 		if err != nil {
-			var de *dbError
-			if errors.As(err, &de) {
+			if _, ok := errors.AsType[*dbError](err); ok {
 				log.Printf("failed to insert uploaded file into data store: %v", err)
 				http.Error(w, "failed to insert file into database", http.StatusInternalServerError)
 			} else {
@@ -87,13 +86,8 @@ func (s Server) entryPut() http.HandlerFunc {
 			return
 		}
 
-		if _, ok := err.(store.GuestLinkNotFoundError); ok {
-			http.Error(w, "Invalid guest link ID", http.StatusNotFound)
-			return
-		}
-
 		if err := s.getDB(r).UpdateEntryMetadata(id, metadata); err != nil {
-			if _, ok := err.(store.EntryNotFoundError); ok {
+			if _, ok := errors.AsType[store.EntryNotFoundError](err); ok {
 				http.Error(w, "Invalid entry ID", http.StatusNotFound)
 				return
 			}
@@ -114,7 +108,7 @@ func (s Server) guestEntryPost() http.HandlerFunc {
 		}
 
 		gl, err := s.getDB(r).GetGuestLink(guestLinkID)
-		if _, ok := err.(store.GuestLinkNotFoundError); ok {
+		if _, ok := errors.AsType[store.GuestLinkNotFoundError](err); ok {
 			http.Error(w, "Invalid guest link ID", http.StatusNotFound)
 			return
 		} else if err != nil {
@@ -143,8 +137,7 @@ func (s Server) guestEntryPost() http.HandlerFunc {
 
 		id, err := s.insertFileFromRequest(r, expiration, guestLinkID)
 		if err != nil {
-			var de *dbError
-			if errors.As(err, &de) {
+			if _, ok := errors.AsType[*dbError](err); ok {
 				log.Printf("failed to insert uploaded file into data store: %v", err)
 				http.Error(w, "failed to insert file into database", http.StatusInternalServerError)
 			} else {

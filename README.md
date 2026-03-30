@@ -10,9 +10,7 @@
 
 ## Overview
 
-PicoShare is a minimalist service that allows you to share files easily.
-
-- [Live demo](https://demo.pico.rocks)
+PicoShare is a minimalist, self-hosted web app that makes it easy to share files on the web without restrictions on size, file type, or media format.
 
 [![PicoShare demo](https://raw.githubusercontent.com/mtlynch/picoshare/master/docs/readme-assets/demo.gif)](https://raw.githubusercontent.com/mtlynch/picoshare/master/docs/readme-assets/demo-full.gif)
 

@@ -4,7 +4,7 @@ import "database/sql"
 
 // Interface to represent a sql.DB object that can be mocked for testing.
 type SqlDB interface {
-	Exec(string, ...interface{}) (sql.Result, error)
+	Exec(string, ...any) (sql.Result, error)
 }
 
 // Create a new SqlDB instance by wrapping a sql.DB instance.
