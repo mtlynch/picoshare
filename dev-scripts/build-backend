@@ -63,4 +63,4 @@ go build \
   -tags "${BUILD_TAGS_JOINED}" \
   -ldflags "-w -extldflags '-static' -X 'github.com/mtlynch/picoshare/build.Version=${PS_VERSION}' -X 'github.com/mtlynch/picoshare/build.unixTime=$(date +%s)'" \
   -o "${BINARY}" \
-  cmd/picoshare/main.go
+  ./cmd/picoshare/
