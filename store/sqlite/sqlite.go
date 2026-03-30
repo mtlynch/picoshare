@@ -92,3 +92,15 @@ func parseFileLifetime(s string) (picoshare.FileLifetime, error) {
 	}
 	return picoshare.NewFileLifetimeFromDuration(d)
 }
+
+// ClearAll deletes all data from the database (for testing only).
+func (s Store) ClearAll() error {
+	tables := []string{"downloads", "entries_data", "entries", "guest_links", "settings"}
+	for _, table := range tables {
+		if _, err := s.ctx.Exec("DELETE FROM " + table); err != nil {
+			return err
+		}
+	}
+	_, _ = s.ctx.Exec("DELETE FROM sqlite_sequence")
+	return nil
+}
