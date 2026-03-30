@@ -1,6 +1,7 @@
 package sqlite
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"fmt"
@@ -170,6 +171,11 @@ func (s Store) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) 
 	if err != nil {
 		return err
 	}
+	defer func() {
+		if err := tx.Rollback(); err != nil && err != sql.ErrTxDone {
+			log.Printf("failed to rollback InsertEntry: %v", err)
+		}
+	}()
 
 	_, err = tx.Exec(`
 	INSERT INTO
@@ -197,32 +203,27 @@ func (s Store) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) 
 		return err
 	}
 
-	log.Printf("saved metadata for %v", metadata.ID) // DEBUG
-
 	// Drop index before bulk insert
 	_, err = tx.Exec(`DROP INDEX IF EXISTS idx_entries_data_length`)
 	if err != nil {
 		return fmt.Errorf("failed to drop index: %v", err)
 	}
 
-	// Calculate number of chunks needed
-	numChunks := (metadata.Size.UInt64() + defaultChunkSize - 1) / defaultChunkSize
-
-	log.Printf("numChunks=%d", numChunks) // DEBUG
-
-	for idx := uint64(0); idx < numChunks; idx++ {
-		chunkSize := defaultChunkSize
-		if idx == numChunks-1 {
-			chunkSize = metadata.Size.UInt64() - (idx * defaultChunkSize)
+	// Stream chunks from reader without requiring file size upfront.
+	buf := make([]byte, s.chunkSize)
+	chunkCount := uint64(0)
+	for idx := uint64(0); ; idx++ {
+		n, readErr := io.ReadFull(reader, buf)
+		if n == 0 {
+			break
 		}
 
-		// Initialize chunk with zeroblob
 		res, err := tx.Exec(`
 			INSERT INTO entries_data (id, chunk_index, chunk)
 			VALUES(:id, :chunk_index, :chunk)`,
 			sql.Named("id", metadata.ID),
 			sql.Named("chunk_index", idx),
-			sql.Named("chunk", sqlite3.ZeroBlob(int(chunkSize))))
+			sql.Named("chunk", sqlite3.ZeroBlob(n)))
 		if err != nil {
 			return fmt.Errorf("failed to initialize chunk %d: %v", idx, err)
 		}
@@ -232,15 +233,23 @@ func (s Store) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) 
 			return err
 		}
 
-		limitedReader := io.LimitReader(reader, int64(chunkSize))
-
 		_, err = tx.Exec(`SELECT writeblob('main', 'entries_data', 'chunk', :rowid, :offset, :data)`,
 			sql.Named("rowid", rowid),
 			sql.Named("offset", 0),
-			sql.Named("data", sqlite3.Pointer(limitedReader)))
+			sql.Named("data", sqlite3.Pointer(bytes.NewReader(buf[:n]))))
 		if err != nil {
 			return fmt.Errorf("failed to write chunk %d: %v", idx, err)
 		}
+
+		chunkCount++
+
+		if readErr != nil {
+			break // EOF or ErrUnexpectedEOF — last chunk was smaller than buffer
+		}
+	}
+
+	if chunkCount == 0 {
+		return picoshare.ErrEmptyFile
 	}
 
 	// Recreate index

@@ -533,17 +533,19 @@ func createMultipartFormBody(filename, note string, r io.Reader) (io.Reader, str
 	bw := bufio.NewWriter(&b)
 	mw := multipart.NewWriter(bw)
 
-	f, err := mw.CreateFormFile("file", filename)
-	if err != nil {
-		panic(err)
-	}
-	io.Copy(f, r)
-
+	// Note must come before file so the streaming multipart reader can
+	// collect form fields before streaming the file to the database.
 	nf, err := mw.CreateFormField("note")
 	if err != nil {
 		panic(err)
 	}
 	nf.Write([]byte(note))
+
+	f, err := mw.CreateFormFile("file", filename)
+	if err != nil {
+		panic(err)
+	}
+	io.Copy(f, r)
 
 	mw.Close()
 	bw.Flush()
