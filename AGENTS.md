@@ -55,7 +55,7 @@ If you learned that methods shouldn't be exported just for testing, add to `AGEN
 # Playwright (MCP)
 
 - Start PicoShare before driving the UI:
-  - `PS_VERSION="$(git describe --tags)" dev-scripts/build-backend dev`
+  - `dev-scripts/build-backend dev`
   - `PS_SHARED_SECRET=somepassword ./bin/picoshare-dev -db data/store.db`
 - Use the MCP Playwright server tools to drive the UI (for example, `mcp__playwright__browser_navigate` -> `mcp__playwright__browser_snapshot`).
 
