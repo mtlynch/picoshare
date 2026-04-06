@@ -62,6 +62,6 @@ export CGO_ENABLED=1
 
 go build \
   -tags "${BUILD_TAGS_JOINED}" \
-  -ldflags "-w -extldflags '-static' -X 'github.com/mtlynch/picoshare/build.Version=${PS_VERSION}'" \
+  -ldflags "-w -extldflags '-static'" \
   -o "${BINARY}" \
   cmd/picoshare/main.go
