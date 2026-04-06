@@ -719,6 +719,7 @@ func (s Server) systemInformationGet() http.HandlerFunc {
 			TotalBytes        uint64
 			BuildTime         time.Time
 			Version           string
+			Revision          string
 		}{
 			commonProps:       makeCommonProps("PicoShare - System Information", r.Context()),
 			TotalServingBytes: spaceUsage.TotalServingBytes,
@@ -727,6 +728,7 @@ func (s Server) systemInformationGet() http.HandlerFunc {
 			TotalBytes:        spaceUsage.FileSystemTotalBytes,
 			BuildTime:         build.Time(),
 			Version:           build.Version,
+			Revision:          build.Revision(),
 		}); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
