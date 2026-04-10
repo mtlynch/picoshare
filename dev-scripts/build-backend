@@ -64,4 +64,4 @@ go build \
   -tags "${BUILD_TAGS_JOINED}" \
   -ldflags "-w -extldflags '-static'" \
   -o "${BINARY}" \
-  cmd/picoshare/main.go
+  ./cmd/picoshare/
