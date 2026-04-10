@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strings"
 	"syscall"
 	"time"
 
@@ -28,7 +29,11 @@ func main() {
 	dbPath := flag.String("db", "data/store.db", "path to database")
 	flag.Parse()
 
-	authenticator, err := shared_secret.New(requireEnv("PS_SHARED_SECRET"))
+	secret, err := sharedSecretFromEnv()
+	if err != nil {
+		log.Fatalf("failed to read shared secret: %v", err)
+	}
+	authenticator, err := shared_secret.New(secret)
 	if err != nil {
 		log.Fatalf("invalid shared secret: %v", err)
 	}
@@ -71,12 +76,19 @@ func main() {
 	log.Fatal(httpSrv.Shutdown(ctx))
 }
 
-func requireEnv(key string) string {
-	val := os.Getenv(key)
-	if val == "" {
-		panic(fmt.Sprintf("missing required environment variable: %s", key))
+func sharedSecretFromEnv() (string, error) {
+	if path := os.Getenv("PS_SHARED_SECRET_FILE"); path != "" {
+		data, err := os.ReadFile(path)
+		if err != nil {
+			return "", fmt.Errorf("reading PS_SHARED_SECRET_FILE: %w", err)
+		}
+		return strings.TrimRight(string(data), "\r\n"), nil
 	}
-	return val
+	secret := os.Getenv("PS_SHARED_SECRET")
+	if secret == "" {
+		return "", fmt.Errorf("PS_SHARED_SECRET or PS_SHARED_SECRET_FILE must be set")
+	}
+	return secret, nil
 }
 
 func ensureDirExists(dir string) {
