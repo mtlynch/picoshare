@@ -283,24 +283,53 @@ func (s Server) insertFileFromRequest(r *http.Request, expiration picoshare.Expi
 	}
 
 	id := generateEntryID()
-	err = s.getDB(r).InsertEntry(filePart,
-		picoshare.UploadMetadata{
-			ID:          id,
-			Filename:    filename,
-			ContentType: contentType,
-			Note:        note,
-			GuestLink: picoshare.GuestLink{
-				ID: guestLinkID,
-			},
-			Uploaded: s.clock.Now(),
-			Expires:  expiration,
-		})
+	metadata := picoshare.UploadMetadata{
+		ID:          id,
+		Filename:    filename,
+		ContentType: contentType,
+		Note:        note,
+		GuestLink: picoshare.GuestLink{
+			ID: guestLinkID,
+		},
+		Uploaded: s.clock.Now(),
+		Expires:  expiration,
+	}
+
+	err = s.getDB(r).InsertEntry(filePart, metadata)
 	if err != nil {
 		if errors.Is(err, picoshare.ErrEmptyFile) {
 			return picoshare.EntryID(""), err
 		}
 		log.Printf("failed to save entry: %v", err)
 		return picoshare.EntryID(""), dbError{err}
+	}
+
+	// Read any remaining parts after the file (e.g., note sent after file).
+	for {
+		part, err := mr.NextPart()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			break
+		}
+		if part.FormName() == "note" && note.Value == nil {
+			noteBytes, err := io.ReadAll(part)
+			if err != nil {
+				break
+			}
+			note, err = parse.FileNote(string(noteBytes))
+			if err != nil {
+				break
+			}
+			if guestLinkID != "" {
+				break
+			}
+			metadata.Note = note
+			if err := s.getDB(r).UpdateEntryMetadata(id, metadata); err != nil {
+				log.Printf("failed to update trailing note: %v", err)
+			}
+		}
 	}
 
 	return id, nil

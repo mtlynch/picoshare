@@ -31,7 +31,7 @@ func (s Store) GetEntriesMetadata() ([]picoshare.UploadMetadata, error) {
 		(
 			SELECT
 				id,
-				SUM(LENGTH(chunk)) AS file_size
+				SUM(chunk_length) AS file_size
 			FROM
 				entries_data
 			GROUP BY
@@ -115,7 +115,7 @@ func (s Store) GetEntryMetadata(id picoshare.EntryID) (picoshare.UploadMetadata,
 		(
 			SELECT
 				id,
-				SUM(LENGTH(chunk)) AS file_size
+				SUM(chunk_length) AS file_size
 			FROM
 				entries_data
 			GROUP BY
@@ -203,12 +203,6 @@ func (s Store) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) 
 		return err
 	}
 
-	// Drop index before bulk insert
-	_, err = tx.Exec(`DROP INDEX IF EXISTS idx_entries_data_length`)
-	if err != nil {
-		return fmt.Errorf("failed to drop index: %v", err)
-	}
-
 	// Stream chunks from reader without requiring file size upfront.
 	buf := make([]byte, s.chunkSize)
 	chunkCount := uint64(0)
@@ -219,11 +213,12 @@ func (s Store) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) 
 		}
 
 		res, err := tx.Exec(`
-			INSERT INTO entries_data (id, chunk_index, chunk)
-			VALUES(:id, :chunk_index, :chunk)`,
+			INSERT INTO entries_data (id, chunk_index, chunk, chunk_length)
+			VALUES(:id, :chunk_index, :chunk, :chunk_length)`,
 			sql.Named("id", metadata.ID),
 			sql.Named("chunk_index", idx),
-			sql.Named("chunk", sqlite3.ZeroBlob(n)))
+			sql.Named("chunk", sqlite3.ZeroBlob(n)),
+			sql.Named("chunk_length", n))
 		if err != nil {
 			return fmt.Errorf("failed to initialize chunk %d: %v", idx, err)
 		}
@@ -250,12 +245,6 @@ func (s Store) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) 
 
 	if chunkCount == 0 {
 		return picoshare.ErrEmptyFile
-	}
-
-	// Recreate index
-	_, err = tx.Exec(`CREATE INDEX idx_entries_data_length ON entries_data (id, LENGTH(chunk))`)
-	if err != nil {
-		return fmt.Errorf("failed to recreate index: %v", err)
 	}
 
 	return tx.Commit()
