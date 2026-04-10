@@ -3,7 +3,7 @@ package picoshare
 import "errors"
 
 var (
-	ErrEmptyFile        = errors.New("filename must be non-empty")
+	ErrEmptyFile        = errors.New("file must be non-empty")
 	ErrNegativeFileSize = errors.New("file size must be positive")
 )
 
