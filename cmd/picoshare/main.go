@@ -76,14 +76,6 @@ func main() {
 	log.Fatal(httpSrv.Shutdown(ctx))
 }
 
-func requireEnv(key string) string {
-	val := os.Getenv(key)
-	if val == "" {
-		panic(fmt.Sprintf("missing required environment variable: %s", key))
-	}
-	return val
-}
-
 func sharedSecretFromEnv() (string, error) {
 	if path := os.Getenv("PS_SHARED_SECRET_FILE"); path != "" {
 		data, err := os.ReadFile(path)

@@ -106,7 +106,7 @@ services:
 ### Environment variables
 
 | Environment Variable    | Meaning                                                                                                           |
-|-------------------------|-------------------------------------------------------------------------------------------------------------------|
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------- |
 | `PORT`                  | TCP port on which to listen for HTTP connections (defaults to 4001).                                              |
 | `PS_BEHIND_PROXY`       | Set to `"true"` for better logging when PicoShare is running behind a reverse proxy.                              |
 | `PS_SHARED_SECRET`      | Specifies a passphrase for the admin user to log in to PicoShare. Required if `PS_SHARED_SECRET_FILE` is not set. |
