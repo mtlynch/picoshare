@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"mime"
 	"mime/multipart"
 	"net/http"
 	"os"
@@ -222,7 +221,7 @@ func parseEntryID(s string) (picoshare.EntryID, error) {
 }
 
 func (s Server) insertFileFromRequest(r *http.Request, expiration picoshare.ExpirationTime, guestLinkID picoshare.GuestLinkID) (picoshare.EntryID, error) {
-	mr, err := newMultipartReader(r)
+	mr, err := r.MultipartReader()
 	if err != nil {
 		return picoshare.EntryID(""), err
 	}
@@ -311,15 +310,18 @@ func (s Server) insertFileFromRequest(r *http.Request, expiration picoshare.Expi
 			break
 		}
 		if err != nil {
+			log.Printf("failed to read trailing multipart part: %v", err)
 			break
 		}
 		if part.FormName() == "note" && note.Value == nil {
 			noteBytes, err := io.ReadAll(part)
 			if err != nil {
+				log.Printf("failed to read trailing note body: %v", err)
 				break
 			}
 			note, err = parse.FileNote(string(noteBytes))
 			if err != nil {
+				log.Printf("failed to parse trailing note: %v", err)
 				break
 			}
 			if guestLinkID != "" {
@@ -333,28 +335,6 @@ func (s Server) insertFileFromRequest(r *http.Request, expiration picoshare.Expi
 	}
 
 	return id, nil
-}
-
-// newMultipartReader creates a multipart reader from the request without
-// buffering the entire body. This avoids the temp file overhead of
-// ParseMultipartForm for large uploads.
-func newMultipartReader(r *http.Request) (*multipart.Reader, error) {
-	ct := r.Header.Get("Content-Type")
-	if ct == "" {
-		return nil, errors.New("missing Content-Type header")
-	}
-	mediaType, params, err := mime.ParseMediaType(ct)
-	if err != nil {
-		return nil, fmt.Errorf("invalid Content-Type: %v", err)
-	}
-	if mediaType != "multipart/form-data" {
-		return nil, fmt.Errorf("expected multipart/form-data, got %s", mediaType)
-	}
-	boundary := params["boundary"]
-	if boundary == "" {
-		return nil, errors.New("missing multipart boundary")
-	}
-	return multipart.NewReader(r.Body, boundary), nil
 }
 
 func parseContentType(s string) (picoshare.ContentType, error) {

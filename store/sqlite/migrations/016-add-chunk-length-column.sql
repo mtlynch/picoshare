@@ -1,3 +1,6 @@
+-- Clean up orphaned rows from pre-transactional insert era.
+DELETE FROM entries_data WHERE id NOT IN (SELECT id FROM entries);
+
 ALTER TABLE entries_data ADD COLUMN chunk_length INTEGER NOT NULL DEFAULT 0;
 
 UPDATE entries_data SET chunk_length = LENGTH(chunk);

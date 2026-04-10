@@ -238,8 +238,11 @@ func (s Store) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) 
 
 		chunkCount++
 
+		if readErr == io.EOF || readErr == io.ErrUnexpectedEOF {
+			break
+		}
 		if readErr != nil {
-			break // EOF or ErrUnexpectedEOF — last chunk was smaller than buffer
+			return fmt.Errorf("failed to read chunk %d: %v", idx, readErr)
 		}
 	}
 
