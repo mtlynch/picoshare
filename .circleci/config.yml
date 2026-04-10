@@ -82,10 +82,10 @@ jobs:
             - go-mod-v3-{{ checksum "go.sum" }}
       - run:
           name: Compile production backend
-          command: PS_VERSION="$(git describe --tags)" dev-scripts/build-backend
+          command: dev-scripts/build-backend
       - run:
           name: Compile dev backend
-          command: PS_VERSION="$(git describe --tags)" dev-scripts/build-backend dev
+          command: dev-scripts/build-backend dev
       - save_cache:
           key: go-mod-v3-{{ checksum "go.sum" }}
           paths:
@@ -133,7 +133,6 @@ jobs:
               readonly BUILD_TARGETS='linux/amd64'
             fi
             docker buildx build \
-              --build-arg "PS_VERSION=$(git describe --tags)" \
               --platform "${BUILD_TARGETS}" \
               --target=artifact \
               --output "type=local,dest=$(pwd)/bin/" \
@@ -210,7 +209,6 @@ jobs:
               --platform "${BUILD_TARGETS}" \
               --tag "mtlynch/picoshare:${CIRCLE_TAG}" \
               --tag mtlynch/picoshare:latest \
-              --build-arg "PS_VERSION=$(git describe --tags)" \
               .
   deploy:
     executor: base
@@ -233,7 +231,6 @@ jobs:
           name: Deploy to fly.io
           command: |
             "${HOME}/.fly/bin/flyctl" deploy \
-              --build-arg "PS_VERSION=$(git describe --tags)" \
               --access-token "${FLY_ACCESS_TOKEN}"
 workflows:
   version: 2

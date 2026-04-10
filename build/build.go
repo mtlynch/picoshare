@@ -1,21 +1,38 @@
 package build
 
 import (
-	"log"
-	"strconv"
+	"runtime/debug"
 	"time"
 )
 
-// These values are set by ldflags at build time.
-// https://www.digitalocean.com/community/tutorials/using-ldflags-to-set-version-information-for-go-applications
-var unixTime string
+// Version is set by ldflags at build time via -X 'github.com/mtlynch/picoshare/build.Version=...'
 var Version string
 
 func Time() time.Time {
-	t, err := strconv.ParseInt(unixTime, 10, 64)
-	if err != nil {
-		log.Printf("no build time specified through ldflags")
+	v := buildSetting("vcs.time")
+	if v == "" {
 		return time.Time{}
 	}
-	return time.Unix(t, 0)
+	t, err := time.Parse(time.RFC3339, v)
+	if err != nil {
+		return time.Time{}
+	}
+	return t
+}
+
+func Revision() string {
+	return buildSetting("vcs.revision")
+}
+
+func buildSetting(key string) string {
+	info, ok := debug.ReadBuildInfo()
+	if !ok {
+		return ""
+	}
+	for _, s := range info.Settings {
+		if s.Key == key {
+			return s.Value
+		}
+	}
+	return ""
 }

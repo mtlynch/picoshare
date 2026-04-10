@@ -1,8 +1,8 @@
 FROM golang:1.26.0 AS builder
 
 ARG TARGETPLATFORM
-ARG PS_VERSION
 
+COPY ./.git /app/.git
 COPY ./build /app/build
 COPY ./cmd /app/cmd
 COPY ./dev-scripts /app/dev-scripts
@@ -17,7 +17,6 @@ COPY ./go.* /app/
 WORKDIR /app
 
 RUN TARGETPLATFORM="${TARGETPLATFORM}" \
-    PS_VERSION="${PS_VERSION}" \
     ./dev-scripts/build-backend "prod"
 
 FROM scratch AS artifact
