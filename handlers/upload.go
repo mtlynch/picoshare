@@ -149,8 +149,8 @@ func (s Server) guestEntryPost() http.HandlerFunc {
 		if clientAcceptsJson(r) {
 			respondJSON(w, EntryPostResponse{ID: id.String()})
 		} else {
-			// If client did not explicitly request JSON, assume this is a
-			// command-line client and return plaintext.
+			// If client does not accept JSON, assume this is a command-line client
+			// and return plaintext.
 			w.Header().Set("Content-Type", "text/plain")
 			if _, err := fmt.Fprintf(w, "%s/-%s\r\n", baseURLFromRequest(r), id.String()); err != nil {
 				log.Fatalf("failed to write HTTP response: %v", err)
