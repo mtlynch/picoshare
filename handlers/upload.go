@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log"
+	"mime/multipart"
 	"net/http"
 	"os"
 
@@ -219,41 +221,60 @@ func parseEntryID(s string) (picoshare.EntryID, error) {
 }
 
 func (s Server) insertFileFromRequest(r *http.Request, expiration picoshare.ExpirationTime, guestLinkID picoshare.GuestLinkID) (picoshare.EntryID, error) {
-	// ParseMultipartForm can go above the limit we set, so set a conservative RAM
-	// limit to avoid exhausting RAM on servers with limited resources.
-	multipartMaxMemory := mibToBytes(1)
-	if err := r.ParseMultipartForm(multipartMaxMemory); err != nil {
+	mr, err := r.MultipartReader()
+	if err != nil {
 		return picoshare.EntryID(""), err
 	}
-	defer func() {
-		if err := r.MultipartForm.RemoveAll(); err != nil {
-			log.Printf("failed to free multipart form resources: %v", err)
+
+	var filename picoshare.Filename
+	var contentType picoshare.ContentType
+	var note picoshare.FileNote
+	var filePart *multipart.Part
+
+	// Iterate multipart parts. Non-file fields (like "note") are buffered.
+	// When the "file" part is found, we stop iterating and stream it directly
+	// to the database, avoiding temp file overhead from ParseMultipartForm.
+	for {
+		part, err := mr.NextPart()
+		if err == io.EOF {
+			break
 		}
-	}()
+		if err != nil {
+			return picoshare.EntryID(""), err
+		}
 
-	reader, metadata, err := r.FormFile("file")
-	if err != nil {
-		return picoshare.EntryID(""), err
+		switch part.FormName() {
+		case "note":
+			noteBytes, err := io.ReadAll(part)
+			if err != nil {
+				return picoshare.EntryID(""), err
+			}
+			note, err = parse.FileNote(string(noteBytes))
+			if err != nil {
+				return picoshare.EntryID(""), err
+			}
+		case "file":
+			fn, err := parse.Filename(part.FileName())
+			if err != nil {
+				return picoshare.EntryID(""), err
+			}
+			filename = fn
+
+			ct, err := parseContentType(part.Header.Get("Content-Type"))
+			if err != nil {
+				return picoshare.EntryID(""), err
+			}
+			contentType = ct
+			filePart = part
+		}
+
+		if filePart != nil {
+			break
+		}
 	}
 
-	fileSize, err := picoshare.FileSizeFromInt64(metadata.Size)
-	if err != nil {
-		return picoshare.EntryID(""), err
-	}
-
-	filename, err := parse.Filename(metadata.Filename)
-	if err != nil {
-		return picoshare.EntryID(""), err
-	}
-
-	contentType, err := parseContentType(metadata.Header.Get("Content-Type"))
-	if err != nil {
-		return picoshare.EntryID(""), err
-	}
-
-	note, err := parse.FileNote(r.FormValue("note"))
-	if err != nil {
-		return picoshare.EntryID(""), err
+	if filePart == nil {
+		return picoshare.EntryID(""), errors.New("missing file in request")
 	}
 
 	if guestLinkID != "" && note.Value != nil {
@@ -261,22 +282,56 @@ func (s Server) insertFileFromRequest(r *http.Request, expiration picoshare.Expi
 	}
 
 	id := generateEntryID()
-	err = s.getDB(r).InsertEntry(reader,
-		picoshare.UploadMetadata{
-			ID:          id,
-			Filename:    filename,
-			ContentType: contentType,
-			Note:        note,
-			GuestLink: picoshare.GuestLink{
-				ID: guestLinkID,
-			},
-			Uploaded: s.clock.Now(),
-			Expires:  expiration,
-			Size:     fileSize,
-		})
+	metadata := picoshare.UploadMetadata{
+		ID:          id,
+		Filename:    filename,
+		ContentType: contentType,
+		Note:        note,
+		GuestLink: picoshare.GuestLink{
+			ID: guestLinkID,
+		},
+		Uploaded: s.clock.Now(),
+		Expires:  expiration,
+	}
+
+	err = s.getDB(r).InsertEntry(filePart, metadata)
 	if err != nil {
+		if errors.Is(err, picoshare.ErrEmptyFile) {
+			return picoshare.EntryID(""), err
+		}
 		log.Printf("failed to save entry: %v", err)
 		return picoshare.EntryID(""), dbError{err}
+	}
+
+	// Read any remaining parts after the file (e.g., note sent after file).
+	for {
+		part, err := mr.NextPart()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			log.Printf("failed to read trailing multipart part: %v", err)
+			break
+		}
+		if part.FormName() == "note" && note.Value == nil {
+			noteBytes, err := io.ReadAll(part)
+			if err != nil {
+				log.Printf("failed to read trailing note body: %v", err)
+				break
+			}
+			note, err = parse.FileNote(string(noteBytes))
+			if err != nil {
+				log.Printf("failed to parse trailing note: %v", err)
+				break
+			}
+			if guestLinkID != "" {
+				break
+			}
+			metadata.Note = note
+			if err := s.getDB(r).UpdateEntryMetadata(id, metadata); err != nil {
+				log.Printf("failed to update trailing note: %v", err)
+			}
+		}
 	}
 
 	return id, nil
@@ -319,11 +374,6 @@ func (s Server) parseGuestExpirationFromRequest(r *http.Request, gl picoshare.Gu
 	}
 
 	return requestedExpiration, nil
-}
-
-// mibToBytes converts an amount in MiB to an amount in bytes.
-func mibToBytes(i int64) int64 {
-	return i << 20
 }
 
 func clientAcceptsJson(r *http.Request) bool {

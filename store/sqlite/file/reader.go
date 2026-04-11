@@ -119,7 +119,7 @@ func getFileLength(db *sql.DB, id picoshare.EntryID, chunkSize int64) (int64, er
 	if err := db.QueryRow(`
 	SELECT
 		chunk_index,
-		LENGTH(chunk) AS chunk_size
+		chunk_length AS chunk_size
 	FROM
 		entries_data
 	WHERE
@@ -141,7 +141,7 @@ func getChunkSize(db *sql.DB, id picoshare.EntryID) (int64, error) {
 	var chunkSize int64
 	if err := db.QueryRow(`
 	SELECT
-		LENGTH(chunk) AS chunk_size
+		chunk_length AS chunk_size
 	FROM
 		entries_data
 	WHERE

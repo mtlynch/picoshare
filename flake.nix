@@ -89,6 +89,9 @@
             PROJECT_NAME="$(basename "$PWD")"
             export GOPATH="$HOME/.local/share/go-workspaces/$PROJECT_NAME"
 
+            # CGO is not needed with the ncruces/go-sqlite3 driver.
+            export CGO_ENABLED=0
+
             export PLAYWRIGHT_BROWSERS_PATH=${playwright}
             export PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS=true
 
