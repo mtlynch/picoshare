@@ -289,6 +289,9 @@ func parseContentType(s string) (picoshare.ContentType, error) {
 }
 
 func (s Server) parseExpirationFromRequest(r *http.Request) (picoshare.ExpirationTime, error) {
+	if r.URL.Query().Get("expiration") == "" {
+		return picoshare.NeverExpire, nil
+	}
 	return parse.Expiration(r.URL.Query().Get("expiration"), s.clock.Now())
 }
 
