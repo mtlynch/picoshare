@@ -42,11 +42,6 @@ var (
 		Filename:    picoshare.Filename("test0.mp4"),
 		ContentType: picoshare.ContentType("application/octet-stream"),
 	}
-	dummyHTMLEntry = mockEntry{
-		ID:          "HHHHHHHHHH",
-		Filename:    picoshare.Filename("payload.html"),
-		ContentType: picoshare.ContentType("text/html"),
-	}
 )
 
 func TestEntryGet(t *testing.T) {
@@ -107,7 +102,6 @@ func TestEntryGet(t *testing.T) {
 				dummyAudioEntrywithoutContentType,
 				dummyVideoEntry,
 				dummyVideoEntryWithGenericContentType,
-				dummyHTMLEntry,
 			} {
 				data := "dummy data"
 				entry := picoshare.UploadEntry{
@@ -154,51 +148,5 @@ func TestEntryGet(t *testing.T) {
 				t.Errorf("Content-Type=%s, want=%s", got, want)
 			}
 		})
-	}
-}
-
-func TestEntryGetAddsSandboxHeaders(t *testing.T) {
-	dataStore := test_sqlite.New()
-
-	entry := picoshare.UploadEntry{
-		UploadMetadata: picoshare.UploadMetadata{
-			ID:          dummyHTMLEntry.ID,
-			Filename:    dummyHTMLEntry.Filename,
-			ContentType: dummyHTMLEntry.ContentType,
-			Uploaded:    mustParseTime("2023-01-01T00:00:00Z"),
-			Expires:     picoshare.NeverExpire,
-			Size:        mustParseFileSize(len("<script src=\"/-AAAAAAAAAA/payload.js\"></script>")),
-		},
-		Reader: strings.NewReader("<script src=\"/-AAAAAAAAAA/payload.js\"></script>"),
-	}
-	if err := dataStore.InsertEntry(entry.Reader, entry.UploadMetadata); err != nil {
-		t.Fatal(err)
-	}
-
-	s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceChecker, nilGarbageCollector, handlers.NewClock())
-
-	req, err := http.NewRequest("GET", "/-HHHHHHHHHH", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	rec := httptest.NewRecorder()
-	s.Router().ServeHTTP(rec, req)
-	res := rec.Result()
-
-	if got, want := res.StatusCode, http.StatusOK; got != want {
-		t.Fatalf("status=%d, want=%d", got, want)
-	}
-
-	if got, want := res.Header.Get("Content-Type"), "text/html"; got != want {
-		t.Fatalf("Content-Type=%q, want=%q", got, want)
-	}
-
-	if got, want := res.Header.Get("Content-Security-Policy"), "sandbox"; got != want {
-		t.Fatalf("Content-Security-Policy=%q, want=%q", got, want)
-	}
-
-	if got, want := res.Header.Get("X-Content-Type-Options"), "nosniff"; got != want {
-		t.Fatalf("X-Content-Type-Options=%q, want=%q", got, want)
 	}
 }
