@@ -1,41 +1,34 @@
 package handlers
 
 import (
-	"log"
+	"embed"
+	"io/fs"
 	"net/http"
-	"os"
-	"path"
+	"strconv"
+	"time"
 )
 
-// serveStaticResource serves any static file under the ./static directory.
+//go:embed static
+var staticFS embed.FS
+
+// serveStaticResource serves any static file under the ./handlers/static
+// directory.
 func serveStaticResource() http.HandlerFunc {
-	const staticRootDir = "./static"
+	fSys, err := fs.Sub(staticFS, "static")
+	if err != nil {
+		panic(err)
+	}
+	server := http.FileServer(http.FS(fSys))
+	// Because we embed static files in the Go binary, we just use the first time
+	// this function runs as the last modification time for caching headers.
+	lastModificationTime := time.Now()
+
 	return func(w http.ResponseWriter, r *http.Request) {
-		fs := http.Dir(staticRootDir)
-		file, err := fs.Open(r.URL.Path)
-		if os.IsNotExist(err) {
-			log.Printf("%s does not exist on the file system: %s", r.URL.Path, err)
-			http.Error(w, "Failed to find file: "+r.URL.Path, http.StatusNotFound)
-			return
-		} else if err != nil {
-			log.Printf("Failed to retrieve the file %s from the file system: %s", r.URL.Path, err)
-			http.Error(w, "Failed to find file: "+r.URL.Path, http.StatusNotFound)
-			return
-		}
-		defer file.Close()
+		// Set cache headers
+		etag := "\"" + strconv.FormatInt(lastModificationTime.UnixMilli(), 10) + "\""
+		w.Header().Set("Etag", etag)
+		w.Header().Set("Cache-Control", "max-age=3600")
 
-		stat, err := file.Stat()
-		if err != nil {
-			log.Printf("Failed to retrieve the information of %s from the file system: %s", r.URL.Path, err)
-			http.Error(w, "Failed to serve: "+r.URL.Path, http.StatusInternalServerError)
-			return
-		}
-		if stat.IsDir() {
-			log.Printf("%s is a directory", r.URL.Path)
-			http.Error(w, "Failed to find file: "+r.URL.Path, http.StatusNotFound)
-			return
-		}
-
-		http.ServeFile(w, r, path.Join(staticRootDir, r.URL.Path))
+		server.ServeHTTP(w, r)
 	}
 }

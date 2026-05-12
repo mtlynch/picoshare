@@ -6,13 +6,13 @@ import (
 	"io"
 	"log"
 
-	"github.com/mtlynch/picoshare/v2/types"
+	"github.com/mtlynch/picoshare/picoshare"
 )
 
 type (
 	fileReader struct {
 		db         *sql.DB
-		entryID    types.EntryID
+		entryID    picoshare.EntryID
 		fileLength int64
 		offset     int64
 		chunkSize  int64
@@ -20,7 +20,7 @@ type (
 	}
 )
 
-func NewReader(db *sql.DB, id types.EntryID) (io.ReadSeeker, error) {
+func NewReader(db *sql.DB, id picoshare.EntryID) (io.ReadSeeker, error) {
 	chunkSize, err := getChunkSize(db, id)
 	if err != nil {
 		return nil, err
@@ -31,14 +31,14 @@ func NewReader(db *sql.DB, id types.EntryID) (io.ReadSeeker, error) {
 		return nil, err
 	}
 
-	return &fileReader{
+	return new(fileReader{
 		db:         db,
 		entryID:    id,
 		fileLength: length,
 		offset:     0,
 		chunkSize:  chunkSize,
 		buf:        bytes.NewBuffer([]byte{}),
-	}, nil
+	}), nil
 }
 
 func (fr *fileReader) Read(p []byte) (int, error) {
@@ -87,27 +87,20 @@ func (fr *fileReader) populateBuffer() error {
 		return io.EOF
 	}
 
-	startChunk := fr.offset / int64(fr.chunkSize)
-	stmt, err := fr.db.Prepare(`
+	chunkIndex := fr.offset / int64(fr.chunkSize)
+	var chunk []byte
+	if err := fr.db.QueryRow(`
 			SELECT
 				chunk
 			FROM
 				entries_data
 			WHERE
 				id=? AND
-				chunk_index>=?
+				chunk_index=?
 			ORDER BY
 				chunk_index ASC
-			`)
-	if err != nil {
+			`, fr.entryID, chunkIndex).Scan(&chunk); err != nil {
 		log.Printf("reading chunk failed: %v", err)
-		return err
-	}
-	defer stmt.Close()
-
-	var chunk []byte
-	err = stmt.QueryRow(fr.entryID, startChunk).Scan(&chunk)
-	if err != nil {
 		return err
 	}
 
@@ -120,8 +113,10 @@ func (fr *fileReader) populateBuffer() error {
 	return nil
 }
 
-func getFileLength(db *sql.DB, id types.EntryID, chunkSize int64) (int64, error) {
-	stmt, err := db.Prepare(`
+func getFileLength(db *sql.DB, id picoshare.EntryID, chunkSize int64) (int64, error) {
+	var chunkIndex int64
+	var chunkLen int64
+	if err := db.QueryRow(`
 	SELECT
 		chunk_index,
 		LENGTH(chunk) AS chunk_size
@@ -132,50 +127,33 @@ func getFileLength(db *sql.DB, id types.EntryID, chunkSize int64) (int64, error)
 	ORDER BY
 		chunk_index DESC
 	LIMIT 1
-	`)
-	if err != nil {
-		return 0, err
-	}
-	defer stmt.Close()
-
-	var chunkIndex int64
-	var chunkLen int64
-	err = stmt.QueryRow(id).Scan(&chunkIndex, &chunkLen)
-	if err != nil {
+	`, id).Scan(&chunkIndex, &chunkLen); err != nil {
 		return 0, err
 	}
 
 	return (chunkSize * chunkIndex) + chunkLen, nil
 }
 
-func getChunkSize(db *sql.DB, id types.EntryID) (int64, error) {
-	stmt, err := db.Prepare(`
+// getChunkSize determines the chunk size that PicoShare used to save the given
+// entry in SQLite. Even though the chunk size is theoretically a constant, it
+// might change in different versions of PicoShare.
+func getChunkSize(db *sql.DB, id picoshare.EntryID) (int64, error) {
+	var chunkSize int64
+	if err := db.QueryRow(`
 	SELECT
 		LENGTH(chunk) AS chunk_size
 	FROM
 		entries_data
 	WHERE
-		id=?
+		id=:id
 	ORDER BY
 		chunk_index ASC
 	LIMIT 1
-	`)
-	if err != nil {
+	`,
+		sql.Named("id", id),
+	).Scan(&chunkSize); err != nil {
 		return 0, err
 	}
-	defer stmt.Close()
 
-	var chunkSize int64
-	err = stmt.QueryRow(id).Scan(&chunkSize)
-	if err != nil {
-		return 0, err
-	}
 	return chunkSize, nil
-}
-
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
 }

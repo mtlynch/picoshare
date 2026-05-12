@@ -1,0 +1,75 @@
+{{ define "style-tags" }}
+  <style nonce="{{ .CspNonce }}">
+    .filename {
+      font-family: "Courier New", Courier, monospace;
+    }
+  </style>
+{{ end }}
+
+{{ define "script-tags" }}
+  <script type="module" nonce="{{ .CspNonce }}">
+    import { deleteFile } from "/js/controllers/files.js";
+    import { showElement, hideElement } from "/js/lib/bulma.js";
+
+    const deleteForm = document.getElementById("delete-form");
+    const errorContainer = document.getElementById("error");
+    const progressSpinner = document.getElementById("progress-spinner");
+
+    deleteForm.addEventListener("submit", (evt) => {
+      evt.preventDefault();
+      const idEl = deleteForm.elements.namedItem("entry-id");
+      if (!idEl) {
+        return;
+      }
+      const id = idEl.value;
+      hideElement(errorContainer);
+      hideElement(deleteForm);
+      showElement(progressSpinner);
+
+      deleteFile(id)
+        .then(() => {
+          document.location = "/files";
+        })
+        .catch((error) => {
+          document.getElementById("error-message").innerText = error;
+          showElement(errorContainer);
+          showElement(deleteForm);
+        })
+        .finally(() => {
+          hideElement(progressSpinner);
+        });
+    });
+  </script>
+{{ end }}
+
+{{ define "content" }}
+  <h1 class="h1">Delete File</h1>
+
+  {{ with .Metadata }}
+
+    <form id="delete-form">
+      <input type="hidden" name="entry-id" value="{{ .ID }}" />
+      <p>Permanently delete <span class="filename">{{ .Filename }}</span>?</p>
+
+      <div class="d-flex justify-content-end gap-2 my-4">
+        <a class="btn btn-outline-primary" href="/files/{{ .ID }}/edit">
+          Cancel
+        </a>
+        <button class="btn btn-danger" id="delete-btn" type="submit">
+          <i class="fa-solid fa-trash me-2"></i>
+          Delete
+        </button>
+      </div>
+    </form>
+
+    <div class="fa-3x d-none" id="progress-spinner">
+      <i class="fa-solid fa-spinner fa-spin"></i>
+    </div>
+
+    <div id="error" class="d-none my-3">
+      <div class="alert alert-danger" role="alert">
+        <div id="error-message">Placeholder error.</div>
+      </div>
+    </div>
+  {{ end }}
+{{ end }}

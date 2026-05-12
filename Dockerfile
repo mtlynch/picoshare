@@ -1,28 +1,31 @@
-FROM golang:1.17.4 AS builder
+FROM golang:1.26.0 AS builder
 
+ARG TARGETPLATFORM
+
+COPY ./.git /app/.git
+COPY ./build /app/build
+COPY ./cmd /app/cmd
+COPY ./dev-scripts /app/dev-scripts
 COPY ./garbagecollect /app/garbagecollect
 COPY ./handlers /app/handlers
+COPY ./picoshare /app/picoshare
 COPY ./random /app/random
-COPY ./static /app/static
+COPY ./space /app/space
 COPY ./store /app/store
-COPY ./templates /app/templates
-COPY ./types /app/types
 COPY ./go.* /app/
-COPY ./main.go /app/
 
 WORKDIR /app
 
-RUN GOOS=linux GOARCH=amd64 \
-    go build \
-      -tags netgo \
-      -ldflags '-w -extldflags "-static"' \
-      -o /app/picoshare \
-      main.go
+RUN TARGETPLATFORM="${TARGETPLATFORM}" \
+    ./dev-scripts/build-backend "prod"
 
-FROM debian:stable-20211011-slim AS litestream_downloader
+FROM scratch AS artifact
+COPY --from=builder /app/bin/picoshare ./
 
-ARG litestream_version="v0.3.8"
-ARG litestream_binary_tgz_filename="litestream-${litestream_version}-linux-amd64-static.tar.gz"
+FROM debian:stable-20240311-slim AS litestream_downloader
+
+ARG TARGETPLATFORM
+ARG litestream_version="v0.3.13"
 
 WORKDIR /litestream
 
@@ -31,20 +34,34 @@ RUN set -x && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y \
       ca-certificates \
       wget
-RUN wget "https://github.com/benbjohnson/litestream/releases/download/${litestream_version}/${litestream_binary_tgz_filename}"
-RUN tar -xvzf "${litestream_binary_tgz_filename}"
+
+RUN set -x && \
+    if [ "$TARGETPLATFORM" = "linux/arm/v7" ]; then \
+      ARCH="arm7" ; \
+    elif [ "$TARGETPLATFORM" = "linux/arm64" ]; then \
+      ARCH="arm64" ; \
+    else \
+      ARCH="amd64" ; \
+    fi && \
+    set -u && \
+    litestream_binary_tgz_filename="litestream-${litestream_version}-linux-${ARCH}.tar.gz" && \
+    wget "https://github.com/benbjohnson/litestream/releases/download/${litestream_version}/${litestream_binary_tgz_filename}" && \
+    mv "${litestream_binary_tgz_filename}" litestream.tgz
+RUN tar -xvzf litestream.tgz
 
 FROM alpine:3.15
 
 RUN apk add --no-cache bash
 
-COPY --from=builder /app/picoshare /app/picoshare
+COPY --from=builder /app/bin/picoshare /app/picoshare
 COPY --from=litestream_downloader /litestream/litestream /app/litestream
 COPY ./docker-entrypoint /app/docker-entrypoint
 COPY ./litestream.yml /etc/litestream.yml
-COPY ./static /app/static
-COPY ./templates /app/templates
+COPY ./LICENSE /app/LICENSE
+
+ENV LITESTREAM_RETENTION=72h
 
 WORKDIR /app
 
 ENTRYPOINT ["/app/docker-entrypoint"]
+CMD ["-db", "/data/store.db"]

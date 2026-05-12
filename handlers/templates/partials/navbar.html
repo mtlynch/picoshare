@@ -1,0 +1,80 @@
+{{ define "navbar" }}
+  <nav class="navbar navbar-expand-lg navbar-light bg-light" role="navigation">
+    <div class="container">
+      <a class="navbar-brand" href="/">PicoShare</a>
+      <button
+        class="navbar-toggler"
+        type="button"
+        data-bs-toggle="collapse"
+        data-bs-target="#navbar-links"
+        aria-controls="navbar-links"
+        aria-expanded="false"
+        aria-label="Toggle navigation"
+      >
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div id="navbar-links" class="collapse navbar-collapse">
+        {{ if .IsAuthenticated }}
+          <ul class="navbar-nav me-auto mb-2 mb-lg-0 align-items-lg-center">
+            <li class="nav-item">
+              <a class="btn btn-success me-lg-2" role="menuitem" href="/"
+                >Upload</a
+              >
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" role="menuitem" href="/files">Files</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" role="menuitem" href="/guest-links"
+                >Guest Links</a
+              >
+            </li>
+          </ul>
+        {{ end }}
+        <ul class="navbar-nav ms-auto mb-2 mb-lg-0 align-items-lg-center">
+          {{ if .IsAuthenticated }}
+            <li class="nav-item dropdown">
+              <a
+                class="nav-link dropdown-toggle"
+                href="#"
+                role="menuitem"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
+              >
+                System
+              </a>
+              <ul class="dropdown-menu dropdown-menu-end">
+                <li>
+                  <a class="dropdown-item" role="menuitem" href="/information"
+                    >Information</a
+                  >
+                </li>
+                <li>
+                  <a class="dropdown-item" role="menuitem" href="/settings"
+                    >Settings</a
+                  >
+                </li>
+                <li>
+                  <button
+                    id="navbar-log-out"
+                    class="dropdown-item"
+                    role="menuitem"
+                    type="button"
+                  >
+                    Log Out
+                  </button>
+                </li>
+              </ul>
+            </li>
+          {{ else }}
+            <li class="nav-item">
+              <a class="btn btn-primary" role="menuitem" href="/login">
+                Log In
+              </a>
+            </li>
+          {{ end }}
+        </ul>
+      </div>
+    </div>
+  </nav>
+{{ end }}

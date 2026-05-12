@@ -17,7 +17,7 @@ func (s Server) entryDelete() http.HandlerFunc {
 			return
 		}
 
-		err = s.store.DeleteEntry(id)
+		err = s.getDB(r).DeleteEntry(id)
 		if err != nil {
 			log.Printf("failed to delete entry %v: %v", id, err)
 			http.Error(w, "failed to delete entry", http.StatusInternalServerError)

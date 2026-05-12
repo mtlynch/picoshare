@@ -1,0 +1,147 @@
+{{ define "style-tags" }}
+  <style nonce="{{ .CspNonce }}">
+    .tooltip {
+      position: relative;
+      display: inline-block;
+
+      & .tooltip-text {
+        position: absolute;
+        top: -9px;
+        left: 150%;
+        visibility: hidden;
+        width: max-content;
+        max-width: 400px;
+        padding: 0.5rem 0.75rem;
+        color: black;
+        background-color: #f5faff;
+        border: 1px solid #004e9c;
+        border-radius: 6px;
+        text-align: center;
+        z-index: 1;
+      }
+    }
+
+    .tooltip:hover .tooltip-text {
+      visibility: visible;
+    }
+
+    #error {
+      max-width: 60ch;
+    }
+  </style>
+{{ end }}
+
+{{ define "script-tags" }}
+  <script type="module" nonce="{{ .CspNonce }}">
+    import { showElement, hideElement } from "/js/lib/bulma.js";
+    import { copyToClipboard } from "/js/lib/clipboard.js";
+    import { makeShortLink } from "/js/lib/links.js";
+
+    const errorContainer = document.getElementById("error");
+
+    document
+      .querySelector("#error .btn-close")
+      .addEventListener("click", () => {
+        hideElement(errorContainer);
+      });
+
+    document.querySelectorAll('[aria-label="Copy"]').forEach((copyBtn) => {
+      copyBtn.addEventListener("click", () => {
+        const fileId = copyBtn.getAttribute("pico-entry-id");
+        const shortLink = makeShortLink(fileId);
+
+        copyToClipboard(shortLink)
+          .then(() =>
+            document
+              .querySelector("snackbar-notifications")
+              .addInfoMessage("Copied link")
+          )
+          .catch((error) => {
+            document.getElementById("error-message").innerText = error;
+            showElement(errorContainer);
+          });
+      });
+    });
+  </script>
+{{ end }}
+
+{{ define "content" }}
+  <h1 class="h1">Files</h1>
+
+  <div class="table-responsive">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Filename</th>
+          <th>Note</th>
+          <th>Size</th>
+          <th>Uploaded</th>
+          <th>Expires</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {{ range .Files }}
+          <tr test-data-filename="{{ .Filename }}">
+            <td class="align-middle">
+              <a href="/-{{ .ID }}">{{ .Filename }}</a>
+            </td>
+            <td class="align-middle">
+              {{ if .Note.Value }}
+                <div class="tooltip">
+                  <i class="fa-solid fa-note-sticky mx-auto"></i>
+                  <span class="tooltip-text">{{ .Note }}</span>
+                </div>
+              {{ end }}
+            </td>
+            <td class="align-middle">{{ formatFileSize .Size }}</td>
+            <td class="align-middle">{{ formatDate .Uploaded }}</td>
+            <td class="align-middle">
+              {{- formatExpiration .Expires -}}
+            </td>
+            <td class="align-middle">
+              <div class="d-flex justify-content-end gap-2">
+                <a
+                  class="btn btn-outline-primary btn-sm file-action-btn"
+                  href="/files/{{ .ID }}/info"
+                  role="button"
+                  aria-label="Information"
+                >
+                  <i class="fa-solid fa-circle-info"></i>
+                </a>
+                <a
+                  class="btn btn-outline-primary btn-sm file-action-btn"
+                  href="/files/{{ .ID }}/edit"
+                  role="button"
+                  aria-label="Edit"
+                >
+                  <i class="fa-solid fa-pen-to-square"></i>
+                </a>
+                <button
+                  class="btn btn-outline-primary btn-sm file-action-btn"
+                  aria-label="Copy"
+                  pico-entry-id="{{ .ID }}"
+                >
+                  <i class="fa-solid fa-copy"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        {{ end }}
+      </tbody>
+    </table>
+  </div>
+
+  <div id="error" class="d-none my-3">
+    <div
+      class="alert alert-danger d-flex justify-content-between align-items-start"
+      role="alert"
+    >
+      <div>
+        <strong>Error</strong>
+        <div id="error-message" class="mt-1">Placeholder error.</div>
+      </div>
+      <button class="btn-close" type="button" aria-label="Close"></button>
+    </div>
+  </div>
+{{ end }}

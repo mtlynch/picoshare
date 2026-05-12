@@ -1,9 +1,11 @@
 .circleci/
 .vscode/
 data/
-dev-scripts/
+bin/
+dist/
 .coverage*
-*.env
+.env*
+*.test.js
 fly.toml
-modd.conf
+.air.toml
 Dockerfile

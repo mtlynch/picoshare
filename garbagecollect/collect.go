@@ -1,35 +1,32 @@
 package garbagecollect
 
 import (
-	"log"
-	"time"
-
-	"github.com/mtlynch/picoshare/v2/store"
+	"sync"
 )
 
-type Collector struct {
-	store store.Store
-}
+type (
+	DatabasePurger interface {
+		Purge() error
+	}
 
-func NewCollector(store store.Store) Collector {
+	Collector struct {
+		purger DatabasePurger
+		mu     sync.Mutex
+	}
+)
+
+func NewCollector(purger DatabasePurger) Collector {
 	return Collector{
-		store: store,
+		purger: purger,
 	}
 }
 
-func (c Collector) Collect() error {
-	mm, err := c.store.GetEntriesMetadata()
-	if err != nil {
-		return err
-	}
+func (c *Collector) Collect() error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 
-	for _, meta := range mm {
-		if time.Now().After(time.Time(meta.Expires)) {
-			log.Printf("entry %v expired at %v", meta.ID, time.Time(meta.Expires).Format(time.RFC3339))
-			if err := c.store.DeleteEntry(meta.ID); err != nil {
-				return err
-			}
-		}
+	if err := c.purger.Purge(); err != nil {
+		return err
 	}
 
 	return nil

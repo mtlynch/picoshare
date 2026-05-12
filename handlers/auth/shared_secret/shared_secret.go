@@ -3,102 +3,119 @@ package shared_secret
 import (
 	"encoding/json"
 	"errors"
-	"log"
 	"net/http"
-	"time"
+
+	"github.com/mtlynch/picoshare/handlers/auth/shared_secret/kdf"
 )
 
 const authCookieName = "sharedSecret"
 
-type (
-	sharedSecret string
+var (
+	// ErrInvalidCredentials indicates that the provided credentials are incorrect.
+	ErrInvalidCredentials = errors.New("incorrect shared secret")
 
-	SharedSecretAuthenticator struct {
-		sharedSecret sharedSecret
-	}
+	// ErrEmptyCredentials indicates that no credentials were provided.
+	ErrEmptyCredentials = errors.New("invalid shared secret")
+
+	// ErrMalformedRequest indicates that the request body is malformed.
+	ErrMalformedRequest = errors.New("malformed request")
 )
 
-func New(sharedSecret string) (SharedSecretAuthenticator, error) {
-	ss, err := parseSharedSecret(sharedSecret)
+// SharedSecretAuthenticator handles authentication using a shared secret.
+type SharedSecretAuthenticator struct {
+	serverKey kdf.DerivedKey
+}
+
+// New creates a new SharedSecretAuthenticator.
+func New(sharedSecretKey string) (SharedSecretAuthenticator, error) {
+	serverKey, err := kdf.DeriveKeyFromSecret(sharedSecretKey)
 	if err != nil {
 		return SharedSecretAuthenticator{}, err
 	}
 
 	return SharedSecretAuthenticator{
-		sharedSecret: ss,
+		serverKey: serverKey,
 	}, nil
 }
 
+// StartSession begins an authenticated session.
 func (ssa SharedSecretAuthenticator) StartSession(w http.ResponseWriter, r *http.Request) {
-	ss, err := sharedSecretFromRequest(r)
+	inputKeyString, err := ssa.inputKeyFromRequest(r)
 	if err != nil {
-		http.Error(w, "Invalid shared secret", http.StatusBadRequest)
+		switch err {
+		case ErrMalformedRequest, ErrEmptyCredentials:
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		default:
+			http.Error(w, ErrInvalidCredentials.Error(), http.StatusUnauthorized)
+		}
 		return
 	}
 
-	if ss != ssa.sharedSecret {
-		http.Error(w, "Incorrect shared secret", http.StatusUnauthorized)
+	// Derive key from user input and compare with server key.
+	userKey, err := kdf.DeriveKeyFromSecret(inputKeyString)
+	if err != nil {
+		http.Error(w, ErrInvalidCredentials.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	if !ssa.serverKey.Equal(userKey) {
+		http.Error(w, ErrInvalidCredentials.Error(), http.StatusUnauthorized)
 		return
 	}
 
 	ssa.createCookie(w)
 }
 
-func sharedSecretFromRequest(r *http.Request) (sharedSecret, error) {
-	ar := struct {
-		SharedSecret string `json:"sharedSecret"`
-	}{}
-	decoder := json.NewDecoder(r.Body)
-	err := decoder.Decode(&ar)
-	if err != nil {
-		return "", err
-	}
-
-	return parseSharedSecret(ar.SharedSecret)
-}
-
+// Authenticate verifies if the request has valid authentication.
 func (ssa SharedSecretAuthenticator) Authenticate(r *http.Request) bool {
 	authCookie, err := r.Cookie(authCookieName)
 	if err != nil {
-		log.Printf("failed to retrieve cookie from request: %v", err)
 		return false
 	}
 
-	ss, err := parseSharedSecret(authCookie.Value)
+	cookieKey, err := kdf.DeserializeKey(authCookie.Value)
 	if err != nil {
 		return false
 	}
 
-	if ss != ssa.sharedSecret {
-		return false
-	}
-
-	return true
+	return ssa.serverKey.Equal(cookieKey)
 }
 
-func (ssa SharedSecretAuthenticator) createCookie(w http.ResponseWriter) {
-	http.SetCookie(w, &http.Cookie{
-		Name:     authCookieName,
-		Value:    string(ssa.sharedSecret),
-		Path:     "/",
-		HttpOnly: false,
-		Expires:  time.Now().Add(time.Hour * 24 * 30),
-	})
-}
-
+// ClearSession removes the authentication cookie.
 func (ssa SharedSecretAuthenticator) ClearSession(w http.ResponseWriter) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     authCookieName,
 		Value:    "",
 		Path:     "/",
-		HttpOnly: false,
-		Expires:  time.Unix(0, 0),
+		HttpOnly: true,
+		SameSite: http.SameSiteStrictMode,
+		MaxAge:   -1,
 	})
 }
 
-func parseSharedSecret(s string) (sharedSecret, error) {
-	if len(s) == 0 {
-		return sharedSecret(""), errors.New("invalid shared secret")
+func (ssa SharedSecretAuthenticator) inputKeyFromRequest(r *http.Request) (string, error) {
+	body := struct {
+		SharedSecretKey string `json:"sharedSecretKey"`
+	}{}
+	decoder := json.NewDecoder(r.Body)
+	if err := decoder.Decode(&body); err != nil {
+		return "", ErrMalformedRequest
 	}
-	return sharedSecret(s), nil
+
+	if body.SharedSecretKey == "" {
+		return "", ErrEmptyCredentials
+	}
+
+	return body.SharedSecretKey, nil
+}
+
+func (ssa SharedSecretAuthenticator) createCookie(w http.ResponseWriter) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     authCookieName,
+		Value:    ssa.serverKey.Serialize(),
+		Path:     "/",
+		HttpOnly: true,
+		SameSite: http.SameSiteStrictMode,
+		MaxAge:   30 * 24 * 60 * 60, // 30 days in seconds
+	})
 }

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Exit build script on first failure.
 set -e
@@ -10,15 +10,19 @@ set -x
 set -u
 
 # Change directory to repository root.
-readonly SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+readonly SCRIPT_DIR
 cd "${SCRIPT_DIR}/.."
 
 DOCKER_BUILDKIT=1 \
   docker build -t picoshare .
 
-set +x
-. dev.env
-set -x
+if [[ -f .env.dev ]]; then
+  set +x
+  # shellcheck disable=SC1091
+  . .env.dev
+  set -x
+fi
 
 PS_SHARED_SECRET=somepassword
 
@@ -27,10 +31,10 @@ docker rm -f picoshare || true
 docker run \
   --env "PORT=4002" \
   --env "PS_SHARED_SECRET=${PS_SHARED_SECRET}" \
-  --env "LITESTREAM_BUCKET=${LITESTREAM_BUCKET}" \
-  --env "LITESTREAM_ENDPOINT=${LITESTREAM_ENDPOINT}" \
-  --env "LITESTREAM_ACCESS_KEY_ID=${LITESTREAM_ACCESS_KEY_ID}" \
-  --env "LITESTREAM_SECRET_ACCESS_KEY=${LITESTREAM_SECRET_ACCESS_KEY}" \
+  --env "LITESTREAM_BUCKET=${LITESTREAM_BUCKET:-}" \
+  --env "LITESTREAM_ENDPOINT=${LITESTREAM_ENDPOINT:-}" \
+  --env "LITESTREAM_ACCESS_KEY_ID=${LITESTREAM_ACCESS_KEY_ID:-}" \
+  --env "LITESTREAM_SECRET_ACCESS_KEY=${LITESTREAM_SECRET_ACCESS_KEY:-}" \
   --publish "0.0.0.0:4002:4002" \
   --name picoshare \
   picoshare

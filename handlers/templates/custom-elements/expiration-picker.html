@@ -1,0 +1,149 @@
+<template id="expiration-picker-template">
+  <link
+    rel="stylesheet"
+    type="text/css"
+    href="/third-party/bootstrap@5.3.3/bootstrap.min.css"
+  />
+  <link
+    rel="stylesheet"
+    type="text/css"
+    href="/third-party/js-datepicker@5.18.0/datepicker.min.css"
+  />
+  <div class="mb-2">
+    <input id="expiration" class="form-control" type="text" />
+    <div class="form-text">Expiration date</div>
+  </div>
+</template>
+
+<script type="module" nonce="{{ .CspNonce }}">
+  // Note: I don't know of a cleaner way of doing this. datepicker doesn't seem
+  // to export values like a proper JS module, so we import the whole JS file,
+  // which populates window.datepicker.
+  import "/third-party/js-datepicker@5.18.0/js-datepicker.js";
+
+  (function () {
+    const template = document.querySelector("#expiration-picker-template");
+
+    function parseDate(raw) {
+      // Make sure the date is valid.
+      const timestamp = Date.parse(raw);
+      if (isNaN(timestamp)) {
+        return null;
+      }
+      // Get the date in local time.
+      const date = new Date(timestamp);
+      return new Date(
+        date.getUTCFullYear(),
+        date.getUTCMonth(),
+        date.getUTCDate()
+      );
+    }
+
+    // Format the date in YYYY-MM-DD format without converting to UTC time.
+    function formatDate(date) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    }
+
+    function tomorrow() {
+      return dateInNDays(1);
+    }
+
+    function dateInNDays(n) {
+      let d = new Date();
+      d.setDate(d.getDate() + n);
+      return d;
+    }
+
+    customElements.define(
+      "expiration-picker",
+      class extends HTMLElement {
+        connectedCallback() {
+          this.attachShadow({ mode: "open" }).appendChild(
+            template.content.cloneNode(true)
+          );
+          this.elements = {
+            container: this.shadowRoot.querySelector(".mb-2"),
+            expirationInput: this.shadowRoot.getElementById("expiration"),
+          };
+
+          let initialExpiration = null;
+          if (this.getAttribute("value")) {
+            initialExpiration = new Date(this.getAttribute("value"));
+          } else {
+            initialExpiration = this._defaultExpirationDate();
+          }
+          this.picker = window.datepicker(this.elements.expirationInput, {
+            minDate: tomorrow(),
+            dateSelected: initialExpiration,
+            formatter: (input, date) => {
+              input.value = formatDate(date);
+            },
+          });
+
+          this.elements.expirationInput.addEventListener("change", (evt) => {
+            const newDate = parseDate(evt.target.value);
+            if (newDate) {
+              this.picker.setDate(newDate);
+              this.elements.expirationInput.setCustomValidity("");
+            } else {
+              this.elements.expirationInput.setCustomValidity(
+                "Date must be in YYYY-MM-DD format"
+              );
+              this.elements.expirationInput.reportValidity();
+            }
+          });
+
+          this._setVisibility(this.getAttribute("disabled") !== null);
+        }
+
+        disconnectedCallback() {
+          this.picker.remove();
+        }
+
+        static get observedAttributes() {
+          return ["value", "disabled"];
+        }
+
+        attributeChangedCallback(name, oldValue, newValue) {
+          if (!this.elements) {
+            return;
+          }
+          if (name === "disabled") {
+            this._setVisibility(newValue === "true");
+          } else if (name === "value") {
+            this.picker.setDate(new Date(newValue));
+          }
+        }
+
+        get value() {
+          if (
+            this.getAttribute("disabled") !== null ||
+            !this.elements.expirationInput.checkValidity()
+          ) {
+            return null;
+          }
+          return this.picker.dateSelected.toISOString();
+        }
+
+        set value(newValue) {
+          this.picker.setDate(new Date(newValue));
+        }
+
+        _setVisibility(visible) {
+          if (visible) {
+            this.elements.container.classList.add("d-none");
+          } else {
+            this.elements.container.classList.remove("d-none");
+          }
+        }
+
+        _defaultExpirationDate() {
+          return dateInNDays(30);
+        }
+      }
+    );
+  })();
+</script>

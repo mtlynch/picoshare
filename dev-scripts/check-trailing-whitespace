@@ -1,14 +1,16 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Check for trailing whitespace
 
-# Exit on first failing command.
+# Exit on first failure.
 set -e
+
 # Exit on unset variable.
 set -u
 
 # Change directory to repository root.
-readonly SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+readonly SCRIPT_DIR
 cd "${SCRIPT_DIR}/.."
 
 while read -r line; do

@@ -19,4 +19,4 @@ jobs:
           path-to-signatures: "signatures/version1/cla.json"
           path-to-document: "https://github.com/mtlynch/picoshare/blob/master/docs/CLA-v1.md"
           branch: "cla-signatures"
-          allowlist: mtlynch
+          allowlist: mtlynch,

@@ -1,0 +1,95 @@
+<template id="upload-link-box-template">
+  <link
+    rel="stylesheet"
+    type="text/css"
+    href="/third-party/bootstrap@5.3.3/bootstrap.min.css"
+  />
+  <link rel="stylesheet" href="/third-party/fontawesome6/css/all.min.css" />
+  <style nonce="{{ .CspNonce }}">
+    .light-font {
+      color: #696969;
+    }
+
+    .card button {
+      align-items: center;
+      display: inline-flex;
+      line-height: 1;
+      padding: 0.25rem 0.4rem;
+    }
+
+    .card button,
+    .card button span {
+      font-size: 0.75rem;
+    }
+
+    #link {
+      text-decoration: none;
+    }
+  </style>
+  <div class="card p-3">
+    <div class="d-flex align-items-center link-row">
+      <p class="mb-0"><a id="link"></a></p>
+      <button id="copy-btn" class="btn btn-sm btn-outline-primary ms-2">
+        <span>
+          <i class="fa-solid fa-copy"></i>
+        </span>
+      </button>
+    </div>
+    <p class="light-font mt-3">
+      <slot></slot>
+    </p>
+  </div>
+</template>
+
+<script type="module" nonce="{{ .CspNonce }}">
+  import { copyToClipboard } from "/js/lib/clipboard.js";
+
+  (function () {
+    const template = document.querySelector("#upload-link-box-template");
+
+    customElements.define(
+      "upload-link-box",
+      class extends HTMLElement {
+        connectedCallback() {
+          this.attachShadow({ mode: "open" }).appendChild(
+            template.content.cloneNode(true)
+          );
+          this.href = this.getAttribute("href");
+          this.shadowRoot
+            .getElementById("copy-btn")
+            .addEventListener("click", () => {
+              copyToClipboard(this.href).then(() => {
+                this.emitLinkCopied();
+              });
+            });
+        }
+
+        attributeChangedCallback(name, oldValue, newValue) {
+          if (name === "href" && newValue !== oldValue) {
+            this.href = newValue;
+          }
+        }
+
+        get href() {
+          return this.getAttribute("href");
+        }
+
+        set href(newValue) {
+          this.setAttribute("href", newValue);
+          const linkEl = this.shadowRoot.getElementById("link");
+          linkEl.innerText = newValue;
+          linkEl.href = newValue;
+        }
+
+        emitLinkCopied() {
+          this.dispatchEvent(
+            new CustomEvent("link-copied", {
+              bubbles: true,
+              composed: true,
+            })
+          );
+        }
+      }
+    );
+  })();
+</script>

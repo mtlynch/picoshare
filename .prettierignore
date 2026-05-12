@@ -1,2 +1,5 @@
-templates/*.html
-static/third-party
+/playwright-report/
+handlers/static/third-party
+.coverage.html
+.direnv/
+/e2e/results

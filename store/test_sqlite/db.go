@@ -3,17 +3,18 @@ package test_sqlite
 import (
 	"fmt"
 
-	"github.com/mtlynch/picoshare/v2/random"
-	"github.com/mtlynch/picoshare/v2/store"
-	"github.com/mtlynch/picoshare/v2/store/sqlite"
+	"github.com/mtlynch/picoshare/random"
+	"github.com/mtlynch/picoshare/store/sqlite"
 )
 
-func New() store.Store {
-	return sqlite.New(ephemeralDbURI())
+const optimizeForLitestream = false
+
+func New() sqlite.Store {
+	return sqlite.New(ephemeralDbURI(), optimizeForLitestream)
 }
 
-func NewWithChunkSize(chunkSize int) store.Store {
-	return sqlite.NewWithChunkSize(ephemeralDbURI(), chunkSize)
+func NewWithChunkSize(chunkSize uint64) sqlite.Store {
+	return sqlite.NewWithChunkSize(ephemeralDbURI(), chunkSize, optimizeForLitestream)
 }
 
 func ephemeralDbURI() string {

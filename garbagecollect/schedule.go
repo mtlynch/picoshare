@@ -3,31 +3,27 @@ package garbagecollect
 import (
 	"log"
 	"time"
-
-	"github.com/mtlynch/picoshare/v2/store"
 )
 
 type Scheduler struct {
-	collector Collector
-	interval  time.Duration
+	collector *Collector
+	ticker    *time.Ticker
 }
 
-func NewScheduler(store store.Store, interval time.Duration) Scheduler {
+func NewScheduler(collector *Collector, interval time.Duration) Scheduler {
 	return Scheduler{
-		collector: NewCollector(store),
-		interval:  interval,
+		collector: collector,
+		ticker:    time.NewTicker(interval),
 	}
 }
 
-func (s Scheduler) StartAsync() {
+func (s *Scheduler) StartAsync() {
 	go func() {
-		for {
-			log.Printf("cleaning up expired entries")
-			err := s.collector.Collect()
-			if err != nil {
-				log.Printf("garbage collection failed: %v", err)
+		for range s.ticker.C {
+			log.Printf("performing database maintenance")
+			if err := s.collector.Collect(); err != nil {
+				log.Printf("database maintenance failed: %v", err)
 			}
-			time.Sleep(s.interval)
 		}
 	}()
 }

@@ -1,0 +1,149 @@
+{{ define "script-tags" }}
+  <script type="module" nonce="{{ .CspNonce }}">
+    import { editFile } from "/js/controllers/files.js";
+    import { showElement, hideElement } from "/js/lib/bulma.js";
+    import { enableElement, disableElement } from "/js/lib/html.js";
+
+    const editForm = document.getElementById("edit-form");
+    const errorContainer = document.getElementById("error");
+    const progressSpinner = document.getElementById("progress-spinner");
+    const expireCheckbox = document.getElementById("expire-checkbox");
+    const expirationPicker = document.getElementById("expiration-picker");
+
+    function readFilename() {
+      return document.getElementById("filename").value || null;
+    }
+
+    function readNote() {
+      return document.getElementById("note").value || null;
+    }
+
+    document.getElementById("cancel-btn").addEventListener("click", () => {
+      history.back();
+    });
+
+    document.getElementById("edit-form").addEventListener("submit", (evt) => {
+      evt.preventDefault();
+      const id = document
+        .getElementById("edit-form")
+        .getAttribute("data-entry-id");
+      if (!id) {
+        return;
+      }
+
+      hideElement(errorContainer);
+      hideElement(editForm);
+      showElement(progressSpinner);
+
+      editFile(id, readFilename(), expirationPicker.value, readNote())
+        .then(() => {
+          document.location = "/files";
+        })
+        .catch((error) => {
+          document.getElementById("error-message").innerText = error;
+          showElement(errorContainer);
+          showElement(editForm);
+        })
+        .finally(() => {
+          hideElement(progressSpinner);
+        });
+    });
+
+    expireCheckbox.addEventListener("change", () => {
+      if (expireCheckbox.checked) {
+        enableElement(expirationPicker);
+      } else {
+        disableElement(expirationPicker);
+      }
+    });
+  </script>
+{{ end }}
+
+{{ define "custom-elements" }}
+  {{ template "expiration-picker.html" . }}
+{{ end }}
+
+{{ define "content" }}
+  <h1 class="h1">Edit File</h1>
+
+  {{ with .Metadata }}
+    <form id="edit-form" data-entry-id="{{ .ID }}">
+      <div class="mb-4">
+        <label class="form-label">Filename</label>
+        <input
+          id="filename"
+          class="form-control"
+          type="text"
+          value="{{ .Filename }}"
+          required
+        />
+      </div>
+
+      <div class="mb-4">
+        <label class="form-label">Expiration</label>
+
+        <div class="form-check mb-2">
+          <input
+            class="form-check-input"
+            type="checkbox"
+            id="expire-checkbox"
+            {{ if not (isNeverExpire .Expires) }}checked{{ end }}
+          />
+          <label class="form-check-label" for="expire-checkbox">
+            Delete after expiration
+          </label>
+        </div>
+        <expiration-picker
+          id="expiration-picker"
+          class="d-block"
+          {{ if not (isNeverExpire .Expires) }}
+            value="{{ formatExpiration .Expires }}"
+          {{ else }}
+            disabled
+          {{ end }}
+        />
+      </div>
+
+      <div class="mb-4">
+        <label class="form-label">Note</label>
+        <input
+          id="note"
+          class="form-control"
+          type="text"
+          {{ if .Note.Value }}
+            value="{{ .Note }}"
+          {{ end }}
+        />
+        <p class="form-text">Note is only visible to you</p>
+      </div>
+
+      <div class="d-flex flex-wrap align-items-center gap-2">
+        <a
+          class="btn btn-danger me-auto"
+          role="button"
+          href="/files/{{ .ID }}/confirm-delete"
+        >
+          <i class="fa-solid fa-trash me-2"></i>
+          Delete
+        </a>
+        <button class="btn btn-outline-primary" id="cancel-btn" type="button">
+          Cancel
+        </button>
+        <button class="btn btn-primary">
+          <i class="fa-solid fa-floppy-disk me-2"></i>
+          Save
+        </button>
+      </div>
+    </form>
+
+    <div class="fa-3x d-none" id="progress-spinner">
+      <i class="fa-solid fa-spinner fa-spin"></i>
+    </div>
+
+    <div id="error" class="d-none my-3">
+      <div class="alert alert-danger" role="alert">
+        <div id="error-message">Placeholder error.</div>
+      </div>
+    </div>
+  {{ end }}
+{{ end }}

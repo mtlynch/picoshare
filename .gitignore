@@ -1,8 +1,26 @@
+.direnv
+
 # Compiled binaries
 bin/
+dist/
 
 # Persistent data directory
 data/
 
 # Environment variables, which may contain secrets
-*.env
+.env.*
+# .env.example is an exception as it only contains dummy secrets.
+!.env.example
+
+# Unit test code coverage output
+.coverage.*
+
+node_modules/
+
+# System files
+.DS_Store
+
+# Playwright output
+/playwright-report/
+/playwright/.cache/
+e2e/results/

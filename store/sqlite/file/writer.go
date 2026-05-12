@@ -3,30 +3,37 @@ package file
 import (
 	"io"
 
-	"github.com/mtlynch/picoshare/v2/store/sqlite/wrapped"
-	"github.com/mtlynch/picoshare/v2/types"
+	"github.com/mtlynch/picoshare/picoshare"
+	"github.com/mtlynch/picoshare/store/sqlite/wrapped"
 )
 
 type writer struct {
-	tx      wrapped.SqlTx
-	entryID types.EntryID
+	ctx     wrapped.SqlDB
+	entryID picoshare.EntryID
 	buf     []byte
 	written int
 }
 
 // Create a new writer for the entry ID using the given SqlTx and splitting the
 // file into separate rows in the DB of at most chunkSize bytes.
-func NewWriter(tx wrapped.SqlTx, id types.EntryID, chunkSize int) io.WriteCloser {
-	return &writer{
-		tx:      tx,
+func NewWriter(ctx wrapped.SqlDB, id picoshare.EntryID, chunkSize uint64) io.WriteCloser {
+	return new(writer{
+		ctx:     ctx,
 		entryID: id,
 		buf:     make([]byte, chunkSize),
-	}
+	})
 }
 
 // Write writes a buffer to the SQLite database.
 func (w *writer) Write(p []byte) (int, error) {
 	n := 0
+
+	min := func(a, b int) int {
+		if a < b {
+			return a
+		}
+		return b
+	}
 
 	for {
 		if n == len(p) {
@@ -37,7 +44,9 @@ func (w *writer) Write(p []byte) (int, error) {
 		dstEnd := dstStart + copySize
 		copy(w.buf[dstStart:dstEnd], p[n:n+copySize])
 		if dstEnd == len(w.buf) {
-			w.flush(len(w.buf))
+			if err := w.flush(len(w.buf)); err != nil {
+				return n, err
+			}
 		}
 		w.written += copySize
 		n += copySize
@@ -56,7 +65,7 @@ func (w *writer) Close() error {
 
 func (w *writer) flush(n int) error {
 	idx := w.written / len(w.buf)
-	_, err := w.tx.Exec(`
+	_, err := w.ctx.Exec(`
 	INSERT INTO
 		entries_data
 	(
