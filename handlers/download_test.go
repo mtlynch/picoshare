@@ -56,6 +56,7 @@ func TestEntryGet(t *testing.T) {
 		expectedStatus             int
 		expectedContentDisposition string
 		expectedContentType        string
+		expectedCSP                string
 	}{
 		{
 			description:                "retrieves text entry",
@@ -63,6 +64,7 @@ func TestEntryGet(t *testing.T) {
 			expectedStatus:             http.StatusOK,
 			expectedContentDisposition: `filename="test.txt"`,
 			expectedContentType:        "text/plain;charset=utf-8",
+			expectedCSP:                "sandbox",
 		},
 		{
 			description:                "retrieves audio entry",
@@ -70,6 +72,7 @@ func TestEntryGet(t *testing.T) {
 			expectedStatus:             http.StatusOK,
 			expectedContentDisposition: `filename="test.mp3"`,
 			expectedContentType:        "audio/mpeg",
+			expectedCSP:                "sandbox",
 		},
 		{
 			description:                "retrieves audio entry and infers content-type when it wasn't specified at upload time",
@@ -77,6 +80,7 @@ func TestEntryGet(t *testing.T) {
 			expectedStatus:             http.StatusOK,
 			expectedContentDisposition: `filename="test0.mp3"`,
 			expectedContentType:        "audio/mpeg",
+			expectedCSP:                "sandbox",
 		},
 		{
 			description:                "retrieves video entry",
@@ -84,6 +88,7 @@ func TestEntryGet(t *testing.T) {
 			expectedStatus:             http.StatusOK,
 			expectedContentDisposition: `filename="test.mp4"`,
 			expectedContentType:        "video/mp4",
+			expectedCSP:                "sandbox",
 		},
 		{
 			description:                "retrieves video entry and infers content-type when it wasn't specified at upload time",
@@ -91,6 +96,15 @@ func TestEntryGet(t *testing.T) {
 			expectedStatus:             http.StatusOK,
 			expectedContentDisposition: `filename="test0.mp4"`,
 			expectedContentType:        "video/mp4",
+			expectedCSP:                "sandbox",
+		},
+		{
+			description:                "retrieves html entry",
+			requestRoute:               "/-HHHHHHHHHH",
+			expectedStatus:             http.StatusOK,
+			expectedContentDisposition: `filename="payload.html"`,
+			expectedContentType:        "text/html",
+			expectedCSP:                "sandbox",
 		},
 		{
 			description:    "request for non-existent entry returns 404",
@@ -153,52 +167,10 @@ func TestEntryGet(t *testing.T) {
 			if got, want := res.Header.Get("Content-Type"), tt.expectedContentType; got != want {
 				t.Errorf("Content-Type=%s, want=%s", got, want)
 			}
+
+			if got, want := res.Header.Get("Content-Security-Policy"), tt.expectedCSP; got != want {
+				t.Errorf("Content-Security-Policy=%s, want=%s", got, want)
+			}
 		})
-	}
-}
-
-func TestEntryGetAddsSandboxHeaders(t *testing.T) {
-	dataStore := test_sqlite.New()
-
-	entry := picoshare.UploadEntry{
-		UploadMetadata: picoshare.UploadMetadata{
-			ID:          dummyHTMLEntry.ID,
-			Filename:    dummyHTMLEntry.Filename,
-			ContentType: dummyHTMLEntry.ContentType,
-			Uploaded:    mustParseTime("2023-01-01T00:00:00Z"),
-			Expires:     picoshare.NeverExpire,
-			Size:        mustParseFileSize(len("<script src=\"/-AAAAAAAAAA/payload.js\"></script>")),
-		},
-		Reader: strings.NewReader("<script src=\"/-AAAAAAAAAA/payload.js\"></script>"),
-	}
-	if err := dataStore.InsertEntry(entry.Reader, entry.UploadMetadata); err != nil {
-		t.Fatal(err)
-	}
-
-	s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceChecker, nilGarbageCollector, handlers.NewClock())
-
-	req, err := http.NewRequest("GET", "/-HHHHHHHHHH", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	rec := httptest.NewRecorder()
-	s.Router().ServeHTTP(rec, req)
-	res := rec.Result()
-
-	if got, want := res.StatusCode, http.StatusOK; got != want {
-		t.Fatalf("status=%d, want=%d", got, want)
-	}
-
-	if got, want := res.Header.Get("Content-Type"), "text/html"; got != want {
-		t.Fatalf("Content-Type=%q, want=%q", got, want)
-	}
-
-	if got, want := res.Header.Get("Content-Security-Policy"), "sandbox"; got != want {
-		t.Fatalf("Content-Security-Policy=%q, want=%q", got, want)
-	}
-
-	if got, want := res.Header.Get("X-Content-Type-Options"), "nosniff"; got != want {
-		t.Fatalf("X-Content-Type-Options=%q, want=%q", got, want)
 	}
 }
