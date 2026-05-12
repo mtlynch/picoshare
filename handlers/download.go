@@ -39,6 +39,12 @@ func (s Server) entryGet() http.HandlerFunc {
 			w.Header().Set("Content-Disposition", fmt.Sprintf(`filename="%s"`, entry.Filename))
 		}
 
+		// Uploaded files are untrusted user content served from the same origin as
+		// the PicoShare UI. Sandboxing document responses prevents uploaded HTML or
+		// similar active content from executing with PicoShare's origin.
+		w.Header().Set("Content-Security-Policy", "sandbox")
+		w.Header().Set("X-Content-Type-Options", "nosniff")
+
 		contentType := entry.ContentType
 		if contentType == "" || contentType == "application/octet-stream" {
 			if inferred, err := inferContentTypeFromFilename(entry.Filename); err == nil {
