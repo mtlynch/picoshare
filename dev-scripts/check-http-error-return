@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+set -e
+set -u
+
+go run ./dev-scripts/check-http-error-return.go .

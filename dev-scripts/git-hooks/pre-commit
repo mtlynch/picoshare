@@ -11,4 +11,5 @@ set -u
 
 ./dev-scripts/run-go-tests --quick
 ./dev-scripts/check-go-formatting
+./dev-scripts/check-http-error-return
 ./dev-scripts/lint-sql
