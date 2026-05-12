@@ -725,6 +725,122 @@ func TestGuestUploadAcceptHeader(t *testing.T) {
 	}
 }
 
+func TestGuestUploadRejectsInactiveGuestLinksWithoutPersisting(t *testing.T) {
+	authenticator, err := shared_secret.New("dummypass")
+	if err != nil {
+		t.Fatalf("failed to create shared secret: %v", err)
+	}
+
+	for _, tt := range []struct {
+		description        string
+		guestLinkInStore   picoshare.GuestLink
+		entriesInStore     []picoshare.UploadEntry
+		expectedEntryCount int
+		expectedStatus     int
+	}{
+		{
+			description: "disabled guest link",
+			guestLinkInStore: picoshare.GuestLink{
+				ID:              picoshare.GuestLinkID("abcdefgh23456789"),
+				Created:         mustParseTime("2024-01-01T00:00:00Z"),
+				UrlExpires:      mustParseExpirationTime("2030-01-02T03:04:25Z"),
+				MaxFileLifetime: picoshare.FileLifetimeInfinite,
+				IsDisabled:      true,
+			},
+			expectedEntryCount: 0,
+			expectedStatus:     http.StatusUnauthorized,
+		},
+		{
+			description: "expired guest link",
+			guestLinkInStore: picoshare.GuestLink{
+				ID:              picoshare.GuestLinkID("abcdefgh23456789"),
+				Created:         mustParseTime("2022-02-21T00:00:00Z"),
+				UrlExpires:      mustParseExpirationTime("2022-02-22T03:04:25Z"),
+				MaxFileLifetime: picoshare.FileLifetimeInfinite,
+			},
+			expectedEntryCount: 0,
+			expectedStatus:     http.StatusUnauthorized,
+		},
+		{
+			description: "upload-count limit reached",
+			guestLinkInStore: picoshare.GuestLink{
+				ID:              picoshare.GuestLinkID("abcdefgh23456789"),
+				Created:         mustParseTime("2024-01-01T00:00:00Z"),
+				UrlExpires:      mustParseExpirationTime("2030-01-02T03:04:25Z"),
+				MaxFileLifetime: picoshare.FileLifetimeInfinite,
+				MaxFileUploads:  makeGuestUploadCountLimit(2),
+			},
+			entriesInStore: []picoshare.UploadEntry{
+				{
+					UploadMetadata: picoshare.UploadMetadata{
+						ID:       picoshare.EntryID("dummy-entry1"),
+						Filename: picoshare.Filename("existing-1.txt"),
+						Uploaded: mustParseTime("2024-02-01T00:00:00Z"),
+						GuestLink: picoshare.GuestLink{
+							ID: picoshare.GuestLinkID("abcdefgh23456789"),
+						},
+						Expires: picoshare.NeverExpire,
+					},
+				},
+				{
+					UploadMetadata: picoshare.UploadMetadata{
+						ID:       picoshare.EntryID("dummy-entry2"),
+						Filename: picoshare.Filename("existing-2.txt"),
+						Uploaded: mustParseTime("2024-02-02T00:00:00Z"),
+						GuestLink: picoshare.GuestLink{
+							ID: picoshare.GuestLinkID("abcdefgh23456789"),
+						},
+						Expires: picoshare.NeverExpire,
+					},
+				},
+			},
+			expectedEntryCount: 2,
+			expectedStatus:     http.StatusUnauthorized,
+		},
+	} {
+		t.Run(tt.description, func(t *testing.T) {
+			dataStore := test_sqlite.New()
+			if err := dataStore.InsertGuestLink(tt.guestLinkInStore); err != nil {
+				t.Fatalf("failed to insert dummy guest link: %v", err)
+			}
+			for _, entry := range tt.entriesInStore {
+				data := "existing file contents"
+				entry.UploadMetadata.Size = mustParseFileSize(len(data))
+				if err := dataStore.InsertEntry(strings.NewReader(data), entry.UploadMetadata); err != nil {
+					t.Fatalf("failed to insert dummy entry: %v", err)
+				}
+			}
+
+			s := handlers.New(authenticator, &dataStore, nilSpaceChecker, nilGarbageCollector, handlers.NewClock())
+
+			formData, contentType := createMultipartFormBody("new-file.txt", "", strings.NewReader("new file contents"))
+			req, err := http.NewRequest("POST", "/api/guest/abcdefgh23456789?expiration=2030-01-01T00:00:00Z", formData)
+			if err != nil {
+				t.Fatal(err)
+			}
+			req.Header.Add("Content-Type", contentType)
+			req.Header.Add("Accept", "application/json")
+
+			rec := httptest.NewRecorder()
+			s.Router().ServeHTTP(rec, req)
+			res := rec.Result()
+
+			if got, want := res.StatusCode, tt.expectedStatus; got != want {
+				t.Fatalf("status=%d, want=%d", got, want)
+			}
+
+			entries, err := dataStore.GetEntriesMetadata()
+			if err != nil {
+				t.Fatalf("failed to list entries metadata: %v", err)
+			}
+
+			if got, want := len(entries), tt.expectedEntryCount; got != want {
+				t.Fatalf("entry count=%d, want=%d", got, want)
+			}
+		})
+	}
+}
+
 func createMultipartFormBody(filename, note string, r io.Reader) (io.Reader, string) {
 	var b bytes.Buffer
 	bw := bufio.NewWriter(&b)
