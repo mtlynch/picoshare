@@ -72,8 +72,11 @@ func main() {
 	}()
 	<-stop
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	log.Fatal(httpSrv.Shutdown(ctx))
+	err = httpSrv.Shutdown(ctx)
+	cancel()
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func sharedSecretFromEnv() (string, error) {

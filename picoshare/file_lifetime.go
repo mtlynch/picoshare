@@ -63,7 +63,7 @@ func (lt FileLifetime) FriendlyName() string {
 	value := lt.Days()
 	unit := "day"
 	if lt.IsYearBoundary() {
-		value = value / daysPerYear
+		value /= daysPerYear
 		unit = "year"
 	}
 	if value > 1 {
