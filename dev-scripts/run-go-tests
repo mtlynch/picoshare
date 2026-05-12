@@ -44,6 +44,17 @@ fi
 
 go vet ./...
 
+# Install go-critic if it's not present.
+GOCRITIC_PATH="$(go env GOPATH)/bin/go-critic"
+readonly GOCRITIC_PATH
+readonly GOCRITIC_VERSION="v0.14.3"
+if [[ ! -f "${GOCRITIC_PATH}" ]]; then
+    go install \
+      -ldflags=-linkmode=external \
+      "github.com/go-critic/go-critic/cmd/go-critic@${GOCRITIC_VERSION}"
+fi
+"${GOCRITIC_PATH}" check -enable=returnAfterHttpError ./...
+
 # Install staticcheck if it's not present.
 STATICCHECK_PATH="$(go env GOPATH)/bin/staticcheck"
 readonly STATICCHECK_PATH
