@@ -116,6 +116,7 @@ func (s Server) guestEntryPost() http.HandlerFunc {
 
 		if !gl.IsActive() {
 			http.Error(w, "Guest link is no longer active", http.StatusUnauthorized)
+			return
 		}
 
 		if gl.MaxFileBytes != picoshare.GuestUploadUnlimitedFileSize {
