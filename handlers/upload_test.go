@@ -599,10 +599,14 @@ func TestGuestUpload(t *testing.T) {
 				t.Fatalf("failed to list entries metadata: %v", err)
 			}
 
-			expectedEntryCount := len(tt.entriesInStore)
-			if tt.status == http.StatusOK {
-				expectedEntryCount++
-			}
+			// On success, we expect the request to add a single entry to the store.
+			// On failure, we expect no new entries in the store.
+			expectedEntryCount := func() int {
+				if tt.status == http.StatusOK {
+					return len(tt.entriesInStore) + 1
+				}
+				return len(tt.entriesInStore)
+			}()
 			if got, want := len(entries), expectedEntryCount; got != want {
 				t.Fatalf("entry count=%d, want=%d", got, want)
 			}
