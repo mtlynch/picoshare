@@ -28,7 +28,7 @@ var (
 		Filename:    picoshare.Filename("test.mp3"),
 		ContentType: picoshare.ContentType("audio/mpeg"),
 	}
-	dummyAudioEntrywithoutContentType = mockEntry{
+	dummyAudioEntryWithoutContentType = mockEntry{
 		ID:       "AAAAAAAA22",
 		Filename: picoshare.Filename("test0.mp3"),
 	}
@@ -118,7 +118,7 @@ func TestEntryGet(t *testing.T) {
 			for _, mockEntry := range []mockEntry{
 				dummyTextEntry,
 				dummyAudioEntry,
-				dummyAudioEntrywithoutContentType,
+				dummyAudioEntryWithoutContentType,
 				dummyVideoEntry,
 				dummyVideoEntryWithGenericContentType,
 				dummyHTMLEntry,
