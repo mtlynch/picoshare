@@ -27,9 +27,10 @@ test("sandboxed HTML downloads cannot log out the current user session", async (
     "Upload complete!"
   );
 
-  const downloadURL = await page.locator("#result-links a").first().evaluate(
-    (link) => (link as HTMLAnchorElement).href
-  );
+  const downloadURL = await page
+    .locator("#result-links a")
+    .first()
+    .evaluate((link) => (link as HTMLAnchorElement).href);
 
   const attackPage = await page.context().newPage();
   const response = await attackPage.goto(downloadURL);
