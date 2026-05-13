@@ -97,7 +97,7 @@ jobs:
             - ./bin/picoshare-dev
   e2e:
     docker:
-      - image: mcr.microsoft.com/playwright:v1.57.0
+      - image: mcr.microsoft.com/playwright:v1.59.1
     resource_class: xlarge
     environment:
       NODE_ENV: development

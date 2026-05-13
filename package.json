@@ -14,7 +14,7 @@
   },
   "homepage": "https://github.com/mtlynch/picoshare",
   "devDependencies": {
-    "@playwright/test": "1.57.0",
+    "@playwright/test": "1.59.1",
     "@types/node": "^24.0.7",
     "eslint": "^8.11.0",
     "eslint-plugin-playwright": "^0.11.2",
