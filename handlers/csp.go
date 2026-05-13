@@ -80,13 +80,6 @@ func enforceContentSecurityPolicy(next http.Handler) http.Handler {
 	})
 }
 
-func enforceDownloadContentSecurityPolicy(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Security-Policy", "sandbox")
-		next.ServeHTTP(w, r)
-	})
-}
-
 func cspNonce(ctx context.Context) string {
 	key, ok := ctx.Value(contextKeyCSPNonce).(string)
 	if !ok {

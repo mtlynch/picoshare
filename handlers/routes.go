@@ -64,7 +64,14 @@ func (s *Server) routes() {
 
 	downloadViews := s.router.PathPrefix("/").Subrouter()
 	downloadViews.Use(upgradeToHttps)
-	downloadViews.Use(enforceDownloadContentSecurityPolicy)
+	// Download views run in a sandbox so that if a user uploads JavaScript, it
+	// doesn't run in the same domain as the server.
+	downloadViews.Use(func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Security-Policy", "sandbox")
+			next.ServeHTTP(w, r)
+		})
+	})
 	downloadViews.PathPrefix("/-{id}").HandlerFunc(s.entryGet()).Methods(http.MethodGet)
 	downloadViews.PathPrefix("/-{id}/{filename}").HandlerFunc(s.entryGet()).Methods(http.MethodGet)
 	// Legacy routes for entries. We stopped using them because the ! has
