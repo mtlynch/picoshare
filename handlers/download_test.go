@@ -42,6 +42,11 @@ var (
 		Filename:    picoshare.Filename("test0.mp4"),
 		ContentType: picoshare.ContentType("application/octet-stream"),
 	}
+	dummyHTMLEntry = mockEntry{
+		ID:          "HHHHHHHHHH",
+		Filename:    picoshare.Filename("payload.html"),
+		ContentType: picoshare.ContentType("text/html"),
+	}
 )
 
 func TestEntryGet(t *testing.T) {
@@ -51,6 +56,7 @@ func TestEntryGet(t *testing.T) {
 		expectedStatus             int
 		expectedContentDisposition string
 		expectedContentType        string
+		expectedCSP                string
 	}{
 		{
 			description:                "retrieves text entry",
@@ -58,6 +64,7 @@ func TestEntryGet(t *testing.T) {
 			expectedStatus:             http.StatusOK,
 			expectedContentDisposition: `filename="test.txt"`,
 			expectedContentType:        "text/plain;charset=utf-8",
+			expectedCSP:                "sandbox",
 		},
 		{
 			description:                "retrieves audio entry",
@@ -65,6 +72,7 @@ func TestEntryGet(t *testing.T) {
 			expectedStatus:             http.StatusOK,
 			expectedContentDisposition: `filename="test.mp3"`,
 			expectedContentType:        "audio/mpeg",
+			expectedCSP:                "sandbox",
 		},
 		{
 			description:                "retrieves audio entry and infers content-type when it wasn't specified at upload time",
@@ -72,6 +80,7 @@ func TestEntryGet(t *testing.T) {
 			expectedStatus:             http.StatusOK,
 			expectedContentDisposition: `filename="test0.mp3"`,
 			expectedContentType:        "audio/mpeg",
+			expectedCSP:                "sandbox",
 		},
 		{
 			description:                "retrieves video entry",
@@ -79,6 +88,7 @@ func TestEntryGet(t *testing.T) {
 			expectedStatus:             http.StatusOK,
 			expectedContentDisposition: `filename="test.mp4"`,
 			expectedContentType:        "video/mp4",
+			expectedCSP:                "sandbox",
 		},
 		{
 			description:                "retrieves video entry and infers content-type when it wasn't specified at upload time",
@@ -86,6 +96,15 @@ func TestEntryGet(t *testing.T) {
 			expectedStatus:             http.StatusOK,
 			expectedContentDisposition: `filename="test0.mp4"`,
 			expectedContentType:        "video/mp4",
+			expectedCSP:                "sandbox",
+		},
+		{
+			description:                "retrieves html entry",
+			requestRoute:               "/-HHHHHHHHHH",
+			expectedStatus:             http.StatusOK,
+			expectedContentDisposition: `filename="payload.html"`,
+			expectedContentType:        "text/html",
+			expectedCSP:                "sandbox",
 		},
 		{
 			description:    "request for non-existent entry returns 404",
@@ -102,6 +121,7 @@ func TestEntryGet(t *testing.T) {
 				dummyAudioEntrywithoutContentType,
 				dummyVideoEntry,
 				dummyVideoEntryWithGenericContentType,
+				dummyHTMLEntry,
 			} {
 				data := "dummy data"
 				entry := picoshare.UploadEntry{
@@ -146,6 +166,10 @@ func TestEntryGet(t *testing.T) {
 
 			if got, want := res.Header.Get("Content-Type"), tt.expectedContentType; got != want {
 				t.Errorf("Content-Type=%s, want=%s", got, want)
+			}
+
+			if got, want := res.Header.Get("Content-Security-Policy"), tt.expectedCSP; got != want {
+				t.Errorf("Content-Security-Policy=%s, want=%s", got, want)
 			}
 		})
 	}
