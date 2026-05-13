@@ -68,10 +68,11 @@ func TestSettingsPut(t *testing.T) {
 			dataStore := test_sqlite.New()
 			s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceChecker, nilGarbageCollector, handlers.NewClock())
 
-			req, err := http.NewRequest("PUT", "/api/settings", strings.NewReader(tt.payload))
-			if err != nil {
-				t.Fatal(err)
-			}
+			req := httptest.NewRequest(
+				http.MethodPut,
+				"/api/settings",
+				strings.NewReader(tt.payload),
+			)
 			req.Header.Add("Content-Type", "text/json")
 
 			rec := httptest.NewRecorder()

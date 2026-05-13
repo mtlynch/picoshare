@@ -106,10 +106,11 @@ func TestEntryPost(t *testing.T) {
 
 			formData, contentType := createMultipartFormBody(tt.filename, tt.note, bytes.NewBuffer([]byte(tt.contents)))
 
-			req, err := http.NewRequest("POST", "/api/entry?expiration="+tt.expiration, formData)
-			if err != nil {
-				t.Fatal(err)
-			}
+			req := httptest.NewRequest(
+				http.MethodPost,
+				"/api/entry?expiration="+tt.expiration,
+				formData,
+			)
 			req.Header.Add("Content-Type", contentType)
 
 			rec := httptest.NewRecorder()
@@ -252,10 +253,11 @@ func TestEntryPut(t *testing.T) {
 			dataStore.InsertEntry(strings.NewReader((originalData)), metadata)
 			s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceChecker, nilGarbageCollector, handlers.NewClock())
 
-			req, err := http.NewRequest("PUT", "/api/entry/"+tt.targetID, strings.NewReader(tt.payload))
-			if err != nil {
-				t.Fatal(err)
-			}
+			req := httptest.NewRequest(
+				http.MethodPut,
+				"/api/entry/"+tt.targetID,
+				strings.NewReader(tt.payload),
+			)
 			req.Header.Add("Content-Type", "text/json")
 
 			rec := httptest.NewRecorder()
@@ -579,10 +581,7 @@ func TestGuestUpload(t *testing.T) {
 			contents := "dummy bytes"
 			formData, contentType := createMultipartFormBody(filename, tt.note, strings.NewReader(contents))
 
-			req, err := http.NewRequest("POST", tt.url, formData)
-			if err != nil {
-				t.Fatal(err)
-			}
+			req := httptest.NewRequest(http.MethodPost, tt.url, formData)
 			req.Header.Add("Content-Type", contentType)
 			req.Header.Add("Accept", "application/json")
 
@@ -707,10 +706,11 @@ func TestGuestUploadAcceptHeader(t *testing.T) {
 			contents := "dummy bytes"
 			formData, contentType := createMultipartFormBody(filename, "", strings.NewReader(contents))
 
-			req, err := http.NewRequest("POST", "/api/guest/abcdefgh23456789", formData)
-			if err != nil {
-				t.Fatal(err)
-			}
+			req := httptest.NewRequest(
+				http.MethodPost,
+				"/api/guest/abcdefgh23456789",
+				formData,
+			)
 			req.Header.Add("Content-Type", contentType)
 			if tt.acceptHeader != "" {
 				req.Header.Add("Accept", tt.acceptHeader)

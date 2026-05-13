@@ -142,10 +142,7 @@ func TestEntryGet(t *testing.T) {
 
 			s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceChecker, nilGarbageCollector, handlers.NewClock())
 
-			req, err := http.NewRequest("GET", tt.requestRoute, nil)
-			if err != nil {
-				t.Fatal(err)
-			}
+			req := httptest.NewRequest(http.MethodGet, tt.requestRoute, nil)
 
 			rec := httptest.NewRecorder()
 			s.Router().ServeHTTP(rec, req)
