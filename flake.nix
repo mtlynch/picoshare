@@ -49,16 +49,81 @@
     air-nixpkgs,
   } @ inputs:
     flake-utils.lib.eachDefaultSystem (system: let
-      go = go-nixpkgs.legacyPackages.${system}.go_1_26;
+      gopkg = go-nixpkgs.legacyPackages.${system};
+      go = gopkg.go_1_26;
+      buildGoModule = gopkg.buildGoModule.override {
+        inherit go;
+        stdenv = gopkg.pkgsStatic.stdenv;
+      };
       sqlite = sqlite-nixpkgs.legacyPackages.${system}.sqlite;
-      nodejs = nodejs-nixpkgs.legacyPackages.${system}.nodejs_20;
+      nodepkgs = nodejs-nixpkgs.legacyPackages.${system};
+      nodejs = nodepkgs.nodejs_20;
       shellcheck = shellcheck-nixpkgs.legacyPackages.${system}.shellcheck;
       sqlfluff = sqlfluff-nixpkgs.legacyPackages.${system}.sqlfluff;
       playwright = playwright-nixpkgs.legacyPackages.${system}.playwright-driver.browsers;
       flyctl = flyctl-nixpkgs.legacyPackages.${system}.flyctl;
       litestream = litestream-nixpkgs.legacyPackages.${system}.litestream;
       air = air-nixpkgs.legacyPackages.${system}.air;
+
+      # Fonts for Playwright browser tests.
+      fontsConf = nodepkgs.makeFontsConf {
+        fontDirectories = [nodepkgs.dejavu_fonts];
+      };
+
+      goVendorHash = "sha256-X2vrEhgEnKKNXRyLCtT+wBbunFHgkcyWZh6DMpQieQ0=";
+
+      npmDepsHash = "sha256-7z4Fdtl0WqriTyh9g1sUlNyoc/vyp5akeP0b/JDzheQ=";
+
+      backend-dev = buildGoModule {
+        pname = "picoshare-dev";
+        version = "0.0.1";
+        src = gopkg.lib.cleanSource ./.;
+        vendorHash = goVendorHash;
+        subPackages = ["cmd/picoshare"];
+        env.CGO_ENABLED = "1";
+        tags = ["netgo" "sqlite_omit_load_extension" "dev"];
+        ldflags = ["-w" "-extldflags '-static'"];
+        postInstall = ''
+          mv "$out/bin/picoshare" "$out/bin/picoshare-dev"
+        '';
+      };
     in {
+      packages = {
+        inherit backend-dev;
+
+        e2e-tests = nodepkgs.buildNpmPackage {
+          pname = "picoshare-e2e-tests";
+          version = "0.0.1";
+          src = nodepkgs.lib.cleanSource ./.;
+          inherit npmDepsHash;
+          npmInstallFlags = ["--ignore-scripts"];
+          dontNpmBuild = true;
+          nativeBuildInputs = [nodejs playwright backend-dev];
+          doCheck = true;
+          checkPhase = ''
+            export HOME="$PWD/.home"
+            mkdir -p "$HOME"
+            export CI=1
+            export PLAYWRIGHT_BROWSERS_PATH=${playwright}
+            export PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
+            export PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS=true
+
+            # Configure fonts for headless browser rendering.
+            export FONTCONFIG_FILE=${fontsConf}
+
+            mkdir -p ./bin
+            cp ${backend-dev}/bin/picoshare-dev ./bin/picoshare-dev
+
+            cd e2e
+            npx playwright test --project=chromium
+          '';
+          installPhase = ''
+            mkdir -p "$out"
+            printf 'e2e-tests passed\n' > "$out/result"
+          '';
+        };
+      };
+
       devShells.default =
         go-nixpkgs.legacyPackages.${system}.mkShell.override
         {
