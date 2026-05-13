@@ -230,10 +230,11 @@ func TestGuestLinksPost(t *testing.T) {
 			c := mockClock{tt.currentTime}
 			s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceChecker, nilGarbageCollector, c)
 
-			req, err := http.NewRequest("POST", "/api/guest-links", strings.NewReader(tt.payload))
-			if err != nil {
-				t.Fatal(err)
-			}
+			req := httptest.NewRequest(
+				http.MethodPost,
+				"/api/guest-links",
+				strings.NewReader(tt.payload),
+			)
 			req.Header.Add("Content-Type", "text/json")
 
 			rec := httptest.NewRecorder()
@@ -291,10 +292,11 @@ func TestDeleteExistingGuestLink(t *testing.T) {
 	})
 	s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceChecker, nilGarbageCollector, handlers.NewClock())
 
-	req, err := http.NewRequest("DELETE", "/api/guest-links/abcdefgh23456789", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	req := httptest.NewRequest(
+		http.MethodDelete,
+		"/api/guest-links/abcdefgh23456789",
+		nil,
+	)
 
 	rec := httptest.NewRecorder()
 	s.Router().ServeHTTP(rec, req)
@@ -304,7 +306,7 @@ func TestDeleteExistingGuestLink(t *testing.T) {
 		t.Fatalf("status=%d, want=%d", got, want)
 	}
 
-	_, err = dataStore.GetGuestLink(picoshare.GuestLinkID("dummy-guest-link-id"))
+	_, err := dataStore.GetGuestLink(picoshare.GuestLinkID("dummy-guest-link-id"))
 	if _, ok := err.(store.GuestLinkNotFoundError); !ok {
 		t.Fatalf("expected entry %v to be deleted, got: %v", picoshare.EntryID("abcdefgh23456789"), err)
 	}
@@ -314,10 +316,11 @@ func TestDeleteNonExistentGuestLink(t *testing.T) {
 	dataStore := test_sqlite.New()
 	s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceChecker, nilGarbageCollector, handlers.NewClock())
 
-	req, err := http.NewRequest("DELETE", "/api/guest-links/abcdefgh23456789", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	req := httptest.NewRequest(
+		http.MethodDelete,
+		"/api/guest-links/abcdefgh23456789",
+		nil,
+	)
 
 	rec := httptest.NewRecorder()
 	s.Router().ServeHTTP(rec, req)
@@ -333,10 +336,11 @@ func TestDeleteInvalidGuestLink(t *testing.T) {
 	dataStore := test_sqlite.New()
 	s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceChecker, nilGarbageCollector, handlers.NewClock())
 
-	req, err := http.NewRequest("DELETE", "/api/guest-links/i-am-an-invalid-link", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	req := httptest.NewRequest(
+		http.MethodDelete,
+		"/api/guest-links/i-am-an-invalid-link",
+		nil,
+	)
 
 	rec := httptest.NewRecorder()
 	s.Router().ServeHTTP(rec, req)
@@ -478,10 +482,7 @@ func TestEnableDisableGuestLink(t *testing.T) {
 
 			s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceChecker, nilGarbageCollector, handlers.NewClock())
 
-			req, err := http.NewRequest("PUT", tt.requestRoute, nil)
-			if err != nil {
-				t.Fatalf("failed to create request for route: %s, error: %v", tt.requestRoute, err)
-			}
+			req := httptest.NewRequest(http.MethodPut, tt.requestRoute, nil)
 			rec := httptest.NewRecorder()
 			s.Router().ServeHTTP(rec, req)
 			res := rec.Result()
