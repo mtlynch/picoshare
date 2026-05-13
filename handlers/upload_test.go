@@ -325,6 +325,20 @@ func TestGuestUpload(t *testing.T) {
 			fileExpirationTimeExpected: picoshare.NeverExpire,
 		},
 		{
+			description: "disabled guest link",
+			guestLinkInStore: picoshare.GuestLink{
+				ID:              picoshare.GuestLinkID("abcdefgh23456789"),
+				Created:         mustParseTime("2024-01-01T00:00:00Z"),
+				UrlExpires:      picoshare.NeverExpire,
+				MaxFileLifetime: picoshare.FileLifetimeInfinite,
+				IsDisabled:      true,
+			},
+			currentTime:                mustParseTime("2024-01-01T00:00:00Z"),
+			url:                        "/api/guest/abcdefgh23456789?expiration=2030-01-01T00:00:00Z",
+			status:                     http.StatusUnauthorized,
+			fileExpirationTimeExpected: picoshare.NeverExpire,
+		},
+		{
 			description: "invalid guest link",
 			guestLinkInStore: picoshare.GuestLink{
 				ID:              picoshare.GuestLinkID("abcdefgh23456789"),
@@ -578,6 +592,23 @@ func TestGuestUpload(t *testing.T) {
 
 			if got, want := res.StatusCode, tt.status; got != want {
 				t.Fatalf("status=%d, want=%d", got, want)
+			}
+
+			entries, err := dataStore.GetEntriesMetadata()
+			if err != nil {
+				t.Fatalf("failed to list entries metadata: %v", err)
+			}
+
+			// On success, we expect the request to add a single entry to the store.
+			// On failure, we expect no new entries in the store.
+			expectedEntryCount := func() int {
+				if tt.status == http.StatusOK {
+					return len(tt.entriesInStore) + 1
+				}
+				return len(tt.entriesInStore)
+			}()
+			if got, want := len(entries), expectedEntryCount; got != want {
+				t.Fatalf("entry count=%d, want=%d", got, want)
 			}
 
 			// Only check the response if the request succeeded.
