@@ -25,7 +25,7 @@ func TestFriendlyLinks(t *testing.T) {
 	filename := "test.txt"
 	contents := "hello friendly world"
 	friendlyName := "my-friendly-link"
-	
+
 	id1 := uploadWithFriendlyName(t, s, filename, contents, friendlyName, false)
 
 	// 2. Retrieve the file via friendly name
