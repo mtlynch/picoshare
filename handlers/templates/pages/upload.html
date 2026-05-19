@@ -89,6 +89,9 @@
     const expirationContainer = document.querySelector(".expiration-container");
     const expirationSelect = document.getElementById("expiration-select");
     const expirationPicker = document.getElementById("expiration-picker");
+    const filenameInput = document.getElementById("custom-filename");
+    const friendlyLinkNameInput = document.getElementById("friendly-link-name");
+    const deleteOldInput = document.getElementById("delete-old");
     const noteInput = document.getElementById("note");
     const uploadAnotherBtn = document.getElementById("upload-another-btn");
 
@@ -112,8 +115,20 @@
       }
     }
 
+    function readFilename() {
+      return filenameInput?.value || null;
+    }
+
+    function readFriendlyLinkName() {
+      return friendlyLinkNameInput?.value || null;
+    }
+
+    function readDeleteOld() {
+      return deleteOldInput?.checked || false;
+    }
+
     function readNote() {
-      return noteInput.value || null;
+      return noteInput?.value || null;
     }
 
     function populateEditButton(entryId) {
@@ -159,8 +174,17 @@
       hideElement(uploadForm);
       showElement(progressBar);
 
+      const friendlyFilename = readFilename() ?? file.name;
       let uploader = () => {
-        return uploadFile(file, readExpiration(), readNote(), updateProgress);
+        return uploadFile(
+          file,
+          readExpiration(),
+          friendlyFilename,
+          readNote(),
+          readFriendlyLinkName(),
+          readDeleteOld(),
+          updateProgress
+        );
       };
       if (guestLinkMetadata) {
         uploader = () => {
@@ -168,6 +192,9 @@
             file,
             guestLinkMetadata.id,
             readExpiration(),
+            friendlyFilename,
+            readFriendlyLinkName(),
+            readDeleteOld(),
             updateProgress
           );
         };
@@ -180,7 +207,7 @@
 
           const uploadLinksEl = document.createElement("upload-links");
           uploadLinksEl.fileId = entryId;
-          uploadLinksEl.filename = file.name;
+          uploadLinksEl.filename = friendlyFilename;
           uploadLinksEl.addEventListener("link-copied", () => {
             document
               .querySelector("snackbar-notifications")
@@ -365,6 +392,44 @@
         <expiration-picker id="expiration-picker" class="d-none mt-3 d-block" />
       </div>
     {{ end }}
+
+      <div class="mb-4 field-max-width">
+        <label class="form-label">Filename <i>(optional)</i></label>
+        <input
+          id="custom-filename"
+          name="filename"
+          class="form-control"
+          type="text"
+          placeholder="my-file-name.txt"
+          maxlength="{{ .MaxFilenameLength }}"
+        />
+        <p class="form-text">If left blank, PicoShare uses the original filename.</p>
+      </div>
+
+      <div class="mb-4 field-max-width">
+        <label class="form-label">Friendly Link Name <i>(optional)</i></label>
+        <input
+          id="friendly-link-name"
+          name="friendly_link_name"
+          class="form-control"
+          type="text"
+          placeholder="latest-report"
+          maxlength="200"
+        />
+        <p class="form-text">If set, you can access the file at /n/friendly-link-name</p>
+      </div>
+
+      <div class="mb-4 field-max-width">
+        <label class="form-check-label">
+          <input
+            id="delete-old"
+            name="delete_old"
+            type="checkbox"
+            class="form-check-input"
+          />
+          Delete old file if friendly link name exists
+        </label>
+      </div>
 
     {{ if not .GuestLinkMetadata.ID }}
       <div class="mb-4 field-max-width">

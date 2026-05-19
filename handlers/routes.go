@@ -16,6 +16,9 @@ func (s *Server) routes() {
 	authenticatedApis.HandleFunc("/guest-links/{id}", s.guestLinksDelete()).Methods(http.MethodDelete)
 	authenticatedApis.HandleFunc("/guest-links/{id}/enable", s.guestLinksEnableDisable()).Methods(http.MethodPut)
 	authenticatedApis.HandleFunc("/guest-links/{id}/disable", s.guestLinksEnableDisable()).Methods(http.MethodPut)
+	authenticatedApis.HandleFunc("/friendly-links/{friendlyName}", s.friendlyLinksDelete()).Methods(http.MethodDelete)
+	authenticatedApis.HandleFunc("/friendly-links/{friendlyName}/enable", s.friendlyLinksEnableDisable()).Methods(http.MethodPut)
+	authenticatedApis.HandleFunc("/friendly-links/{friendlyName}/disable", s.friendlyLinksEnableDisable()).Methods(http.MethodPut)
 	authenticatedApis.HandleFunc("/settings", s.settingsPut()).Methods(http.MethodPut)
 
 	publicApis := s.router.PathPrefix("/api").Subrouter()
@@ -53,6 +56,7 @@ func (s *Server) routes() {
 	authenticatedViews.HandleFunc("/files/{id}/confirm-delete", s.fileConfirmDeleteGet()).Methods(http.MethodGet)
 	authenticatedViews.HandleFunc("/guest-links", s.guestLinkIndexGet()).Methods(http.MethodGet)
 	authenticatedViews.HandleFunc("/guest-links/new", s.guestLinksNewGet()).Methods(http.MethodGet)
+	authenticatedViews.HandleFunc("/friendly-links", s.friendlyLinkIndexGet()).Methods(http.MethodGet)
 	authenticatedViews.HandleFunc("/settings", s.settingsGet()).Methods(http.MethodGet)
 
 	views := s.router.PathPrefix("/").Subrouter()
@@ -74,6 +78,7 @@ func (s *Server) routes() {
 	})
 	downloadViews.PathPrefix("/-{id}").HandlerFunc(s.entryGet()).Methods(http.MethodGet)
 	downloadViews.PathPrefix("/-{id}/{filename}").HandlerFunc(s.entryGet()).Methods(http.MethodGet)
+	downloadViews.PathPrefix("/n/{friendlyName}").HandlerFunc(s.friendlyLinkGet()).Methods(http.MethodGet)
 	// Legacy routes for entries. We stopped using them because the ! has
 	// unintended side effects within the bash shell.
 	downloadViews.PathPrefix("/!{id}").HandlerFunc(s.entryGet()).Methods(http.MethodGet)

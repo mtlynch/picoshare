@@ -44,11 +44,28 @@ function uploadFormData(url, formData, progressFn) {
     });
 }
 
-export async function uploadFile(file, expirationTime, note, progressFn) {
+export async function uploadFile(
+  file,
+  expirationTime,
+  filename,
+  note,
+  friendlyLinkName,
+  deleteOld,
+  progressFn
+) {
   const formData = new FormData();
   formData.append("file", file);
+  if (filename) {
+    formData.append("filename", filename);
+  }
   if (note) {
     formData.append("note", note);
+  }
+  if (friendlyLinkName) {
+    formData.append("friendly_name", friendlyLinkName);
+  }
+  if (deleteOld) {
+    formData.append("delete_old", "true");
   }
   return uploadFormData(
     `/api/entry?expiration=${encodeURIComponent(expirationTime)}`,
@@ -61,10 +78,22 @@ export async function guestUploadFile(
   file,
   guestLinkID,
   expirationTime,
+  filename,
+  friendlyLinkName,
+  deleteOld,
   progressFn
 ) {
   const formData = new FormData();
   formData.append("file", file);
+  if (filename) {
+    formData.append("filename", filename);
+  }
+  if (friendlyLinkName) {
+    formData.append("friendly_name", friendlyLinkName);
+  }
+  if (deleteOld) {
+    formData.append("delete_old", "true");
+  }
   return uploadFormData(
     `/api/guest/${guestLinkID}?expiration=${encodeURIComponent(
       expirationTime

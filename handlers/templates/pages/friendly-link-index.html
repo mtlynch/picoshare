@@ -1,0 +1,245 @@
+{{ define "style-tags" }}
+  <style nonce="{{ .CspNonce }}">
+    .deleted-entry {
+      text-decoration: line-through;
+      color: darkgray;
+      visibility: collapse;
+      opacity: 0;
+    }
+
+    .table {
+      & tr {
+        transition: all 1000ms ease-out;
+
+        /* Show aria-label in a tooltip over the button. */
+        button[aria-label]:hover::after {
+          content: attr(aria-label);
+          position: absolute;
+          background: #333;
+          color: white;
+          padding: 4px 8px;
+          border-radius: 4px;
+          font-size: 14px;
+          margin-top: -5rem;
+          white-space: nowrap;
+        }
+
+        button {
+          position: relative;
+        }
+      }
+
+      & .inactive {
+        background-color: #d9d9d9;
+      }
+
+      & .inactive [aria-label="Copy"] {
+        display: none;
+      }
+    }
+
+    #error {
+      max-width: 60ch;
+    }
+  </style>
+{{ end }}
+
+{{ define "script-tags" }}
+  <script type="module" nonce="{{ .CspNonce }}">
+    import {
+      friendlyLinkDelete,
+      friendlyLinkEnable,
+      friendlyLinkDisable,
+    } from "/js/controllers/friendlyLinks.js";
+    import { showElement, hideElement } from "/js/lib/bulma.js";
+    import { copyToClipboard } from "/js/lib/clipboard.js";
+
+    const errorContainer = document.getElementById("error");
+
+    function makeFriendlyLink(friendlyName) {
+      return `${window.location.origin}/n/${friendlyName}`;
+    }
+
+    document.querySelectorAll('[aria-label="Delete"]').forEach((deleteBtn) => {
+      deleteBtn.addEventListener("click", () => {
+        const name = deleteBtn.getAttribute("pico-friendly-name");
+        friendlyLinkDelete(name)
+          .then(() => {
+            let currentEl = deleteBtn.parentElement;
+            while (currentEl && currentEl.nodeName !== "TR") {
+              currentEl = currentEl.parentElement;
+            }
+            if (!currentEl) {
+              return;
+            }
+
+            currentEl.classList.add("deleted-entry");
+          })
+          .catch((error) => {
+            document.getElementById("error-message").innerText = error;
+            showElement(errorContainer);
+          });
+      });
+    });
+
+    document
+      .querySelector("#error .btn-close")
+      .addEventListener("click", () => {
+        hideElement(errorContainer);
+      });
+
+    document.querySelectorAll('[aria-label="Copy"]').forEach((copyBtn) => {
+      copyBtn.addEventListener("click", () => {
+        const friendlyName = copyBtn.getAttribute("pico-friendly-name");
+        const friendlyLink = makeFriendlyLink(friendlyName);
+
+        copyToClipboard(friendlyLink)
+          .then(() =>
+            document
+              .querySelector("snackbar-notifications")
+              .addInfoMessage("Copied link")
+          )
+          .catch((error) => {
+            document.getElementById("error-message").innerText = error;
+            showElement(errorContainer);
+          });
+      });
+    });
+
+    // Switch the state of the friendly link.
+    document
+      .querySelectorAll('[aria-label="Enable"], [aria-label="Disable"]')
+      .forEach((toggleBtn) => {
+        toggleBtn.addEventListener("click", () => {
+          const currentState = toggleBtn.getAttribute("aria-label");
+          const name = toggleBtn.getAttribute("pico-friendly-name");
+
+          let apiCall = undefined;
+          let snackBarMessage = undefined;
+          let newAriaLabel = undefined;
+
+          if (toggleBtn.getAttribute("aria-label") === "Enable") {
+            apiCall = friendlyLinkEnable;
+            snackBarMessage = "Friendly link reactivated";
+            newAriaLabel = "Disable";
+          } else {
+            apiCall = friendlyLinkDisable;
+            snackBarMessage = "Friendly link disabled";
+            newAriaLabel = "Enable";
+          }
+
+          apiCall(name)
+            .then(() => {
+              toggleBtn.setAttribute("aria-label", newAriaLabel);
+
+              // Toggle the friendly link's row active state in the table.
+              toggleBtn.closest("tr").classList.toggle("inactive");
+
+              // Switch the button color and icon.
+              toggleBtn.classList.toggle("btn-outline-info");
+              toggleBtn.classList.toggle("btn-outline-secondary");
+              toggleBtn.querySelector("i").classList.toggle("fa-ban");
+              toggleBtn.querySelector("i").classList.toggle("fa-square-check");
+
+              document
+                .querySelector("snackbar-notifications")
+                .addInfoMessage(snackBarMessage);
+            })
+            .catch((error) => {
+              document.getElementById("error-message").innerText = error;
+              showElement(errorContainer);
+            });
+        });
+      });
+  </script>
+{{ end }}
+
+{{ define "content" }}
+  <h1 class="h1">Friendly Links</h1>
+
+  <div class="alert alert-primary" role="alert">
+    <p>
+      Friendly links provide human-readable URLs for your files.
+    </p>
+
+    <p>
+      You can assign a friendly name to a file during upload, and it will be accessible at <code>/n/friendly-name</code>.
+    </p>
+  </div>
+
+  <div class="table-responsive mt-4">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Friendly Name</th>
+          <th>Created</th>
+          <th>Expiration</th>
+          <th class="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{ range .FriendlyLinks }}
+          <tr {{ if .IsDisabled }}class="inactive"{{ end }}>
+            <td class="align-middle">
+              <a href="/n/{{ .FriendlyName }}">
+                {{ .FriendlyName }}
+              </a>
+            </td>
+            <td class="align-middle">{{ formatDate .Created }}</td>
+            <td class="align-middle expiration">
+              {{ formatExpiration .UrlExpires }}
+            </td>
+            <td class="align-middle">
+              <div class="d-flex justify-content-end gap-2">
+                <button
+                  class="btn btn-outline-primary btn-sm"
+                  aria-label="Copy"
+                  pico-friendly-name="{{ .FriendlyName }}"
+                >
+                  <i class="fa-solid fa-copy"></i>
+                </button>
+                {{ if .IsDisabled }}
+                  <button
+                    class="btn btn-outline-info btn-sm"
+                    aria-label="Enable"
+                    pico-friendly-name="{{ .FriendlyName }}"
+                  >
+                    <i class="fa-solid fa-square-check" aria-hidden="true"></i>
+                  </button>
+                {{ else }}
+                  <button
+                    class="btn btn-outline-secondary btn-sm"
+                    aria-label="Disable"
+                    pico-friendly-name="{{ .FriendlyName }}"
+                  >
+                    <i class="fa-solid fa-ban" aria-hidden="true"></i>
+                  </button>
+                {{ end }}
+                <button
+                  class="btn btn-outline-danger btn-sm"
+                  aria-label="Delete"
+                  pico-friendly-name="{{ .FriendlyName }}"
+                >
+                  <i class="fa-solid fa-trash" aria-hidden="true"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        {{ end }}
+      </tbody>
+    </table>
+  </div>
+
+  <div id="error" class="d-none my-3">
+    <div
+      class="alert alert-danger d-flex justify-content-between align-items-start"
+      role="alert"
+    >
+      <div>
+        <strong>Error</strong>
+        <div id="error-message" class="mt-1">Placeholder error.</div>
+      </div>
+      <button class="btn-close" type="button" aria-label="Close"></button>
+    </div>
+  </div>
+{{ end }}

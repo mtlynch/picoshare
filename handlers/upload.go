@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/mtlynch/picoshare/handlers/parse"
@@ -22,7 +23,8 @@ var entryIDCharacters = []rune("abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXY
 
 type (
 	EntryPostResponse struct {
-		ID string `json:"id"`
+		ID           string `json:"id"`
+		FriendlyName string `json:"friendly_name,omitempty"`
 	}
 
 	dbError struct {
@@ -50,7 +52,7 @@ func (s Server) entryPost() http.HandlerFunc {
 		// We're intentionally not limiting the size of the request because we
 		// assume that the uploading user is trusted, so they can upload files of
 		// any size they want.
-		id, err := s.insertFileFromRequest(r, expiration, picoshare.GuestLinkID(""))
+		id, friendlyName, err := s.insertFileFromRequest(r, expiration, picoshare.GuestLinkID(""))
 		if err != nil {
 			if _, ok := errors.AsType[*dbError](err); ok {
 				log.Printf("failed to insert uploaded file into data store: %v", err)
@@ -62,7 +64,7 @@ func (s Server) entryPost() http.HandlerFunc {
 			return
 		}
 
-		respondJSON(w, EntryPostResponse{ID: id.String()})
+		respondJSON(w, EntryPostResponse{ID: id.String(), FriendlyName: string(friendlyName)})
 	}
 }
 
@@ -133,7 +135,7 @@ func (s Server) guestEntryPost() http.HandlerFunc {
 			return
 		}
 
-		id, err := s.insertFileFromRequest(r, expiration, guestLinkID)
+		id, friendlyName, err := s.insertFileFromRequest(r, expiration, guestLinkID)
 		if err != nil {
 			if _, ok := errors.AsType[*dbError](err); ok {
 				log.Printf("failed to insert uploaded file into data store: %v", err)
@@ -146,12 +148,16 @@ func (s Server) guestEntryPost() http.HandlerFunc {
 		}
 
 		if clientAcceptsJson(r) {
-			respondJSON(w, EntryPostResponse{ID: id.String()})
+			respondJSON(w, EntryPostResponse{ID: id.String(), FriendlyName: string(friendlyName)})
 		} else {
 			// If client does not accept JSON, assume this is a command-line client
 			// and return plaintext.
 			w.Header().Set("Content-Type", "text/plain")
-			if _, err := fmt.Fprintf(w, "%s/-%s\r\n", baseURLFromRequest(r), id.String()); err != nil {
+			urlPath := fmt.Sprintf("-%s", id.String())
+			if friendlyName != "" {
+				urlPath = fmt.Sprintf("n/%s", friendlyName)
+			}
+			if _, err := fmt.Fprintf(w, "%s/%s\r\n", baseURLFromRequest(r), urlPath); err != nil {
 				log.Fatalf("failed to write HTTP response: %v", err)
 			}
 		}
@@ -219,12 +225,12 @@ func parseEntryID(s string) (picoshare.EntryID, error) {
 	return picoshare.EntryID(s), nil
 }
 
-func (s Server) insertFileFromRequest(r *http.Request, expiration picoshare.ExpirationTime, guestLinkID picoshare.GuestLinkID) (picoshare.EntryID, error) {
+func (s Server) insertFileFromRequest(r *http.Request, expiration picoshare.ExpirationTime, guestLinkID picoshare.GuestLinkID) (picoshare.EntryID, picoshare.FriendlyName, error) {
 	// ParseMultipartForm can go above the limit we set, so set a conservative RAM
 	// limit to avoid exhausting RAM on servers with limited resources.
 	multipartMaxMemory := mibToBytes(1)
 	if err := r.ParseMultipartForm(multipartMaxMemory); err != nil {
-		return picoshare.EntryID(""), err
+		return picoshare.EntryID(""), picoshare.FriendlyName(""), err
 	}
 	defer func() {
 		if err := r.MultipartForm.RemoveAll(); err != nil {
@@ -234,31 +240,49 @@ func (s Server) insertFileFromRequest(r *http.Request, expiration picoshare.Expi
 
 	reader, metadata, err := r.FormFile("file")
 	if err != nil {
-		return picoshare.EntryID(""), err
+		return picoshare.EntryID(""), picoshare.FriendlyName(""), err
 	}
 
 	fileSize, err := picoshare.FileSizeFromInt64(metadata.Size)
 	if err != nil {
-		return picoshare.EntryID(""), err
+		return picoshare.EntryID(""), picoshare.FriendlyName(""), err
 	}
 
 	filename, err := parse.Filename(metadata.Filename)
 	if err != nil {
-		return picoshare.EntryID(""), err
+		return picoshare.EntryID(""), picoshare.FriendlyName(""), err
+	}
+
+	customFilename := r.FormValue("filename")
+	if strings.TrimSpace(customFilename) != "" {
+		filename, err = parse.Filename(customFilename)
+		if err != nil {
+			return picoshare.EntryID(""), picoshare.FriendlyName(""), err
+		}
 	}
 
 	contentType, err := parseContentType(metadata.Header.Get("Content-Type"))
 	if err != nil {
-		return picoshare.EntryID(""), err
+		return picoshare.EntryID(""), picoshare.FriendlyName(""), err
 	}
 
 	note, err := parse.FileNote(r.FormValue("note"))
 	if err != nil {
-		return picoshare.EntryID(""), err
+		return picoshare.EntryID(""), picoshare.FriendlyName(""), err
 	}
 
 	if guestLinkID != "" && note.Value != nil {
-		return picoshare.EntryID(""), errors.New("guest uploads cannot have file notes")
+		return picoshare.EntryID(""), picoshare.FriendlyName(""), errors.New("guest uploads cannot have file notes")
+	}
+
+	friendlyNameRaw := r.FormValue("friendly_name")
+	var friendlyName picoshare.FriendlyName
+	if friendlyNameRaw != "" {
+		var err error
+		friendlyName, err = parse.FriendlyName(friendlyNameRaw)
+		if err != nil {
+			return picoshare.EntryID(""), picoshare.FriendlyName(""), err
+		}
 	}
 
 	id := generateEntryID()
@@ -277,10 +301,47 @@ func (s Server) insertFileFromRequest(r *http.Request, expiration picoshare.Expi
 		})
 	if err != nil {
 		log.Printf("failed to save entry: %v", err)
-		return picoshare.EntryID(""), dbError{err}
+		return picoshare.EntryID(""), picoshare.FriendlyName(""), dbError{err}
 	}
 
-	return id, nil
+	deleteOld := r.FormValue("delete_old") == "true"
+	if friendlyName != "" {
+		db := s.getDB(r)
+		oldFL, err := db.GetFriendlyLink(friendlyName)
+		exists := true
+		if err != nil {
+			if _, ok := errors.AsType[store.FriendlyLinkNotFoundError](err); ok {
+				exists = false
+			} else {
+				log.Printf("failed to check for existing friendly link: %v", err)
+				// Continue anyway, as the main file upload succeeded
+			}
+		}
+
+		newFL := picoshare.FriendlyLink{
+			FriendlyName:    friendlyName,
+			EntryID:         id,
+			Created:         s.clock.Now(),
+			UrlExpires:      expiration,
+			MaxFileLifetime: picoshare.FileLifetimeInfinite,
+		}
+
+		if exists {
+			if err := db.UpdateFriendlyLink(newFL); err != nil {
+				log.Printf("failed to update friendly link: %v", err)
+			} else if deleteOld {
+				if err := db.DeleteEntry(oldFL.EntryID); err != nil {
+					log.Printf("failed to delete old entry %s: %v", oldFL.EntryID, err)
+				}
+			}
+		} else {
+			if err := db.InsertFriendlyLink(newFL); err != nil {
+				log.Printf("failed to insert friendly link: %v", err)
+			}
+		}
+	}
+
+	return id, friendlyName, nil
 }
 
 func parseContentType(s string) (picoshare.ContentType, error) {

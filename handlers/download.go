@@ -12,6 +12,7 @@ import (
 
 	"github.com/gorilla/mux"
 
+	"github.com/mtlynch/picoshare/handlers/parse"
 	"github.com/mtlynch/picoshare/picoshare"
 	"github.com/mtlynch/picoshare/store"
 )
@@ -25,40 +26,70 @@ func (s Server) entryGet() http.HandlerFunc {
 			return
 		}
 
-		entry, err := s.getDB(r).GetEntryMetadata(id)
-		if _, ok := errors.AsType[store.EntryNotFoundError](err); ok {
-			http.Error(w, "entry not found", http.StatusNotFound)
+		s.serveEntry(w, r, id)
+	}
+}
+
+func (s Server) friendlyLinkGet() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		name, err := parse.FriendlyName(mux.Vars(r)["friendlyName"])
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Invalid friendly name: %v", err), http.StatusBadRequest)
+			return
+		}
+		fl, err := s.getDB(r).GetFriendlyLink(name)
+		if _, ok := errors.AsType[store.FriendlyLinkNotFoundError](err); ok {
+			http.Error(w, "friendly link not found", http.StatusNotFound)
 			return
 		} else if err != nil {
-			log.Printf("error retrieving entry with id %v: %v", id, err)
-			http.Error(w, "failed to retrieve entry", http.StatusInternalServerError)
+			log.Printf("error retrieving friendly link %s: %v", name, err)
+			http.Error(w, "failed to retrieve friendly link", http.StatusInternalServerError)
 			return
 		}
 
-		if entry.Filename != "" {
-			w.Header().Set("Content-Disposition", fmt.Sprintf(`filename="%s"`, entry.Filename))
-		}
-
-		contentType := entry.ContentType
-		if contentType == "" || contentType == "application/octet-stream" {
-			if inferred, err := inferContentTypeFromFilename(entry.Filename); err == nil {
-				contentType = inferred
-			}
-		}
-		w.Header().Set("Content-Type", contentType.String())
-
-		entryFile, err := s.getDB(r).ReadEntryFile(id)
-		if err != nil {
-			log.Printf("error retrieving entry data with id %v: %v", id, err)
-			http.Error(w, "failed to retrieve entry", http.StatusInternalServerError)
+		if fl.IsDisabled {
+			http.Error(w, "friendly link inactive", http.StatusGone)
 			return
 		}
 
-		http.ServeContent(w, r, entry.Filename.String(), entry.Uploaded, entryFile)
+		s.serveEntry(w, r, fl.EntryID)
+	}
+}
 
-		if err := recordDownload(s.getDB(r), entry.ID, s.clock.Now(), r.RemoteAddr, r.Header.Get("User-Agent")); err != nil {
-			log.Printf("failed to record download of file %s: %v", id.String(), err)
+func (s Server) serveEntry(w http.ResponseWriter, r *http.Request, id picoshare.EntryID) {
+	entry, err := s.getDB(r).GetEntryMetadata(id)
+	if _, ok := errors.AsType[store.EntryNotFoundError](err); ok {
+		http.Error(w, "entry not found", http.StatusNotFound)
+		return
+	} else if err != nil {
+		log.Printf("error retrieving entry with id %v: %v", id, err)
+		http.Error(w, "failed to retrieve entry", http.StatusInternalServerError)
+		return
+	}
+
+	if entry.Filename != "" {
+		w.Header().Set("Content-Disposition", fmt.Sprintf(`filename="%s"`, entry.Filename))
+	}
+
+	contentType := entry.ContentType
+	if contentType == "" || contentType == "application/octet-stream" {
+		if inferred, err := inferContentTypeFromFilename(entry.Filename); err == nil {
+			contentType = inferred
 		}
+	}
+	w.Header().Set("Content-Type", contentType.String())
+
+	entryFile, err := s.getDB(r).ReadEntryFile(id)
+	if err != nil {
+		log.Printf("error retrieving entry data with id %v: %v", id, err)
+		http.Error(w, "failed to retrieve entry", http.StatusInternalServerError)
+		return
+	}
+
+	http.ServeContent(w, r, entry.Filename.String(), entry.Uploaded, entryFile)
+
+	if err := recordDownload(s.getDB(r), entry.ID, s.clock.Now(), r.RemoteAddr, r.Header.Get("User-Agent")); err != nil {
+		log.Printf("failed to record download of file %s: %v", id.String(), err)
 	}
 }
 

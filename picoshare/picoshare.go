@@ -8,6 +8,7 @@ import (
 type (
 	EntryID        string
 	Filename       string
+	FriendlyName   string
 	ContentType    string
 	ExpirationTime time.Time
 

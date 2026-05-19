@@ -41,27 +41,36 @@ func (c mockClock) Now() time.Time {
 
 func TestEntryPost(t *testing.T) {
 	for _, tt := range []struct {
-		description string
-		filename    string
-		contents    string
-		expiration  string
-		note        string
-		status      int
+		description    string
+		filename       string
+		customFilename string
+		contents       string
+		expiration     string
+		note           string
+		status         int
 	}{
 		{
-			description: "valid file with no note",
-			filename:    "dummyimage.png",
-			contents:    "dummy bytes",
-			expiration:  "2040-01-01T00:00:00Z",
-			status:      http.StatusOK,
+			description:    "valid file with no note",
+			filename:       "dummyimage.png",
+			contents:       "dummy bytes",
+			expiration:     "2040-01-01T00:00:00Z",
+			status:         http.StatusOK,
 		},
 		{
-			description: "valid file with a note",
-			filename:    "dummyimage.png",
-			contents:    "dummy bytes",
-			note:        "for my homeboy, willy",
-			expiration:  "2040-01-01T00:00:00Z",
-			status:      http.StatusOK,
+			description:    "valid file with a note",
+			filename:       "dummyimage.png",
+			contents:       "dummy bytes",
+			note:           "for my homeboy, willy",
+			expiration:     "2040-01-01T00:00:00Z",
+			status:         http.StatusOK,
+		},
+		{
+			description:    "valid file with a custom filename",
+			filename:       "dummyimage.png",
+			customFilename: "friendly-name.txt",
+			contents:       "dummy bytes",
+			expiration:     "2040-01-01T00:00:00Z",
+			status:         http.StatusOK,
 		},
 		{
 			description: "valid file with a too-long note",
@@ -104,7 +113,7 @@ func TestEntryPost(t *testing.T) {
 			dataStore := test_sqlite.New()
 			s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceChecker, nilGarbageCollector, handlers.NewClock())
 
-			formData, contentType := createMultipartFormBody(tt.filename, tt.note, bytes.NewBuffer([]byte(tt.contents)))
+			formData, contentType := createMultipartFormBody(tt.filename, tt.customFilename, tt.note, bytes.NewBuffer([]byte(tt.contents)))
 
 			req := httptest.NewRequest(
 				http.MethodPost,
@@ -142,7 +151,12 @@ func TestEntryPost(t *testing.T) {
 				t.Fatalf("failed to get expected entry %v from data store: %v", response.ID, err)
 			}
 
-			if got, want := entry.Filename, picoshare.Filename(tt.filename); got != want {
+			expectedFilename := tt.filename
+			if tt.customFilename != "" {
+				expectedFilename = tt.customFilename
+			}
+
+			if got, want := entry.Filename, picoshare.Filename(expectedFilename); got != want {
 				t.Errorf("filename=%v, want=%v", got, want)
 			}
 
@@ -579,7 +593,7 @@ func TestGuestUpload(t *testing.T) {
 
 			filename := "dummyimage.png"
 			contents := "dummy bytes"
-			formData, contentType := createMultipartFormBody(filename, tt.note, strings.NewReader(contents))
+			formData, contentType := createMultipartFormBody(filename, "", tt.note, strings.NewReader(contents))
 
 			req := httptest.NewRequest(http.MethodPost, tt.url, formData)
 			req.Header.Add("Content-Type", contentType)
@@ -704,7 +718,7 @@ func TestGuestUploadAcceptHeader(t *testing.T) {
 
 			filename := "dummyimage.png"
 			contents := "dummy bytes"
-			formData, contentType := createMultipartFormBody(filename, "", strings.NewReader(contents))
+			formData, contentType := createMultipartFormBody(filename, "", "", strings.NewReader(contents))
 
 			req := httptest.NewRequest(
 				http.MethodPost,
@@ -756,7 +770,7 @@ func TestGuestUploadAcceptHeader(t *testing.T) {
 	}
 }
 
-func createMultipartFormBody(filename, note string, r io.Reader) (io.Reader, string) {
+func createMultipartFormBody(filename, customFilename, note string, r io.Reader) (io.Reader, string) {
 	var b bytes.Buffer
 	bw := bufio.NewWriter(&b)
 	mw := multipart.NewWriter(bw)
@@ -766,6 +780,14 @@ func createMultipartFormBody(filename, note string, r io.Reader) (io.Reader, str
 		panic(err)
 	}
 	io.Copy(f, r)
+
+	if customFilename != "" {
+		fn, err := mw.CreateFormField("filename")
+		if err != nil {
+			panic(err)
+		}
+		fn.Write([]byte(customFilename))
+	}
 
 	nf, err := mw.CreateFormField("note")
 	if err != nil {

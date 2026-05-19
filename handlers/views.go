@@ -116,6 +116,70 @@ func (s Server) guestLinkIndexGet() http.HandlerFunc {
 	}
 }
 
+func (s Server) friendlyLinkIndexGet() http.HandlerFunc {
+	fns := template.FuncMap{
+		"formatDate": func(t time.Time) string {
+			return t.Format(time.DateOnly)
+		},
+		"formatSizeLimit": func(limit picoshare.GuestUploadMaxFileBytes) string {
+			if limit == picoshare.GuestUploadUnlimitedFileSize {
+				return "Unlimited"
+			}
+			b := uint64(*limit)
+			const unit = 1024
+
+			if b < unit {
+				return fmt.Sprintf("%d B", b)
+			}
+			div, exp := int64(unit), 0
+			for n := b / unit; n >= unit; n /= unit {
+				div *= unit
+				exp++
+			}
+			return fmt.Sprintf("%.2f %cB", float64(b)/float64(div), "kMGTPE"[exp])
+		},
+		"formatCountLimit": func(limit picoshare.GuestUploadCountLimit) string {
+			if limit == picoshare.GuestUploadUnlimitedFileUploads {
+				return "Unlimited"
+			}
+			return fmt.Sprintf("%d", int(*limit))
+		},
+		"formatExpiration": func(et picoshare.ExpirationTime) string {
+			if et == picoshare.NeverExpire {
+				return "Never"
+			}
+			t := time.Time(et)
+			delta := t.Sub(s.clock.Now())
+			suffix := ""
+			if delta.Seconds() < 0 {
+				suffix = " ago"
+			}
+			return fmt.Sprintf("%s (%.0f days%s)", t.Format(time.DateOnly), math.Abs(delta.Hours())/24, suffix)
+		},
+	}
+
+	t := parseTemplatesWithFuncs(fns, "templates/pages/friendly-link-index.html")
+	return func(w http.ResponseWriter, r *http.Request) {
+		links, err := s.getDB(r).GetFriendlyLinks()
+		if err != nil {
+			log.Printf("failed to retrieve friendly links: %v", err)
+			http.Error(w, "Failed to retrieve friendly links", http.StatusInternalServerError)
+			return
+		}
+
+		if err := t.Execute(w, struct {
+			commonProps
+			FriendlyLinks []picoshare.FriendlyLink
+		}{
+			commonProps: makeCommonProps("PicoShare - Friendly Links", r.Context()),
+			FriendlyLinks:  links,
+		}); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+}
+
 func (s Server) guestLinksNewGet() http.HandlerFunc {
 	fns := template.FuncMap{
 		"formatExpiration": func(t time.Time) string {
@@ -531,10 +595,12 @@ func (s Server) uploadGet() http.HandlerFunc {
 			commonProps
 			ExpirationOptions []expirationOption
 			MaxNoteLength     int
+			MaxFilenameLength int
 			GuestLinkMetadata picoshare.GuestLink
 		}{
 			commonProps:       makeCommonProps("PicoShare - Upload", r.Context()),
 			MaxNoteLength:     parse.MaxFileNoteBytes,
+			MaxFilenameLength: parse.MaxFilenameBytes,
 			ExpirationOptions: expirationOptions,
 		}); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -641,9 +707,11 @@ func (s Server) guestUploadGet() http.HandlerFunc {
 		if err := t.Execute(w, struct {
 			commonProps
 			ExpirationOptions []expirationOption
+			MaxFilenameLength int
 			GuestLinkMetadata picoshare.GuestLink
 		}{
 			commonProps:       makeCommonProps("PicoShare - Upload", r.Context()),
+			MaxFilenameLength: parse.MaxFilenameBytes,
 			ExpirationOptions: expirationOptions,
 			GuestLinkMetadata: gl,
 		}); err != nil {

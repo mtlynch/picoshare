@@ -23,3 +23,12 @@ type GuestLinkNotFoundError struct {
 func (f GuestLinkNotFoundError) Error() string {
 	return fmt.Sprintf("Could not find guest link with ID %v", f.ID)
 }
+
+// FriendlyLinkNotFoundError occurs when no friendly link exists with the given name.
+type FriendlyLinkNotFoundError struct {
+	Name string
+}
+
+func (f FriendlyLinkNotFoundError) Error() string {
+	return fmt.Sprintf("Could not find friendly link with name %v", f.Name)
+}

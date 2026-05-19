@@ -42,6 +42,34 @@ test("uploads a file without specifying any parameters", async ({
   await expect(matchingRow.getByRole("cell").nth(noteColumn)).toBeEmpty();
 });
 
+test("uploads a file with a friendly name", async ({ page }) => {
+  await login(page);
+
+  await page.locator("#friendly-name").fill("friendly-filename.txt");
+
+  await page.locator(".file-input").setInputFiles([
+    {
+      name: "upload-with-friendly-name-original.txt",
+      mimeType: "text/plain",
+      buffer: Buffer.from("This upload uses a friendly name"),
+    },
+  ]);
+
+  await expect(page.locator("#upload-result .message-body")).toHaveText(
+    "Upload complete!"
+  );
+  await expect(page.locator("#upload-result upload-links")).toHaveAttribute(
+    "filename",
+    "friendly-filename.txt"
+  );
+
+  await page.getByRole("menuitem", { name: "Files" }).click();
+  const matchingRow = await page
+    .getByRole("row")
+    .filter({ hasText: "friendly-filename.txt" });
+  await expect(matchingRow).toBeVisible();
+});
+
 test("uploads a file with a custom expiration time", async ({ page }) => {
   await login(page);
 

@@ -19,6 +19,11 @@ type Store interface {
 	DeleteGuestLink(picoshare.GuestLinkID) error
 	DisableGuestLink(picoshare.GuestLinkID) error
 	EnableGuestLink(picoshare.GuestLinkID) error
+	GetFriendlyLink(friendlyName picoshare.FriendlyName) (picoshare.FriendlyLink, error)
+	GetFriendlyLinks() ([]picoshare.FriendlyLink, error)
+	InsertFriendlyLink(picoshare.FriendlyLink) error
+	UpdateFriendlyLink(picoshare.FriendlyLink) error
+	DeleteFriendlyLink(friendlyName picoshare.FriendlyName) error
 	InsertEntryDownload(picoshare.EntryID, picoshare.DownloadRecord) error
 	GetEntryDownloads(id picoshare.EntryID) ([]picoshare.DownloadRecord, error)
 	ReadSettings() (picoshare.Settings, error)
