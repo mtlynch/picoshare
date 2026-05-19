@@ -171,8 +171,8 @@ func (s Server) friendlyLinkIndexGet() http.HandlerFunc {
 			commonProps
 			FriendlyLinks []picoshare.FriendlyLink
 		}{
-			commonProps: makeCommonProps("PicoShare - Friendly Links", r.Context()),
-			FriendlyLinks:  links,
+			commonProps:   makeCommonProps("PicoShare - Friendly Links", r.Context()),
+			FriendlyLinks: links,
 		}); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return

@@ -50,19 +50,19 @@ func TestEntryPost(t *testing.T) {
 		status         int
 	}{
 		{
-			description:    "valid file with no note",
-			filename:       "dummyimage.png",
-			contents:       "dummy bytes",
-			expiration:     "2040-01-01T00:00:00Z",
-			status:         http.StatusOK,
+			description: "valid file with no note",
+			filename:    "dummyimage.png",
+			contents:    "dummy bytes",
+			expiration:  "2040-01-01T00:00:00Z",
+			status:      http.StatusOK,
 		},
 		{
-			description:    "valid file with a note",
-			filename:       "dummyimage.png",
-			contents:       "dummy bytes",
-			note:           "for my homeboy, willy",
-			expiration:     "2040-01-01T00:00:00Z",
-			status:         http.StatusOK,
+			description: "valid file with a note",
+			filename:    "dummyimage.png",
+			contents:    "dummy bytes",
+			note:        "for my homeboy, willy",
+			expiration:  "2040-01-01T00:00:00Z",
+			status:      http.StatusOK,
 		},
 		{
 			description:    "valid file with a custom filename",
