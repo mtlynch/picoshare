@@ -393,43 +393,48 @@
       </div>
     {{ end }}
 
-      <div class="mb-4 field-max-width">
-        <label class="form-label">Filename <i>(optional)</i></label>
-        <input
-          id="custom-filename"
-          name="filename"
-          class="form-control"
-          type="text"
-          placeholder="my-file-name.txt"
-          maxlength="{{ .MaxFilenameLength }}"
-        />
-        <p class="form-text">If left blank, PicoShare uses the original filename.</p>
-      </div>
 
-      <div class="mb-4 field-max-width">
-        <label class="form-label">Friendly Link Name <i>(optional)</i></label>
-        <input
-          id="friendly-link-name"
-          name="friendly_link_name"
-          class="form-control"
-          type="text"
-          placeholder="latest-report"
-          maxlength="200"
-        />
-        <p class="form-text">If set, you can access the file at /n/friendly-link-name</p>
-      </div>
+    <div class="mb-4 field-max-width">
+      <label class="form-label">Filename <i>(optional)</i></label>
+      <input
+        id="custom-filename"
+        name="filename"
+        class="form-control"
+        type="text"
+        placeholder="my-file-name.txt"
+        maxlength="{{ .MaxFilenameLength }}"
+      />
+      <p class="form-text">
+        If left blank, PicoShare uses the original filename.
+      </p>
+    </div>
 
-      <div class="mb-4 field-max-width">
-        <label class="form-check-label">
-          <input
-            id="delete-old"
-            name="delete_old"
-            type="checkbox"
-            class="form-check-input"
-          />
-          Delete old file if friendly link name exists
-        </label>
-      </div>
+    <div class="mb-4 field-max-width">
+      <label class="form-label">Friendly Link Name <i>(optional)</i></label>
+      <input
+        id="friendly-link-name"
+        name="friendly_link_name"
+        class="form-control"
+        type="text"
+        placeholder="latest-report"
+        maxlength="200"
+      />
+      <p class="form-text">
+        If set, you can access the file at /n/friendly-link-name
+      </p>
+    </div>
+
+    <div class="mb-4 field-max-width">
+      <label class="form-check-label">
+        <input
+          id="delete-old"
+          name="delete_old"
+          type="checkbox"
+          class="form-check-input"
+        />
+        Delete old file if friendly link name exists
+      </label>
+    </div>
 
     {{ if not .GuestLinkMetadata.ID }}
       <div class="mb-4 field-max-width">

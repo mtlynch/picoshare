@@ -25,10 +25,13 @@ export async function friendlyLinkDelete(friendlyName) {
 }
 
 export async function friendlyLinkEnable(friendlyName) {
-  return fetch(`/api/friendly-links/${encodeURIComponent(friendlyName)}/enable`, {
-    method: "PUT",
-    credentials: "include",
-  })
+  return fetch(
+    `/api/friendly-links/${encodeURIComponent(friendlyName)}/enable`,
+    {
+      method: "PUT",
+      credentials: "include",
+    }
+  )
     .then((response) => {
       if (!response.ok) {
         return response.text().then((error) => {
@@ -49,10 +52,13 @@ export async function friendlyLinkEnable(friendlyName) {
 }
 
 export async function friendlyLinkDisable(friendlyName) {
-  return fetch(`/api/friendly-links/${encodeURIComponent(friendlyName)}/disable`, {
-    method: "PUT",
-    credentials: "include",
-  })
+  return fetch(
+    `/api/friendly-links/${encodeURIComponent(friendlyName)}/disable`,
+    {
+      method: "PUT",
+      credentials: "include",
+    }
+  )
     .then((response) => {
       if (!response.ok) {
         return response.text().then((error) => {
