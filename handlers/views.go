@@ -727,7 +727,7 @@ func (s Server) systemInformationGet() http.HandlerFunc {
 			UsedBytes:         spaceUsage.FileSystemUsedBytes,
 			TotalBytes:        spaceUsage.FileSystemTotalBytes,
 			BuildTime:         build.Time(),
-			Version:           build.Version,
+			Version:           build.Version(),
 			Revision:          build.Revision(),
 		}); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
