@@ -7,4 +7,5 @@ test("views system info", async ({ page }) => {
   await page.getByRole("menuitem", { name: "System" }).hover();
   await page.getByRole("menuitem", { name: "Information" }).click();
   await expect(page).toHaveURL("/information");
+  await expect(page.locator(".content")).toContainText(/Version:\s+\S+/);
 });
