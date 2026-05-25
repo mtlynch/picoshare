@@ -2,6 +2,7 @@ package build
 
 import (
 	"runtime/debug"
+	"strings"
 	"time"
 )
 
@@ -10,7 +11,7 @@ func Version() string {
 	if !ok {
 		return ""
 	}
-	return info.Main.Version
+	return strings.TrimPrefix(info.Main.Version, "v")
 }
 
 func Time() time.Time {
