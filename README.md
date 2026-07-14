@@ -144,6 +144,12 @@ PicoShare is easy to deploy to cloud hosting platforms:
 
 - [fly.io](docs/deployment/fly.io.md)
 
+## Third-party clients
+
+These clients are built and maintained by third parties, not by the PicoShare project:
+
+- [picaroa](https://www.picaroa.app) - Native iOS client for PicoShare
+
 ## Tips and tricks
 
 ### Reclaiming reserved database space
