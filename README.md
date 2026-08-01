@@ -111,6 +111,7 @@ services:
 | `PS_BEHIND_PROXY`       | Set to `"true"` for better logging when PicoShare is running behind a reverse proxy.                              |
 | `PS_SHARED_SECRET`      | Specifies a passphrase for the admin user to log in to PicoShare. Required if `PS_SHARED_SECRET_FILE` is not set. |
 | `PS_SHARED_SECRET_FILE` | Path to a file containing the passphrase for the admin user. Required if `PS_SHARED_SECRET` is not set.           |
+| `PS_FORCE_DOWNLOAD`     | Set to `"true"` to force browsers to download shared files instead of displaying supported file types inline.     |
 
 ### Docker environment variables
 

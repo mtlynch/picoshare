@@ -57,12 +57,22 @@ func TestEntryGet(t *testing.T) {
 		expectedContentDisposition string
 		expectedContentType        string
 		expectedCSP                string
+		forceDownload              bool
 	}{
 		{
 			description:                "retrieves text entry",
 			requestRoute:               "/-TTTTTTTTTT",
 			expectedStatus:             http.StatusOK,
 			expectedContentDisposition: `filename="test.txt"`,
+			expectedContentType:        "text/plain;charset=utf-8",
+			expectedCSP:                "sandbox",
+		},
+		{
+			description:                "forces text entry download when configured",
+			requestRoute:               "/-TTTTTTTTTT",
+			forceDownload:              true,
+			expectedStatus:             http.StatusOK,
+			expectedContentDisposition: `attachment; filename="test.txt"`,
 			expectedContentType:        "text/plain;charset=utf-8",
 			expectedCSP:                "sandbox",
 		},
@@ -113,6 +123,13 @@ func TestEntryGet(t *testing.T) {
 		},
 	} {
 		t.Run(tt.description, func(t *testing.T) {
+
+			if tt.forceDownload {
+				t.Setenv("PS_FORCE_DOWNLOAD", "true")
+			} else {
+				t.Setenv("PS_FORCE_DOWNLOAD", "")
+			}
+
 			dataStore := test_sqlite.New()
 
 			for _, mockEntry := range []mockEntry{

@@ -7,7 +7,9 @@ import (
 	"mime"
 	"net"
 	"net/http"
+	"os"
 	"path/filepath"
+	"strconv"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -36,7 +38,13 @@ func (s Server) entryGet() http.HandlerFunc {
 		}
 
 		if entry.Filename != "" {
-			w.Header().Set("Content-Disposition", fmt.Sprintf(`filename="%s"`, entry.Filename))
+			contentDisposition := fmt.Sprintf(`filename="%s"`, entry.Filename)
+
+			forceDownload, err := strconv.ParseBool(os.Getenv("PS_FORCE_DOWNLOAD"))
+			if err == nil && forceDownload {
+				contentDisposition = "attachment; " + contentDisposition
+			}
+			w.Header().Set("Content-Disposition", contentDisposition)
 		}
 
 		contentType := entry.ContentType
