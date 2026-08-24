@@ -4,12 +4,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
 
 	"github.com/gorilla/mux"
 	"github.com/mtlynch/picoshare/handlers/parse"
+	"github.com/mtlynch/picoshare/imagemeta"
 	"github.com/mtlynch/picoshare/picoshare"
 	"github.com/mtlynch/picoshare/random"
 	"github.com/mtlynch/picoshare/store"
@@ -261,8 +263,16 @@ func (s Server) insertFileFromRequest(r *http.Request, expiration picoshare.Expi
 		return picoshare.EntryID(""), errors.New("guest uploads cannot have file notes")
 	}
 
+	fileReader := io.Reader(reader)
+	if s.stripImageMetadata {
+		fileReader, err = imagemeta.Strip(reader)
+		if err != nil {
+			return picoshare.EntryID(""), err
+		}
+	}
+
 	id := generateEntryID()
-	err = s.getDB(r).InsertEntry(reader,
+	err = s.getDB(r).InsertEntry(fileReader,
 		picoshare.UploadMetadata{
 			ID:          id,
 			Filename:    filename,

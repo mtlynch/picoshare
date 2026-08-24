@@ -52,7 +52,9 @@ func main() {
 
 	clock := handlers.NewClock()
 
-	server := handlers.New(authenticator, &store, spaceChecker, &collector, &clock)
+	stripImageMetadata := os.Getenv("PS_STRIP_IMAGE_METADATA") != ""
+
+	server := handlers.New(authenticator, &store, spaceChecker, &collector, &clock, handlers.WithImageMetadataStripping(stripImageMetadata))
 
 	h := gorilla.LoggingHandler(os.Stdout, server.Router())
 	if os.Getenv("PS_BEHIND_PROXY") != "" {

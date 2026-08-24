@@ -105,12 +105,13 @@ services:
 
 ### Environment variables
 
-| Environment Variable    | Meaning                                                                                                           |
-| ----------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| `PORT`                  | TCP port on which to listen for HTTP connections (defaults to 4001).                                              |
-| `PS_BEHIND_PROXY`       | Set to `"true"` for better logging when PicoShare is running behind a reverse proxy.                              |
-| `PS_SHARED_SECRET`      | Specifies a passphrase for the admin user to log in to PicoShare. Required if `PS_SHARED_SECRET_FILE` is not set. |
-| `PS_SHARED_SECRET_FILE` | Path to a file containing the passphrase for the admin user. Required if `PS_SHARED_SECRET` is not set.           |
+| Environment Variable      | Meaning                                                                                                           |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `PORT`                    | TCP port on which to listen for HTTP connections (defaults to 4001).                                              |
+| `PS_BEHIND_PROXY`         | Set to `"true"` for better logging when PicoShare is running behind a reverse proxy.                              |
+| `PS_SHARED_SECRET`        | Specifies a passphrase for the admin user to log in to PicoShare. Required if `PS_SHARED_SECRET_FILE` is not set. |
+| `PS_SHARED_SECRET_FILE`   | Path to a file containing the passphrase for the admin user. Required if `PS_SHARED_SECRET` is not set.           |
+| `PS_STRIP_IMAGE_METADATA` | Set to a non-empty value to remove metadata (such as EXIF tags) from uploaded images.                             |
 
 ### Docker environment variables
 
