@@ -663,28 +663,28 @@ func TestGuestUploadAcceptHeader(t *testing.T) {
 		expectedContentType string
 	}{
 		{
-			"no Accept header returns plain text URL",
-			"",
-			false,
-			"text/plain",
+			explanation:         "no Accept header returns plain text URL",
+			acceptHeader:        "",
+			expectJSON:          false,
+			expectedContentType: "text/plain",
 		},
 		{
-			"Accept header with wildcard returns plain text URL",
-			"*/*",
-			false,
-			"text/plain",
+			explanation:         "Accept header with wildcard returns plain text URL",
+			acceptHeader:        "*/*",
+			expectJSON:          false,
+			expectedContentType: "text/plain",
 		},
 		{
-			"Accept header with application/json returns JSON",
-			"application/json",
-			true,
-			"application/json",
+			explanation:         "Accept header with application/json returns JSON",
+			acceptHeader:        "application/json",
+			expectJSON:          true,
+			expectedContentType: "application/json",
 		},
 		{
-			"Accept header with text/html returns plain text URL",
-			"text/html",
-			false,
-			"text/plain",
+			explanation:         "Accept header with text/html returns plain text URL",
+			acceptHeader:        "text/html",
+			expectJSON:          false,
+			expectedContentType: "text/plain",
 		},
 	} {
 		t.Run(fmt.Sprintf("%s [%s]", tt.explanation, tt.acceptHeader), func(t *testing.T) {
