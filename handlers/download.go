@@ -34,61 +34,77 @@ func (s Server) entryGet() http.HandlerFunc {
 			http.Error(w, "failed to retrieve entry", http.StatusInternalServerError)
 			return
 		}
-		if entry.DownloadPassphraseHash != nil && !isAuthenticated(r.Context()) {
-			w.Header().Set("Cache-Control", "no-store")
-			s.entryDownloadPassphrase(w, r, entry)
-			return
-		}
-		if r.Method != http.MethodGet && r.Method != http.MethodPost {
-			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-			return
-		}
-		if r.Method == http.MethodPost && entry.DownloadPassphraseHash == nil {
-			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-			return
-		}
 		if entry.DownloadPassphraseHash != nil {
 			w.Header().Set("Cache-Control", "no-store")
+			if !isAuthenticated(r.Context()) {
+				http.Redirect(w, r, entryUnlockPath(entry.ID), http.StatusFound)
+				return
+			}
 		}
 		s.serveEntryContent(w, r, entry)
 	}
 }
 
-func (s Server) entryDownloadPassphrase(w http.ResponseWriter, r *http.Request, entry picoshare.UploadMetadata) {
-	if r.Method == http.MethodPost {
-		if err := r.ParseForm(); err != nil {
-			http.Error(w, "invalid passphrase form", http.StatusBadRequest)
+func (s Server) entryUnlock() http.HandlerFunc {
+	t := parseTemplates("templates/pages/download-passphrase.html")
+	return func(w http.ResponseWriter, r *http.Request) {
+		id, err := parseEntryID(mux.Vars(r)["id"])
+		if err != nil {
+			log.Printf("error parsing ID: %v", err)
+			http.Error(w, fmt.Sprintf("bad entry ID: %v", err), http.StatusBadRequest)
 			return
 		}
-		passphrase, err := picoshare.NewPassphrase(r.FormValue("passphrase"))
-		if err == nil && entry.DownloadPassphraseHash.Matches(passphrase) {
-			s.serveEntryContent(w, r, entry)
+
+		entry, err := s.store.GetEntryMetadata(id)
+		if _, ok := errors.AsType[store.EntryNotFoundError](err); ok {
+			http.Error(w, "entry not found", http.StatusNotFound)
+			return
+		} else if err != nil {
+			log.Printf("error retrieving entry with id %v: %v", id, err)
+			http.Error(w, "failed to retrieve entry", http.StatusInternalServerError)
 			return
 		}
-		s.renderEntryDownloadPassphraseChallenge(w, r, true)
-		return
+		w.Header().Set("Cache-Control", "no-store")
+		if entry.DownloadPassphraseHash == nil || isAuthenticated(r.Context()) {
+			http.Redirect(w, r, entryDownloadPath(entry.ID), http.StatusFound)
+			return
+		}
+
+		incorrectPassphrase := false
+		if r.Method == http.MethodPost {
+			if err := r.ParseForm(); err != nil {
+				http.Error(w, "invalid passphrase form", http.StatusBadRequest)
+				return
+			}
+			passphrase, err := picoshare.NewPassphrase(r.FormValue("passphrase"))
+			if err == nil && entry.DownloadPassphraseHash.Matches(passphrase) {
+				s.serveEntryContent(w, r, entry)
+				return
+			}
+			incorrectPassphrase = true
+		}
+
+		enforceContentSecurityPolicy(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if incorrectPassphrase {
+				w.WriteHeader(http.StatusUnauthorized)
+			}
+			renderTemplate(w, t, struct {
+				commonProps
+				IncorrectPassphrase bool
+			}{
+				commonProps:         makeCommonProps("PicoShare - Download", r.Context()),
+				IncorrectPassphrase: incorrectPassphrase,
+			})
+		})).ServeHTTP(w, r)
 	}
-	if r.Method != http.MethodGet {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-	s.renderEntryDownloadPassphraseChallenge(w, r, false)
 }
 
-func (s Server) renderEntryDownloadPassphraseChallenge(w http.ResponseWriter, r *http.Request, incorrectPassphrase bool) {
-	t := parseTemplates("templates/pages/download-passphrase.html")
-	enforceContentSecurityPolicy(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if incorrectPassphrase {
-			w.WriteHeader(http.StatusUnauthorized)
-		}
-		renderTemplate(w, t, struct {
-			commonProps
-			IncorrectPassphrase bool
-		}{
-			commonProps:         makeCommonProps("PicoShare - Download", r.Context()),
-			IncorrectPassphrase: incorrectPassphrase,
-		})
-	})).ServeHTTP(w, r)
+func entryDownloadPath(id picoshare.EntryID) string {
+	return "/-" + id.String()
+}
+
+func entryUnlockPath(id picoshare.EntryID) string {
+	return entryDownloadPath(id) + "/unlock"
 }
 
 func (s Server) serveEntryContent(w http.ResponseWriter, r *http.Request, entry picoshare.UploadMetadata) {

@@ -174,7 +174,209 @@ func TestEntryGet(t *testing.T) {
 }
 
 func TestProtectedEntryDownload(t *testing.T) {
+	protectedData := "protected file contents"
+	for _, tt := range []struct {
+		explanation      string
+		authenticated    bool
+		method           string
+		route            string
+		passphrase       string
+		expectedStatus   int
+		expectedLocation string
+		expectedCSP      string
+		expectedBody     string
+	}{
+		{
+			explanation:      "unauthenticated GET of a protected entry redirects to the unlock page",
+			authenticated:    false,
+			method:           http.MethodGet,
+			route:            "/-PPPPPPPPPP",
+			expectedStatus:   http.StatusFound,
+			expectedLocation: "/-PPPPPPPPPP/unlock",
+		},
+		{
+			explanation:      "unauthenticated GET of a protected entry with a filename redirects to the unlock page",
+			authenticated:    false,
+			method:           http.MethodGet,
+			route:            "/-PPPPPPPPPP/protected.txt",
+			expectedStatus:   http.StatusFound,
+			expectedLocation: "/-PPPPPPPPPP/unlock",
+		},
+		{
+			explanation:      "unauthenticated GET of a protected entry via a legacy route redirects to the unlock page",
+			authenticated:    false,
+			method:           http.MethodGet,
+			route:            "/!PPPPPPPPPP",
+			expectedStatus:   http.StatusFound,
+			expectedLocation: "/-PPPPPPPPPP/unlock",
+		},
+		{
+			explanation:    "unauthenticated GET of the unlock page renders the challenge with a nonce CSP",
+			authenticated:  false,
+			method:         http.MethodGet,
+			route:          "/-PPPPPPPPPP/unlock",
+			expectedStatus: http.StatusOK,
+			expectedCSP:    "nonce",
+			expectedBody:   "Download passphrase",
+		},
+		{
+			explanation:    "incorrect passphrase re-renders the challenge with 401",
+			authenticated:  false,
+			method:         http.MethodPost,
+			route:          "/-PPPPPPPPPP/unlock",
+			passphrase:     "wrong passphrase",
+			expectedStatus: http.StatusUnauthorized,
+			expectedCSP:    "nonce",
+			expectedBody:   "Incorrect passphrase.",
+		},
+		{
+			explanation:    "correct passphrase serves the file with sandbox CSP",
+			authenticated:  false,
+			method:         http.MethodPost,
+			route:          "/-PPPPPPPPPP/unlock",
+			passphrase:     "correct horse battery staple",
+			expectedStatus: http.StatusOK,
+			expectedCSP:    "sandbox",
+			expectedBody:   protectedData,
+		},
+		{
+			explanation:    "POST to the download route is not allowed",
+			authenticated:  false,
+			method:         http.MethodPost,
+			route:          "/-PPPPPPPPPP",
+			passphrase:     "correct horse battery staple",
+			expectedStatus: http.StatusMethodNotAllowed,
+		},
+		{
+			explanation:    "authenticated owner downloads a protected entry without a challenge",
+			authenticated:  true,
+			method:         http.MethodGet,
+			route:          "/-PPPPPPPPPP",
+			expectedStatus: http.StatusOK,
+			expectedCSP:    "sandbox",
+			expectedBody:   protectedData,
+		},
+		{
+			explanation:      "authenticated owner visiting the unlock page redirects to the download",
+			authenticated:    true,
+			method:           http.MethodGet,
+			route:            "/-PPPPPPPPPP/unlock",
+			expectedStatus:   http.StatusFound,
+			expectedLocation: "/-PPPPPPPPPP",
+		},
+		{
+			explanation:      "unlock page for an unprotected entry redirects to the download",
+			authenticated:    false,
+			method:           http.MethodGet,
+			route:            "/-TTTTTTTTTT/unlock",
+			expectedStatus:   http.StatusFound,
+			expectedLocation: "/-TTTTTTTTTT",
+		},
+		{
+			explanation:    "unlock page for a non-existent entry returns 404",
+			authenticated:  false,
+			method:         http.MethodGet,
+			route:          "/-ZZZZZZZZZZ/unlock",
+			expectedStatus: http.StatusNotFound,
+		},
+	} {
+		t.Run(tt.explanation, func(t *testing.T) {
+			dataStore := test_sqlite.New(t)
+			insertProtectedEntry(t, &dataStore, protectedData)
+			unprotectedData := "dummy data"
+			if err := dataStore.InsertEntry(strings.NewReader(unprotectedData), picoshare.UploadMetadata{
+				ID:          dummyTextEntry.ID,
+				Filename:    dummyTextEntry.Filename,
+				ContentType: dummyTextEntry.ContentType,
+				Uploaded:    mustParseTime("2023-01-01T00:00:00Z"),
+				Expires:     picoshare.NeverExpire,
+				Size:        mustParseFileSize(len(unprotectedData)),
+			}); err != nil {
+				t.Fatalf("failed to insert unprotected entry: %v", err)
+			}
+
+			var authenticator handlers.Authenticator = unauthenticatedAuthenticator{}
+			if tt.authenticated {
+				authenticator = mockAuthenticator{}
+			}
+			s := handlers.New(authenticator, &dataStore, nilSpaceChecker, nilGarbageCollector, handlers.NewClock())
+
+			var req *http.Request
+			if tt.method == http.MethodPost {
+				form := url.Values{"passphrase": {tt.passphrase}}
+				req = httptest.NewRequest(tt.method, tt.route, strings.NewReader(form.Encode()))
+				req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+			} else {
+				req = httptest.NewRequest(tt.method, tt.route, nil)
+			}
+			rec := httptest.NewRecorder()
+
+			s.Router().ServeHTTP(rec, req)
+			res := rec.Result()
+
+			if got, want := res.StatusCode, tt.expectedStatus; got != want {
+				t.Fatalf("status=%d, want=%d", got, want)
+			}
+			if got := res.Header.Get("Set-Cookie"); got != "" {
+				t.Errorf("Set-Cookie=%q, want empty", got)
+			}
+			if tt.expectedStatus == http.StatusNotFound || tt.expectedStatus == http.StatusMethodNotAllowed {
+				return
+			}
+			if got, want := res.Header.Get("Cache-Control"), "no-store"; got != want {
+				t.Errorf("Cache-Control=%q, want=%q", got, want)
+			}
+			if got, want := res.Header.Get("Location"), tt.expectedLocation; got != want {
+				t.Errorf("Location=%q, want=%q", got, want)
+			}
+			switch tt.expectedCSP {
+			case "sandbox":
+				if got, want := res.Header.Get("Content-Security-Policy"), "sandbox"; got != want {
+					t.Errorf("Content-Security-Policy=%q, want=%q", got, want)
+				}
+			case "nonce":
+				if got := res.Header.Get("Content-Security-Policy"); got == "sandbox" || !strings.Contains(got, "'nonce-") {
+					t.Errorf("Content-Security-Policy=%q, want nonce policy", got)
+				}
+			}
+			if got := rec.Body.String(); !strings.Contains(got, tt.expectedBody) {
+				t.Errorf("body=%q, want to contain %q", got, tt.expectedBody)
+			}
+		})
+	}
+}
+
+func TestProtectedEntryDownloadDoesNotPersistUnlock(t *testing.T) {
 	dataStore := test_sqlite.New(t)
+	data := "protected file contents"
+	insertProtectedEntry(t, &dataStore, data)
+	s := handlers.New(unauthenticatedAuthenticator{}, &dataStore, nilSpaceChecker, nilGarbageCollector, handlers.NewClock())
+
+	form := url.Values{"passphrase": {"correct horse battery staple"}}
+	req := httptest.NewRequest(http.MethodPost, "/-PPPPPPPPPP/unlock", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	rec := httptest.NewRecorder()
+	s.Router().ServeHTTP(rec, req)
+	if got, want := rec.Code, http.StatusOK; got != want {
+		t.Fatalf("status=%d, want=%d", got, want)
+	}
+	if got, want := rec.Body.String(), data; got != want {
+		t.Fatalf("body=%q, want=%q", got, want)
+	}
+
+	followUpReq := httptest.NewRequest(http.MethodGet, "/-PPPPPPPPPP", nil)
+	followUpRec := httptest.NewRecorder()
+	s.Router().ServeHTTP(followUpRec, followUpReq)
+	if got, want := followUpRec.Code, http.StatusFound; got != want {
+		t.Errorf("follow-up status=%d, want=%d", got, want)
+	}
+	if got, want := followUpRec.Header().Get("Location"), "/-PPPPPPPPPP/unlock"; got != want {
+		t.Errorf("follow-up Location=%q, want=%q", got, want)
+	}
+}
+
+func insertProtectedEntry(t *testing.T, dataStore handlers.Store, data string) {
+	t.Helper()
 	passphrase, err := picoshare.NewPassphrase("correct horse battery staple")
 	if err != nil {
 		t.Fatalf("failed to create passphrase: %v", err)
@@ -183,8 +385,7 @@ func TestProtectedEntryDownload(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to hash passphrase: %v", err)
 	}
-	data := "protected file contents"
-	metadata := picoshare.UploadMetadata{
+	if err := dataStore.InsertEntry(strings.NewReader(data), picoshare.UploadMetadata{
 		ID:                     "PPPPPPPPPP",
 		Filename:               "protected.txt",
 		ContentType:            "text/plain",
@@ -192,97 +393,7 @@ func TestProtectedEntryDownload(t *testing.T) {
 		Expires:                picoshare.NeverExpire,
 		Size:                   mustParseFileSize(len(data)),
 		DownloadPassphraseHash: &hash,
-	}
-	if err := dataStore.InsertEntry(strings.NewReader(data), metadata); err != nil {
+	}); err != nil {
 		t.Fatalf("failed to insert protected entry: %v", err)
 	}
-
-	t.Run("unauthenticated GET renders a no-store challenge with nonce CSP", func(t *testing.T) {
-		s := handlers.New(unauthenticatedAuthenticator{}, &dataStore, nilSpaceChecker, nilGarbageCollector, handlers.NewClock())
-		req := httptest.NewRequest(http.MethodGet, "/-PPPPPPPPPP", nil)
-		rec := httptest.NewRecorder()
-
-		s.Router().ServeHTTP(rec, req)
-
-		if got, want := rec.Code, http.StatusOK; got != want {
-			t.Fatalf("status=%d, want=%d", got, want)
-		}
-		if got := rec.Header().Get("Content-Security-Policy"); got == "sandbox" || !strings.Contains(got, "'nonce-") {
-			t.Errorf("Content-Security-Policy=%q, want nonce policy", got)
-		}
-		if got, want := rec.Header().Get("Cache-Control"), "no-store"; got != want {
-			t.Errorf("Cache-Control=%q, want=%q", got, want)
-		}
-		if got := rec.Body.String(); !strings.Contains(got, "Download passphrase") {
-			t.Errorf("challenge body=%q, want passphrase form", got)
-		}
-	})
-
-	t.Run("incorrect POST returns the challenge without authorizing later requests", func(t *testing.T) {
-		s := handlers.New(unauthenticatedAuthenticator{}, &dataStore, nilSpaceChecker, nilGarbageCollector, handlers.NewClock())
-		form := url.Values{"passphrase": {"wrong passphrase"}}
-		req := httptest.NewRequest(http.MethodPost, "/-PPPPPPPPPP", strings.NewReader(form.Encode()))
-		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-		rec := httptest.NewRecorder()
-
-		s.Router().ServeHTTP(rec, req)
-
-		if got, want := rec.Code, http.StatusUnauthorized; got != want {
-			t.Errorf("status=%d, want=%d", got, want)
-		}
-		if got := rec.Header().Get("Set-Cookie"); got != "" {
-			t.Errorf("Set-Cookie=%q, want empty", got)
-		}
-	})
-
-	t.Run("correct POST serves content once with sandbox CSP and no-store", func(t *testing.T) {
-		s := handlers.New(unauthenticatedAuthenticator{}, &dataStore, nilSpaceChecker, nilGarbageCollector, handlers.NewClock())
-		form := url.Values{"passphrase": {"correct horse battery staple"}}
-		req := httptest.NewRequest(http.MethodPost, "/-PPPPPPPPPP", strings.NewReader(form.Encode()))
-		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-		rec := httptest.NewRecorder()
-
-		s.Router().ServeHTTP(rec, req)
-
-		if got, want := rec.Code, http.StatusOK; got != want {
-			t.Fatalf("status=%d, want=%d", got, want)
-		}
-		if got, want := rec.Header().Get("Content-Security-Policy"), "sandbox"; got != want {
-			t.Errorf("Content-Security-Policy=%q, want=%q", got, want)
-		}
-		if got, want := rec.Header().Get("Cache-Control"), "no-store"; got != want {
-			t.Errorf("Cache-Control=%q, want=%q", got, want)
-		}
-		if got, want := rec.Body.String(), data; got != want {
-			t.Errorf("body=%q, want=%q", got, want)
-		}
-
-		followUpReq := httptest.NewRequest(http.MethodGet, "/-PPPPPPPPPP", nil)
-		followUpRec := httptest.NewRecorder()
-		s.Router().ServeHTTP(followUpRec, followUpReq)
-		if got := followUpRec.Body.String(); !strings.Contains(got, "Download passphrase") {
-			t.Errorf("follow-up body=%q, want passphrase challenge", got)
-		}
-	})
-
-	t.Run("authenticated owner bypasses the challenge", func(t *testing.T) {
-		s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceChecker, nilGarbageCollector, handlers.NewClock())
-		req := httptest.NewRequest(http.MethodGet, "/-PPPPPPPPPP", nil)
-		rec := httptest.NewRecorder()
-
-		s.Router().ServeHTTP(rec, req)
-
-		if got, want := rec.Code, http.StatusOK; got != want {
-			t.Fatalf("status=%d, want=%d", got, want)
-		}
-		if got, want := rec.Body.String(), data; got != want {
-			t.Errorf("body=%q, want=%q", got, want)
-		}
-		if got, want := rec.Header().Get("Cache-Control"), "no-store"; got != want {
-			t.Errorf("Cache-Control=%q, want=%q", got, want)
-		}
-		if got, want := rec.Header().Get("Content-Security-Policy"), "sandbox"; got != want {
-			t.Errorf("Content-Security-Policy=%q, want=%q", got, want)
-		}
-	})
 }

@@ -64,12 +64,15 @@ func (s *Server) routes() {
 
 	downloadViews := s.router.PathPrefix("/").Subrouter()
 	downloadViews.Use(upgradeToHttps)
-	downloadViews.PathPrefix("/-{id}").HandlerFunc(s.entryGet()).Methods(http.MethodGet, http.MethodPost)
-	downloadViews.PathPrefix("/-{id}/{filename}").HandlerFunc(s.entryGet()).Methods(http.MethodGet, http.MethodPost)
+	// The unlock route must precede the /-{id} prefix routes because mux
+	// matches routes in registration order.
+	downloadViews.HandleFunc("/-{id}/unlock", s.entryUnlock()).Methods(http.MethodGet, http.MethodPost)
+	downloadViews.PathPrefix("/-{id}").HandlerFunc(s.entryGet()).Methods(http.MethodGet)
+	downloadViews.PathPrefix("/-{id}/{filename}").HandlerFunc(s.entryGet()).Methods(http.MethodGet)
 	// Legacy routes for entries. We stopped using them because the ! has
 	// unintended side effects within the bash shell.
-	downloadViews.PathPrefix("/!{id}").HandlerFunc(s.entryGet()).Methods(http.MethodGet, http.MethodPost)
-	downloadViews.PathPrefix("/!{id}/{filename}").HandlerFunc(s.entryGet()).Methods(http.MethodGet, http.MethodPost)
+	downloadViews.PathPrefix("/!{id}").HandlerFunc(s.entryGet()).Methods(http.MethodGet)
+	downloadViews.PathPrefix("/!{id}/{filename}").HandlerFunc(s.entryGet()).Methods(http.MethodGet)
 
 	s.addDevRoutes()
 }
