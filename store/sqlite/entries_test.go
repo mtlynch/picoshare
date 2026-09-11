@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"io"
 	"log"
+	"strings"
 	"testing"
 	"time"
 
@@ -113,6 +114,53 @@ func TestReadLastByteOfEntry(t *testing.T) {
 
 	if got, want := string(contents), "!"; got != want {
 		log.Fatalf("unexpected file contents: got %v, want %v", got, want)
+	}
+}
+
+func TestUpdateEntryDownloadPassphraseHash(t *testing.T) {
+	dataStore := test_sqlite.New(t)
+	passphrase, err := picoshare.NewPassphrase("correct horse battery staple")
+	if err != nil {
+		t.Fatalf("failed to create passphrase: %v", err)
+	}
+	hash, err := picoshare.HashDownloadPassphrase(passphrase)
+	if err != nil {
+		t.Fatalf("failed to hash passphrase: %v", err)
+	}
+
+	data := "dummy data"
+	if err := dataStore.InsertEntry(strings.NewReader(data), picoshare.UploadMetadata{
+		ID:                     picoshare.EntryID("dummy-id"),
+		Filename:               "dummy-file.txt",
+		Uploaded:               mustParseTime("2025-05-25T00:00:00Z"),
+		Expires:                mustParseExpirationTime("2040-01-01T00:00:00Z"),
+		Size:                   mustParseFileSize(len(data)),
+		DownloadPassphraseHash: &hash,
+	}); err != nil {
+		t.Fatalf("failed to insert file into sqlite: %v", err)
+	}
+
+	metadata, err := dataStore.GetEntryMetadata("dummy-id")
+	if err != nil {
+		t.Fatalf("failed to retrieve entry metadata: %v", err)
+	}
+	if metadata.DownloadPassphraseHash == nil {
+		t.Fatal("download passphrase hash is nil, want hash")
+	}
+	if got, want := metadata.DownloadPassphraseHash.Encoded(), hash.Encoded(); got != want {
+		t.Errorf("download passphrase hash=%q, want=%q", got, want)
+	}
+
+	if err := dataStore.UpdateEntryDownloadPassphraseHash("dummy-id", nil); err != nil {
+		t.Fatalf("failed to clear download passphrase hash: %v", err)
+	}
+
+	metadata, err = dataStore.GetEntryMetadata("dummy-id")
+	if err != nil {
+		t.Fatalf("failed to retrieve entry metadata: %v", err)
+	}
+	if got := metadata.DownloadPassphraseHash; got != nil {
+		t.Errorf("download passphrase hash=%v, want nil", got)
 	}
 }
 

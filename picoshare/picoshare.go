@@ -25,6 +25,8 @@ type (
 		Size          FileSize
 		GuestLink     GuestLink
 		DownloadCount uint64
+		// DownloadPassphraseHash is nil when downloads do not require a passphrase.
+		DownloadPassphraseHash *DownloadPassphraseHash
 	}
 
 	DownloadRecord struct {
