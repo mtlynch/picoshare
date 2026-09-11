@@ -36,7 +36,7 @@ func New(passphrase picoshare.Passphrase) SharedSecretAuthenticator {
 
 // StartSession begins an authenticated session.
 func (ssa SharedSecretAuthenticator) StartSession(w http.ResponseWriter, r *http.Request) {
-	passphrase, err := parseSessionStartRequest(r)
+	req, err := parseSessionStartRequest(r)
 	if err != nil {
 		switch err {
 		case ErrMalformedRequest, ErrEmptyCredentials:
@@ -47,7 +47,7 @@ func (ssa SharedSecretAuthenticator) StartSession(w http.ResponseWriter, r *http
 		return
 	}
 
-	if serverKey, userKey := ssa.serverKey, kdf.DeriveKey(passphrase.Passphrase); !serverKey.Equal(userKey) {
+	if serverKey, userKey := ssa.serverKey, kdf.DeriveKey(req.Passphrase); !serverKey.Equal(userKey) {
 		http.Error(w, ErrInvalidCredentials.Error(), http.StatusUnauthorized)
 		return
 	}
