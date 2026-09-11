@@ -9,56 +9,59 @@ import (
 
 func TestNewPassphrase(t *testing.T) {
 	for _, tt := range []struct {
-		explanation string
-		input       string
-		errExpected bool
+		explanation     string
+		input           string
+		isValidExpected bool
 	}{
 		{
-			explanation: "empty passphrases are invalid",
-			input:       "",
-			errExpected: true,
+			explanation:     "empty passphrases are invalid",
+			input:           "",
+			isValidExpected: false,
 		},
 		{
-			explanation: "one ASCII character is valid",
-			input:       "a",
+			explanation:     "one ASCII character is valid",
+			input:           "a",
+			isValidExpected: true,
 		},
 		{
-			explanation: "one emoji is valid",
-			input:       "🔒",
+			explanation:     "one emoji is valid",
+			input:           "🔒",
+			isValidExpected: true,
 		},
 		{
-			explanation: "100 ASCII characters are valid",
-			input:       strings.Repeat("a", picoshare.MaxPassphraseCodePoints),
+			explanation:     "100 ASCII characters are valid",
+			input:           strings.Repeat("a", picoshare.MaxPassphraseCodePoints),
+			isValidExpected: true,
 		},
 		{
-			explanation: "100 emoji are valid",
-			input:       strings.Repeat("🔒", picoshare.MaxPassphraseCodePoints),
+			explanation:     "100 emoji are valid",
+			input:           strings.Repeat("🔒", picoshare.MaxPassphraseCodePoints),
+			isValidExpected: true,
 		},
 		{
-			explanation: "101 Unicode code points are invalid",
-			input:       strings.Repeat("🔒", picoshare.MaxPassphraseCodePoints+1),
-			errExpected: true,
+			explanation:     "101 Unicode code points are invalid",
+			input:           strings.Repeat("🔒", picoshare.MaxPassphraseCodePoints+1),
+			isValidExpected: false,
 		},
 		{
-			explanation: "arbitrary characters are preserved",
-			input:       " \t\n<script>\x00&'\\é",
+			explanation:     "arbitrary characters are preserved",
+			input:           " \t\n<script>\x00&'\\é",
+			isValidExpected: true,
 		},
 		{
-			explanation: "invalid UTF-8 is rejected",
-			input:       string([]byte{0xff}),
-			errExpected: true,
+			explanation:     "invalid UTF-8 is rejected",
+			input:           string([]byte{0xff}),
+			isValidExpected: false,
 		},
 	} {
 		t.Run(tt.explanation, func(t *testing.T) {
 			passphrase, err := picoshare.NewPassphrase(tt.input)
-			if tt.errExpected {
-				if err == nil {
-					t.Fatal("NewPassphrase returned nil error")
-				}
-				return
+			isValid := err == nil
+			if got, want := isValid, tt.isValidExpected; got != want {
+				t.Fatalf("NewPassphrase validity=%t, want=%t", got, want)
 			}
-			if err != nil {
-				t.Fatalf("NewPassphrase failed: %v", err)
+			if !isValid {
+				return
 			}
 			if got, want := string(passphrase.Bytes()), tt.input; got != want {
 				t.Errorf("passphrase=%q, want=%q", got, want)
