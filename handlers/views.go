@@ -504,13 +504,15 @@ func (s Server) uploadGet() http.HandlerFunc {
 
 		renderTemplate(w, t, struct {
 			commonProps
-			ExpirationOptions []expirationOption
-			MaxNoteLength     int
-			GuestLinkMetadata picoshare.GuestLink
+			ExpirationOptions       []expirationOption
+			MaxNoteLength           int
+			MaxPassphraseCodePoints int
+			GuestLinkMetadata       picoshare.GuestLink
 		}{
-			commonProps:       makeCommonProps("PicoShare - Upload", r.Context()),
-			MaxNoteLength:     parse.MaxFileNoteBytes,
-			ExpirationOptions: expirationOptions,
+			commonProps:             makeCommonProps("PicoShare - Upload", r.Context()),
+			MaxNoteLength:           parse.MaxFileNoteBytes,
+			MaxPassphraseCodePoints: picoshare.MaxPassphraseCodePoints,
+			ExpirationOptions:       expirationOptions,
 		})
 	}
 }

@@ -261,6 +261,22 @@ func (s Server) insertFileFromRequest(r *http.Request, expiration picoshare.Expi
 	if guestLinkID != "" && note.Value != nil {
 		return picoshare.EntryID(""), errors.New("guest uploads cannot have file notes")
 	}
+	if guestLinkID != "" && r.FormValue("downloadPassphrase") != "" {
+		return picoshare.EntryID(""), errors.New("guest uploads cannot have download passphrases")
+	}
+
+	var downloadPassphraseHash *picoshare.DownloadPassphraseHash
+	if rawDownloadPassphrase := r.FormValue("downloadPassphrase"); rawDownloadPassphrase != "" {
+		downloadPassphrase, err := picoshare.NewPassphrase(rawDownloadPassphrase)
+		if err != nil {
+			return picoshare.EntryID(""), err
+		}
+		downloadPassphraseHashValue, err := picoshare.HashDownloadPassphrase(downloadPassphrase)
+		if err != nil {
+			return picoshare.EntryID(""), err
+		}
+		downloadPassphraseHash = &downloadPassphraseHashValue
+	}
 
 	id := generateEntryID()
 	err = s.store.InsertEntry(reader,
@@ -272,9 +288,10 @@ func (s Server) insertFileFromRequest(r *http.Request, expiration picoshare.Expi
 			GuestLink: picoshare.GuestLink{
 				ID: guestLinkID,
 			},
-			Uploaded: s.clock.Now(),
-			Expires:  expiration,
-			Size:     fileSize,
+			Uploaded:               s.clock.Now(),
+			Expires:                expiration,
+			Size:                   fileSize,
+			DownloadPassphraseHash: downloadPassphraseHash,
 		})
 	if err != nil {
 		log.Printf("failed to save entry: %v", err)

@@ -46,6 +46,7 @@ func TestEntryPost(t *testing.T) {
 		contents    string
 		expiration  string
 		note        string
+		passphrase  string
 		status      int
 	}{
 		{
@@ -62,6 +63,22 @@ func TestEntryPost(t *testing.T) {
 			note:        "for my homeboy, willy",
 			expiration:  "2040-01-01T00:00:00Z",
 			status:      http.StatusOK,
+		},
+		{
+			description: "valid file with a download passphrase",
+			filename:    "dummyimage.png",
+			contents:    "dummy bytes",
+			passphrase:  "correct horse battery staple",
+			expiration:  "2040-01-01T00:00:00Z",
+			status:      http.StatusOK,
+		},
+		{
+			description: "invalid download passphrase is rejected",
+			filename:    "dummyimage.png",
+			contents:    "dummy bytes",
+			passphrase:  strings.Repeat("a", picoshare.MaxPassphraseCodePoints+1),
+			expiration:  "2040-01-01T00:00:00Z",
+			status:      http.StatusBadRequest,
 		},
 		{
 			description: "valid file with a too-long note",
@@ -104,7 +121,7 @@ func TestEntryPost(t *testing.T) {
 			dataStore := test_sqlite.New(t)
 			s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceChecker, nilGarbageCollector, handlers.NewClock())
 
-			formData, contentType := createMultipartFormBody(tt.filename, tt.note, bytes.NewBuffer([]byte(tt.contents)))
+			formData, contentType := createMultipartFormBodyWithDownloadPassphrase(tt.filename, tt.note, tt.passphrase, bytes.NewBuffer([]byte(tt.contents)))
 
 			req := httptest.NewRequest(
 				http.MethodPost,
@@ -148,6 +165,22 @@ func TestEntryPost(t *testing.T) {
 
 			if got, want := entry.Expires, mustParseExpirationTime(tt.expiration); got != want {
 				t.Errorf("expiration=%v, want=%v", got, want)
+			}
+			switch {
+			case tt.passphrase == "":
+				if got := entry.DownloadPassphraseHash; got != nil {
+					t.Errorf("download passphrase hash=%v, want nil", got)
+				}
+			case entry.DownloadPassphraseHash == nil:
+				t.Error("download passphrase hash is nil, want hash")
+			default:
+				passphrase, err := picoshare.NewPassphrase(tt.passphrase)
+				if err != nil {
+					t.Fatalf("failed to create expected passphrase: %v", err)
+				}
+				if got := entry.DownloadPassphraseHash.Matches(passphrase); !got {
+					t.Error("download passphrase hash does not match upload passphrase")
+				}
 			}
 
 			entryFile, err := dataStore.ReadEntryFile(entry.ID)
@@ -759,6 +792,10 @@ func TestGuestUploadAcceptHeader(t *testing.T) {
 }
 
 func createMultipartFormBody(filename, note string, r io.Reader) (io.Reader, string) {
+	return createMultipartFormBodyWithDownloadPassphrase(filename, note, "", r)
+}
+
+func createMultipartFormBodyWithDownloadPassphrase(filename, note, passphrase string, r io.Reader) (io.Reader, string) {
 	var b bytes.Buffer
 	bw := bufio.NewWriter(&b)
 	mw := multipart.NewWriter(bw)
@@ -774,6 +811,12 @@ func createMultipartFormBody(filename, note string, r io.Reader) (io.Reader, str
 		panic(err)
 	}
 	nf.Write([]byte(note))
+
+	pf, err := mw.CreateFormField("downloadPassphrase")
+	if err != nil {
+		panic(err)
+	}
+	pf.Write([]byte(passphrase))
 
 	mw.Close()
 	bw.Flush()
