@@ -9,7 +9,14 @@ import (
 	"github.com/mtlynch/picoshare/picoshare"
 )
 
-const authCookieName = "sharedSecret"
+const (
+	authCookieName = "sharedSecret"
+
+	// maxSessionStartRequestBytes bounds the body of a request to start a
+	// session. Even a passphrase of MaxPassphraseCodePoints code points that
+	// JSON encodes entirely as escaped surrogate pairs fits well within it.
+	maxSessionStartRequestBytes = 4096
+)
 
 var (
 	// ErrInvalidCredentials indicates that the provided credentials are incorrect.
@@ -37,6 +44,7 @@ func New(passphrase picoshare.Passphrase) SharedSecretAuthenticator {
 
 // StartSession begins an authenticated session.
 func (ssa SharedSecretAuthenticator) StartSession(w http.ResponseWriter, r *http.Request) {
+	r.Body = http.MaxBytesReader(w, r.Body, maxSessionStartRequestBytes)
 	req, err := parseSessionStartRequest(r)
 	if err != nil {
 		if err == ErrMalformedRequest {
