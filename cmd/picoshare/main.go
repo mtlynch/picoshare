@@ -30,15 +30,15 @@ func main() {
 	dbPath := flag.String("db", "data/store.db", "path to database")
 	flag.Parse()
 
+	dbDir := filepath.Dir(*dbPath)
+
+	ensureDirExists(dbDir)
+
 	secret, err := sharedSecretFromEnv()
 	if err != nil {
 		log.Fatalf("failed to read shared secret: %v", err)
 	}
 	authenticator := shared_secret.New(secret)
-
-	dbDir := filepath.Dir(*dbPath)
-
-	ensureDirExists(dbDir)
 
 	store := sqlite.New(sqlite.Params{
 		Path:                  *dbPath,
