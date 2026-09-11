@@ -48,10 +48,7 @@ func (ssa SharedSecretAuthenticator) StartSession(w http.ResponseWriter, r *http
 		return
 	}
 
-	// Derive key from user input and compare with server key.
-	userKey := kdf.DeriveKey(passphrase.Passphrase)
-
-	if !ssa.serverKey.Equal(userKey) {
+	if serverKey, userKey := ssa.serverKey, kdf.DeriveKey(passphrase.Passphrase); !serverKey.Equal(userKey) {
 		http.Error(w, ErrInvalidCredentials.Error(), http.StatusUnauthorized)
 		return
 	}
