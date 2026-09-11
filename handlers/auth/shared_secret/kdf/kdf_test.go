@@ -4,55 +4,21 @@ import (
 	"testing"
 
 	"github.com/mtlynch/picoshare/handlers/auth/shared_secret/kdf"
+	"github.com/mtlynch/picoshare/picoshare"
 )
 
-func TestDeriveKeyFromSecret(t *testing.T) {
-	for _, tt := range []struct {
-		description string
-		input       string
-		err         error
-	}{
-		{
-			description: "accept valid secret",
-			input:       "mysecret",
-			err:         nil,
-		},
-		{
-			description: "reject empty secret",
-			input:       "",
-			err:         kdf.ErrInvalidSecret,
-		},
-	} {
-		t.Run(tt.description, func(t *testing.T) {
-			_, err := kdf.DeriveKeyFromSecret(tt.input)
-			if got, want := err, tt.err; got != want {
-				t.Fatalf("err=%v, want=%v", got, want)
-			}
-		})
-	}
-}
-
 func TestKeyComparison(t *testing.T) {
-	originalKey, err := kdf.DeriveKeyFromSecret("test")
-	if got, want := err, error(nil); got != want {
-		t.Fatalf("failed to derive key: err=%v, want=%v", got, want)
-	}
+	originalKey := kdf.DeriveKey(mustCreatePassphrase(t, "test"))
 
 	t.Run("same secret creates matching keys", func(t *testing.T) {
-		sameKey, err := kdf.DeriveKeyFromSecret("test")
-		if got, want := err, error(nil); got != want {
-			t.Fatalf("failed to derive second key: err=%v, want=%v", got, want)
-		}
+		sameKey := kdf.DeriveKey(mustCreatePassphrase(t, "test"))
 		if got, want := originalKey.Equal(sameKey), true; got != want {
 			t.Errorf("key comparison=%v, want=%v", got, want)
 		}
 	})
 
 	t.Run("different secrets don't match", func(t *testing.T) {
-		otherKey, err := kdf.DeriveKeyFromSecret("different-secret")
-		if got, want := err, error(nil); got != want {
-			t.Fatalf("failed to derive third key: err=%v, want=%v", got, want)
-		}
+		otherKey := kdf.DeriveKey(mustCreatePassphrase(t, "different-secret"))
 		if got, want := originalKey.Equal(otherKey), false; got != want {
 			t.Errorf("key comparison=%v, want=%v", got, want)
 		}
@@ -70,10 +36,7 @@ func TestKeyComparison(t *testing.T) {
 }
 
 func TestSerializeDeserialize(t *testing.T) {
-	key, err := kdf.DeriveKeyFromSecret("test")
-	if err != nil {
-		t.Fatalf("failed to derive key: %v", err)
-	}
+	key := kdf.DeriveKey(mustCreatePassphrase(t, "test"))
 
 	deserializedKey, err := kdf.DeserializeKey(key.Serialize())
 	if err != nil {
@@ -93,4 +56,13 @@ func TestSerializeEmptyKey(t *testing.T) {
 	}()
 
 	kdf.DerivedKey{}.Serialize()
+}
+
+func mustCreatePassphrase(t *testing.T, raw string) picoshare.Passphrase {
+	t.Helper()
+	passphrase, err := picoshare.NewPassphrase(raw)
+	if err != nil {
+		t.Fatalf("failed to create passphrase: %v", err)
+	}
+	return passphrase
 }

@@ -18,6 +18,7 @@ import (
 	"github.com/mtlynch/picoshare/garbagecollect"
 	"github.com/mtlynch/picoshare/handlers"
 	"github.com/mtlynch/picoshare/handlers/auth/shared_secret"
+	"github.com/mtlynch/picoshare/picoshare"
 	"github.com/mtlynch/picoshare/space"
 	"github.com/mtlynch/picoshare/store/sqlite"
 )
@@ -29,18 +30,15 @@ func main() {
 	dbPath := flag.String("db", "data/store.db", "path to database")
 	flag.Parse()
 
+	dbDir := filepath.Dir(*dbPath)
+
+	ensureDirExists(dbDir)
+
 	secret, err := sharedSecretFromEnv()
 	if err != nil {
 		log.Fatalf("failed to read shared secret: %v", err)
 	}
-	authenticator, err := shared_secret.New(secret)
-	if err != nil {
-		log.Fatalf("invalid shared secret: %v", err)
-	}
-
-	dbDir := filepath.Dir(*dbPath)
-
-	ensureDirExists(dbDir)
+	authenticator := shared_secret.New(secret)
 
 	store := sqlite.New(sqlite.Params{
 		Path:                  *dbPath,
@@ -89,19 +87,34 @@ func main() {
 	}
 }
 
-func sharedSecretFromEnv() (string, error) {
+func sharedSecretFromEnv() (picoshare.Passphrase, error) {
 	if path := os.Getenv("PS_SHARED_SECRET_FILE"); path != "" {
-		data, err := os.ReadFile(path)
-		if err != nil {
-			return "", fmt.Errorf("reading PS_SHARED_SECRET_FILE: %w", err)
-		}
-		return strings.TrimRight(string(data), "\r\n"), nil
+		return sharedSecretFromFile(path)
 	}
 	secret := os.Getenv("PS_SHARED_SECRET")
 	if secret == "" {
-		return "", fmt.Errorf("PS_SHARED_SECRET or PS_SHARED_SECRET_FILE must be set")
+		return picoshare.Passphrase{},
+			fmt.Errorf("PS_SHARED_SECRET or PS_SHARED_SECRET_FILE must be set")
 	}
-	return secret, nil
+	passphrase, err := picoshare.NewPassphrase(secret)
+	if err != nil {
+		return picoshare.Passphrase{}, fmt.Errorf("invalid PS_SHARED_SECRET: %w", err)
+	}
+	return passphrase, nil
+}
+
+func sharedSecretFromFile(path string) (picoshare.Passphrase, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return picoshare.Passphrase{}, fmt.Errorf("failed to read PS_SHARED_SECRET_FILE: %w", err)
+	}
+
+	stripped := strings.TrimRight(string(data), "\r\n")
+	passphrase, err := picoshare.NewPassphrase(stripped)
+	if err != nil {
+		return picoshare.Passphrase{}, fmt.Errorf("invalid PS_SHARED_SECRET_FILE: %w", err)
+	}
+	return passphrase, nil
 }
 
 func ensureDirExists(dir string) {
