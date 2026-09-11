@@ -30,15 +30,15 @@ func main() {
 	dbPath := flag.String("db", "data/store.db", "path to database")
 	flag.Parse()
 
+	dbDir := filepath.Dir(*dbPath)
+
+	ensureDirExists(dbDir)
+
 	secret, err := sharedSecretFromEnv()
 	if err != nil {
 		log.Fatalf("failed to read shared secret: %v", err)
 	}
 	authenticator := shared_secret.New(secret)
-
-	dbDir := filepath.Dir(*dbPath)
-
-	ensureDirExists(dbDir)
 
 	store := sqlite.New(sqlite.Params{
 		Path:                  *dbPath,
@@ -89,23 +89,30 @@ func main() {
 
 func sharedSecretFromEnv() (picoshare.Passphrase, error) {
 	if path := os.Getenv("PS_SHARED_SECRET_FILE"); path != "" {
-		data, err := os.ReadFile(path)
-		if err != nil {
-			return picoshare.Passphrase{}, fmt.Errorf("failed to read PS_SHARED_SECRET_FILE: %w", err)
-		}
-		passphrase, err := picoshare.NewPassphrase(strings.TrimRight(string(data), "\r\n"))
-		if err != nil {
-			return picoshare.Passphrase{}, fmt.Errorf("invalid PS_SHARED_SECRET_FILE: %w", err)
-		}
-		return passphrase, nil
+		return sharedSecretFromFile(path)
 	}
 	secret := os.Getenv("PS_SHARED_SECRET")
 	if secret == "" {
-		return picoshare.Passphrase{}, fmt.Errorf("PS_SHARED_SECRET or PS_SHARED_SECRET_FILE must be set")
+		return picoshare.Passphrase{},
+			fmt.Errorf("PS_SHARED_SECRET or PS_SHARED_SECRET_FILE must be set")
 	}
 	passphrase, err := picoshare.NewPassphrase(secret)
 	if err != nil {
 		return picoshare.Passphrase{}, fmt.Errorf("invalid PS_SHARED_SECRET: %w", err)
+	}
+	return passphrase, nil
+}
+
+func sharedSecretFromFile(path string) (picoshare.Passphrase, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return picoshare.Passphrase{}, fmt.Errorf("failed to read PS_SHARED_SECRET_FILE: %w", err)
+	}
+
+	stripped := strings.TrimRight(string(data), "\r\n")
+	passphrase, err := picoshare.NewPassphrase(stripped)
+	if err != nil {
+		return picoshare.Passphrase{}, fmt.Errorf("invalid PS_SHARED_SECRET_FILE: %w", err)
 	}
 	return passphrase, nil
 }

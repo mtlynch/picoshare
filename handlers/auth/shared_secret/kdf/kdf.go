@@ -12,14 +12,12 @@ import (
 )
 
 var (
-	// ErrInvalidSecret indicates that the provided secret is empty or invalid.
-	ErrInvalidSecret = errors.New("invalid shared secret")
 	// ErrInvalidSerialization indicates that the serialized data is invalid.
 	ErrInvalidSerialization = errors.New("invalid serialized key data")
 )
 
-// DeriveKeyFromSecret creates a derived key from the provided secret string
-// using PBKDF2 with hardcoded parameters.
+// DeriveKey creates a derived key from the provided passphrase using PBKDF2
+// with hardcoded parameters.
 func DeriveKey(passphrase picoshare.Passphrase) DerivedKey {
 	// These would be insecure values for storing a database of user credentials,
 	// but we're only storing a single password, so it's not important to have

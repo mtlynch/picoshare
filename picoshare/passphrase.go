@@ -1,14 +1,13 @@
 package picoshare
 
 import (
-	"errors"
 	"fmt"
 	"unicode/utf8"
 )
 
 const MaxPassphraseCodePoints = 100
 
-var ErrInvalidPassphrase = errors.New("passphrase must contain between 1 and 100 Unicode code points")
+var ErrInvalidPassphrase = fmt.Errorf("passphrase must contain between 1 and %d Unicode code points", MaxPassphraseCodePoints)
 
 // Passphrase is a validated plaintext passphrase.
 type Passphrase struct {

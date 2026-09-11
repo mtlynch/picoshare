@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/mtlynch/picoshare/handlers/auth/shared_secret"
@@ -34,6 +35,13 @@ func TestStartSession(t *testing.T) {
 			description:    "reject empty credentials",
 			secretKey:      "mysecret",
 			requestBody:    `{"sharedSecretKey": ""}`,
+			expectedStatus: http.StatusUnauthorized,
+		},
+		{
+			description: "reject oversized request body",
+			secretKey:   "mysecret",
+			requestBody: `{"sharedSecretKey": "` +
+				strings.Repeat("a", 4096) + `"}`,
 			expectedStatus: http.StatusBadRequest,
 		},
 		{
@@ -44,7 +52,7 @@ func TestStartSession(t *testing.T) {
 		},
 	} {
 		t.Run(tt.description, func(t *testing.T) {
-			auth := shared_secret.New(mustPassphrase(t, tt.secretKey))
+			auth := shared_secret.New(mustCreatePassphrase(t, tt.secretKey))
 
 			req := httptest.NewRequest(http.MethodPost, "/auth", bytes.NewBufferString(tt.requestBody))
 			w := httptest.NewRecorder()
@@ -71,10 +79,7 @@ func TestStartSession(t *testing.T) {
 }
 
 func TestAuthenticate(t *testing.T) {
-	secretKey := "mysecret"
-
-	// Create authenticator.
-	auth := shared_secret.New(mustPassphrase(t, secretKey))
+	auth := shared_secret.New(mustCreatePassphrase(t, "mysecret"))
 
 	// Start a valid session to get a valid cookie.
 	w := httptest.NewRecorder()
@@ -82,7 +87,7 @@ func TestAuthenticate(t *testing.T) {
 		body := struct {
 			SharedSecretKey string `json:"sharedSecretKey"`
 		}{
-			SharedSecretKey: secretKey,
+			SharedSecretKey: "mysecret",
 		}
 		var buf bytes.Buffer
 		if err := json.NewEncoder(&buf).Encode(body); err != nil {
@@ -132,7 +137,7 @@ func TestAuthenticate(t *testing.T) {
 	})
 
 	t.Run("cookie created with wrong secret should fail", func(t *testing.T) {
-		wrongAuth := shared_secret.New(mustPassphrase(t, "wrongsecret"))
+		wrongAuth := shared_secret.New(mustCreatePassphrase(t, "wrongsecret"))
 
 		wrongW := httptest.NewRecorder()
 		wrongReq := httptest.NewRequest(http.MethodPost, "/auth", func() *bytes.Buffer {
@@ -159,7 +164,7 @@ func TestAuthenticate(t *testing.T) {
 }
 
 func TestClearSession(t *testing.T) {
-	auth := shared_secret.New(mustPassphrase(t, "mysecret"))
+	auth := shared_secret.New(mustCreatePassphrase(t, "mysecret"))
 
 	w := httptest.NewRecorder()
 	auth.ClearSession(w)
@@ -181,7 +186,7 @@ func TestClearSession(t *testing.T) {
 	}
 }
 
-func mustPassphrase(t *testing.T, raw string) picoshare.Passphrase {
+func mustCreatePassphrase(t *testing.T, raw string) picoshare.Passphrase {
 	t.Helper()
 	passphrase, err := picoshare.NewPassphrase(raw)
 	if err != nil {
