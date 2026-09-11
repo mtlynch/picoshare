@@ -29,9 +29,8 @@ type SharedSecretAuthenticator struct {
 
 // New creates a new SharedSecretAuthenticator.
 func New(passphrase picoshare.Passphrase) SharedSecretAuthenticator {
-	serverKey := kdf.DeriveKey(passphrase)
 	return SharedSecretAuthenticator{
-		serverKey: serverKey,
+		serverKey: kdf.DeriveKey(passphrase),
 	}
 }
 
