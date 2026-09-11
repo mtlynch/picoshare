@@ -21,13 +21,6 @@ There are a million services for sharing files, but none of them are quite like 
 - **Direct download links**: PicoShare gives you a direct download link you can share with anyone. They can view or download the file with no ads or signups.
 - **No file restrictions**: Unlike sites like imgur, Vimeo, or SoundCloud that only allow you to share specific types of files, PicoShare lets you share any file of any size.
 - **No resizing/re-encoding**: If you upload media like images, video, or audio, PicoShare never forces you to wait on re-encoding. You get a direct download link as soon as you upload the file, and PicoShare never resizes or re-encodes your file.
-- **Per-file download passphrases**: You can require a passphrase before someone downloads an individual file.
-
-## Download passphrases
-
-When you upload a file, enter an optional download passphrase to protect its shared links. Visitors enter that passphrase in their browser before PicoShare serves the file. PicoShare only stores a passphrase verifier, not the plaintext passphrase.
-
-You can change or remove a file's download passphrase from its Edit File page. Logged-in owners can download their protected files without entering the passphrase. Download passphrase protection applies to browser downloads; PicoShare does not provide a credential API for command-line clients.
 
 ## Run PicoShare
 
