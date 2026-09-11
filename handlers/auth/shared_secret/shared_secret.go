@@ -15,9 +15,6 @@ var (
 	// ErrInvalidCredentials indicates that the provided credentials are incorrect.
 	ErrInvalidCredentials = errors.New("incorrect shared secret")
 
-	// ErrEmptyCredentials indicates that no credentials were provided.
-	ErrEmptyCredentials = errors.New("invalid shared secret")
-
 	// ErrMalformedRequest indicates that the request body is malformed.
 	ErrMalformedRequest = errors.New("malformed request")
 )
@@ -38,10 +35,9 @@ func New(passphrase picoshare.Passphrase) SharedSecretAuthenticator {
 func (ssa SharedSecretAuthenticator) StartSession(w http.ResponseWriter, r *http.Request) {
 	req, err := parseSessionStartRequest(r)
 	if err != nil {
-		switch err {
-		case ErrMalformedRequest, ErrEmptyCredentials:
+		if err == ErrMalformedRequest {
 			http.Error(w, err.Error(), http.StatusBadRequest)
-		default:
+		} else {
 			http.Error(w, ErrInvalidCredentials.Error(), http.StatusUnauthorized)
 		}
 		return
@@ -96,7 +92,7 @@ func parseSessionStartRequest(r *http.Request) (sessionStartRequest, error) {
 	}
 	passphrase, err := picoshare.NewPassphrase(body.SharedSecretKey)
 	if err != nil {
-		return sessionStartRequest{}, ErrEmptyCredentials
+		return sessionStartRequest{}, err
 	}
 	return sessionStartRequest{Passphrase: passphrase}, nil
 }

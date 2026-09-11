@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/mtlynch/picoshare/handlers/auth/shared_secret"
@@ -34,7 +35,14 @@ func TestStartSession(t *testing.T) {
 			description:    "reject empty credentials",
 			secretKey:      "mysecret",
 			requestBody:    `{"sharedSecretKey": ""}`,
-			expectedStatus: http.StatusBadRequest,
+			expectedStatus: http.StatusUnauthorized,
+		},
+		{
+			description: "reject overlong credentials",
+			secretKey:   "mysecret",
+			requestBody: `{"sharedSecretKey": "` +
+				strings.Repeat("a", picoshare.MaxPassphraseCodePoints+1) + `"}`,
+			expectedStatus: http.StatusUnauthorized,
 		},
 		{
 			description:    "reject malformed JSON",
