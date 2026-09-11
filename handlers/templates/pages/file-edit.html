@@ -18,6 +18,14 @@
       return document.getElementById("note").value || null;
     }
 
+    function readDownloadPassphrase() {
+      return document.getElementById("download-passphrase").value || null;
+    }
+
+    function removeDownloadPassphrase() {
+      return document.getElementById("remove-download-passphrase").checked;
+    }
+
     document.getElementById("cancel-btn").addEventListener("click", () => {
       history.back();
     });
@@ -35,7 +43,14 @@
       hideElement(editForm);
       showElement(progressSpinner);
 
-      editFile(id, readFilename(), expirationPicker.value, readNote())
+      editFile(
+        id,
+        readFilename(),
+        expirationPicker.value,
+        readNote(),
+        readDownloadPassphrase(),
+        removeDownloadPassphrase(),
+      )
         .then(() => {
           document.location = "/files";
         })
@@ -77,6 +92,30 @@
           value="{{ .Filename }}"
           required
         />
+      </div>
+
+      <div class="mb-4">
+        <label class="form-label" for="download-passphrase"
+          >Download passphrase</label
+        >
+        <input
+          id="download-passphrase"
+          class="form-control"
+          type="password"
+          autocomplete="new-password"
+          maxlength="{{ .MaxPassphraseCodePoints }}"
+          placeholder="Enter a new passphrase"
+        />
+        <div class="form-check mt-2">
+          <input
+            class="form-check-input"
+            type="checkbox"
+            id="remove-download-passphrase"
+          />
+          <label class="form-check-label" for="remove-download-passphrase"
+            >Remove download passphrase</label
+          >
+        </div>
       </div>
 
       <div class="mb-4">

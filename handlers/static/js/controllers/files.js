@@ -83,13 +83,26 @@ export async function guestUploadFile(
   );
 }
 
-export async function editFile(id, filename, expiration, note) {
+export async function editFile(
+  id,
+  filename,
+  expiration,
+  note,
+  downloadPassphrase,
+  removeDownloadPassphrase,
+) {
   let payload = {
     filename,
     note,
   };
   if (expiration) {
     payload.expiration = expiration;
+  }
+  if (downloadPassphrase) {
+    payload.downloadPassphrase = downloadPassphrase;
+  }
+  if (removeDownloadPassphrase) {
+    payload.removeDownloadPassphrase = true;
   }
   return fetch(`/api/entry/${encodeURIComponent(id)}`, {
     method: "PUT",

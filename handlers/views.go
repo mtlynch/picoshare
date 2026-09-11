@@ -234,10 +234,12 @@ func (s Server) fileEditGet() http.HandlerFunc {
 
 		renderTemplate(w, t, struct {
 			commonProps
-			Metadata picoshare.UploadMetadata
+			Metadata                picoshare.UploadMetadata
+			MaxPassphraseCodePoints int
 		}{
-			commonProps: makeCommonProps("PicoShare - Edit", r.Context()),
-			Metadata:    metadata,
+			commonProps:             makeCommonProps("PicoShare - Edit", r.Context()),
+			Metadata:                metadata,
+			MaxPassphraseCodePoints: picoshare.MaxPassphraseCodePoints,
 		})
 	}
 }
