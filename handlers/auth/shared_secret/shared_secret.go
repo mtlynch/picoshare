@@ -24,6 +24,10 @@ type SharedSecretAuthenticator struct {
 	serverKey kdf.DerivedKey
 }
 
+type sessionStartRequest struct {
+	Passphrase picoshare.Passphrase
+}
+
 // New creates a new SharedSecretAuthenticator.
 func New(passphrase picoshare.Passphrase) SharedSecretAuthenticator {
 	return SharedSecretAuthenticator{
@@ -77,10 +81,6 @@ func (ssa SharedSecretAuthenticator) ClearSession(w http.ResponseWriter) {
 		SameSite: http.SameSiteStrictMode,
 		MaxAge:   -1,
 	})
-}
-
-type sessionStartRequest struct {
-	Passphrase picoshare.Passphrase
 }
 
 func parseSessionStartRequest(r *http.Request) (sessionStartRequest, error) {
