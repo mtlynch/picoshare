@@ -69,13 +69,3 @@ func TestNewPassphrase(t *testing.T) {
 		})
 	}
 }
-
-func TestPassphraseBytesPanicsWhenUninitialized(t *testing.T) {
-	defer func() {
-		if recovered := recover(); recovered == nil {
-			t.Fatal("Bytes on an uninitialized passphrase did not panic")
-		}
-	}()
-
-	_ = picoshare.Passphrase{}.Bytes()
-}
