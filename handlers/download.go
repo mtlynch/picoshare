@@ -34,31 +34,89 @@ func (s Server) entryGet() http.HandlerFunc {
 			http.Error(w, "failed to retrieve entry", http.StatusInternalServerError)
 			return
 		}
-
-		if entry.Filename != "" {
-			w.Header().Set("Content-Disposition", fmt.Sprintf(`filename="%s"`, entry.Filename))
-		}
-
-		contentType := entry.ContentType
-		if contentType == "" || contentType == "application/octet-stream" {
-			if inferred, err := inferContentTypeFromFilename(entry.Filename); err == nil {
-				contentType = inferred
-			}
-		}
-		w.Header().Set("Content-Type", contentType.String())
-
-		entryFile, err := s.store.ReadEntryFile(id)
-		if err != nil {
-			log.Printf("error retrieving entry data with id %v: %v", id, err)
-			http.Error(w, "failed to retrieve entry", http.StatusInternalServerError)
+		if entry.DownloadPassphraseHash != nil && !isAuthenticated(r.Context()) {
+			w.Header().Set("Cache-Control", "no-store")
+			s.entryDownloadPassphrase(w, r, entry)
 			return
 		}
-
-		http.ServeContent(w, r, entry.Filename.String(), entry.Uploaded, entryFile)
-
-		if err := recordDownload(s.store, entry.ID, s.clock.Now(), r.RemoteAddr, r.Header.Get("User-Agent")); err != nil {
-			log.Printf("failed to record download of file %s: %v", id.String(), err)
+		if r.Method != http.MethodGet && r.Method != http.MethodPost {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
 		}
+		if r.Method == http.MethodPost && entry.DownloadPassphraseHash == nil {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		if entry.DownloadPassphraseHash != nil {
+			w.Header().Set("Cache-Control", "no-store")
+		}
+		s.serveEntryContent(w, r, entry)
+	}
+}
+
+func (s Server) entryDownloadPassphrase(w http.ResponseWriter, r *http.Request, entry picoshare.UploadMetadata) {
+	if r.Method == http.MethodPost {
+		if err := r.ParseForm(); err != nil {
+			http.Error(w, "invalid passphrase form", http.StatusBadRequest)
+			return
+		}
+		passphrase, err := picoshare.NewPassphrase(r.FormValue("passphrase"))
+		if err == nil && entry.DownloadPassphraseHash.Matches(passphrase) {
+			s.serveEntryContent(w, r, entry)
+			return
+		}
+		s.renderEntryDownloadPassphraseChallenge(w, r, true)
+		return
+	}
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	s.renderEntryDownloadPassphraseChallenge(w, r, false)
+}
+
+func (s Server) renderEntryDownloadPassphraseChallenge(w http.ResponseWriter, r *http.Request, incorrectPassphrase bool) {
+	t := parseTemplates("templates/pages/download-passphrase.html")
+	enforceContentSecurityPolicy(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if incorrectPassphrase {
+			w.WriteHeader(http.StatusUnauthorized)
+		}
+		renderTemplate(w, t, struct {
+			commonProps
+			IncorrectPassphrase bool
+		}{
+			commonProps:         makeCommonProps("PicoShare - Download", r.Context()),
+			IncorrectPassphrase: incorrectPassphrase,
+		})
+	})).ServeHTTP(w, r)
+}
+
+func (s Server) serveEntryContent(w http.ResponseWriter, r *http.Request, entry picoshare.UploadMetadata) {
+	w.Header().Set("Content-Security-Policy", "sandbox")
+
+	if entry.Filename != "" {
+		w.Header().Set("Content-Disposition", fmt.Sprintf(`filename="%s"`, entry.Filename))
+	}
+
+	contentType := entry.ContentType
+	if contentType == "" || contentType == "application/octet-stream" {
+		if inferred, err := inferContentTypeFromFilename(entry.Filename); err == nil {
+			contentType = inferred
+		}
+	}
+	w.Header().Set("Content-Type", contentType.String())
+
+	entryFile, err := s.store.ReadEntryFile(entry.ID)
+	if err != nil {
+		log.Printf("error retrieving entry data with id %v: %v", entry.ID, err)
+		http.Error(w, "failed to retrieve entry", http.StatusInternalServerError)
+		return
+	}
+
+	http.ServeContent(w, r, entry.Filename.String(), entry.Uploaded, entryFile)
+
+	if err := recordDownload(s.store, entry.ID, s.clock.Now(), r.RemoteAddr, r.Header.Get("User-Agent")); err != nil {
+		log.Printf("failed to record download of file %s: %v", entry.ID.String(), err)
 	}
 }
 

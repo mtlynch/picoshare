@@ -3,6 +3,7 @@ package handlers_test
 import (
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 
@@ -170,4 +171,118 @@ func TestEntryGet(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestProtectedEntryDownload(t *testing.T) {
+	dataStore := test_sqlite.New(t)
+	passphrase, err := picoshare.NewPassphrase("correct horse battery staple")
+	if err != nil {
+		t.Fatalf("failed to create passphrase: %v", err)
+	}
+	hash, err := picoshare.HashDownloadPassphrase(passphrase)
+	if err != nil {
+		t.Fatalf("failed to hash passphrase: %v", err)
+	}
+	data := "protected file contents"
+	metadata := picoshare.UploadMetadata{
+		ID:                     "PPPPPPPPPP",
+		Filename:               "protected.txt",
+		ContentType:            "text/plain",
+		Uploaded:               mustParseTime("2023-01-01T00:00:00Z"),
+		Expires:                picoshare.NeverExpire,
+		Size:                   mustParseFileSize(len(data)),
+		DownloadPassphraseHash: &hash,
+	}
+	if err := dataStore.InsertEntry(strings.NewReader(data), metadata); err != nil {
+		t.Fatalf("failed to insert protected entry: %v", err)
+	}
+
+	t.Run("unauthenticated GET renders a no-store challenge with nonce CSP", func(t *testing.T) {
+		s := handlers.New(unauthenticatedAuthenticator{}, &dataStore, nilSpaceChecker, nilGarbageCollector, handlers.NewClock())
+		req := httptest.NewRequest(http.MethodGet, "/-PPPPPPPPPP", nil)
+		rec := httptest.NewRecorder()
+
+		s.Router().ServeHTTP(rec, req)
+
+		if got, want := rec.Code, http.StatusOK; got != want {
+			t.Fatalf("status=%d, want=%d", got, want)
+		}
+		if got := rec.Header().Get("Content-Security-Policy"); got == "sandbox" || !strings.Contains(got, "'nonce-") {
+			t.Errorf("Content-Security-Policy=%q, want nonce policy", got)
+		}
+		if got, want := rec.Header().Get("Cache-Control"), "no-store"; got != want {
+			t.Errorf("Cache-Control=%q, want=%q", got, want)
+		}
+		if got := rec.Body.String(); !strings.Contains(got, "Download passphrase") {
+			t.Errorf("challenge body=%q, want passphrase form", got)
+		}
+	})
+
+	t.Run("incorrect POST returns the challenge without authorizing later requests", func(t *testing.T) {
+		s := handlers.New(unauthenticatedAuthenticator{}, &dataStore, nilSpaceChecker, nilGarbageCollector, handlers.NewClock())
+		form := url.Values{"passphrase": {"wrong passphrase"}}
+		req := httptest.NewRequest(http.MethodPost, "/-PPPPPPPPPP", strings.NewReader(form.Encode()))
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		rec := httptest.NewRecorder()
+
+		s.Router().ServeHTTP(rec, req)
+
+		if got, want := rec.Code, http.StatusUnauthorized; got != want {
+			t.Errorf("status=%d, want=%d", got, want)
+		}
+		if got := rec.Header().Get("Set-Cookie"); got != "" {
+			t.Errorf("Set-Cookie=%q, want empty", got)
+		}
+	})
+
+	t.Run("correct POST serves content once with sandbox CSP and no-store", func(t *testing.T) {
+		s := handlers.New(unauthenticatedAuthenticator{}, &dataStore, nilSpaceChecker, nilGarbageCollector, handlers.NewClock())
+		form := url.Values{"passphrase": {"correct horse battery staple"}}
+		req := httptest.NewRequest(http.MethodPost, "/-PPPPPPPPPP", strings.NewReader(form.Encode()))
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		rec := httptest.NewRecorder()
+
+		s.Router().ServeHTTP(rec, req)
+
+		if got, want := rec.Code, http.StatusOK; got != want {
+			t.Fatalf("status=%d, want=%d", got, want)
+		}
+		if got, want := rec.Header().Get("Content-Security-Policy"), "sandbox"; got != want {
+			t.Errorf("Content-Security-Policy=%q, want=%q", got, want)
+		}
+		if got, want := rec.Header().Get("Cache-Control"), "no-store"; got != want {
+			t.Errorf("Cache-Control=%q, want=%q", got, want)
+		}
+		if got, want := rec.Body.String(), data; got != want {
+			t.Errorf("body=%q, want=%q", got, want)
+		}
+
+		followUpReq := httptest.NewRequest(http.MethodGet, "/-PPPPPPPPPP", nil)
+		followUpRec := httptest.NewRecorder()
+		s.Router().ServeHTTP(followUpRec, followUpReq)
+		if got := followUpRec.Body.String(); !strings.Contains(got, "Download passphrase") {
+			t.Errorf("follow-up body=%q, want passphrase challenge", got)
+		}
+	})
+
+	t.Run("authenticated owner bypasses the challenge", func(t *testing.T) {
+		s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceChecker, nilGarbageCollector, handlers.NewClock())
+		req := httptest.NewRequest(http.MethodGet, "/-PPPPPPPPPP", nil)
+		rec := httptest.NewRecorder()
+
+		s.Router().ServeHTTP(rec, req)
+
+		if got, want := rec.Code, http.StatusOK; got != want {
+			t.Fatalf("status=%d, want=%d", got, want)
+		}
+		if got, want := rec.Body.String(), data; got != want {
+			t.Errorf("body=%q, want=%q", got, want)
+		}
+		if got, want := rec.Header().Get("Cache-Control"), "no-store"; got != want {
+			t.Errorf("Cache-Control=%q, want=%q", got, want)
+		}
+		if got, want := rec.Header().Get("Content-Security-Policy"), "sandbox"; got != want {
+			t.Errorf("Content-Security-Policy=%q, want=%q", got, want)
+		}
+	})
 }
