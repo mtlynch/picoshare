@@ -12,8 +12,6 @@ import (
 )
 
 var (
-	// ErrInvalidSecret indicates that the provided secret is empty or invalid.
-	ErrInvalidSecret = errors.New("invalid shared secret")
 	// ErrInvalidSerialization indicates that the serialized data is invalid.
 	ErrInvalidSerialization = errors.New("invalid serialized key data")
 )
