@@ -48,15 +48,6 @@ func TestSerializeDeserialize(t *testing.T) {
 	}
 }
 
-func mustCreatePassphrase(t *testing.T, raw string) picoshare.Passphrase {
-	t.Helper()
-	passphrase, err := picoshare.NewPassphrase(raw)
-	if err != nil {
-		t.Fatalf("failed to create passphrase: %v", err)
-	}
-	return passphrase
-}
-
 func TestSerializeEmptyKey(t *testing.T) {
 	defer func() {
 		if r := recover(); r == nil {
@@ -65,4 +56,13 @@ func TestSerializeEmptyKey(t *testing.T) {
 	}()
 
 	kdf.DerivedKey{}.Serialize()
+}
+
+func mustCreatePassphrase(t *testing.T, raw string) picoshare.Passphrase {
+	t.Helper()
+	passphrase, err := picoshare.NewPassphrase(raw)
+	if err != nil {
+		t.Fatalf("failed to create passphrase: %v", err)
+	}
+	return passphrase
 }
