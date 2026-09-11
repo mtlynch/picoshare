@@ -108,7 +108,9 @@ func sharedSecretFromFile(path string) (picoshare.Passphrase, error) {
 	if err != nil {
 		return picoshare.Passphrase{}, fmt.Errorf("failed to read PS_SHARED_SECRET_FILE: %w", err)
 	}
-	passphrase, err := picoshare.NewPassphrase(strings.TrimRight(string(data), "\r\n"))
+
+	stripped := strings.TrimRight(string(data), "\r\n")
+	passphrase, err := picoshare.NewPassphrase(stripped)
 	if err != nil {
 		return picoshare.Passphrase{}, fmt.Errorf("invalid PS_SHARED_SECRET_FILE: %w", err)
 	}
