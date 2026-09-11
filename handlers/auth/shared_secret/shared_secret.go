@@ -75,8 +75,7 @@ func (ssa SharedSecretAuthenticator) Authenticate(r *http.Request) bool {
 		return false
 	}
 
-	serverKey := ssa.serverKey
-	return serverKey.Equal(cookieKey)
+	return ssa.serverKey.Equal(cookieKey)
 }
 
 // ClearSession removes the authentication cookie.
