@@ -71,10 +71,7 @@ func TestStartSession(t *testing.T) {
 }
 
 func TestAuthenticate(t *testing.T) {
-	secretKey := "mysecret"
-
-	// Create authenticator.
-	auth := shared_secret.New(mustCreatePassphrase(t, secretKey))
+	auth := shared_secret.New(mustCreatePassphrase(t, "mysecret"))
 
 	// Start a valid session to get a valid cookie.
 	w := httptest.NewRecorder()
@@ -82,7 +79,7 @@ func TestAuthenticate(t *testing.T) {
 		body := struct {
 			SharedSecretKey string `json:"sharedSecretKey"`
 		}{
-			SharedSecretKey: secretKey,
+			SharedSecretKey: "mysecret",
 		}
 		var buf bytes.Buffer
 		if err := json.NewEncoder(&buf).Encode(body); err != nil {
