@@ -18,6 +18,7 @@ import (
 	"github.com/mtlynch/picoshare/garbagecollect"
 	"github.com/mtlynch/picoshare/handlers"
 	"github.com/mtlynch/picoshare/handlers/auth/shared_secret"
+	"github.com/mtlynch/picoshare/picoshare"
 	"github.com/mtlynch/picoshare/space"
 	"github.com/mtlynch/picoshare/store/sqlite"
 )
@@ -33,10 +34,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to read shared secret: %v", err)
 	}
-	authenticator, err := shared_secret.New(secret)
-	if err != nil {
-		log.Fatalf("invalid shared secret: %v", err)
-	}
+	authenticator := shared_secret.New(secret)
 
 	dbDir := filepath.Dir(*dbPath)
 
@@ -89,19 +87,27 @@ func main() {
 	}
 }
 
-func sharedSecretFromEnv() (string, error) {
+func sharedSecretFromEnv() (picoshare.Passphrase, error) {
 	if path := os.Getenv("PS_SHARED_SECRET_FILE"); path != "" {
 		data, err := os.ReadFile(path)
 		if err != nil {
-			return "", fmt.Errorf("reading PS_SHARED_SECRET_FILE: %w", err)
+			return picoshare.Passphrase{}, fmt.Errorf("failed to read PS_SHARED_SECRET_FILE: %w", err)
 		}
-		return strings.TrimRight(string(data), "\r\n"), nil
+		passphrase, err := picoshare.NewPassphrase(strings.TrimRight(string(data), "\r\n"))
+		if err != nil {
+			return picoshare.Passphrase{}, fmt.Errorf("invalid PS_SHARED_SECRET_FILE: %w", err)
+		}
+		return passphrase, nil
 	}
 	secret := os.Getenv("PS_SHARED_SECRET")
 	if secret == "" {
-		return "", fmt.Errorf("PS_SHARED_SECRET or PS_SHARED_SECRET_FILE must be set")
+		return picoshare.Passphrase{}, fmt.Errorf("PS_SHARED_SECRET or PS_SHARED_SECRET_FILE must be set")
 	}
-	return secret, nil
+	passphrase, err := picoshare.NewPassphrase(secret)
+	if err != nil {
+		return picoshare.Passphrase{}, fmt.Errorf("invalid PS_SHARED_SECRET: %w", err)
+	}
+	return passphrase, nil
 }
 
 func ensureDirExists(dir string) {
