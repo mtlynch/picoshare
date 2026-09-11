@@ -89,23 +89,28 @@ func main() {
 
 func sharedSecretFromEnv() (picoshare.Passphrase, error) {
 	if path := os.Getenv("PS_SHARED_SECRET_FILE"); path != "" {
-		data, err := os.ReadFile(path)
-		if err != nil {
-			return picoshare.Passphrase{}, fmt.Errorf("failed to read PS_SHARED_SECRET_FILE: %w", err)
-		}
-		passphrase, err := picoshare.NewPassphrase(strings.TrimRight(string(data), "\r\n"))
-		if err != nil {
-			return picoshare.Passphrase{}, fmt.Errorf("invalid PS_SHARED_SECRET_FILE: %w", err)
-		}
-		return passphrase, nil
+		return sharedSecretFromFile(path)
 	}
 	secret := os.Getenv("PS_SHARED_SECRET")
 	if secret == "" {
-		return picoshare.Passphrase{}, fmt.Errorf("PS_SHARED_SECRET or PS_SHARED_SECRET_FILE must be set")
+		return picoshare.Passphrase{},
+			fmt.Errorf("PS_SHARED_SECRET or PS_SHARED_SECRET_FILE must be set")
 	}
 	passphrase, err := picoshare.NewPassphrase(secret)
 	if err != nil {
 		return picoshare.Passphrase{}, fmt.Errorf("invalid PS_SHARED_SECRET: %w", err)
+	}
+	return passphrase, nil
+}
+
+func sharedSecretFromFile(path string) (picoshare.Passphrase, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return picoshare.Passphrase{}, fmt.Errorf("failed to read PS_SHARED_SECRET_FILE: %w", err)
+	}
+	passphrase, err := picoshare.NewPassphrase(strings.TrimRight(string(data), "\r\n"))
+	if err != nil {
+		return picoshare.Passphrase{}, fmt.Errorf("invalid PS_SHARED_SECRET_FILE: %w", err)
 	}
 	return passphrase, nil
 }
