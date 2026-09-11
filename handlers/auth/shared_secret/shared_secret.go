@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/mtlynch/picoshare/handlers/auth/shared_secret/kdf"
+	"github.com/mtlynch/picoshare/picoshare"
 )
 
 const authCookieName = "sharedSecret"
@@ -27,20 +28,16 @@ type SharedSecretAuthenticator struct {
 }
 
 // New creates a new SharedSecretAuthenticator.
-func New(sharedSecretKey string) (SharedSecretAuthenticator, error) {
-	serverKey, err := kdf.DeriveKeyFromSecret(sharedSecretKey)
-	if err != nil {
-		return SharedSecretAuthenticator{}, err
-	}
-
+func New(passphrase picoshare.Passphrase) SharedSecretAuthenticator {
+	serverKey := kdf.DeriveKey(passphrase)
 	return SharedSecretAuthenticator{
 		serverKey: serverKey,
-	}, nil
+	}
 }
 
 // StartSession begins an authenticated session.
 func (ssa SharedSecretAuthenticator) StartSession(w http.ResponseWriter, r *http.Request) {
-	inputKeyString, err := ssa.inputKeyFromRequest(r)
+	passphrase, err := parseSessionStartRequest(r)
 	if err != nil {
 		switch err {
 		case ErrMalformedRequest, ErrEmptyCredentials:
@@ -52,11 +49,7 @@ func (ssa SharedSecretAuthenticator) StartSession(w http.ResponseWriter, r *http
 	}
 
 	// Derive key from user input and compare with server key.
-	userKey, err := kdf.DeriveKeyFromSecret(inputKeyString)
-	if err != nil {
-		http.Error(w, ErrInvalidCredentials.Error(), http.StatusUnauthorized)
-		return
-	}
+	userKey := kdf.DeriveKey(passphrase.Passphrase)
 
 	if !ssa.serverKey.Equal(userKey) {
 		http.Error(w, ErrInvalidCredentials.Error(), http.StatusUnauthorized)
@@ -93,20 +86,23 @@ func (ssa SharedSecretAuthenticator) ClearSession(w http.ResponseWriter) {
 	})
 }
 
-func (ssa SharedSecretAuthenticator) inputKeyFromRequest(r *http.Request) (string, error) {
+type sessionStartRequest struct {
+	Passphrase picoshare.Passphrase
+}
+
+func parseSessionStartRequest(r *http.Request) (sessionStartRequest, error) {
 	body := struct {
 		SharedSecretKey string `json:"sharedSecretKey"`
 	}{}
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(&body); err != nil {
-		return "", ErrMalformedRequest
+		return sessionStartRequest{}, ErrMalformedRequest
 	}
-
-	if body.SharedSecretKey == "" {
-		return "", ErrEmptyCredentials
+	passphrase, err := picoshare.NewPassphrase(body.SharedSecretKey)
+	if err != nil {
+		return sessionStartRequest{}, ErrEmptyCredentials
 	}
-
-	return body.SharedSecretKey, nil
+	return sessionStartRequest{Passphrase: passphrase}, nil
 }
 
 func (ssa SharedSecretAuthenticator) createCookie(w http.ResponseWriter) {
