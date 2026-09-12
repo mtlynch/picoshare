@@ -121,7 +121,7 @@ func TestEntryPost(t *testing.T) {
 			dataStore := test_sqlite.New(t)
 			s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceChecker, nilGarbageCollector, handlers.NewClock())
 
-			formData, contentType := createMultipartFormBodyWithDownloadPassphrase(tt.filename, tt.note, tt.passphrase, bytes.NewBuffer([]byte(tt.contents)))
+			formData, contentType := createMultipartFormBody(tt.filename, tt.note, tt.passphrase, bytes.NewBuffer([]byte(tt.contents)))
 
 			req := httptest.NewRequest(
 				http.MethodPost,
@@ -613,7 +613,7 @@ func TestGuestUpload(t *testing.T) {
 
 			filename := "dummyimage.png"
 			contents := "dummy bytes"
-			formData, contentType := createMultipartFormBody(filename, tt.note, strings.NewReader(contents))
+			formData, contentType := createMultipartFormBody(filename, tt.note, "", strings.NewReader(contents))
 
 			req := httptest.NewRequest(http.MethodPost, tt.url, formData)
 			req.Header.Add("Content-Type", contentType)
@@ -739,7 +739,7 @@ func TestGuestUploadAcceptHeader(t *testing.T) {
 
 			filename := "dummyimage.png"
 			contents := "dummy bytes"
-			formData, contentType := createMultipartFormBody(filename, "", strings.NewReader(contents))
+			formData, contentType := createMultipartFormBody(filename, "", "", strings.NewReader(contents))
 
 			req := httptest.NewRequest(
 				http.MethodPost,
@@ -791,11 +791,7 @@ func TestGuestUploadAcceptHeader(t *testing.T) {
 	}
 }
 
-func createMultipartFormBody(filename, note string, r io.Reader) (io.Reader, string) {
-	return createMultipartFormBodyWithDownloadPassphrase(filename, note, "", r)
-}
-
-func createMultipartFormBodyWithDownloadPassphrase(filename, note, passphrase string, r io.Reader) (io.Reader, string) {
+func createMultipartFormBody(filename, note, downloadPassphrase string, r io.Reader) (io.Reader, string) {
 	var b bytes.Buffer
 	bw := bufio.NewWriter(&b)
 	mw := multipart.NewWriter(bw)
@@ -816,7 +812,7 @@ func createMultipartFormBodyWithDownloadPassphrase(filename, note, passphrase st
 	if err != nil {
 		panic(err)
 	}
-	pf.Write([]byte(passphrase))
+	pf.Write([]byte(downloadPassphrase))
 
 	mw.Close()
 	bw.Flush()
