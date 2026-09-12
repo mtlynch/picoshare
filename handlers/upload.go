@@ -92,36 +92,26 @@ func (s Server) entryPut() http.HandlerFunc {
 			http.Error(w, fmt.Sprintf("Failed to save new entry data: %v", err), http.StatusInternalServerError)
 			return
 		}
-		if err := s.updateEntryDownloadPassphrase(id, updateRequest); err != nil {
-			log.Printf("error updating entry download passphrase: %v", err)
-			http.Error(w, fmt.Sprintf("Bad request: %v", err), http.StatusBadRequest)
-			return
+		if updateRequest.RemoveDownloadPassphrase || updateRequest.DownloadPassphraseHash != nil {
+			if err := s.store.UpdateEntryDownloadPassphraseHash(id, updateRequest.DownloadPassphraseHash); err != nil {
+				if _, ok := errors.AsType[store.EntryNotFoundError](err); ok {
+					http.Error(w, "Invalid entry ID", http.StatusNotFound)
+					return
+				}
+				log.Printf("error saving entry download passphrase: %v", err)
+				http.Error(w, fmt.Sprintf("Failed to save new entry data: %v", err), http.StatusInternalServerError)
+				return
+			}
 		}
 	}
 }
 
 type entryUpdateRequest struct {
-	Metadata                 picoshare.UploadMetadata
-	DownloadPassphrase       *string
+	Metadata picoshare.UploadMetadata
+	// DownloadPassphraseHash is nil when the request does not set a new
+	// passphrase.
+	DownloadPassphraseHash   *picoshare.DownloadPassphraseHash
 	RemoveDownloadPassphrase bool
-}
-
-func (s Server) updateEntryDownloadPassphrase(id picoshare.EntryID, request entryUpdateRequest) error {
-	if request.DownloadPassphrase == nil && !request.RemoveDownloadPassphrase {
-		return nil
-	}
-	if request.RemoveDownloadPassphrase {
-		return s.store.UpdateEntryDownloadPassphraseHash(id, nil)
-	}
-	passphrase, err := picoshare.NewPassphrase(*request.DownloadPassphrase)
-	if err != nil {
-		return err
-	}
-	hash, err := picoshare.HashDownloadPassphrase(passphrase)
-	if err != nil {
-		return err
-	}
-	return s.store.UpdateEntryDownloadPassphraseHash(id, &hash)
 }
 
 func (s Server) parseEntryUpdateRequest(r *http.Request) (entryUpdateRequest, error) {
@@ -150,9 +140,24 @@ func (s Server) parseEntryUpdateRequest(r *http.Request) (entryUpdateRequest, er
 	if err != nil {
 		return entryUpdateRequest{}, err
 	}
+	var downloadPassphraseHash *picoshare.DownloadPassphraseHash
+	if payload.DownloadPassphrase != nil {
+		if payload.RemoveDownloadPassphrase {
+			return entryUpdateRequest{}, errors.New("cannot set and remove the download passphrase in the same request")
+		}
+		passphrase, err := picoshare.NewPassphrase(*payload.DownloadPassphrase)
+		if err != nil {
+			return entryUpdateRequest{}, err
+		}
+		hash, err := picoshare.HashDownloadPassphrase(passphrase)
+		if err != nil {
+			return entryUpdateRequest{}, err
+		}
+		downloadPassphraseHash = &hash
+	}
 	return entryUpdateRequest{
 		Metadata:                 picoshare.UploadMetadata{Filename: filename, Expires: expiration, Note: note},
-		DownloadPassphrase:       payload.DownloadPassphrase,
+		DownloadPassphraseHash:   downloadPassphraseHash,
 		RemoveDownloadPassphrase: payload.RemoveDownloadPassphrase,
 	}, nil
 }
