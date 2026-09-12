@@ -21,9 +21,10 @@ const (
 
 var ErrInvalidDownloadPassphraseHash = errors.New("invalid download passphrase hash")
 
-// DownloadPassphraseHash is an opaque, serialized per-file passphrase verifier.
+// DownloadPassphraseHash is a per-file passphrase verifier.
 type DownloadPassphraseHash struct {
-	encoded string
+	salt []byte
+	key  []byte
 }
 
 func HashDownloadPassphrase(passphrase Passphrase) (DownloadPassphraseHash, error) {
@@ -31,13 +32,15 @@ func HashDownloadPassphrase(passphrase Passphrase) (DownloadPassphraseHash, erro
 	if _, err := rand.Read(salt); err != nil {
 		return DownloadPassphraseHash{}, fmt.Errorf("failed to generate passphrase salt: %w", err)
 	}
-	key := pbkdf2.Key(passphrase.Bytes(), salt, downloadPassphraseIterations, downloadPassphraseKeyLength, sha256.New)
-	return newDownloadPassphraseHash(salt, key), nil
+	return DownloadPassphraseHash{
+		salt: salt,
+		key:  deriveDownloadPassphraseKey(passphrase, salt),
+	}, nil
 }
 
 func ParseDownloadPassphraseHash(encoded string) (DownloadPassphraseHash, error) {
 	parts := strings.Split(encoded, "$")
-	if len(parts) != 5 || parts[0] != "pbkdf2-sha256" || parts[1] != "v=1" || parts[2] != "i=600000" {
+	if len(parts) != 5 || parts[0] != "pbkdf2-sha256" || parts[1] != "v=1" || parts[2] != "i="+strconv.Itoa(downloadPassphraseIterations) {
 		return DownloadPassphraseHash{}, ErrInvalidDownloadPassphraseHash
 	}
 	salt, err := base64.RawStdEncoding.DecodeString(parts[3])
@@ -48,26 +51,29 @@ func ParseDownloadPassphraseHash(encoded string) (DownloadPassphraseHash, error)
 	if err != nil || len(key) != downloadPassphraseKeyLength {
 		return DownloadPassphraseHash{}, ErrInvalidDownloadPassphraseHash
 	}
-	return DownloadPassphraseHash{encoded: encoded}, nil
+	return DownloadPassphraseHash{salt: salt, key: key}, nil
 }
 
 func (h DownloadPassphraseHash) Matches(passphrase Passphrase) bool {
-	parsed, err := ParseDownloadPassphraseHash(h.encoded)
-	if err != nil {
-		return false
+	if len(h.key) == 0 {
+		panic("cannot match against an uninitialized download passphrase hash")
 	}
-	parts := strings.Split(parsed.encoded, "$")
-	salt, _ := base64.RawStdEncoding.DecodeString(parts[3])
-	expected, _ := base64.RawStdEncoding.DecodeString(parts[4])
-	actual := pbkdf2.Key(passphrase.Bytes(), salt, downloadPassphraseIterations, downloadPassphraseKeyLength, sha256.New)
-	return subtle.ConstantTimeCompare(expected, actual) == 1
+	return subtle.ConstantTimeCompare(h.key, deriveDownloadPassphraseKey(passphrase, h.salt)) == 1
 }
 
-func (h DownloadPassphraseHash) Encoded() string { return h.encoded }
+func (h DownloadPassphraseHash) Encoded() string {
+	if len(h.key) == 0 {
+		panic("cannot encode an uninitialized download passphrase hash")
+	}
+	return strings.Join([]string{
+		"pbkdf2-sha256",
+		"v=1",
+		"i=" + strconv.Itoa(downloadPassphraseIterations),
+		base64.RawStdEncoding.EncodeToString(h.salt),
+		base64.RawStdEncoding.EncodeToString(h.key),
+	}, "$")
+}
 
-func newDownloadPassphraseHash(salt, key []byte) DownloadPassphraseHash {
-	return DownloadPassphraseHash{encoded: strings.Join([]string{
-		"pbkdf2-sha256", "v=1", "i=" + strconv.Itoa(downloadPassphraseIterations),
-		base64.RawStdEncoding.EncodeToString(salt), base64.RawStdEncoding.EncodeToString(key),
-	}, "$")}
+func deriveDownloadPassphraseKey(passphrase Passphrase, salt []byte) []byte {
+	return pbkdf2.Key(passphrase.Bytes(), salt, downloadPassphraseIterations, downloadPassphraseKeyLength, sha256.New)
 }
