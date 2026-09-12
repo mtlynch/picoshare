@@ -55,6 +55,7 @@
         inherit go;
         stdenv = gopkg.pkgsStatic.stdenv;
       };
+      buildGoTool = gopkg.buildGoModule.override {inherit go;};
       sqlite = sqlite-nixpkgs.legacyPackages.${system}.sqlite;
       nodepkgs = nodejs-nixpkgs.legacyPackages.${system};
       nodejs = nodepkgs.nodejs_24;
@@ -66,6 +67,22 @@
       air = air-nixpkgs.legacyPackages.${system}.air;
 
       goVendorHash = "sha256-1BF3UFHjYS/UfZ5pRds6YGKG0tsv127JuFlZYGmPeek=";
+
+      deadcode = buildGoTool {
+        pname = "deadcode";
+        version = "0.42.0";
+        src = gopkg.fetchFromGitHub {
+          owner = "golang";
+          repo = "tools";
+          rev = "v0.42.0";
+          hash = "sha256-0RiinnIocPaj8Z5jtYGkbFiRf1BXyap4Z8e/sw2FBgg=";
+        };
+        vendorHash = "sha256-oYmM+5lNmlP2i78NsG3v4WRhAUbiwS+EFkiicI6MKXA=";
+        subPackages = ["cmd/deadcode"];
+        postInstall = ''
+          mv "$out/bin/deadcode" "$out/bin/picoshare-deadcode"
+        '';
+      };
 
       npmDepsHash = "sha256-vlpvjZBjSn+dx4s+mdp/2kI4TbXmpP+kWYwjwRLhBxE=";
 
@@ -205,6 +222,30 @@
           extraInputs = [go];
         };
 
+        check-go-deadcode = mkBuildStep {
+          name = "check-go-deadcode";
+          command = "./dev-scripts/check-go-deadcode";
+          src = gopkg.lib.fileset.toSource {
+            root = ./.;
+            fileset =
+              gopkg.lib.fileset.intersection
+              (gopkg.lib.fileset.gitTracked ./.)
+              (gopkg.lib.fileset.unions [
+                ./dev-scripts/check-go-deadcode
+                ./go.mod
+                ./go.sum
+                (gopkg.lib.fileset.fileFilter (file: file.hasExt "go") ./.)
+              ]);
+          };
+          extraInputs = [go gopkg.git deadcode gopkg.stdenv.cc];
+          setup = ''
+            export HOME="$PWD/.home"
+            mkdir -p "$HOME"
+            git init --quiet
+            git add --all
+          '';
+        };
+
         check-go-test-packages = mkBuildStep {
           name = "check-go-test-packages";
           command = "./dev-scripts/check-go-test-packages";
@@ -308,6 +349,7 @@
         inherit frontend-check;
         inherit
           (self.packages.${system})
+          check-go-deadcode
           check-go-formatting
           check-go-test-packages
           check-trailing-newline
@@ -324,6 +366,7 @@
         {
           packages = [
             go-nixpkgs.legacyPackages.${system}.gotools
+            deadcode
             go-nixpkgs.legacyPackages.${system}.gopls
             go-nixpkgs.legacyPackages.${system}.go-outline
             go-nixpkgs.legacyPackages.${system}.gopkgs
