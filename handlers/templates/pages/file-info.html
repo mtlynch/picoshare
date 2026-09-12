@@ -99,6 +99,17 @@
     </section>
 
     <section>
+      <h2>Download passphrase</h2>
+      <p class="value">
+        {{ if .DownloadPassphraseHash }}
+          Required
+        {{ else }}
+          None
+        {{ end }}
+      </p>
+    </section>
+
+    <section>
       <h2>Uploaded by</h2>
       <p class="value">
         {{ if .GuestLink.Empty }}

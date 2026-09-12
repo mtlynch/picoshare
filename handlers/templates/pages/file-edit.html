@@ -23,7 +23,9 @@
     }
 
     function removeDownloadPassphrase() {
-      return document.getElementById("remove-download-passphrase").checked;
+      // The checkbox only appears when the file has a passphrase.
+      const checkbox = document.getElementById("remove-download-passphrase");
+      return checkbox !== null && checkbox.checked;
     }
 
     document.getElementById("cancel-btn").addEventListener("click", () => {
@@ -106,16 +108,21 @@
           maxlength="{{ $.MaxPassphraseCodePoints }}"
           placeholder="Enter a new passphrase"
         />
-        <div class="form-check mt-2">
-          <input
-            class="form-check-input"
-            type="checkbox"
-            id="remove-download-passphrase"
-          />
-          <label class="form-check-label" for="remove-download-passphrase"
-            >Remove download passphrase</label
-          >
-        </div>
+        {{ if .DownloadPassphraseHash }}
+          <p class="form-text">
+            This file requires a passphrase. Leave blank to keep it.
+          </p>
+          <div class="form-check mt-2">
+            <input
+              class="form-check-input"
+              type="checkbox"
+              id="remove-download-passphrase"
+            />
+            <label class="form-check-label" for="remove-download-passphrase"
+              >Remove download passphrase</label
+            >
+          </div>
+        {{ end }}
       </div>
 
       <div class="mb-4">
