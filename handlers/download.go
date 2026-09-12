@@ -84,18 +84,16 @@ func (s Server) entryUnlock() http.HandlerFunc {
 			incorrectPassphrase = true
 		}
 
-		enforceContentSecurityPolicy(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if incorrectPassphrase {
-				w.WriteHeader(http.StatusUnauthorized)
-			}
-			renderTemplate(w, t, struct {
-				commonProps
-				IncorrectPassphrase bool
-			}{
-				commonProps:         makeCommonProps("PicoShare - Download", r.Context()),
-				IncorrectPassphrase: incorrectPassphrase,
-			})
-		})).ServeHTTP(w, r)
+		if incorrectPassphrase {
+			w.WriteHeader(http.StatusUnauthorized)
+		}
+		renderTemplate(w, t, struct {
+			commonProps
+			IncorrectPassphrase bool
+		}{
+			commonProps:         makeCommonProps("PicoShare - Download", r.Context()),
+			IncorrectPassphrase: incorrectPassphrase,
+		})
 	}
 }
 
