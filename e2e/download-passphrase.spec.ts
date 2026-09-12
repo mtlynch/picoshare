@@ -37,7 +37,12 @@ test("requires a passphrase for a protected file download", async ({
   await expect(visitor).toHaveURL(/\/-[A-Za-z0-9]+\/unlock$/);
 
   await expect(
-    visitor.getByRole("heading", { name: "Download passphrase" }),
+    visitor.getByRole("heading", { name: "Protected Download" }),
+  ).toBeVisible();
+  await expect(
+    visitor.getByText(
+      "Enter this file's passphrase to complete your download:",
+    ),
   ).toBeVisible();
   await visitor.getByLabel("Passphrase").fill("wrong passphrase");
   await visitor.getByRole("button", { name: "Download" }).click();

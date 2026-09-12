@@ -217,7 +217,7 @@ func TestProtectedEntryDownload(t *testing.T) {
 			route:          "/-PPPPPPPPPP/unlock",
 			expectedStatus: http.StatusOK,
 			expectedCSP:    "nonce",
-			expectedBody:   "Download passphrase",
+			expectedBody:   "Protected Download",
 		},
 		{
 			explanation:    "incorrect passphrase re-renders the challenge with 401",
