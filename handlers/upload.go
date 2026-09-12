@@ -289,21 +289,21 @@ func (s Server) insertFileFromRequest(r *http.Request, expiration picoshare.Expi
 	if guestLinkID != "" && note.Value != nil {
 		return picoshare.EntryID(""), errors.New("guest uploads cannot have file notes")
 	}
-	if guestLinkID != "" && r.FormValue("downloadPassphrase") != "" {
-		return picoshare.EntryID(""), errors.New("guest uploads cannot have download passphrases")
-	}
 
 	var downloadPassphraseHash *picoshare.DownloadPassphraseHash
 	if rawDownloadPassphrase := r.FormValue("downloadPassphrase"); rawDownloadPassphrase != "" {
+		if guestLinkID != "" {
+			return picoshare.EntryID(""), errors.New("guest uploads cannot have download passphrases")
+		}
 		downloadPassphrase, err := picoshare.NewPassphrase(rawDownloadPassphrase)
 		if err != nil {
 			return picoshare.EntryID(""), err
 		}
-		downloadPassphraseHashValue, err := picoshare.HashDownloadPassphrase(downloadPassphrase)
+		hash, err := picoshare.HashDownloadPassphrase(downloadPassphrase)
 		if err != nil {
 			return picoshare.EntryID(""), err
 		}
-		downloadPassphraseHash = &downloadPassphraseHashValue
+		downloadPassphraseHash = &hash
 	}
 
 	id := generateEntryID()
