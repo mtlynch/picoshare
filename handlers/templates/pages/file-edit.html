@@ -120,6 +120,31 @@
       </div>
 
       <div class="mb-4">
+        <label class="form-label">Expiration</label>
+
+        <div class="form-check mb-2">
+          <input
+            class="form-check-input"
+            type="checkbox"
+            id="expire-checkbox"
+            {{ if not (isNeverExpire .Expires) }}checked{{ end }}
+          />
+          <label class="form-check-label" for="expire-checkbox">
+            Delete after expiration
+          </label>
+        </div>
+        <expiration-picker
+          id="expiration-picker"
+          class="d-block"
+          {{ if not (isNeverExpire .Expires) }}
+            value="{{ formatExpiration .Expires }}"
+          {{ else }}
+            disabled
+          {{ end }}
+        />
+      </div>
+
+      <div class="mb-4">
         <label class="form-label">Passphrase</label>
 
         <div class="form-check mb-2">
@@ -150,31 +175,6 @@
             {{ end }}
           />
         </div>
-      </div>
-
-      <div class="mb-4">
-        <label class="form-label">Expiration</label>
-
-        <div class="form-check mb-2">
-          <input
-            class="form-check-input"
-            type="checkbox"
-            id="expire-checkbox"
-            {{ if not (isNeverExpire .Expires) }}checked{{ end }}
-          />
-          <label class="form-check-label" for="expire-checkbox">
-            Delete after expiration
-          </label>
-        </div>
-        <expiration-picker
-          id="expiration-picker"
-          class="d-block"
-          {{ if not (isNeverExpire .Expires) }}
-            value="{{ formatExpiration .Expires }}"
-          {{ else }}
-            disabled
-          {{ end }}
-        />
       </div>
 
       <div class="mb-4">
