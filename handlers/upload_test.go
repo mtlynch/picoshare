@@ -211,7 +211,12 @@ func TestEntryPut(t *testing.T) {
 		filenameExpected string
 		expiresExpected  picoshare.ExpirationTime
 		noteExpected     picoshare.FileNote
-		status           int
+		// passphraseInStore protects the original entry when non-empty.
+		passphraseInStore string
+		// passphraseExpected is the passphrase the entry must accept after the
+		// request, or empty if the entry must be unprotected.
+		passphraseExpected string
+		status             int
 	}{
 		{
 			description: "updates metadata for valid request",
@@ -277,12 +282,118 @@ func TestEntryPut(t *testing.T) {
 			noteExpected:     picoshare.FileNote{},
 			status:           http.StatusNotFound,
 		},
+		{
+			description: "sets a download passphrase",
+			targetID:    "AAAAAAAAAA",
+			payload: `{
+				"filename": "cool-song.mp3",
+				"expiration": "2029-01-02T01:02:03Z",
+				"note":"My latest track",
+				"downloadPassphrase": "correct horse battery staple"
+			}`,
+			filenameExpected:   "cool-song.mp3",
+			noteExpected:       makeNote("My latest track"),
+			expiresExpected:    mustParseExpirationTime("2029-01-02T01:02:03Z"),
+			passphraseExpected: "correct horse battery staple",
+			status:             http.StatusOK,
+		},
+		{
+			description: "replaces an existing download passphrase",
+			targetID:    "AAAAAAAAAA",
+			payload: `{
+				"filename": "cool-song.mp3",
+				"expiration": "2029-01-02T01:02:03Z",
+				"note":"My latest track",
+				"downloadPassphrase": "new passphrase"
+			}`,
+			filenameExpected:   "cool-song.mp3",
+			noteExpected:       makeNote("My latest track"),
+			expiresExpected:    mustParseExpirationTime("2029-01-02T01:02:03Z"),
+			passphraseInStore:  "correct horse battery staple",
+			passphraseExpected: "new passphrase",
+			status:             http.StatusOK,
+		},
+		{
+			description: "removes the download passphrase",
+			targetID:    "AAAAAAAAAA",
+			payload: `{
+				"filename": "cool-song.mp3",
+				"expiration": "2029-01-02T01:02:03Z",
+				"note":"My latest track",
+				"removeDownloadPassphrase": true
+			}`,
+			filenameExpected:   "cool-song.mp3",
+			noteExpected:       makeNote("My latest track"),
+			expiresExpected:    mustParseExpirationTime("2029-01-02T01:02:03Z"),
+			passphraseInStore:  "correct horse battery staple",
+			passphraseExpected: "",
+			status:             http.StatusOK,
+		},
+		{
+			description: "keeps the download passphrase when the request omits it",
+			targetID:    "AAAAAAAAAA",
+			payload: `{
+				"filename": "cool-song.mp3",
+				"expiration": "2029-01-02T01:02:03Z",
+				"note":"My latest track"
+			}`,
+			filenameExpected:   "cool-song.mp3",
+			noteExpected:       makeNote("My latest track"),
+			expiresExpected:    mustParseExpirationTime("2029-01-02T01:02:03Z"),
+			passphraseInStore:  "correct horse battery staple",
+			passphraseExpected: "correct horse battery staple",
+			status:             http.StatusOK,
+		},
+		{
+			description: "rejects update when download passphrase is too long",
+			targetID:    "AAAAAAAAAA",
+			payload: `{
+				"filename": "cool-song.mp3",
+				"expiration": "2029-01-02T01:02:03Z",
+				"note":"My latest track",
+				"downloadPassphrase": "` + strings.Repeat("a", picoshare.MaxPassphraseCodePoints+1) + `"
+			}`,
+			filenameExpected:   "original-filename.mp3",
+			noteExpected:       picoshare.FileNote{},
+			expiresExpected:    mustParseExpirationTime("2024-12-15T21:52:33Z"),
+			passphraseInStore:  "correct horse battery staple",
+			passphraseExpected: "correct horse battery staple",
+			status:             http.StatusBadRequest,
+		},
+		{
+			description: "rejects update that both sets and removes the download passphrase",
+			targetID:    "AAAAAAAAAA",
+			payload: `{
+				"filename": "cool-song.mp3",
+				"expiration": "2029-01-02T01:02:03Z",
+				"note":"My latest track",
+				"downloadPassphrase": "new passphrase",
+				"removeDownloadPassphrase": true
+			}`,
+			filenameExpected:   "original-filename.mp3",
+			noteExpected:       picoshare.FileNote{},
+			expiresExpected:    mustParseExpirationTime("2024-12-15T21:52:33Z"),
+			passphraseInStore:  "correct horse battery staple",
+			passphraseExpected: "correct horse battery staple",
+			status:             http.StatusBadRequest,
+		},
 	} {
 		t.Run(tt.description, func(t *testing.T) {
 			dataStore := test_sqlite.New(t)
 			originalData := "dummy original data"
 			metadata := originalEntry
 			metadata.Size = mustParseFileSize(len(originalData))
+			if tt.passphraseInStore != "" {
+				passphrase, err := picoshare.NewPassphrase(tt.passphraseInStore)
+				if err != nil {
+					t.Fatalf("failed to create passphrase: %v", err)
+				}
+				hash, err := picoshare.HashDownloadPassphrase(passphrase)
+				if err != nil {
+					t.Fatalf("failed to hash passphrase: %v", err)
+				}
+				metadata.DownloadPassphraseHash = &hash
+			}
 			dataStore.InsertEntry(strings.NewReader((originalData)), metadata)
 			s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceChecker, nilGarbageCollector, handlers.NewClock())
 
@@ -313,6 +424,23 @@ func TestEntryPut(t *testing.T) {
 			if got, want := entry.Note.String(), tt.noteExpected.String(); got != want {
 				t.Errorf("note=%v, want=%v", got, want)
 			}
+
+			if tt.passphraseExpected == "" {
+				if got := entry.DownloadPassphraseHash; got != nil {
+					t.Errorf("download passphrase hash=%v, want nil", got)
+				}
+				return
+			}
+			if entry.DownloadPassphraseHash == nil {
+				t.Fatal("download passphrase hash is nil, want hash")
+			}
+			passphrase, err := picoshare.NewPassphrase(tt.passphraseExpected)
+			if err != nil {
+				t.Fatalf("failed to create expected passphrase: %v", err)
+			}
+			if !entry.DownloadPassphraseHash.Matches(passphrase) {
+				t.Errorf("download passphrase hash does not match %q", tt.passphraseExpected)
+			}
 		})
 	}
 }
@@ -331,6 +459,7 @@ func TestGuestUpload(t *testing.T) {
 		currentTime                time.Time
 		url                        string
 		note                       string
+		downloadPassphrase         string
 		status                     int
 		fileExpirationTimeExpected picoshare.ExpirationTime
 	}{
@@ -424,6 +553,20 @@ func TestGuestUpload(t *testing.T) {
 			currentTime:                mustParseTime("2024-01-01T00:00:00Z"),
 			url:                        "/api/guest/abcdefgh23456789?expiration=2030-01-01T00:00:00Z",
 			note:                       "I'm a disallowed note",
+			status:                     http.StatusBadRequest,
+			fileExpirationTimeExpected: picoshare.NeverExpire,
+		},
+		{
+			description: "reject upload that includes a download passphrase",
+			guestLinkInStore: picoshare.GuestLink{
+				ID:              picoshare.GuestLinkID("abcdefgh23456789"),
+				Created:         mustParseTime("2022-05-26T00:00:00Z"),
+				UrlExpires:      mustParseExpirationTime("2030-01-02T03:04:25Z"),
+				MaxFileLifetime: picoshare.FileLifetimeInfinite,
+			},
+			currentTime:                mustParseTime("2024-01-01T00:00:00Z"),
+			url:                        "/api/guest/abcdefgh23456789?expiration=2030-01-01T00:00:00Z",
+			downloadPassphrase:         "correct horse battery staple",
 			status:                     http.StatusBadRequest,
 			fileExpirationTimeExpected: picoshare.NeverExpire,
 		},
@@ -613,7 +756,7 @@ func TestGuestUpload(t *testing.T) {
 
 			filename := "dummyimage.png"
 			contents := "dummy bytes"
-			formData, contentType := createMultipartFormBody(filename, tt.note, "", strings.NewReader(contents))
+			formData, contentType := createMultipartFormBody(filename, tt.note, tt.downloadPassphrase, strings.NewReader(contents))
 
 			req := httptest.NewRequest(http.MethodPost, tt.url, formData)
 			req.Header.Add("Content-Type", contentType)
