@@ -1,16 +1,17 @@
 {{ define "style-tags" }}
   <style nonce="{{ .CspNonce }}">
     .file {
-      border: 1px dashed #ced4da;
-      border-radius: 0.5rem;
-      background: #f8f9fa;
-      padding: 1.5rem;
+      border: 2px dashed var(--bs-border-color);
+      border-radius: var(--bs-border-radius-lg);
+      background: var(--bs-tertiary-bg);
+      padding: 2.5rem 1.5rem;
       text-align: center;
       cursor: pointer;
     }
 
     .file.accepting-drop {
       background: #dbf5ff;
+      border-color: var(--bs-primary);
     }
 
     .file-label {
@@ -25,7 +26,9 @@
     .file-cta {
       display: inline-flex;
       align-items: center;
-      gap: 0.5rem;
+      gap: 0.75rem;
+      color: var(--bs-primary);
+      font-size: 1.25rem;
       font-weight: 600;
     }
 
@@ -33,16 +36,17 @@
       display: inline-flex;
     }
 
+    .file-hint {
+      display: block;
+      margin-top: 0.5rem;
+      color: var(--bs-secondary-color);
+    }
+
     #pastebox {
       font-size: 0.95em;
       padding: 1rem;
       text-align: center;
       caret-color: transparent;
-    }
-
-    .field-max-width {
-      max-width: 500px;
-      width: 100%;
     }
 
     .upload-progress-bar {
@@ -329,53 +333,64 @@
 {{ define "content" }}
   <h1 class="h1">Upload</h1>
 
-  <div id="upload-form">
-    <div class="file field-max-width">
-      <label class="file-label">
-        <input class="file-input" type="file" />
-        <span class="file-cta">
-          <span class="file-icon">
-            <i class="fa-solid fa-upload"></i>
+  <div id="upload-form" class="form-panel">
+    <div class="form-panel-body">
+      <div class="file">
+        <label class="file-label">
+          <input class="file-input" type="file" />
+          <span class="file-cta">
+            <span class="file-icon">
+              <i class="fa-solid fa-upload"></i>
+            </span>
+            <span class="file-label"> Choose a file… </span>
           </span>
-          <span class="file-label"> Choose a file… </span>
-        </span>
-      </label>
+          <span class="file-hint">or drag one here</span>
+        </label>
+      </div>
+
+      <textarea id="pastebox" class="form-control mt-3"></textarea>
     </div>
 
-    <textarea
-      id="pastebox"
-      class="form-control mt-4 field-max-width"
-    ></textarea>
-
-    {{ if gt (len .ExpirationOptions) 0 }}
-      <div class="mb-4 mt-5 expiration-container field-max-width">
-        <label class="form-label">Expiration</label>
-        <select id="expiration-select" class="form-select" autocomplete="off">
-          {{ range .ExpirationOptions }}
-            <option
-              value="{{ formatExpiration .Expiration }}"
-              {{ if .IsDefault }}selected{{ end }}
+    {{ if or (gt (len .ExpirationOptions) 0) (not .GuestLinkMetadata.ID) }}
+      <div class="form-panel-body">
+        {{ if gt (len .ExpirationOptions) 0 }}
+          <div class="expiration-container">
+            <label class="form-label" for="expiration-select">Expiration</label>
+            <select
+              id="expiration-select"
+              class="form-select"
+              autocomplete="off"
             >
-              {{- .FriendlyName -}}
-            </option>
-          {{ end }}
-        </select>
+              {{ range .ExpirationOptions }}
+                <option
+                  value="{{ formatExpiration .Expiration }}"
+                  {{ if .IsDefault }}selected{{ end }}
+                >
+                  {{- .FriendlyName -}}
+                </option>
+              {{ end }}
+            </select>
 
-        <expiration-picker id="expiration-picker" class="d-none mt-3 d-block" />
-      </div>
-    {{ end }}
+            <expiration-picker
+              id="expiration-picker"
+              class="dependent-field d-none"
+            />
+          </div>
+        {{ end }}
 
-    {{ if not .GuestLinkMetadata.ID }}
-      <div class="mb-4 field-max-width">
-        <label class="form-label">Note <i>(optional)</i></label>
-        <input
-          id="note"
-          class="form-control"
-          type="text"
-          placeholder="For Joe at ExampleCo"
-          maxlength="{{ .MaxNoteLength }}"
-        />
-        <p class="form-text">Note is only visible to you</p>
+        {{ if not .GuestLinkMetadata.ID }}
+          <div class="mt-4">
+            <label class="form-label" for="note">Note <i>(optional)</i></label>
+            <input
+              id="note"
+              class="form-control"
+              type="text"
+              placeholder="For Joe at ExampleCo"
+              maxlength="{{ .MaxNoteLength }}"
+            />
+            <div class="form-text">Note is only visible to you</div>
+          </div>
+        {{ end }}
       </div>
     {{ end }}
   </div>
