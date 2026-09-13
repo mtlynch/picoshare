@@ -12,8 +12,7 @@ const MaxPassphraseCodePoints = 100
 
 var ErrInvalidPassphrase = fmt.Errorf("passphrase must contain between 1 and %d Unicode code points", MaxPassphraseCodePoints)
 
-// Passphrase is a validated plaintext passphrase. The zero value is the empty
-// passphrase, which represents the absence of a passphrase.
+// Passphrase is a validated plaintext passphrase.
 type Passphrase struct {
 	value string
 }
