@@ -130,7 +130,7 @@ func (s Server) parseEntryUpdateRequest(r *http.Request) (entryUpdateRequest, er
 	}
 	expiration := picoshare.NeverExpire
 	if payload.Expiration != "" {
-		expiration, err = parse.Expiration(payload.Expiration, s.clock.Now())
+		expiration, err = parse.Expiration(payload.Expiration, s.now())
 		if err != nil {
 			return entryUpdateRequest{}, err
 		}
@@ -307,7 +307,7 @@ func (s Server) insertFileFromRequest(r *http.Request, expiration picoshare.Expi
 			GuestLink: picoshare.GuestLink{
 				ID: guestLinkID,
 			},
-			Uploaded:           s.clock.Now(),
+			Uploaded:           s.now(),
 			Expires:            expiration,
 			Size:               fileSize,
 			DownloadPassphrase: downloadPassphrase,
@@ -327,7 +327,7 @@ func parseContentType(s string) (picoshare.ContentType, error) {
 }
 
 func (s Server) parseExpirationFromRequest(r *http.Request) (picoshare.ExpirationTime, error) {
-	return parse.Expiration(r.URL.Query().Get("expiration"), s.clock.Now())
+	return parse.Expiration(r.URL.Query().Get("expiration"), s.now())
 }
 
 func (s Server) parseGuestExpirationFromRequest(r *http.Request, gl picoshare.GuestLink) (picoshare.ExpirationTime, error) {
@@ -337,16 +337,16 @@ func (s Server) parseGuestExpirationFromRequest(r *http.Request, gl picoshare.Gu
 	// or a command-line utility), default to the maximum allowed expiration for
 	// this guest link.
 	if expirationParam == "" {
-		return gl.MaxFileLifetime.ExpirationFromTime(s.clock.Now()), nil
+		return gl.MaxFileLifetime.ExpirationFromTime(s.now()), nil
 	}
 
-	requestedExpiration, err := parse.Expiration(expirationParam, s.clock.Now())
+	requestedExpiration, err := parse.Expiration(expirationParam, s.now())
 	if err != nil {
 		return picoshare.ExpirationTime{}, err
 	}
 
 	// Validate that the requested expiration doesn't exceed the guest link's maximum.
-	maxPermittedExpiration := gl.MaxFileLifetime.ExpirationFromTime(s.clock.Now())
+	maxPermittedExpiration := gl.MaxFileLifetime.ExpirationFromTime(s.now())
 
 	// If the requested expiration is beyond the guest link's maximum, reject it.
 	if requestedExpiration.Time().After(maxPermittedExpiration.Time()) {

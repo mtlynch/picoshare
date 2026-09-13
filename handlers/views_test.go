@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/mtlynch/picoshare/handlers"
 )
@@ -63,7 +64,7 @@ func TestIndexGetWritesRenderedTemplateAtomically(t *testing.T) {
 		nil,
 		nilSpaceChecker,
 		nilGarbageCollector,
-		handlers.NewClock(),
+		time.Now,
 	)
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	w := newSingleWriteResponseWriter()

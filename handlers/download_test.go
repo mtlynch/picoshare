@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/mtlynch/picoshare/handlers"
 	"github.com/mtlynch/picoshare/picoshare"
@@ -141,7 +142,7 @@ func TestEntryGet(t *testing.T) {
 				}
 			}
 
-			s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceChecker, nilGarbageCollector, handlers.NewClock())
+			s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceChecker, nilGarbageCollector, time.Now)
 
 			req := httptest.NewRequest(http.MethodGet, tt.requestRoute, nil)
 
@@ -302,7 +303,7 @@ func TestProtectedEntryDownload(t *testing.T) {
 			if tt.authenticated {
 				authenticator = mockAuthenticator{}
 			}
-			s := handlers.New(authenticator, &dataStore, nilSpaceChecker, nilGarbageCollector, handlers.NewClock())
+			s := handlers.New(authenticator, &dataStore, nilSpaceChecker, nilGarbageCollector, time.Now)
 
 			var req *http.Request
 			if tt.method == http.MethodPost {
@@ -364,7 +365,7 @@ func TestProtectedEntryDownloadDoesNotPersistUnlock(t *testing.T) {
 	}); err != nil {
 		t.Fatalf("failed to insert protected entry: %v", err)
 	}
-	s := handlers.New(unauthenticatedAuthenticator{}, &dataStore, nilSpaceChecker, nilGarbageCollector, handlers.NewClock())
+	s := handlers.New(unauthenticatedAuthenticator{}, &dataStore, nilSpaceChecker, nilGarbageCollector, time.Now)
 
 	form := url.Values{"passphrase": {"correct horse battery staple"}}
 	req := httptest.NewRequest(http.MethodPost, "/-PPPPPPPPPP/unlock", strings.NewReader(form.Encode()))

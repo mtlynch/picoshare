@@ -129,7 +129,7 @@ func (s Server) serveEntryContent(w http.ResponseWriter, r *http.Request, entry 
 
 	http.ServeContent(w, r, entry.Filename.String(), entry.Uploaded, entryFile)
 
-	if err := recordDownload(s.store, entry.ID, s.clock.Now(), r.RemoteAddr, r.Header.Get("User-Agent")); err != nil {
+	if err := recordDownload(s.store, entry.ID, s.now(), r.RemoteAddr, r.Header.Get("User-Agent")); err != nil {
 		log.Printf("failed to record download of file %s: %v", entry.ID.String(), err)
 	}
 }
