@@ -28,19 +28,11 @@
     }
 
     function readDownloadPassphrase() {
+      // An empty passphrase tells the server to remove any existing passphrase.
       if (!requirePassphraseCheckbox.checked) {
-        return null;
+        return "";
       }
-      return downloadPassphraseInput.value || null;
-    }
-
-    function removeDownloadPassphrase() {
-      // The checkbox starts checked only when the file already has a
-      // passphrase, so unchecking it asks the server to remove that passphrase.
-      return (
-        requirePassphraseCheckbox.defaultChecked &&
-        !requirePassphraseCheckbox.checked
-      );
+      return downloadPassphraseInput.value;
     }
 
     document.getElementById("cancel-btn").addEventListener("click", () => {
@@ -66,7 +58,6 @@
         expirationPicker.value,
         readNote(),
         readDownloadPassphrase(),
-        removeDownloadPassphrase(),
       )
         .then(() => {
           document.location = "/files";

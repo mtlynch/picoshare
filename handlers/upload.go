@@ -92,8 +92,8 @@ func (s Server) entryPut() http.HandlerFunc {
 			http.Error(w, fmt.Sprintf("Failed to save new entry data: %v", err), http.StatusInternalServerError)
 			return
 		}
-		if updateRequest.RemoveDownloadPassphrase || !updateRequest.DownloadPassphrase.Empty() {
-			if err := s.store.UpdateEntryDownloadPassphrase(id, updateRequest.DownloadPassphrase); err != nil {
+		if updateRequest.DownloadPassphrase != nil {
+			if err := s.store.UpdateEntryDownloadPassphrase(id, *updateRequest.DownloadPassphrase); err != nil {
 				if _, ok := errors.AsType[store.EntryNotFoundError](err); ok {
 					http.Error(w, "Invalid entry ID", http.StatusNotFound)
 					return
@@ -108,19 +108,18 @@ func (s Server) entryPut() http.HandlerFunc {
 
 type entryUpdateRequest struct {
 	Metadata picoshare.UploadMetadata
-	// DownloadPassphrase is empty when the request does not set a new
-	// passphrase.
-	DownloadPassphrase       picoshare.DownloadPassphrase
-	RemoveDownloadPassphrase bool
+	// DownloadPassphrase is nil when the request omits the passphrase, which
+	// keeps the entry's existing passphrase. It is the empty passphrase when the
+	// request removes the entry's passphrase.
+	DownloadPassphrase *picoshare.DownloadPassphrase
 }
 
 func (s Server) parseEntryUpdateRequest(r *http.Request) (entryUpdateRequest, error) {
 	var payload struct {
-		DownloadPassphrase       *string `json:"downloadPassphrase"`
-		RemoveDownloadPassphrase bool    `json:"removeDownloadPassphrase"`
-		Filename                 string  `json:"filename"`
-		Expiration               string  `json:"expiration"`
-		Note                     string  `json:"note"`
+		DownloadPassphrase *string `json:"downloadPassphrase"`
+		Filename           string  `json:"filename"`
+		Expiration         string  `json:"expiration"`
+		Note               string  `json:"note"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
 		return entryUpdateRequest{}, err
@@ -140,20 +139,20 @@ func (s Server) parseEntryUpdateRequest(r *http.Request) (entryUpdateRequest, er
 	if err != nil {
 		return entryUpdateRequest{}, err
 	}
-	downloadPassphrase := picoshare.DownloadPassphrase{}
+	var downloadPassphrase *picoshare.DownloadPassphrase
 	if payload.DownloadPassphrase != nil {
-		if payload.RemoveDownloadPassphrase {
-			return entryUpdateRequest{}, errors.New("cannot set and remove the download passphrase in the same request")
+		parsed := picoshare.DownloadPassphrase{}
+		if *payload.DownloadPassphrase != "" {
+			parsed, err = picoshare.NewDownloadPassphrase(*payload.DownloadPassphrase)
+			if err != nil {
+				return entryUpdateRequest{}, err
+			}
 		}
-		downloadPassphrase, err = picoshare.NewDownloadPassphrase(*payload.DownloadPassphrase)
-		if err != nil {
-			return entryUpdateRequest{}, err
-		}
+		downloadPassphrase = &parsed
 	}
 	return entryUpdateRequest{
-		Metadata:                 picoshare.UploadMetadata{Filename: filename, Expires: expiration, Note: note},
-		DownloadPassphrase:       downloadPassphrase,
-		RemoveDownloadPassphrase: payload.RemoveDownloadPassphrase,
+		Metadata:           picoshare.UploadMetadata{Filename: filename, Expires: expiration, Note: note},
+		DownloadPassphrase: downloadPassphrase,
 	}, nil
 }
 

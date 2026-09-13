@@ -300,12 +300,27 @@ func TestEntryPut(t *testing.T) {
 				"filename": "cool-song.mp3",
 				"expiration": "2029-01-02T01:02:03Z",
 				"note":"My latest track",
-				"removeDownloadPassphrase": true
+				"downloadPassphrase": ""
 			}`,
 			filenameExpected:   "cool-song.mp3",
 			noteExpected:       makeNote("My latest track"),
 			expiresExpected:    mustParseExpirationTime("2029-01-02T01:02:03Z"),
 			passphraseInStore:  "correct horse battery staple",
+			passphraseExpected: "",
+			status:             http.StatusOK,
+		},
+		{
+			description: "keeps an unprotected entry unprotected when the passphrase is empty",
+			targetID:    "AAAAAAAAAA",
+			payload: `{
+				"filename": "cool-song.mp3",
+				"expiration": "2029-01-02T01:02:03Z",
+				"note":"My latest track",
+				"downloadPassphrase": ""
+			}`,
+			filenameExpected:   "cool-song.mp3",
+			noteExpected:       makeNote("My latest track"),
+			expiresExpected:    mustParseExpirationTime("2029-01-02T01:02:03Z"),
 			passphraseExpected: "",
 			status:             http.StatusOK,
 		},
@@ -332,23 +347,6 @@ func TestEntryPut(t *testing.T) {
 				"expiration": "2029-01-02T01:02:03Z",
 				"note":"My latest track",
 				"downloadPassphrase": "` + strings.Repeat("a", picoshare.MaxPassphraseCodePoints+1) + `"
-			}`,
-			filenameExpected:   "original-filename.mp3",
-			noteExpected:       picoshare.FileNote{},
-			expiresExpected:    mustParseExpirationTime("2024-12-15T21:52:33Z"),
-			passphraseInStore:  "correct horse battery staple",
-			passphraseExpected: "correct horse battery staple",
-			status:             http.StatusBadRequest,
-		},
-		{
-			description: "rejects update that both sets and removes the download passphrase",
-			targetID:    "AAAAAAAAAA",
-			payload: `{
-				"filename": "cool-song.mp3",
-				"expiration": "2029-01-02T01:02:03Z",
-				"note":"My latest track",
-				"downloadPassphrase": "new passphrase",
-				"removeDownloadPassphrase": true
 			}`,
 			filenameExpected:   "original-filename.mp3",
 			noteExpected:       picoshare.FileNote{},

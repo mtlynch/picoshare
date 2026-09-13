@@ -89,20 +89,14 @@ export async function editFile(
   expiration,
   note,
   downloadPassphrase,
-  removeDownloadPassphrase,
 ) {
   let payload = {
     filename,
     note,
+    downloadPassphrase,
   };
   if (expiration) {
     payload.expiration = expiration;
-  }
-  if (downloadPassphrase) {
-    payload.downloadPassphrase = downloadPassphrase;
-  }
-  if (removeDownloadPassphrase) {
-    payload.removeDownloadPassphrase = true;
   }
   return fetch(`/api/entry/${encodeURIComponent(id)}`, {
     method: "PUT",
