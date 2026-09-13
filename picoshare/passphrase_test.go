@@ -45,8 +45,18 @@ func TestNewPassphrase(t *testing.T) {
 		},
 		{
 			explanation:     "arbitrary characters are preserved",
-			input:           " \t\n<script>\x00&'\\é",
+			input:           " \t\n<script>&'\\é",
 			isValidExpected: true,
+		},
+		{
+			explanation:     "NUL bytes are rejected",
+			input:           "abc\x00def",
+			isValidExpected: false,
+		},
+		{
+			explanation:     "a lone NUL byte is rejected",
+			input:           "\x00",
+			isValidExpected: false,
 		},
 		{
 			explanation:     "invalid UTF-8 is rejected",
