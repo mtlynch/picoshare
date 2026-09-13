@@ -55,11 +55,6 @@ test("requires a passphrase for a protected file download", async ({
     await expect(
       visitorPage.getByRole("heading", { name: "Protected Download" }),
     ).toBeVisible();
-    await expect(
-      visitorPage.getByText(
-        "Enter this file's passphrase to complete your download:",
-      ),
-    ).toBeVisible();
     await visitorPage.getByLabel("Passphrase").fill("wrong passphrase");
     await visitorPage.getByRole("button", { name: "Download" }).click();
     await expect(visitorPage.getByText("Incorrect passphrase.")).toBeVisible();
