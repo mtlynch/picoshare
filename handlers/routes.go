@@ -74,10 +74,6 @@ func (s *Server) routes() {
 	})
 	downloadViews.PathPrefix("/-{id}").HandlerFunc(s.entryGet()).Methods(http.MethodGet)
 	downloadViews.PathPrefix("/-{id}/{filename}").HandlerFunc(s.entryGet()).Methods(http.MethodGet)
-	// Legacy routes for entries. We stopped using them because the ! has
-	// unintended side effects within the bash shell.
-	downloadViews.PathPrefix("/!{id}").HandlerFunc(s.entryGet()).Methods(http.MethodGet)
-	downloadViews.PathPrefix("/!{id}/{filename}").HandlerFunc(s.entryGet()).Methods(http.MethodGet)
 
 	s.addDevRoutes()
 }
