@@ -94,7 +94,7 @@ func TestEntryPost(t *testing.T) {
 	} {
 		t.Run(tt.description, func(t *testing.T) {
 			dataStore := test_sqlite.New(t)
-			s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceChecker, nilGarbageCollector, time.Now)
+			s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceCheck, nilGarbageCollector, time.Now)
 
 			formData, contentType := createMultipartFormBody(tt.filename, tt.note, bytes.NewBuffer([]byte(tt.contents)))
 
@@ -243,7 +243,7 @@ func TestEntryPut(t *testing.T) {
 			metadata := originalEntry
 			metadata.Size = mustParseFileSize(len(originalData))
 			dataStore.InsertEntry(strings.NewReader((originalData)), metadata)
-			s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceChecker, nilGarbageCollector, time.Now)
+			s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceCheck, nilGarbageCollector, time.Now)
 
 			req := httptest.NewRequest(
 				http.MethodPut,
@@ -568,7 +568,7 @@ func TestGuestUpload(t *testing.T) {
 			}
 
 			now := tt.currentTime
-			s := handlers.New(authenticator, &dataStore, nilSpaceChecker, nilGarbageCollector, func() time.Time { return now })
+			s := handlers.New(authenticator, &dataStore, nilSpaceCheck, nilGarbageCollector, func() time.Time { return now })
 
 			filename := "dummyimage.png"
 			contents := "dummy bytes"
@@ -694,7 +694,7 @@ func TestGuestUploadAcceptHeader(t *testing.T) {
 			}
 
 			now := mustParseTime("2024-01-01T00:00:00Z")
-			s := handlers.New(authenticator, &dataStore, nilSpaceChecker, nilGarbageCollector, func() time.Time { return now })
+			s := handlers.New(authenticator, &dataStore, nilSpaceCheck, nilGarbageCollector, func() time.Time { return now })
 
 			filename := "dummyimage.png"
 			contents := "dummy bytes"

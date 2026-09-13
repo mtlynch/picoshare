@@ -228,7 +228,7 @@ func TestGuestLinksPost(t *testing.T) {
 		t.Run(tt.description, func(t *testing.T) {
 			dataStore := test_sqlite.New(t)
 			now := tt.currentTime
-			s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceChecker, nilGarbageCollector, func() time.Time { return now })
+			s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceCheck, nilGarbageCollector, func() time.Time { return now })
 
 			req := httptest.NewRequest(
 				http.MethodPost,
@@ -290,7 +290,7 @@ func TestDeleteExistingGuestLink(t *testing.T) {
 		Created:    mustParseTime("2025-05-25T00:00:00Z"),
 		UrlExpires: mustParseExpirationTime("2030-01-02T03:04:25Z"),
 	})
-	s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceChecker, nilGarbageCollector, time.Now)
+	s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceCheck, nilGarbageCollector, time.Now)
 
 	req := httptest.NewRequest(
 		http.MethodDelete,
@@ -314,7 +314,7 @@ func TestDeleteExistingGuestLink(t *testing.T) {
 
 func TestDeleteNonExistentGuestLink(t *testing.T) {
 	dataStore := test_sqlite.New(t)
-	s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceChecker, nilGarbageCollector, time.Now)
+	s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceCheck, nilGarbageCollector, time.Now)
 
 	req := httptest.NewRequest(
 		http.MethodDelete,
@@ -334,7 +334,7 @@ func TestDeleteNonExistentGuestLink(t *testing.T) {
 
 func TestDeleteInvalidGuestLink(t *testing.T) {
 	dataStore := test_sqlite.New(t)
-	s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceChecker, nilGarbageCollector, time.Now)
+	s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceCheck, nilGarbageCollector, time.Now)
 
 	req := httptest.NewRequest(
 		http.MethodDelete,
@@ -480,7 +480,7 @@ func TestEnableDisableGuestLink(t *testing.T) {
 				}
 			}
 
-			s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceChecker, nilGarbageCollector, time.Now)
+			s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceCheck, nilGarbageCollector, time.Now)
 
 			req := httptest.NewRequest(http.MethodPut, tt.requestRoute, nil)
 			rec := httptest.NewRecorder()
