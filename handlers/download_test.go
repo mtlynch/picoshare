@@ -57,7 +57,7 @@ func TestEntryGet(t *testing.T) {
 		expectedStatus             int
 		expectedContentDisposition string
 		expectedContentType        string
-		hasSandboxedCSP            bool
+		expectedCSP                string
 	}{
 		{
 			description:                "retrieves text entry",
@@ -65,7 +65,7 @@ func TestEntryGet(t *testing.T) {
 			expectedStatus:             http.StatusOK,
 			expectedContentDisposition: `filename="test.txt"`,
 			expectedContentType:        "text/plain;charset=utf-8",
-			hasSandboxedCSP:            true,
+			expectedCSP:                "sandbox",
 		},
 		{
 			description:                "retrieves audio entry",
@@ -73,7 +73,7 @@ func TestEntryGet(t *testing.T) {
 			expectedStatus:             http.StatusOK,
 			expectedContentDisposition: `filename="test.mp3"`,
 			expectedContentType:        "audio/mpeg",
-			hasSandboxedCSP:            true,
+			expectedCSP:                "sandbox",
 		},
 		{
 			description:                "retrieves audio entry and infers content-type when it wasn't specified at upload time",
@@ -81,7 +81,7 @@ func TestEntryGet(t *testing.T) {
 			expectedStatus:             http.StatusOK,
 			expectedContentDisposition: `filename="test0.mp3"`,
 			expectedContentType:        "audio/mpeg",
-			hasSandboxedCSP:            true,
+			expectedCSP:                "sandbox",
 		},
 		{
 			description:                "retrieves video entry",
@@ -89,7 +89,7 @@ func TestEntryGet(t *testing.T) {
 			expectedStatus:             http.StatusOK,
 			expectedContentDisposition: `filename="test.mp4"`,
 			expectedContentType:        "video/mp4",
-			hasSandboxedCSP:            true,
+			expectedCSP:                "sandbox",
 		},
 		{
 			description:                "retrieves video entry and infers content-type when it wasn't specified at upload time",
@@ -97,7 +97,7 @@ func TestEntryGet(t *testing.T) {
 			expectedStatus:             http.StatusOK,
 			expectedContentDisposition: `filename="test0.mp4"`,
 			expectedContentType:        "video/mp4",
-			hasSandboxedCSP:            true,
+			expectedCSP:                "sandbox",
 		},
 		{
 			description:                "retrieves html entry",
@@ -105,13 +105,12 @@ func TestEntryGet(t *testing.T) {
 			expectedStatus:             http.StatusOK,
 			expectedContentDisposition: `filename="payload.html"`,
 			expectedContentType:        "text/html",
-			hasSandboxedCSP:            true,
+			expectedCSP:                "sandbox",
 		},
 		{
-			description:     "request for non-existent entry returns a nonce CSP",
-			requestRoute:    "/-ZZZZZZZZZZ",
-			expectedStatus:  http.StatusNotFound,
-			hasSandboxedCSP: false,
+			description:    "request for non-existent entry returns 404",
+			requestRoute:   "/-ZZZZZZZZZZ",
+			expectedStatus: http.StatusNotFound,
 		},
 	} {
 		t.Run(tt.description, func(t *testing.T) {
@@ -155,10 +154,6 @@ func TestEntryGet(t *testing.T) {
 					tt.requestRoute, got, want)
 			}
 
-			if got, want := res.Header.Get("Content-Security-Policy") == "sandbox", tt.hasSandboxedCSP; got != want {
-				t.Errorf("sandboxed CSP=%v, want=%v (Content-Security-Policy=%q)", got, want, res.Header.Get("Content-Security-Policy"))
-			}
-
 			if tt.expectedStatus != http.StatusOK {
 				return
 			}
@@ -169,6 +164,10 @@ func TestEntryGet(t *testing.T) {
 
 			if got, want := res.Header.Get("Content-Type"), tt.expectedContentType; got != want {
 				t.Errorf("Content-Type=%s, want=%s", got, want)
+			}
+
+			if got, want := res.Header.Get("Content-Security-Policy"), tt.expectedCSP; got != want {
+				t.Errorf("Content-Security-Policy=%s, want=%s", got, want)
 			}
 
 		})
