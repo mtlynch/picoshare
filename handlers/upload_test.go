@@ -68,7 +68,7 @@ func TestEntryPost(t *testing.T) {
 			description: "invalid download passphrase is rejected",
 			filename:    "dummyimage.png",
 			contents:    "dummy bytes",
-			passphrase:  strings.Repeat("a", picoshare.MaxPassphraseCodePoints+1),
+			passphrase:  strings.Repeat("a", picoshare.MaxPassphraseLength+1),
 			expiration:  "2040-01-01T00:00:00Z",
 			status:      http.StatusBadRequest,
 		},
@@ -346,7 +346,7 @@ func TestEntryPut(t *testing.T) {
 				"filename": "cool-song.mp3",
 				"expiration": "2029-01-02T01:02:03Z",
 				"note":"My latest track",
-				"downloadPassphrase": "` + strings.Repeat("a", picoshare.MaxPassphraseCodePoints+1) + `"
+				"downloadPassphrase": "` + strings.Repeat("a", picoshare.MaxPassphraseLength+1) + `"
 			}`,
 			filenameExpected:   "original-filename.mp3",
 			noteExpected:       picoshare.FileNote{},

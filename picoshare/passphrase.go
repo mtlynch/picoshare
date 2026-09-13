@@ -8,9 +8,9 @@ import (
 	"unicode/utf8"
 )
 
-const MaxPassphraseCodePoints = 100
+const MaxPassphraseLength = 100
 
-var ErrInvalidPassphrase = fmt.Errorf("passphrase must contain between 1 and %d Unicode code points", MaxPassphraseCodePoints)
+var ErrInvalidPassphrase = fmt.Errorf("passphrase must contain between 1 and %d Unicode code points", MaxPassphraseLength)
 
 // Passphrase is a validated plaintext passphrase.
 type Passphrase struct {
@@ -28,7 +28,7 @@ func NewPassphrase(raw string) (Passphrase, error) {
 	if strings.ContainsRune(raw, 0) {
 		return Passphrase{}, fmt.Errorf("%w: NUL bytes are not allowed", ErrInvalidPassphrase)
 	}
-	if count := utf8.RuneCountInString(raw); count < 1 || count > MaxPassphraseCodePoints {
+	if count := utf8.RuneCountInString(raw); count < 1 || count > MaxPassphraseLength {
 		return Passphrase{}, ErrInvalidPassphrase
 	}
 	return Passphrase{value: raw}, nil

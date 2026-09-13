@@ -167,7 +167,7 @@
               class="form-control"
               type="text"
               autocomplete="off"
-              maxlength="{{ $.MaxPassphraseCodePoints }}"
+              maxlength="{{ $.MaxPassphraseLength }}"
               placeholder="Enter a passphrase"
               {{ if not .DownloadPassphrase.Empty }}
                 value="{{ .DownloadPassphrase }}"

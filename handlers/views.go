@@ -234,12 +234,12 @@ func (s Server) fileEditGet() http.HandlerFunc {
 
 		renderTemplate(w, t, struct {
 			commonProps
-			Metadata                picoshare.UploadMetadata
-			MaxPassphraseCodePoints int
+			Metadata            picoshare.UploadMetadata
+			MaxPassphraseLength int
 		}{
-			commonProps:             makeCommonProps("PicoShare - Edit", r.Context()),
-			Metadata:                metadata,
-			MaxPassphraseCodePoints: picoshare.MaxPassphraseCodePoints,
+			commonProps:         makeCommonProps("PicoShare - Edit", r.Context()),
+			Metadata:            metadata,
+			MaxPassphraseLength: picoshare.MaxPassphraseLength,
 		})
 	}
 }
@@ -506,15 +506,15 @@ func (s Server) uploadGet() http.HandlerFunc {
 
 		renderTemplate(w, t, struct {
 			commonProps
-			ExpirationOptions       []expirationOption
-			MaxNoteLength           int
-			MaxPassphraseCodePoints int
-			GuestLinkMetadata       picoshare.GuestLink
+			ExpirationOptions   []expirationOption
+			MaxNoteLength       int
+			MaxPassphraseLength int
+			GuestLinkMetadata   picoshare.GuestLink
 		}{
-			commonProps:             makeCommonProps("PicoShare - Upload", r.Context()),
-			MaxNoteLength:           parse.MaxFileNoteBytes,
-			MaxPassphraseCodePoints: picoshare.MaxPassphraseCodePoints,
-			ExpirationOptions:       expirationOptions,
+			commonProps:         makeCommonProps("PicoShare - Upload", r.Context()),
+			MaxNoteLength:       parse.MaxFileNoteBytes,
+			MaxPassphraseLength: picoshare.MaxPassphraseLength,
+			ExpirationOptions:   expirationOptions,
 		})
 	}
 }
