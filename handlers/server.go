@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"net/http"
-	"time"
 
 	"github.com/gorilla/mux"
 
@@ -13,10 +12,6 @@ import (
 type (
 	SpaceChecker interface {
 		Check() (space.Usage, error)
-	}
-
-	Clock interface {
-		Now() time.Time
 	}
 
 	Authenticator interface {
@@ -31,7 +26,7 @@ type (
 		store         Store
 		spaceChecker  SpaceChecker
 		collector     *garbagecollect.Collector
-		clock         Clock
+		now           NowFunc
 	}
 )
 
@@ -42,14 +37,14 @@ func (s Server) Router() *mux.Router {
 
 // New creates a new server with all the state it needs to satisfy HTTP
 // requests.
-func New(authenticator Authenticator, store Store, spaceChecker SpaceChecker, collector *garbagecollect.Collector, clock Clock) Server {
+func New(authenticator Authenticator, store Store, spaceChecker SpaceChecker, collector *garbagecollect.Collector, now NowFunc) Server {
 	s := Server{
 		router:        mux.NewRouter(),
 		authenticator: authenticator,
 		store:         store,
 		spaceChecker:  spaceChecker,
 		collector:     collector,
-		clock:         clock,
+		now:           now,
 	}
 
 	s.routes()

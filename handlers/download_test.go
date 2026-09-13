@@ -5,6 +5,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/mtlynch/picoshare/handlers"
 	"github.com/mtlynch/picoshare/picoshare"
@@ -140,7 +141,7 @@ func TestEntryGet(t *testing.T) {
 				}
 			}
 
-			s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceChecker, nilGarbageCollector, handlers.NewClock())
+			s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceChecker, nilGarbageCollector, time.Now)
 
 			req := httptest.NewRequest(http.MethodGet, tt.requestRoute, nil)
 
