@@ -26,6 +26,22 @@ test("requires a passphrase for a protected file download", async ({
     .first()
     .evaluate((link) => (link as HTMLAnchorElement).href);
 
+  await page.getByRole("menuitem", { name: "Files" }).click();
+  await page
+    .getByRole("row")
+    .filter({ hasText: "protected-download.txt" })
+    .getByRole("button", { name: "Information" })
+    .click();
+  await expect(page).toHaveURL(/\/files\/.+\/info$/);
+  await expect(
+    page
+      .locator("section")
+      .filter({
+        has: page.getByRole("heading", { name: "Download passphrase" }),
+      })
+      .locator(".value"),
+  ).toHaveText("correct horse battery staple");
+
   const browser = page.context().browser();
   if (browser === null) {
     throw new Error("browser is unavailable");
@@ -127,6 +143,7 @@ test("adds and removes a download passphrase from the edit page", async ({
 
   await expect(requirePassphrase).toBeChecked();
   await expect(page.locator("#download-passphrase")).toBeVisible();
+  await expect(page.locator("#download-passphrase")).toHaveValue("open sesame");
 
   await requirePassphrase.uncheck();
   await expect(page.locator("#download-passphrase")).toBeHidden();

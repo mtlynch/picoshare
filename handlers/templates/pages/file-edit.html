@@ -170,14 +170,11 @@
             <input
               id="download-passphrase"
               class="form-control"
-              type="password"
-              autocomplete="new-password"
+              type="text"
+              autocomplete="off"
               maxlength="{{ $.MaxPassphraseCodePoints }}"
-              {{ if .DownloadPassphrase }}
-                placeholder="Enter a new passphrase"
-              {{ else }}
-                placeholder="Enter a passphrase"
-              {{ end }}
+              placeholder="Enter a passphrase"
+              {{ with .DownloadPassphrase }}value="{{ . }}"{{ end }}
             />
           </div>
         </fieldset>
