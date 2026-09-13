@@ -392,7 +392,7 @@
       </div>
       <div class="mb-4 field-max-width">
         <label class="form-label" for="download-passphrase">
-          Download passphrase <i>(optional)</i>
+          Passphrase <i>(optional)</i>
         </label>
         <input
           id="download-passphrase"
@@ -401,7 +401,9 @@
           autocomplete="new-password"
           maxlength="{{ .MaxPassphraseCodePoints }}"
         />
-        <p class="form-text">Anyone downloading this file must enter it</p>
+        <p class="form-text">
+          If set, guest users must enter this passphrase to download.
+        </p>
       </div>
     {{ end }}
   </div>
