@@ -7,6 +7,8 @@ import (
 	"errors"
 
 	"golang.org/x/crypto/pbkdf2"
+
+	"github.com/mtlynch/picoshare/picoshare"
 )
 
 var (
@@ -14,9 +16,9 @@ var (
 	ErrInvalidSerialization = errors.New("invalid serialized key data")
 )
 
-// DeriveKey creates a derived key from the provided secret using PBKDF2 with
-// hardcoded parameters.
-func DeriveKey(secret string) DerivedKey {
+// DeriveKey creates a derived key from the provided passphrase using PBKDF2
+// with hardcoded parameters.
+func DeriveKey(passphrase picoshare.Passphrase) DerivedKey {
 	// These would be insecure values for storing a database of user credentials,
 	// but we're only storing a single password, so it's not important to have
 	// random salt or high iteration rounds.
@@ -24,7 +26,7 @@ func DeriveKey(secret string) DerivedKey {
 	iter := 100
 	keyLength := 32
 
-	keyData := pbkdf2.Key([]byte(secret), salt, iter, keyLength, sha256.New)
+	keyData := pbkdf2.Key([]byte(passphrase.String()), salt, iter, keyLength, sha256.New)
 	return DerivedKey{data: keyData}
 }
 

@@ -18,6 +18,7 @@ import (
 	"github.com/mtlynch/picoshare/garbagecollect"
 	"github.com/mtlynch/picoshare/handlers"
 	"github.com/mtlynch/picoshare/handlers/auth/shared_secret"
+	"github.com/mtlynch/picoshare/picoshare"
 	"github.com/mtlynch/picoshare/space"
 	"github.com/mtlynch/picoshare/store/sqlite"
 )
@@ -92,7 +93,11 @@ func sharedSecretFromEnv() (shared_secret.SharedSecretAuthenticator, error) {
 		return shared_secret.SharedSecretAuthenticator{},
 			fmt.Errorf("PS_SHARED_SECRET or PS_SHARED_SECRET_FILE must be set")
 	}
-	return shared_secret.New(secret), nil
+	passphrase, err := picoshare.NewPassphrase(secret)
+	if err != nil {
+		return shared_secret.SharedSecretAuthenticator{}, fmt.Errorf("invalid PS_SHARED_SECRET: %w", err)
+	}
+	return shared_secret.New(passphrase), nil
 }
 
 func sharedSecretFromFile(path string) (shared_secret.SharedSecretAuthenticator, error) {
@@ -101,11 +106,12 @@ func sharedSecretFromFile(path string) (shared_secret.SharedSecretAuthenticator,
 		return shared_secret.SharedSecretAuthenticator{}, fmt.Errorf("failed to read PS_SHARED_SECRET_FILE: %w", err)
 	}
 
-	secret := strings.TrimRight(string(data), "\r\n")
-	if secret == "" {
-		return shared_secret.SharedSecretAuthenticator{}, fmt.Errorf("PS_SHARED_SECRET_FILE is empty")
+	stripped := strings.TrimRight(string(data), "\r\n")
+	passphrase, err := picoshare.NewPassphrase(stripped)
+	if err != nil {
+		return shared_secret.SharedSecretAuthenticator{}, fmt.Errorf("invalid PS_SHARED_SECRET_FILE: %w", err)
 	}
-	return shared_secret.New(secret), nil
+	return shared_secret.New(passphrase), nil
 }
 
 func ensureDirExists(dir string) {
