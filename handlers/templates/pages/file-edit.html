@@ -81,6 +81,9 @@
     });
 
     requirePassphraseCheckbox.addEventListener("change", () => {
+      // Requiring a passphrase means the user must enter one before the form
+      // submits.
+      downloadPassphraseInput.required = requirePassphraseCheckbox.checked;
       if (requirePassphraseCheckbox.checked) {
         showElement(downloadPassphraseFields);
       } else {
@@ -171,6 +174,7 @@
               placeholder="Enter a passphrase"
               {{ if not .DownloadPassphrase.Empty }}
                 value="{{ .DownloadPassphrase }}"
+                required
               {{ end }}
             />
           </div>

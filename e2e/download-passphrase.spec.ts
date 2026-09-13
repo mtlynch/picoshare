@@ -113,6 +113,12 @@ test("adds and removes a download passphrase from the edit page", async ({
 
   await requirePassphrase.check();
   await expect(page.locator("#download-passphrase")).toBeVisible();
+
+  // Saving with the passphrase left blank keeps the user on the edit page.
+  await page.getByRole("button", { name: "Save" }).click();
+  await expect(page).toHaveURL(/\/files\/.+\/edit$/);
+  await expect(page.locator("#download-passphrase")).toBeFocused();
+
   await page.locator("#download-passphrase").fill("open sesame");
   await page.getByRole("button", { name: "Save" }).click();
   await expect(page).toHaveURL("/files");
