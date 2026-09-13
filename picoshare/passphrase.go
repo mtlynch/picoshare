@@ -2,6 +2,7 @@ package picoshare
 
 import (
 	"fmt"
+	"strings"
 	"unicode/utf8"
 )
 
@@ -18,6 +19,12 @@ type Passphrase struct {
 func NewPassphrase(raw string) (Passphrase, error) {
 	if !utf8.ValidString(raw) {
 		return Passphrase{}, fmt.Errorf("%w: invalid UTF-8", ErrInvalidPassphrase)
+	}
+	// UTF-8 strings support nul bytes, but in practice, there's almost certainly
+	// something fishy going on if a passphrase contains a nul byte, so disallow
+	// it.
+	if strings.ContainsRune(raw, 0) {
+		return Passphrase{}, fmt.Errorf("%w: NUL bytes are not allowed", ErrInvalidPassphrase)
 	}
 	if count := utf8.RuneCountInString(raw); count < 1 || count > MaxPassphraseCodePoints {
 		return Passphrase{}, ErrInvalidPassphrase
