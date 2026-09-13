@@ -25,7 +25,8 @@ a {
   p,
   ul,
   article,
-  form {
+  form,
+  .form-panel {
     max-width: 70ch;
   }
 
@@ -110,6 +111,10 @@ a {
 
 .form-panel-body {
   padding: 1.5rem;
+
+  & + & {
+    border-top: 1px solid var(--bs-border-color);
+  }
 }
 
 .form-panel-footer {
