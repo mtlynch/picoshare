@@ -107,6 +107,11 @@ a {
     font-size: 1rem;
     width: auto;
   }
+
+  .label-icon {
+    color: var(--bs-secondary-color);
+    margin-right: 0.5rem;
+  }
 }
 
 .form-panel-body {
