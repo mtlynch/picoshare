@@ -159,13 +159,7 @@ func TestEntryPost(t *testing.T) {
 				t.Errorf("expiration=%v, want=%v", got, want)
 			}
 
-			// An empty passphrase in the test case means the entry should have
-			// no download passphrase.
-			passphrase := ""
-			if !entry.DownloadPassphrase.Empty() {
-				passphrase = entry.DownloadPassphrase.String()
-			}
-			if got, want := passphrase, tt.passphrase; got != want {
+			if got, want := entry.DownloadPassphrase.String(), tt.passphrase; got != want {
 				t.Errorf("download passphrase=%q, want=%q", got, want)
 			}
 
@@ -407,13 +401,7 @@ func TestEntryPut(t *testing.T) {
 				t.Errorf("note=%v, want=%v", got, want)
 			}
 
-			// An empty passphraseExpected means the entry should have no
-			// download passphrase.
-			passphrase := ""
-			if !entry.DownloadPassphrase.Empty() {
-				passphrase = entry.DownloadPassphrase.String()
-			}
-			if got, want := passphrase, tt.passphraseExpected; got != want {
+			if got, want := entry.DownloadPassphrase.String(), tt.passphraseExpected; got != want {
 				t.Errorf("download passphrase=%q, want=%q", got, want)
 			}
 		})
