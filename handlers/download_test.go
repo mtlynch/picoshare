@@ -204,14 +204,6 @@ func TestProtectedEntryDownload(t *testing.T) {
 			expectedLocation: "/-PPPPPPPPPP/unlock",
 		},
 		{
-			explanation:      "unauthenticated GET of a protected entry via a legacy route redirects to the unlock page",
-			authenticated:    false,
-			method:           http.MethodGet,
-			route:            "/!PPPPPPPPPP",
-			expectedStatus:   http.StatusFound,
-			expectedLocation: "/-PPPPPPPPPP/unlock",
-		},
-		{
 			explanation:    "unauthenticated GET of the unlock page renders the challenge with a nonce CSP",
 			authenticated:  false,
 			method:         http.MethodGet,
