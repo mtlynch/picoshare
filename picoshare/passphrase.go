@@ -1,9 +1,9 @@
 package picoshare
 
 import (
-	"crypto/md5"
 	"crypto/subtle"
 	"fmt"
+	"hash/fnv"
 	"unicode/utf8"
 )
 
@@ -47,13 +47,9 @@ func (p Passphrase) Equal(other Passphrase) bool {
 	// Hashing both values first produces fixed-length inputs so that the
 	// comparison always takes the same amount of time.
 	//
-	// MD5 is not a secure hash, but that doesn't matter here. We never store
-	// or transmit the digests, and we only use them to compare the plaintext
-	// values already in memory. An attacker can't submit a digest directly,
-	// so MD5's weakness to collision attacks is irrelevant: forging a
-	// collision would require finding a second preimage of the passphrase,
-	// which is no easier than guessing the passphrase itself.
-	pHash := md5.Sum([]byte(p.value))
-	otherHash := md5.Sum([]byte(other.value))
-	return subtle.ConstantTimeCompare(pHash[:], otherHash[:]) == 1
+	pHash := fnv.New64a()
+	_, _ = pHash.Write([]byte(p.value))
+	otherHash := fnv.New64a()
+	_, _ = otherHash.Write([]byte(other.value))
+	return subtle.ConstantTimeCompare(pHash.Sum(nil), otherHash.Sum(nil)) == 1
 }

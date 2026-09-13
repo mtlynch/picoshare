@@ -303,7 +303,7 @@ func TestProtectedEntryDownload(t *testing.T) {
 			if tt.authenticated {
 				authenticator = mockAuthenticator{}
 			}
-			s := handlers.New(authenticator, &dataStore, nilSpaceChecker, nilGarbageCollector, time.Now)
+			s := handlers.New(authenticator, &dataStore, nilSpaceCheckFunc, nilGarbageCollector, time.Now)
 
 			var req *http.Request
 			if tt.method == http.MethodPost {
@@ -365,7 +365,7 @@ func TestProtectedEntryDownloadDoesNotPersistUnlock(t *testing.T) {
 	}); err != nil {
 		t.Fatalf("failed to insert protected entry: %v", err)
 	}
-	s := handlers.New(unauthenticatedAuthenticator{}, &dataStore, nilSpaceChecker, nilGarbageCollector, time.Now)
+	s := handlers.New(unauthenticatedAuthenticator{}, &dataStore, nilSpaceCheckFunc, nilGarbageCollector, time.Now)
 
 	form := url.Values{"passphrase": {"correct horse battery staple"}}
 	req := httptest.NewRequest(http.MethodPost, "/-PPPPPPPPPP/unlock", strings.NewReader(form.Encode()))
