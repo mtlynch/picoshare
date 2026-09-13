@@ -52,9 +52,7 @@ func main() {
 	gc := garbagecollect.NewScheduler(&collector, 7*time.Hour)
 	gc.StartAsync()
 
-	clock := handlers.NewClock()
-
-	server := handlers.New(authenticator, &store, spaceChecker, &collector, &clock)
+	server := handlers.New(authenticator, &store, spaceChecker, &collector, time.Now)
 
 	// CrossOriginProtection rejects non-safe cross-origin requests to prevent CSRF.
 	protectedRouter := http.NewCrossOriginProtection().Handler(server.Router())

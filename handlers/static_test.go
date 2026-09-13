@@ -6,12 +6,13 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/mtlynch/picoshare/handlers"
 )
 
 func TestStaticResourceCaching(t *testing.T) {
-	s := handlers.New(mockAuthenticator{}, nil, nilSpaceChecker, nilGarbageCollector, handlers.NewClock())
+	s := handlers.New(mockAuthenticator{}, nil, nilSpaceChecker, nilGarbageCollector, time.Now)
 
 	var cssETag string
 	{
@@ -77,7 +78,7 @@ func TestStaticResourceCaching(t *testing.T) {
 }
 
 func TestStaticWebfontRangeRequest(t *testing.T) {
-	s := handlers.New(mockAuthenticator{}, nil, nilSpaceChecker, nilGarbageCollector, handlers.NewClock())
+	s := handlers.New(mockAuthenticator{}, nil, nilSpaceChecker, nilGarbageCollector, time.Now)
 	req := httptest.NewRequest(
 		http.MethodGet,
 		"/third-party/fontawesome6/webfonts/fa-solid-900.woff2",

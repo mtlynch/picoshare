@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/mtlynch/picoshare/handlers"
 	"github.com/mtlynch/picoshare/picoshare"
@@ -66,7 +67,7 @@ func TestSettingsPut(t *testing.T) {
 	} {
 		t.Run(tt.description, func(t *testing.T) {
 			dataStore := test_sqlite.New(t)
-			s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceChecker, nilGarbageCollector, handlers.NewClock())
+			s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceChecker, nilGarbageCollector, time.Now)
 
 			req := httptest.NewRequest(
 				http.MethodPut,

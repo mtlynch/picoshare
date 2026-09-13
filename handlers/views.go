@@ -80,7 +80,7 @@ func (s Server) guestLinkIndexGet() http.HandlerFunc {
 				return "Never"
 			}
 			t := time.Time(et)
-			delta := t.Sub(s.clock.Now())
+			delta := t.Sub(s.now())
 			suffix := ""
 			if delta.Seconds() < 0 {
 				suffix = " ago"
@@ -141,10 +141,10 @@ func (s Server) guestLinksNewGet() http.HandlerFunc {
 		}{
 			commonProps: makeCommonProps("PicoShare - New Guest Link", r.Context()),
 			ExpirationOptions: []expirationOption{
-				{"1 day", s.clock.Now().AddDate(0, 0, 1), false},
-				{"7 days", s.clock.Now().AddDate(0, 0, 7), false},
-				{"30 days", s.clock.Now().AddDate(0, 0, 30), false},
-				{"1 year", s.clock.Now().AddDate(1, 0, 0), false},
+				{"1 day", s.now().AddDate(0, 0, 1), false},
+				{"7 days", s.now().AddDate(0, 0, 7), false},
+				{"30 days", s.now().AddDate(0, 0, 30), false},
+				{"1 year", s.now().AddDate(1, 0, 0), false},
 				{"Never", time.Time(picoshare.NeverExpire), true},
 			},
 			FileLifetimeOptions: []fileLifetimeOption{
@@ -168,7 +168,7 @@ func (s Server) fileIndexGet() http.HandlerFunc {
 				return "Never"
 			}
 			t := et.Time().Local()
-			delta := t.Sub(s.clock.Now())
+			delta := t.Sub(s.now())
 			daysRemaining := delta.Hours() / 24
 			return fmt.Sprintf("%s (%.0f days)", t.Format(time.DateOnly), daysRemaining)
 		},
@@ -249,7 +249,7 @@ func (s Server) fileInfoGet() http.HandlerFunc {
 				return "Never"
 			}
 			t := et.Time().Local()
-			delta := t.Sub(s.clock.Now())
+			delta := t.Sub(s.now())
 			daysRemaining := delta.Hours() / 24
 			return fmt.Sprintf("%s (%.0f days)", t.Format(time.DateOnly), daysRemaining)
 		},
@@ -489,7 +489,7 @@ func (s Server) uploadGet() http.HandlerFunc {
 		expirationOptions := []expirationOption{}
 		for _, lto := range lifetimeOptions {
 			friendlyName := lto.Lifetime.FriendlyName()
-			expiration := lto.Lifetime.ExpirationFromTime(s.clock.Now())
+			expiration := lto.Lifetime.ExpirationFromTime(s.now())
 			if lto.Lifetime.Equal(picoshare.FileLifetimeInfinite) {
 				expiration = picoshare.NeverExpire
 			}
@@ -596,7 +596,7 @@ func (s Server) guestUploadGet() http.HandlerFunc {
 		expirationOptions := []expirationOption{}
 		for _, lto := range validLifetimeOptions {
 			friendlyName := lto.Lifetime.FriendlyName()
-			expiration := lto.Lifetime.ExpirationFromTime(s.clock.Now())
+			expiration := lto.Lifetime.ExpirationFromTime(s.now())
 			if lto.Lifetime.Equal(picoshare.FileLifetimeInfinite) {
 				expiration = picoshare.NeverExpire
 			}

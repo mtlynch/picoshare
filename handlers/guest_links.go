@@ -36,7 +36,7 @@ func (s Server) guestLinksPost() http.HandlerFunc {
 		}
 
 		gl.ID = generateGuestLinkID()
-		gl.Created = s.clock.Now()
+		gl.Created = s.now()
 
 		if err := s.store.InsertGuestLink(gl); err != nil {
 			log.Printf("failed to save guest link: %v", err)
@@ -117,7 +117,7 @@ func (s Server) guestLinkFromRequest(r *http.Request) (picoshare.GuestLink, erro
 		return picoshare.GuestLink{}, err
 	}
 
-	urlExpiration, err := parse.Expiration(payload.UrlExpiration, s.clock.Now())
+	urlExpiration, err := parse.Expiration(payload.UrlExpiration, s.now())
 	if err != nil {
 		return picoshare.GuestLink{}, err
 	}
