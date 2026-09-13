@@ -158,17 +158,15 @@ func TestEntryPost(t *testing.T) {
 			if got, want := entry.Expires, mustParseExpirationTime(tt.expiration); got != want {
 				t.Errorf("expiration=%v, want=%v", got, want)
 			}
-			switch {
-			case tt.passphrase == "":
-				if got := entry.DownloadPassphrase; got != nil {
-					t.Errorf("download passphrase=%v, want nil", got)
-				}
-			case entry.DownloadPassphrase == nil:
-				t.Error("download passphrase is nil, want passphrase")
-			default:
-				if got, want := entry.DownloadPassphrase.String(), tt.passphrase; got != want {
-					t.Errorf("download passphrase=%q, want=%q", got, want)
-				}
+
+			// An empty passphrase in the test case means the entry should have
+			// no download passphrase.
+			passphrase := ""
+			if entry.DownloadPassphrase != nil {
+				passphrase = entry.DownloadPassphrase.String()
+			}
+			if got, want := passphrase, tt.passphrase; got != want {
+				t.Errorf("download passphrase=%q, want=%q", got, want)
 			}
 
 			entryFile, err := dataStore.ReadEntryFile(entry.ID)
@@ -409,16 +407,13 @@ func TestEntryPut(t *testing.T) {
 				t.Errorf("note=%v, want=%v", got, want)
 			}
 
-			if tt.passphraseExpected == "" {
-				if got := entry.DownloadPassphrase; got != nil {
-					t.Errorf("download passphrase=%v, want nil", got)
-				}
-				return
+			// An empty passphraseExpected means the entry should have no
+			// download passphrase.
+			passphrase := ""
+			if entry.DownloadPassphrase != nil {
+				passphrase = entry.DownloadPassphrase.String()
 			}
-			if entry.DownloadPassphrase == nil {
-				t.Fatal("download passphrase is nil, want passphrase")
-			}
-			if got, want := entry.DownloadPassphrase.String(), tt.passphraseExpected; got != want {
+			if got, want := passphrase, tt.passphraseExpected; got != want {
 				t.Errorf("download passphrase=%q, want=%q", got, want)
 			}
 		})
