@@ -35,6 +35,10 @@ func (s Server) entryGet() http.HandlerFunc {
 			return
 		}
 
+		// Serve response in a sandbox so that if a user uploads JavaScript, it
+		// doesn't run in the same domain as the server.
+		w.Header().Set("Content-Security-Policy", "sandbox")
+
 		if entry.Filename != "" {
 			w.Header().Set("Content-Disposition", fmt.Sprintf(`filename="%s"`, entry.Filename))
 		}

@@ -61,19 +61,8 @@ func (s *Server) routes() {
 	views.HandleFunc("/login", s.authGet()).Methods(http.MethodGet)
 	views.PathPrefix("/g/{guestLinkID}").HandlerFunc(s.guestUploadGet()).Methods(http.MethodGet)
 	views.HandleFunc("/", s.indexGet()).Methods(http.MethodGet)
-
-	downloadViews := s.router.PathPrefix("/").Subrouter()
-	downloadViews.Use(upgradeToHttps)
-	// Download views run in a sandbox so that if a user uploads JavaScript, it
-	// doesn't run in the same domain as the server.
-	downloadViews.Use(func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Content-Security-Policy", "sandbox")
-			next.ServeHTTP(w, r)
-		})
-	})
-	downloadViews.PathPrefix("/-{id}").HandlerFunc(s.entryGet()).Methods(http.MethodGet)
-	downloadViews.PathPrefix("/-{id}/{filename}").HandlerFunc(s.entryGet()).Methods(http.MethodGet)
+	views.PathPrefix("/-{id}").HandlerFunc(s.entryGet()).Methods(http.MethodGet)
+	views.PathPrefix("/-{id}/{filename}").HandlerFunc(s.entryGet()).Methods(http.MethodGet)
 
 	s.addDevRoutes()
 }
