@@ -131,7 +131,7 @@ func TestUpdateEntryDownloadPassphrase(t *testing.T) {
 		Uploaded:           mustParseTime("2025-05-25T00:00:00Z"),
 		Expires:            mustParseExpirationTime("2040-01-01T00:00:00Z"),
 		Size:               mustParseFileSize(len(data)),
-		DownloadPassphrase: &passphrase,
+		DownloadPassphrase: passphrase,
 	}); err != nil {
 		t.Fatalf("failed to insert file into sqlite: %v", err)
 	}
@@ -140,14 +140,14 @@ func TestUpdateEntryDownloadPassphrase(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to retrieve entry metadata: %v", err)
 	}
-	if metadata.DownloadPassphrase == nil {
-		t.Fatal("download passphrase is nil, want passphrase")
+	if metadata.DownloadPassphrase.Empty() {
+		t.Fatal("download passphrase is empty, want passphrase")
 	}
 	if got, want := metadata.DownloadPassphrase.String(), "correct horse battery staple"; got != want {
 		t.Errorf("download passphrase=%q, want=%q", got, want)
 	}
 
-	if err := dataStore.UpdateEntryDownloadPassphrase("dummy-id", nil); err != nil {
+	if err := dataStore.UpdateEntryDownloadPassphrase("dummy-id", picoshare.Passphrase{}); err != nil {
 		t.Fatalf("failed to clear download passphrase: %v", err)
 	}
 
@@ -155,8 +155,8 @@ func TestUpdateEntryDownloadPassphrase(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to retrieve entry metadata: %v", err)
 	}
-	if got := metadata.DownloadPassphrase; got != nil {
-		t.Errorf("download passphrase=%v, want nil", got)
+	if !metadata.DownloadPassphrase.Empty() {
+		t.Errorf("download passphrase=%q, want empty", metadata.DownloadPassphrase.String())
 	}
 }
 

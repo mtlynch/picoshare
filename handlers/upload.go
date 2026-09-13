@@ -92,7 +92,7 @@ func (s Server) entryPut() http.HandlerFunc {
 			http.Error(w, fmt.Sprintf("Failed to save new entry data: %v", err), http.StatusInternalServerError)
 			return
 		}
-		if updateRequest.RemoveDownloadPassphrase || updateRequest.DownloadPassphrase != nil {
+		if updateRequest.RemoveDownloadPassphrase || !updateRequest.DownloadPassphrase.Empty() {
 			if err := s.store.UpdateEntryDownloadPassphrase(id, updateRequest.DownloadPassphrase); err != nil {
 				if _, ok := errors.AsType[store.EntryNotFoundError](err); ok {
 					http.Error(w, "Invalid entry ID", http.StatusNotFound)
@@ -108,8 +108,9 @@ func (s Server) entryPut() http.HandlerFunc {
 
 type entryUpdateRequest struct {
 	Metadata picoshare.UploadMetadata
-	// DownloadPassphrase is nil when the request does not set a new passphrase.
-	DownloadPassphrase       *picoshare.Passphrase
+	// DownloadPassphrase is empty when the request does not set a new
+	// passphrase.
+	DownloadPassphrase       picoshare.Passphrase
 	RemoveDownloadPassphrase bool
 }
 
@@ -139,16 +140,15 @@ func (s Server) parseEntryUpdateRequest(r *http.Request) (entryUpdateRequest, er
 	if err != nil {
 		return entryUpdateRequest{}, err
 	}
-	var downloadPassphrase *picoshare.Passphrase
+	downloadPassphrase := picoshare.Passphrase{}
 	if payload.DownloadPassphrase != nil {
 		if payload.RemoveDownloadPassphrase {
 			return entryUpdateRequest{}, errors.New("cannot set and remove the download passphrase in the same request")
 		}
-		passphrase, err := picoshare.NewPassphrase(*payload.DownloadPassphrase)
+		downloadPassphrase, err = picoshare.NewPassphrase(*payload.DownloadPassphrase)
 		if err != nil {
 			return entryUpdateRequest{}, err
 		}
-		downloadPassphrase = &passphrase
 	}
 	return entryUpdateRequest{
 		Metadata:                 picoshare.UploadMetadata{Filename: filename, Expires: expiration, Note: note},
@@ -285,16 +285,15 @@ func (s Server) insertFileFromRequest(r *http.Request, expiration picoshare.Expi
 		return picoshare.EntryID(""), errors.New("guest uploads cannot have file notes")
 	}
 
-	var downloadPassphrase *picoshare.Passphrase
+	downloadPassphrase := picoshare.Passphrase{}
 	if rawDownloadPassphrase := r.FormValue("downloadPassphrase"); rawDownloadPassphrase != "" {
 		if guestLinkID != "" {
 			return picoshare.EntryID(""), errors.New("guest uploads cannot have download passphrases")
 		}
-		passphrase, err := picoshare.NewPassphrase(rawDownloadPassphrase)
+		downloadPassphrase, err = picoshare.NewPassphrase(rawDownloadPassphrase)
 		if err != nil {
 			return picoshare.EntryID(""), err
 		}
-		downloadPassphrase = &passphrase
 	}
 
 	id := generateEntryID()

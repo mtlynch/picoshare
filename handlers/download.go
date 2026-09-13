@@ -34,7 +34,7 @@ func (s Server) entryGet() http.HandlerFunc {
 			http.Error(w, "failed to retrieve entry", http.StatusInternalServerError)
 			return
 		}
-		if entry.DownloadPassphrase != nil {
+		if !entry.DownloadPassphrase.Empty() {
 			w.Header().Set("Cache-Control", "no-store")
 			if !isAuthenticated(r.Context()) {
 				http.Redirect(w, r, entryUnlockPath(entry.ID), http.StatusFound)
@@ -65,7 +65,7 @@ func (s Server) entryUnlock() http.HandlerFunc {
 			return
 		}
 		w.Header().Set("Cache-Control", "no-store")
-		if entry.DownloadPassphrase == nil || isAuthenticated(r.Context()) {
+		if entry.DownloadPassphrase.Empty() || isAuthenticated(r.Context()) {
 			http.Redirect(w, r, entryDownloadPath(entry.ID), http.StatusFound)
 			return
 		}

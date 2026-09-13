@@ -70,6 +70,20 @@ func TestNewPassphrase(t *testing.T) {
 	}
 }
 
+func TestPassphraseEmpty(t *testing.T) {
+	if got, want := (picoshare.Passphrase{}).Empty(), true; got != want {
+		t.Errorf("empty=%v, want=%v", got, want)
+	}
+
+	passphrase, err := picoshare.NewPassphrase("correct horse battery staple")
+	if err != nil {
+		t.Fatalf("failed to create passphrase: %v", err)
+	}
+	if got, want := passphrase.Empty(), false; got != want {
+		t.Errorf("empty=%v, want=%v", got, want)
+	}
+}
+
 func TestPassphraseEqual(t *testing.T) {
 	for _, tt := range []struct {
 		explanation   string

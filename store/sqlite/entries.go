@@ -222,7 +222,9 @@ func (s Store) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) 
 	return nil
 }
 
-func (s Store) UpdateEntryDownloadPassphrase(id picoshare.EntryID, passphrase *picoshare.Passphrase) error {
+// UpdateEntryDownloadPassphrase sets the entry's download passphrase. An empty
+// passphrase removes the download passphrase.
+func (s Store) UpdateEntryDownloadPassphrase(id picoshare.EntryID, passphrase picoshare.Passphrase) error {
 	res, err := s.db.Exec(`
 	UPDATE entries
 	SET download_passphrase = :download_passphrase
@@ -243,19 +245,15 @@ func (s Store) UpdateEntryDownloadPassphrase(id picoshare.EntryID, passphrase *p
 	return nil
 }
 
-func parseDownloadPassphrase(raw *string) (*picoshare.Passphrase, error) {
+func parseDownloadPassphrase(raw *string) (picoshare.Passphrase, error) {
 	if raw == nil {
-		return nil, nil
+		return picoshare.Passphrase{}, nil
 	}
-	passphrase, err := picoshare.NewPassphrase(*raw)
-	if err != nil {
-		return nil, err
-	}
-	return &passphrase, nil
+	return picoshare.NewPassphrase(*raw)
 }
 
-func downloadPassphraseString(passphrase *picoshare.Passphrase) *string {
-	if passphrase == nil {
+func downloadPassphraseString(passphrase picoshare.Passphrase) *string {
+	if passphrase.Empty() {
 		return nil
 	}
 	s := passphrase.String()

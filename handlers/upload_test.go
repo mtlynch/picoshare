@@ -162,7 +162,7 @@ func TestEntryPost(t *testing.T) {
 			// An empty passphrase in the test case means the entry should have
 			// no download passphrase.
 			passphrase := ""
-			if entry.DownloadPassphrase != nil {
+			if !entry.DownloadPassphrase.Empty() {
 				passphrase = entry.DownloadPassphrase.String()
 			}
 			if got, want := passphrase, tt.passphrase; got != want {
@@ -374,7 +374,7 @@ func TestEntryPut(t *testing.T) {
 				if err != nil {
 					t.Fatalf("failed to create passphrase: %v", err)
 				}
-				metadata.DownloadPassphrase = &passphrase
+				metadata.DownloadPassphrase = passphrase
 			}
 			dataStore.InsertEntry(strings.NewReader((originalData)), metadata)
 			s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceChecker, nilGarbageCollector, time.Now)
@@ -410,7 +410,7 @@ func TestEntryPut(t *testing.T) {
 			// An empty passphraseExpected means the entry should have no
 			// download passphrase.
 			passphrase := ""
-			if entry.DownloadPassphrase != nil {
+			if !entry.DownloadPassphrase.Empty() {
 				passphrase = entry.DownloadPassphrase.String()
 			}
 			if got, want := passphrase, tt.passphraseExpected; got != want {

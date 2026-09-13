@@ -10,7 +10,8 @@ const MaxPassphraseCodePoints = 100
 
 var ErrInvalidPassphrase = fmt.Errorf("passphrase must contain between 1 and %d Unicode code points", MaxPassphraseCodePoints)
 
-// Passphrase is a validated plaintext passphrase.
+// Passphrase is a validated plaintext passphrase. The zero value is the empty
+// passphrase, which represents the absence of a passphrase.
 type Passphrase struct {
 	value string
 }
@@ -26,19 +27,19 @@ func NewPassphrase(raw string) (Passphrase, error) {
 	return Passphrase{value: raw}, nil
 }
 
-// String returns the exact text supplied when constructing the passphrase.
+// Empty reports whether the passphrase is the empty passphrase.
+func (p Passphrase) Empty() bool {
+	return p.value == ""
+}
+
+// String returns the exact text supplied when constructing the passphrase, or
+// an empty string for the empty passphrase.
 func (p Passphrase) String() string {
-	if p.value == "" {
-		panic("cannot access an uninitialized passphrase")
-	}
 	return p.value
 }
 
 // Equal performs constant-time comparison between this passphrase and another
-// passphrase.
+// passphrase. Two empty passphrases are equal.
 func (p Passphrase) Equal(other Passphrase) bool {
-	if p.value == "" || other.value == "" {
-		panic("cannot compare equality of an uninitialized passphrase")
-	}
 	return subtle.ConstantTimeCompare([]byte(p.value), []byte(other.value)) == 1
 }

@@ -283,7 +283,7 @@ func TestProtectedEntryDownload(t *testing.T) {
 				Uploaded:           mustParseTime("2023-01-01T00:00:00Z"),
 				Expires:            picoshare.NeverExpire,
 				Size:               mustParseFileSize(len(protectedData)),
-				DownloadPassphrase: &passphrase,
+				DownloadPassphrase: passphrase,
 			}); err != nil {
 				t.Fatalf("failed to insert protected entry: %v", err)
 			}
@@ -361,7 +361,7 @@ func TestProtectedEntryDownloadDoesNotPersistUnlock(t *testing.T) {
 		Uploaded:           mustParseTime("2023-01-01T00:00:00Z"),
 		Expires:            picoshare.NeverExpire,
 		Size:               mustParseFileSize(len(data)),
-		DownloadPassphrase: &passphrase,
+		DownloadPassphrase: passphrase,
 	}); err != nil {
 		t.Fatalf("failed to insert protected entry: %v", err)
 	}
