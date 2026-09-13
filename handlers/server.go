@@ -6,7 +6,6 @@ import (
 	"github.com/gorilla/mux"
 
 	"github.com/mtlynch/picoshare/garbagecollect"
-	"github.com/mtlynch/picoshare/picoshare"
 	"github.com/mtlynch/picoshare/space"
 )
 
@@ -27,7 +26,7 @@ type (
 		store         Store
 		spaceChecker  SpaceChecker
 		collector     *garbagecollect.Collector
-		now           picoshare.NowFunc
+		now           NowFunc
 	}
 )
 
@@ -38,7 +37,7 @@ func (s Server) Router() *mux.Router {
 
 // New creates a new server with all the state it needs to satisfy HTTP
 // requests.
-func New(authenticator Authenticator, store Store, spaceChecker SpaceChecker, collector *garbagecollect.Collector, now picoshare.NowFunc) Server {
+func New(authenticator Authenticator, store Store, spaceChecker SpaceChecker, collector *garbagecollect.Collector, now NowFunc) Server {
 	s := Server{
 		router:        mux.NewRouter(),
 		authenticator: authenticator,

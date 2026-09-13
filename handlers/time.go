@@ -1,4 +1,4 @@
-package picoshare
+package handlers
 
 import "time"
 
