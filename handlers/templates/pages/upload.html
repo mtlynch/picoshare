@@ -368,7 +368,9 @@
       <div class="form-panel-body">
         {{ if gt (len .ExpirationOptions) 0 }}
           <div class="expiration-container">
-            <label class="form-label" for="expiration-select">Expiration</label>
+            <label class="form-label" for="expiration-select">
+              <i class="fa-solid fa-clock fa-fw label-icon"></i>Expiration
+            </label>
             <select
               id="expiration-select"
               class="form-select"
@@ -393,7 +395,10 @@
 
         {{ if not .GuestLinkMetadata.ID }}
           <div class="mt-4">
-            <label class="form-label" for="note">Note <i>(optional)</i></label>
+            <label class="form-label" for="note">
+              <i class="fa-solid fa-note-sticky fa-fw label-icon"></i>Note
+              <i>(optional)</i>
+            </label>
             <input
               id="note"
               class="form-control"
@@ -406,7 +411,8 @@
 
           <div class="mt-4">
             <label class="form-label" for="download-passphrase">
-              Passphrase <i>(optional)</i>
+              <i class="fa-solid fa-key fa-fw label-icon"></i>Passphrase
+              <i>(optional)</i>
             </label>
             <input
               id="download-passphrase"
