@@ -409,11 +409,7 @@ func TestEntryPut(t *testing.T) {
 }
 
 func TestGuestUpload(t *testing.T) {
-	passphrase, err := picoshare.NewPassphrase("dummypass")
-	if err != nil {
-		t.Fatalf("failed to create passphrase: %v", err)
-	}
-	authenticator := shared_secret.New(passphrase)
+	authenticator := shared_secret.New("dummypass")
 
 	for _, tt := range []struct {
 		description                string
@@ -791,11 +787,7 @@ func TestGuestUpload(t *testing.T) {
 }
 
 func TestGuestUploadAcceptHeader(t *testing.T) {
-	passphrase, err := picoshare.NewPassphrase("dummypass")
-	if err != nil {
-		t.Fatalf("failed to create passphrase: %v", err)
-	}
-	authenticator := shared_secret.New(passphrase)
+	authenticator := shared_secret.New("dummypass")
 
 	for _, tt := range []struct {
 		explanation         string
