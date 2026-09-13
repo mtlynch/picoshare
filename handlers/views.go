@@ -671,7 +671,7 @@ func (s Server) systemInformationGet() http.HandlerFunc {
 	t := parseTemplatesWithFuncs(fns, "templates/pages/system-information.html")
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		spaceUsage, err := s.spaceChecker.Check()
+		spaceUsage, err := s.checkSpace()
 		if err != nil {
 			log.Printf("error checking available space: %v", err)
 			http.Error(w, fmt.Sprintf("failed to check available space: %v", err), http.StatusInternalServerError)
