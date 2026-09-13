@@ -3,6 +3,7 @@ import { login } from "./helpers/login";
 
 test("requires a passphrase for a protected file download", async ({
   page,
+  browser,
   baseURL,
 }) => {
   await login(page);
@@ -42,41 +43,44 @@ test("requires a passphrase for a protected file download", async ({
       .locator(".value"),
   ).toHaveText("correct horse battery staple");
 
-  const browser = page.context().browser();
-  if (browser === null) {
-    throw new Error("browser is unavailable");
+  // Try to download the file as an unauthenticated visitor.
+  {
+    const visitorContext = await browser.newContext({ baseURL });
+    const visitorPage = await visitorContext.newPage();
+
+    await visitorPage.goto("/");
+    await visitorPage.goto(downloadURL);
+    await expect(visitorPage).toHaveURL(/\/-[A-Za-z0-9]+\/unlock$/);
+
+    await expect(
+      visitorPage.getByRole("heading", { name: "Protected Download" }),
+    ).toBeVisible();
+    await expect(
+      visitorPage.getByText(
+        "Enter this file's passphrase to complete your download:",
+      ),
+    ).toBeVisible();
+    await visitorPage.getByLabel("Passphrase").fill("wrong passphrase");
+    await visitorPage.getByRole("button", { name: "Download" }).click();
+    await expect(visitorPage.getByText("Incorrect passphrase.")).toBeVisible();
+
+    await visitorPage
+      .getByLabel("Passphrase")
+      .fill("correct horse battery staple");
+    await visitorPage.getByRole("button", { name: "Download" }).click();
+    await expect(visitorPage.locator("body")).toHaveText(
+      "This download is protected.",
+    );
+    await visitorContext.close();
   }
-  const visitorContext = await browser.newContext({ baseURL });
-  const visitor = await visitorContext.newPage();
-  await visitor.goto("/");
-  await visitor.goto(downloadURL);
-  await expect(visitor).toHaveURL(/\/-[A-Za-z0-9]+\/unlock$/);
-
-  await expect(
-    visitor.getByRole("heading", { name: "Protected Download" }),
-  ).toBeVisible();
-  await expect(
-    visitor.getByText(
-      "Enter this file's passphrase to complete your download:",
-    ),
-  ).toBeVisible();
-  await visitor.getByLabel("Passphrase").fill("wrong passphrase");
-  await visitor.getByRole("button", { name: "Download" }).click();
-  await expect(visitor.getByText("Incorrect passphrase.")).toBeVisible();
-
-  await visitor.getByLabel("Passphrase").fill("correct horse battery staple");
-  await visitor.getByRole("button", { name: "Download" }).click();
-  await expect(visitor.locator("body")).toHaveText(
-    "This download is protected.",
-  );
 
   await page.goto(downloadURL);
   await expect(page.locator("body")).toHaveText("This download is protected.");
-  await visitorContext.close();
 });
 
 test("adds and removes a download passphrase from the edit page", async ({
   page,
+  browser,
   baseURL,
 }) => {
   await login(page);
@@ -96,13 +100,6 @@ test("adds and removes a download passphrase from the edit page", async ({
     .locator("#result-links a")
     .first()
     .evaluate((link) => (link as HTMLAnchorElement).href);
-
-  const browser = page.context().browser();
-  if (browser === null) {
-    throw new Error("browser is unavailable");
-  }
-  const visitorContext = await browser.newContext({ baseURL });
-  const visitor = await visitorContext.newPage();
 
   // Add a passphrase to the unprotected file.
   await page.getByRole("menuitem", { name: "Files" }).click();
@@ -125,13 +122,20 @@ test("adds and removes a download passphrase from the edit page", async ({
   await page.getByRole("button", { name: "Save" }).click();
   await expect(page).toHaveURL("/files");
 
-  await visitor.goto(downloadURL);
-  await expect(visitor).toHaveURL(/\/-[A-Za-z0-9]+\/unlock$/);
-  await visitor.getByLabel("Passphrase").fill("open sesame");
-  await visitor.getByRole("button", { name: "Download" }).click();
-  await expect(visitor.locator("body")).toHaveText(
-    "My passphrase changes after upload.",
-  );
+  // Try to download the file as an unauthenticated visitor.
+  {
+    const visitorContext = await browser.newContext({ baseURL });
+    const visitorPage = await visitorContext.newPage();
+
+    await visitorPage.goto(downloadURL);
+    await expect(visitorPage).toHaveURL(/\/-[A-Za-z0-9]+\/unlock$/);
+    await visitorPage.getByLabel("Passphrase").fill("open sesame");
+    await visitorPage.getByRole("button", { name: "Download" }).click();
+    await expect(visitorPage.locator("body")).toHaveText(
+      "My passphrase changes after upload.",
+    );
+    await visitorContext.close();
+  }
 
   // Remove the passphrase from the protected file.
   await page
@@ -150,10 +154,16 @@ test("adds and removes a download passphrase from the edit page", async ({
   await page.getByRole("button", { name: "Save" }).click();
   await expect(page).toHaveURL("/files");
 
-  await visitor.goto(downloadURL);
-  await expect(visitor).toHaveURL(downloadURL);
-  await expect(visitor.locator("body")).toHaveText(
-    "My passphrase changes after upload.",
-  );
-  await visitorContext.close();
+  // Try to download the file as an unauthenticated visitor.
+  {
+    const visitorContext = await browser.newContext({ baseURL });
+    const visitorPage = await visitorContext.newPage();
+
+    await visitorPage.goto(downloadURL);
+    await expect(visitorPage).toHaveURL(downloadURL);
+    await expect(visitorPage.locator("body")).toHaveText(
+      "My passphrase changes after upload.",
+    );
+    await visitorContext.close();
+  }
 });
