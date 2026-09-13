@@ -101,7 +101,7 @@
     <section>
       <h2>Download passphrase</h2>
       <p class="value">
-        {{ if .DownloadPassphrase }}
+        {{ if not .DownloadPassphrase.Empty }}
           {{ .DownloadPassphrase }}
         {{ else }}
           None

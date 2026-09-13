@@ -157,7 +157,7 @@
               class="form-check-input"
               type="checkbox"
               id="require-passphrase-checkbox"
-              {{ if .DownloadPassphrase }}checked{{ end }}
+              {{ if not .DownloadPassphrase.Empty }}checked{{ end }}
             />
             <label class="form-check-label" for="require-passphrase-checkbox">
               Require users to enter a passphrase before downloading
@@ -165,7 +165,7 @@
           </div>
           <div
             id="download-passphrase-fields"
-            {{ if .DownloadPassphrase }}
+            {{ if not .DownloadPassphrase.Empty }}
               class="dependent-field"
             {{ else }}
               class="dependent-field d-none"
@@ -178,7 +178,9 @@
               autocomplete="off"
               maxlength="{{ $.MaxPassphraseCodePoints }}"
               placeholder="Enter a passphrase"
-              {{ with .DownloadPassphrase }}value="{{ . }}"{{ end }}
+              {{ if not .DownloadPassphrase.Empty }}
+                value="{{ .DownloadPassphrase }}"
+              {{ end }}
             />
           </div>
         </fieldset>
