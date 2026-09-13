@@ -173,8 +173,7 @@
               maxlength="{{ $.MaxPassphraseLength }}"
               placeholder="Enter a passphrase"
               {{ if not .DownloadPassphrase.Empty }}
-                value="{{ .DownloadPassphrase }}"
-                required
+                value="{{ .DownloadPassphrase }}" required
               {{ end }}
             />
           </div>
