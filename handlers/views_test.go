@@ -62,7 +62,7 @@ func TestIndexGetWritesRenderedTemplateAtomically(t *testing.T) {
 	s := handlers.New(
 		unauthenticatedAuthenticator{},
 		nil,
-		nilSpaceCheck,
+		nilSpaceCheckFunc,
 		nilGarbageCollector,
 		time.Now,
 	)

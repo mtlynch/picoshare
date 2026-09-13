@@ -12,7 +12,7 @@ import (
 )
 
 func TestStaticResourceCaching(t *testing.T) {
-	s := handlers.New(mockAuthenticator{}, nil, nilSpaceCheck, nilGarbageCollector, time.Now)
+	s := handlers.New(mockAuthenticator{}, nil, nilSpaceCheckFunc, nilGarbageCollector, time.Now)
 
 	var cssETag string
 	{
@@ -78,7 +78,7 @@ func TestStaticResourceCaching(t *testing.T) {
 }
 
 func TestStaticWebfontRangeRequest(t *testing.T) {
-	s := handlers.New(mockAuthenticator{}, nil, nilSpaceCheck, nilGarbageCollector, time.Now)
+	s := handlers.New(mockAuthenticator{}, nil, nilSpaceCheckFunc, nilGarbageCollector, time.Now)
 	req := httptest.NewRequest(
 		http.MethodGet,
 		"/third-party/fontawesome6/webfonts/fa-solid-900.woff2",
