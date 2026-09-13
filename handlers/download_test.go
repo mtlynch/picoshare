@@ -205,7 +205,7 @@ func TestProtectedEntryDownload(t *testing.T) {
 			expectedLocation: "/-PPPPPPPPPP/unlock",
 		},
 		{
-			explanation:    "unauthenticated GET of the unlock page renders the challenge with a nonce CSP",
+			explanation:    "unauthenticated GET of the unlock page renders the challenge form",
 			authenticated:  false,
 			method:         http.MethodGet,
 			route:          "/-PPPPPPPPPP/unlock",
@@ -341,7 +341,7 @@ func TestProtectedEntryDownload(t *testing.T) {
 	}
 }
 
-func TestProtectedEntryDownloadDoesNotPersistUnlock(t *testing.T) {
+func TestProtectedEntryDownloadRequiresPasswordEveryDownload(t *testing.T) {
 	dataStore := test_sqlite.New(t)
 	data := "protected file contents"
 	passphrase := mustCreateDownloadPassphrase(t, "correct horse battery staple")
