@@ -295,6 +295,7 @@
               mkdir -p ./bin
               cp ${backend-dev}/bin/picoshare-dev ./bin/picoshare-dev
 
+              patchShebangs ./dev-scripts
               ./dev-scripts/run-e2e-tests --skip-build --project=chromium
             '';
             installPhase = ''
