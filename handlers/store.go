@@ -12,7 +12,7 @@ type Store interface {
 	GetEntryMetadata(id picoshare.EntryID) (picoshare.UploadMetadata, error)
 	InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) error
 	UpdateEntryMetadata(id picoshare.EntryID, metadata picoshare.UploadMetadata) error
-	UpdateEntryDownloadPassphrase(picoshare.EntryID, picoshare.Passphrase) error
+	UpdateEntryDownloadPassphrase(picoshare.EntryID, picoshare.DownloadPassphrase) error
 	DeleteEntry(id picoshare.EntryID) error
 	GetGuestLink(picoshare.GuestLinkID) (picoshare.GuestLink, error)
 	GetGuestLinks() ([]picoshare.GuestLink, error)

@@ -119,9 +119,9 @@ func TestReadLastByteOfEntry(t *testing.T) {
 
 func TestUpdateEntryDownloadPassphrase(t *testing.T) {
 	dataStore := test_sqlite.New(t)
-	passphrase, err := picoshare.NewPassphrase("correct horse battery staple")
+	passphrase, err := picoshare.NewDownloadPassphrase("correct horse battery staple")
 	if err != nil {
-		t.Fatalf("failed to create passphrase: %v", err)
+		t.Fatalf("failed to create download passphrase: %v", err)
 	}
 
 	data := "dummy data"
@@ -147,7 +147,7 @@ func TestUpdateEntryDownloadPassphrase(t *testing.T) {
 		t.Errorf("download passphrase=%q, want=%q", got, want)
 	}
 
-	if err := dataStore.UpdateEntryDownloadPassphrase("dummy-id", picoshare.Passphrase{}); err != nil {
+	if err := dataStore.UpdateEntryDownloadPassphrase("dummy-id", picoshare.DownloadPassphrase{}); err != nil {
 		t.Fatalf("failed to clear download passphrase: %v", err)
 	}
 

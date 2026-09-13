@@ -46,17 +46,45 @@ func (p Passphrase) String() string {
 	return p.value
 }
 
-// Equal performs constant-time comparison between this passphrase and another
-// passphrase. Two empty passphrases are equal.
-func (p Passphrase) Equal(other Passphrase) bool {
+// DownloadPassphrase is a passphrase that protects downloads of an entry.
+// PicoShare stores download passphrases in plaintext, so it is safe to compare
+// them directly. The zero value is the empty download passphrase, which
+// represents the absence of a passphrase.
+type DownloadPassphrase struct {
+	passphrase Passphrase
+}
+
+// NewDownloadPassphrase constructs a download passphrase from user-provided
+// text.
+func NewDownloadPassphrase(raw string) (DownloadPassphrase, error) {
+	passphrase, err := NewPassphrase(raw)
+	if err != nil {
+		return DownloadPassphrase{}, err
+	}
+	return DownloadPassphrase{passphrase: passphrase}, nil
+}
+
+// Empty reports whether the download passphrase is the empty passphrase.
+func (p DownloadPassphrase) Empty() bool {
+	return p.passphrase.Empty()
+}
+
+// String returns the exact text of the download passphrase, or an empty string
+// for the empty download passphrase.
+func (p DownloadPassphrase) String() string {
+	return p.passphrase.String()
+}
+
+// Equal performs constant-time comparison between this download passphrase and
+// another download passphrase. Two empty download passphrases are equal.
+func (p DownloadPassphrase) Equal(other DownloadPassphrase) bool {
 	// subtle.ConstantTimeCompare returns early when its inputs differ in
 	// length, which would leak the length of the passphrase through timing.
 	// Hashing both values first produces fixed-length inputs so that the
 	// comparison always takes the same amount of time.
-	//
 	pHash := fnv.New64a()
-	_, _ = pHash.Write([]byte(p.value))
+	_, _ = pHash.Write([]byte(p.String()))
 	otherHash := fnv.New64a()
-	_, _ = otherHash.Write([]byte(other.value))
+	_, _ = otherHash.Write([]byte(other.String()))
 	return subtle.ConstantTimeCompare(pHash.Sum(nil), otherHash.Sum(nil)) == 1
 }

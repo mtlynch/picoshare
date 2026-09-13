@@ -76,7 +76,7 @@ func (s Server) entryUnlock() http.HandlerFunc {
 				http.Error(w, "invalid passphrase form", http.StatusBadRequest)
 				return
 			}
-			passphrase, err := picoshare.NewPassphrase(r.FormValue("passphrase"))
+			passphrase, err := picoshare.NewDownloadPassphrase(r.FormValue("passphrase"))
 			if err == nil && entry.DownloadPassphrase.Equal(passphrase) {
 				s.serveEntryContent(w, r, entry)
 				return

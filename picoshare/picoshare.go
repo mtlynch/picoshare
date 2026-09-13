@@ -31,7 +31,7 @@ type (
 		// of hashing them. The server owner assigns every download passphrase, so
 		// they are not user credentials that a hash would protect, and hashing
 		// would stop the owner from reading or changing a passphrase later.
-		DownloadPassphrase Passphrase
+		DownloadPassphrase DownloadPassphrase
 	}
 
 	DownloadRecord struct {

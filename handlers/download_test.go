@@ -176,7 +176,7 @@ func TestEntryGet(t *testing.T) {
 
 func TestProtectedEntryDownload(t *testing.T) {
 	protectedData := "protected file contents"
-	passphrase := mustCreatePassphrase(t, "correct horse battery staple")
+	passphrase := mustCreateDownloadPassphrase(t, "correct horse battery staple")
 	for _, tt := range []struct {
 		explanation      string
 		authenticated    bool
@@ -353,7 +353,7 @@ func TestProtectedEntryDownload(t *testing.T) {
 func TestProtectedEntryDownloadDoesNotPersistUnlock(t *testing.T) {
 	dataStore := test_sqlite.New(t)
 	data := "protected file contents"
-	passphrase := mustCreatePassphrase(t, "correct horse battery staple")
+	passphrase := mustCreateDownloadPassphrase(t, "correct horse battery staple")
 	if err := dataStore.InsertEntry(strings.NewReader(data), picoshare.UploadMetadata{
 		ID:                 "PPPPPPPPPP",
 		Filename:           "protected.txt",
@@ -390,12 +390,12 @@ func TestProtectedEntryDownloadDoesNotPersistUnlock(t *testing.T) {
 	}
 }
 
-func mustCreatePassphrase(t *testing.T, value string) picoshare.Passphrase {
+func mustCreateDownloadPassphrase(t *testing.T, value string) picoshare.DownloadPassphrase {
 	t.Helper()
 
-	passphrase, err := picoshare.NewPassphrase(value)
+	passphrase, err := picoshare.NewDownloadPassphrase(value)
 	if err != nil {
-		t.Fatalf("failed to create passphrase: %v", err)
+		t.Fatalf("failed to create download passphrase: %v", err)
 	}
 
 	return passphrase

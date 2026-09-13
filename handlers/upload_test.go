@@ -364,9 +364,9 @@ func TestEntryPut(t *testing.T) {
 			metadata := originalEntry
 			metadata.Size = mustParseFileSize(len(originalData))
 			if tt.passphraseInStore != "" {
-				passphrase, err := picoshare.NewPassphrase(tt.passphraseInStore)
+				passphrase, err := picoshare.NewDownloadPassphrase(tt.passphraseInStore)
 				if err != nil {
-					t.Fatalf("failed to create passphrase: %v", err)
+					t.Fatalf("failed to create download passphrase: %v", err)
 				}
 				metadata.DownloadPassphrase = passphrase
 			}

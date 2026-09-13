@@ -110,7 +110,7 @@ type entryUpdateRequest struct {
 	Metadata picoshare.UploadMetadata
 	// DownloadPassphrase is empty when the request does not set a new
 	// passphrase.
-	DownloadPassphrase       picoshare.Passphrase
+	DownloadPassphrase       picoshare.DownloadPassphrase
 	RemoveDownloadPassphrase bool
 }
 
@@ -140,12 +140,12 @@ func (s Server) parseEntryUpdateRequest(r *http.Request) (entryUpdateRequest, er
 	if err != nil {
 		return entryUpdateRequest{}, err
 	}
-	downloadPassphrase := picoshare.Passphrase{}
+	downloadPassphrase := picoshare.DownloadPassphrase{}
 	if payload.DownloadPassphrase != nil {
 		if payload.RemoveDownloadPassphrase {
 			return entryUpdateRequest{}, errors.New("cannot set and remove the download passphrase in the same request")
 		}
-		downloadPassphrase, err = picoshare.NewPassphrase(*payload.DownloadPassphrase)
+		downloadPassphrase, err = picoshare.NewDownloadPassphrase(*payload.DownloadPassphrase)
 		if err != nil {
 			return entryUpdateRequest{}, err
 		}
@@ -285,12 +285,12 @@ func (s Server) insertFileFromRequest(r *http.Request, expiration picoshare.Expi
 		return picoshare.EntryID(""), errors.New("guest uploads cannot have file notes")
 	}
 
-	downloadPassphrase := picoshare.Passphrase{}
+	downloadPassphrase := picoshare.DownloadPassphrase{}
 	if rawDownloadPassphrase := r.FormValue("downloadPassphrase"); rawDownloadPassphrase != "" {
 		if guestLinkID != "" {
 			return picoshare.EntryID(""), errors.New("guest uploads cannot have download passphrases")
 		}
-		downloadPassphrase, err = picoshare.NewPassphrase(rawDownloadPassphrase)
+		downloadPassphrase, err = picoshare.NewDownloadPassphrase(rawDownloadPassphrase)
 		if err != nil {
 			return picoshare.EntryID(""), err
 		}

@@ -94,7 +94,7 @@ func TestPassphraseEmpty(t *testing.T) {
 	}
 }
 
-func TestPassphraseEqual(t *testing.T) {
+func TestDownloadPassphraseEqual(t *testing.T) {
 	for _, tt := range []struct {
 		explanation   string
 		a             string
@@ -127,13 +127,13 @@ func TestPassphraseEqual(t *testing.T) {
 		},
 	} {
 		t.Run(tt.explanation, func(t *testing.T) {
-			a, err := picoshare.NewPassphrase(tt.a)
+			a, err := picoshare.NewDownloadPassphrase(tt.a)
 			if err != nil {
-				t.Fatalf("failed to create passphrase %q: %v", tt.a, err)
+				t.Fatalf("failed to create download passphrase %q: %v", tt.a, err)
 			}
-			b, err := picoshare.NewPassphrase(tt.b)
+			b, err := picoshare.NewDownloadPassphrase(tt.b)
 			if err != nil {
-				t.Fatalf("failed to create passphrase %q: %v", tt.b, err)
+				t.Fatalf("failed to create download passphrase %q: %v", tt.b, err)
 			}
 			if got, want := a.Equal(b), tt.equalExpected; got != want {
 				t.Errorf("equal=%v, want=%v", got, want)
