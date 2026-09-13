@@ -23,9 +23,9 @@ func NewPassphrase(raw string) (Passphrase, error) {
 	if !utf8.ValidString(raw) {
 		return Passphrase{}, fmt.Errorf("%w: invalid UTF-8", ErrInvalidPassphrase)
 	}
-	// SQLite's length() function stops counting at the first NUL byte in a
-	// TEXT value, so a passphrase containing NUL would fail the database's
-	// CHECK constraint even though it satisfies the code point limits below.
+	// UTF-8 strings support nul bytes, but in practice, there's almost certainly
+	// something fishy going on if a passphrase contains a nul byte, so disallow
+	// it.
 	if strings.ContainsRune(raw, 0) {
 		return Passphrase{}, fmt.Errorf("%w: NUL bytes are not allowed", ErrInvalidPassphrase)
 	}
