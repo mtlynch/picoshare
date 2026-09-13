@@ -20,7 +20,7 @@ func (s Store) GetEntriesMetadata() ([]picoshare.UploadMetadata, error) {
 		entries.content_type AS content_type,
 		entries.upload_time AS upload_time,
 		entries.expiration_time AS expiration_time,
-		entries.download_passphrase_hash AS download_passphrase_hash,
+		entries.download_passphrase AS download_passphrase,
 		sizes.file_size AS file_size
 	FROM
 		entries
@@ -46,9 +46,9 @@ func (s Store) GetEntriesMetadata() ([]picoshare.UploadMetadata, error) {
 		var contentType string
 		var uploadTimeRaw string
 		var expirationTimeRaw string
-		var downloadPassphraseHashRaw *string
+		var downloadPassphraseRaw *string
 		var fileSizeRaw uint64
-		if err = rows.Scan(&id, &filename, &note, &contentType, &uploadTimeRaw, &expirationTimeRaw, &downloadPassphraseHashRaw, &fileSizeRaw); err != nil {
+		if err = rows.Scan(&id, &filename, &note, &contentType, &uploadTimeRaw, &expirationTimeRaw, &downloadPassphraseRaw, &fileSizeRaw); err != nil {
 			return []picoshare.UploadMetadata{}, err
 		}
 
@@ -66,20 +66,20 @@ func (s Store) GetEntriesMetadata() ([]picoshare.UploadMetadata, error) {
 		if err != nil {
 			return []picoshare.UploadMetadata{}, err
 		}
-		downloadPassphraseHash, err := parseDownloadPassphraseHash(downloadPassphraseHashRaw)
+		downloadPassphrase, err := parseDownloadPassphrase(downloadPassphraseRaw)
 		if err != nil {
 			return []picoshare.UploadMetadata{}, err
 		}
 
 		ee = append(ee, picoshare.UploadMetadata{
-			ID:                     picoshare.EntryID(id),
-			Filename:               picoshare.Filename(filename),
-			Note:                   picoshare.FileNote{Value: note},
-			ContentType:            picoshare.ContentType(contentType),
-			Uploaded:               ut,
-			Expires:                picoshare.ExpirationTime(et),
-			Size:                   fileSize,
-			DownloadPassphraseHash: downloadPassphraseHash,
+			ID:                 picoshare.EntryID(id),
+			Filename:           picoshare.Filename(filename),
+			Note:               picoshare.FileNote{Value: note},
+			ContentType:        picoshare.ContentType(contentType),
+			Uploaded:           ut,
+			Expires:            picoshare.ExpirationTime(et),
+			Size:               fileSize,
+			DownloadPassphrase: downloadPassphrase,
 		})
 	}
 
@@ -101,7 +101,7 @@ func (s Store) GetEntryMetadata(id picoshare.EntryID) (picoshare.UploadMetadata,
 	var contentType string
 	var uploadTimeRaw string
 	var expirationTimeRaw string
-	var downloadPassphraseHashRaw *string
+	var downloadPassphraseRaw *string
 	var fileSizeRaw uint64
 	var guestLinkID *picoshare.GuestLinkID
 	err := s.db.QueryRow(`
@@ -111,7 +111,7 @@ func (s Store) GetEntryMetadata(id picoshare.EntryID) (picoshare.UploadMetadata,
 		entries.content_type AS content_type,
 		entries.upload_time AS upload_time,
 		entries.expiration_time AS expiration_time,
-		entries.download_passphrase_hash AS download_passphrase_hash,
+		entries.download_passphrase AS download_passphrase,
 		sizes.file_size AS file_size,
 		entries.guest_link_id AS guest_link_id
 	FROM
@@ -127,7 +127,7 @@ func (s Store) GetEntryMetadata(id picoshare.EntryID) (picoshare.UploadMetadata,
 				id
 		) sizes ON entries.id = sizes.id
 	WHERE
-		entries.id = :entry_id`, sql.Named("entry_id", id)).Scan(&filename, &note, &contentType, &uploadTimeRaw, &expirationTimeRaw, &downloadPassphraseHashRaw, &fileSizeRaw, &guestLinkID)
+		entries.id = :entry_id`, sql.Named("entry_id", id)).Scan(&filename, &note, &contentType, &uploadTimeRaw, &expirationTimeRaw, &downloadPassphraseRaw, &fileSizeRaw, &guestLinkID)
 	if err == sql.ErrNoRows {
 		return picoshare.UploadMetadata{}, store.EntryNotFoundError{ID: id}
 	} else if err != nil {
@@ -156,21 +156,21 @@ func (s Store) GetEntryMetadata(id picoshare.EntryID) (picoshare.UploadMetadata,
 	if err != nil {
 		return picoshare.UploadMetadata{}, err
 	}
-	downloadPassphraseHash, err := parseDownloadPassphraseHash(downloadPassphraseHashRaw)
+	downloadPassphrase, err := parseDownloadPassphrase(downloadPassphraseRaw)
 	if err != nil {
 		return picoshare.UploadMetadata{}, err
 	}
 
 	return picoshare.UploadMetadata{
-		ID:                     id,
-		Filename:               picoshare.Filename(filename),
-		GuestLink:              guestLink,
-		Note:                   picoshare.FileNote{Value: note},
-		ContentType:            picoshare.ContentType(contentType),
-		Uploaded:               ut,
-		Expires:                picoshare.ExpirationTime(et),
-		Size:                   fileSize,
-		DownloadPassphraseHash: downloadPassphraseHash,
+		ID:                 id,
+		Filename:           picoshare.Filename(filename),
+		GuestLink:          guestLink,
+		Note:               picoshare.FileNote{Value: note},
+		ContentType:        picoshare.ContentType(contentType),
+		Uploaded:           ut,
+		Expires:            picoshare.ExpirationTime(et),
+		Size:               fileSize,
+		DownloadPassphrase: downloadPassphrase,
 	}, nil
 }
 
@@ -202,9 +202,9 @@ func (s Store) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) 
 		content_type,
 		upload_time,
 		expiration_time,
-		download_passphrase_hash
+		download_passphrase
 	)
-	VALUES(:entry_id, NULLIF(:guest_link_id, ''), :filename, :note, :content_type, :upload_time, :expiration_time, :download_passphrase_hash)`,
+	VALUES(:entry_id, NULLIF(:guest_link_id, ''), :filename, :note, :content_type, :upload_time, :expiration_time, :download_passphrase)`,
 		sql.Named("entry_id", metadata.ID),
 		sql.Named("guest_link_id", metadata.GuestLink.ID),
 		sql.Named("filename", metadata.Filename),
@@ -212,7 +212,7 @@ func (s Store) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) 
 		sql.Named("content_type", metadata.ContentType),
 		sql.Named("upload_time", formatTime(metadata.Uploaded)),
 		sql.Named("expiration_time", formatExpirationTime(metadata.Expires)),
-		sql.Named("download_passphrase_hash", encodedDownloadPassphraseHash(metadata.DownloadPassphraseHash)),
+		sql.Named("download_passphrase", downloadPassphraseString(metadata.DownloadPassphrase)),
 	)
 	if err != nil {
 		log.Printf("insert into entries table failed, aborting transaction: %v", err)
@@ -222,12 +222,12 @@ func (s Store) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) 
 	return nil
 }
 
-func (s Store) UpdateEntryDownloadPassphraseHash(id picoshare.EntryID, hash *picoshare.DownloadPassphraseHash) error {
+func (s Store) UpdateEntryDownloadPassphrase(id picoshare.EntryID, passphrase *picoshare.Passphrase) error {
 	res, err := s.db.Exec(`
 	UPDATE entries
-	SET download_passphrase_hash = :download_passphrase_hash
+	SET download_passphrase = :download_passphrase
 	WHERE id = :entry_id`,
-		sql.Named("download_passphrase_hash", encodedDownloadPassphraseHash(hash)),
+		sql.Named("download_passphrase", downloadPassphraseString(passphrase)),
 		sql.Named("entry_id", id))
 	if err != nil {
 		return err
@@ -243,23 +243,23 @@ func (s Store) UpdateEntryDownloadPassphraseHash(id picoshare.EntryID, hash *pic
 	return nil
 }
 
-func parseDownloadPassphraseHash(encoded *string) (*picoshare.DownloadPassphraseHash, error) {
-	if encoded == nil {
+func parseDownloadPassphrase(raw *string) (*picoshare.Passphrase, error) {
+	if raw == nil {
 		return nil, nil
 	}
-	hash, err := picoshare.ParseDownloadPassphraseHash(*encoded)
+	passphrase, err := picoshare.NewPassphrase(*raw)
 	if err != nil {
 		return nil, err
 	}
-	return &hash, nil
+	return &passphrase, nil
 }
 
-func encodedDownloadPassphraseHash(hash *picoshare.DownloadPassphraseHash) *string {
-	if hash == nil {
+func downloadPassphraseString(passphrase *picoshare.Passphrase) *string {
+	if passphrase == nil {
 		return nil
 	}
-	encoded := hash.Encoded()
-	return &encoded
+	s := passphrase.String()
+	return &s
 }
 
 func (s Store) UpdateEntryMetadata(id picoshare.EntryID, metadata picoshare.UploadMetadata) error {

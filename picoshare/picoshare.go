@@ -25,8 +25,13 @@ type (
 		Size          FileSize
 		GuestLink     GuestLink
 		DownloadCount uint64
-		// DownloadPassphraseHash is nil when downloads do not require a passphrase.
-		DownloadPassphraseHash *DownloadPassphraseHash
+		// DownloadPassphrase is nil when downloads do not require a passphrase.
+		//
+		// PicoShare intentionally stores download passphrases in plaintext instead
+		// of hashing them. The server owner assigns every download passphrase, so
+		// they are not user credentials that a hash would protect, and hashing
+		// would stop the owner from reading or changing a passphrase later.
+		DownloadPassphrase *Passphrase
 	}
 
 	DownloadRecord struct {

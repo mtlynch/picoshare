@@ -175,7 +175,10 @@ func TestEntryGet(t *testing.T) {
 
 func TestProtectedEntryDownload(t *testing.T) {
 	protectedData := "protected file contents"
-	hash := mustCreatePassphraseHash(t, "correct horse battery staple")
+	passphrase, err := picoshare.NewPassphrase("correct horse battery staple")
+	if err != nil {
+		t.Fatalf("failed to create passphrase: %v", err)
+	}
 	for _, tt := range []struct {
 		explanation      string
 		authenticated    bool
@@ -284,13 +287,13 @@ func TestProtectedEntryDownload(t *testing.T) {
 		t.Run(tt.explanation, func(t *testing.T) {
 			dataStore := test_sqlite.New(t)
 			if err := dataStore.InsertEntry(strings.NewReader(protectedData), picoshare.UploadMetadata{
-				ID:                     "PPPPPPPPPP",
-				Filename:               "protected.txt",
-				ContentType:            "text/plain",
-				Uploaded:               mustParseTime("2023-01-01T00:00:00Z"),
-				Expires:                picoshare.NeverExpire,
-				Size:                   mustParseFileSize(len(protectedData)),
-				DownloadPassphraseHash: &hash,
+				ID:                 "PPPPPPPPPP",
+				Filename:           "protected.txt",
+				ContentType:        "text/plain",
+				Uploaded:           mustParseTime("2023-01-01T00:00:00Z"),
+				Expires:            picoshare.NeverExpire,
+				Size:               mustParseFileSize(len(protectedData)),
+				DownloadPassphrase: &passphrase,
 			}); err != nil {
 				t.Fatalf("failed to insert protected entry: %v", err)
 			}
@@ -360,15 +363,18 @@ func TestProtectedEntryDownload(t *testing.T) {
 func TestProtectedEntryDownloadDoesNotPersistUnlock(t *testing.T) {
 	dataStore := test_sqlite.New(t)
 	data := "protected file contents"
-	hash := mustCreatePassphraseHash(t, "correct horse battery staple")
+	passphrase, err := picoshare.NewPassphrase("correct horse battery staple")
+	if err != nil {
+		t.Fatalf("failed to create passphrase: %v", err)
+	}
 	if err := dataStore.InsertEntry(strings.NewReader(data), picoshare.UploadMetadata{
-		ID:                     "PPPPPPPPPP",
-		Filename:               "protected.txt",
-		ContentType:            "text/plain",
-		Uploaded:               mustParseTime("2023-01-01T00:00:00Z"),
-		Expires:                picoshare.NeverExpire,
-		Size:                   mustParseFileSize(len(data)),
-		DownloadPassphraseHash: &hash,
+		ID:                 "PPPPPPPPPP",
+		Filename:           "protected.txt",
+		ContentType:        "text/plain",
+		Uploaded:           mustParseTime("2023-01-01T00:00:00Z"),
+		Expires:            picoshare.NeverExpire,
+		Size:               mustParseFileSize(len(data)),
+		DownloadPassphrase: &passphrase,
 	}); err != nil {
 		t.Fatalf("failed to insert protected entry: %v", err)
 	}
@@ -395,19 +401,4 @@ func TestProtectedEntryDownloadDoesNotPersistUnlock(t *testing.T) {
 	if got, want := followUpRec.Header().Get("Location"), "/-PPPPPPPPPP/unlock"; got != want {
 		t.Errorf("follow-up Location=%q, want=%q", got, want)
 	}
-}
-
-func mustCreatePassphraseHash(t *testing.T, raw string) picoshare.DownloadPassphraseHash {
-	t.Helper()
-
-	passphrase, err := picoshare.NewPassphrase(raw)
-	if err != nil {
-		t.Fatalf("failed to create passphrase: %v", err)
-	}
-	hash, err := picoshare.HashDownloadPassphrase(passphrase)
-	if err != nil {
-		t.Fatalf("failed to hash passphrase: %v", err)
-	}
-
-	return hash
 }

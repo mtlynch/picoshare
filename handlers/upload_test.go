@@ -168,18 +168,14 @@ func TestEntryPost(t *testing.T) {
 			}
 			switch {
 			case tt.passphrase == "":
-				if got := entry.DownloadPassphraseHash; got != nil {
-					t.Errorf("download passphrase hash=%v, want nil", got)
+				if got := entry.DownloadPassphrase; got != nil {
+					t.Errorf("download passphrase=%v, want nil", got)
 				}
-			case entry.DownloadPassphraseHash == nil:
-				t.Error("download passphrase hash is nil, want hash")
+			case entry.DownloadPassphrase == nil:
+				t.Error("download passphrase is nil, want passphrase")
 			default:
-				passphrase, err := picoshare.NewPassphrase(tt.passphrase)
-				if err != nil {
-					t.Fatalf("failed to create expected passphrase: %v", err)
-				}
-				if got := entry.DownloadPassphraseHash.Matches(passphrase); !got {
-					t.Error("download passphrase hash does not match upload passphrase")
+				if got, want := entry.DownloadPassphrase.String(), tt.passphrase; got != want {
+					t.Errorf("download passphrase=%q, want=%q", got, want)
 				}
 			}
 
@@ -388,11 +384,7 @@ func TestEntryPut(t *testing.T) {
 				if err != nil {
 					t.Fatalf("failed to create passphrase: %v", err)
 				}
-				hash, err := picoshare.HashDownloadPassphrase(passphrase)
-				if err != nil {
-					t.Fatalf("failed to hash passphrase: %v", err)
-				}
-				metadata.DownloadPassphraseHash = &hash
+				metadata.DownloadPassphrase = &passphrase
 			}
 			dataStore.InsertEntry(strings.NewReader((originalData)), metadata)
 			s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceChecker, nilGarbageCollector, handlers.NewClock())
@@ -426,20 +418,16 @@ func TestEntryPut(t *testing.T) {
 			}
 
 			if tt.passphraseExpected == "" {
-				if got := entry.DownloadPassphraseHash; got != nil {
-					t.Errorf("download passphrase hash=%v, want nil", got)
+				if got := entry.DownloadPassphrase; got != nil {
+					t.Errorf("download passphrase=%v, want nil", got)
 				}
 				return
 			}
-			if entry.DownloadPassphraseHash == nil {
-				t.Fatal("download passphrase hash is nil, want hash")
+			if entry.DownloadPassphrase == nil {
+				t.Fatal("download passphrase is nil, want passphrase")
 			}
-			passphrase, err := picoshare.NewPassphrase(tt.passphraseExpected)
-			if err != nil {
-				t.Fatalf("failed to create expected passphrase: %v", err)
-			}
-			if !entry.DownloadPassphraseHash.Matches(passphrase) {
-				t.Errorf("download passphrase hash does not match %q", tt.passphraseExpected)
+			if got, want := entry.DownloadPassphrase.String(), tt.passphraseExpected; got != want {
+				t.Errorf("download passphrase=%q, want=%q", got, want)
 			}
 		})
 	}

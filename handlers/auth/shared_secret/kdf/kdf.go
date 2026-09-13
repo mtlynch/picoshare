@@ -26,7 +26,7 @@ func DeriveKey(passphrase picoshare.Passphrase) DerivedKey {
 	iter := 100
 	keyLength := 32
 
-	keyData := pbkdf2.Key(passphrase.Bytes(), salt, iter, keyLength, sha256.New)
+	keyData := pbkdf2.Key([]byte(passphrase.String()), salt, iter, keyLength, sha256.New)
 	return DerivedKey{data: keyData}
 }
 

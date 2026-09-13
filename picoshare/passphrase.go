@@ -1,6 +1,7 @@
 package picoshare
 
 import (
+	"crypto/subtle"
 	"fmt"
 	"unicode/utf8"
 )
@@ -25,10 +26,19 @@ func NewPassphrase(raw string) (Passphrase, error) {
 	return Passphrase{value: raw}, nil
 }
 
-// Bytes returns the exact UTF-8 bytes supplied when constructing the passphrase.
-func (p Passphrase) Bytes() []byte {
+// String returns the exact text supplied when constructing the passphrase.
+func (p Passphrase) String() string {
 	if p.value == "" {
 		panic("cannot access an uninitialized passphrase")
 	}
-	return []byte(p.value)
+	return p.value
+}
+
+// Equal performs constant-time comparison between this passphrase and another
+// passphrase.
+func (p Passphrase) Equal(other Passphrase) bool {
+	if p.value == "" || other.value == "" {
+		panic("cannot compare equality of an uninitialized passphrase")
+	}
+	return subtle.ConstantTimeCompare([]byte(p.value), []byte(other.value)) == 1
 }

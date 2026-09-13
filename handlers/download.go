@@ -34,7 +34,7 @@ func (s Server) entryGet() http.HandlerFunc {
 			http.Error(w, "failed to retrieve entry", http.StatusInternalServerError)
 			return
 		}
-		if entry.DownloadPassphraseHash != nil {
+		if entry.DownloadPassphrase != nil {
 			w.Header().Set("Cache-Control", "no-store")
 			if !isAuthenticated(r.Context()) {
 				http.Redirect(w, r, entryUnlockPath(entry.ID), http.StatusFound)
@@ -65,7 +65,7 @@ func (s Server) entryUnlock() http.HandlerFunc {
 			return
 		}
 		w.Header().Set("Cache-Control", "no-store")
-		if entry.DownloadPassphraseHash == nil || isAuthenticated(r.Context()) {
+		if entry.DownloadPassphrase == nil || isAuthenticated(r.Context()) {
 			http.Redirect(w, r, entryDownloadPath(entry.ID), http.StatusFound)
 			return
 		}
@@ -77,7 +77,7 @@ func (s Server) entryUnlock() http.HandlerFunc {
 				return
 			}
 			passphrase, err := picoshare.NewPassphrase(r.FormValue("passphrase"))
-			if err == nil && entry.DownloadPassphraseHash.Matches(passphrase) {
+			if err == nil && entry.DownloadPassphrase.Equal(passphrase) {
 				s.serveEntryContent(w, r, entry)
 				return
 			}

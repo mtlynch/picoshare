@@ -63,8 +63,56 @@ func TestNewPassphrase(t *testing.T) {
 			if !isValid {
 				return
 			}
-			if got, want := string(passphrase.Bytes()), tt.input; got != want {
+			if got, want := passphrase.String(), tt.input; got != want {
 				t.Errorf("passphrase=%q, want=%q", got, want)
+			}
+		})
+	}
+}
+
+func TestPassphraseEqual(t *testing.T) {
+	for _, tt := range []struct {
+		explanation   string
+		a             string
+		b             string
+		equalExpected bool
+	}{
+		{
+			explanation:   "identical passphrases are equal",
+			a:             "correct horse battery staple",
+			b:             "correct horse battery staple",
+			equalExpected: true,
+		},
+		{
+			explanation:   "passphrases that differ by case are not equal",
+			a:             "correct horse battery staple",
+			b:             "Correct horse battery staple",
+			equalExpected: false,
+		},
+		{
+			explanation:   "passphrases that differ by trailing whitespace are not equal",
+			a:             "correct horse battery staple",
+			b:             "correct horse battery staple ",
+			equalExpected: false,
+		},
+		{
+			explanation:   "passphrases of different lengths are not equal",
+			a:             "correct horse battery staple",
+			b:             "correct",
+			equalExpected: false,
+		},
+	} {
+		t.Run(tt.explanation, func(t *testing.T) {
+			a, err := picoshare.NewPassphrase(tt.a)
+			if err != nil {
+				t.Fatalf("failed to create passphrase %q: %v", tt.a, err)
+			}
+			b, err := picoshare.NewPassphrase(tt.b)
+			if err != nil {
+				t.Fatalf("failed to create passphrase %q: %v", tt.b, err)
+			}
+			if got, want := a.Equal(b), tt.equalExpected; got != want {
+				t.Errorf("equal=%v, want=%v", got, want)
 			}
 		})
 	}
