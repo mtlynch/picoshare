@@ -1,7 +1,9 @@
 package handlers_test
 
 import (
+	"io"
 	"net/http"
+	"net/http/cookiejar"
 	"net/http/httptest"
 	"net/url"
 	"strings"
@@ -357,26 +359,59 @@ func TestProtectedEntryDownloadRequiresPasswordEveryDownload(t *testing.T) {
 		t.Fatalf("failed to insert protected entry: %v", err)
 	}
 	s := handlers.New(unauthenticatedAuthenticator{}, &dataStore, nilSpaceCheckFunc, nilGarbageCollector, time.Now)
+	server := httptest.NewServer(s.Router())
+	defer server.Close()
+
+	// Use a client that retains cookies across requests, like a browser would,
+	// so that any cookie the server set after a successful unlock would be sent
+	// on the follow-up request.
+	jar, err := cookiejar.New(nil)
+	if err != nil {
+		t.Fatalf("failed to create cookie jar: %v", err)
+	}
+	client := &http.Client{
+		Jar: jar,
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
 
 	form := url.Values{"passphrase": {"correct horse battery staple"}}
-	req := httptest.NewRequest(http.MethodPost, "/-PPPPPPPPPP/unlock", strings.NewReader(form.Encode()))
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	rec := httptest.NewRecorder()
-	s.Router().ServeHTTP(rec, req)
-	if got, want := rec.Code, http.StatusOK; got != want {
+	res, err := client.PostForm(server.URL+"/-PPPPPPPPPP/unlock", form)
+	if err != nil {
+		t.Fatalf("failed to POST passphrase: %v", err)
+	}
+	defer res.Body.Close()
+	if got, want := res.StatusCode, http.StatusOK; got != want {
 		t.Fatalf("status=%d, want=%d", got, want)
 	}
-	if got, want := rec.Body.String(), data; got != want {
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		t.Fatalf("failed to read response body: %v", err)
+	}
+	if got, want := string(body), data; got != want {
 		t.Fatalf("body=%q, want=%q", got, want)
 	}
 
-	followUpReq := httptest.NewRequest(http.MethodGet, "/-PPPPPPPPPP", nil)
-	followUpRec := httptest.NewRecorder()
-	s.Router().ServeHTTP(followUpRec, followUpReq)
-	if got, want := followUpRec.Code, http.StatusFound; got != want {
+	serverURL, err := url.Parse(server.URL)
+	if err != nil {
+		t.Fatalf("failed to parse server URL: %v", err)
+	}
+	if got := jar.Cookies(serverURL); len(got) != 0 {
+		t.Errorf("cookies after unlock=%v, want none", got)
+	}
+
+	// On subsequent downloads, still require the passphrase to download, even
+	// though the client sends back any cookies it received.
+	followUpRes, err := client.Get(server.URL + "/-PPPPPPPPPP")
+	if err != nil {
+		t.Fatalf("failed to GET protected entry: %v", err)
+	}
+	defer followUpRes.Body.Close()
+	if got, want := followUpRes.StatusCode, http.StatusFound; got != want {
 		t.Errorf("follow-up status=%d, want=%d", got, want)
 	}
-	if got, want := followUpRec.Header().Get("Location"), "/-PPPPPPPPPP/unlock"; got != want {
+	if got, want := followUpRes.Header.Get("Location"), "/-PPPPPPPPPP/unlock"; got != want {
 		t.Errorf("follow-up Location=%q, want=%q", got, want)
 	}
 }
