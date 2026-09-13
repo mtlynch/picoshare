@@ -106,6 +106,8 @@ func entryUnlockPath(id picoshare.EntryID) string {
 }
 
 func (s Server) serveEntryContent(w http.ResponseWriter, r *http.Request, entry picoshare.UploadMetadata) {
+	// Serve response in a sandbox so that if a user uploads JavaScript, it
+	// doesn't run in the same domain as the server.
 	w.Header().Set("Content-Security-Policy", "sandbox")
 
 	if entry.Filename != "" {
