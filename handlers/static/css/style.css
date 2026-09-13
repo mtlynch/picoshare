@@ -1,5 +1,7 @@
 :root {
   --heading-color: #363636;
+  --panel-bg: #ffffff;
+  --panel-footer-bg: #f7f7f7;
   --navbar-bg: #f7f7f7;
   --navbar-brand-color: #555;
   --navbar-link-color: #666;
@@ -77,6 +79,59 @@ a {
 
   li + li {
     margin-top: 0.25em;
+  }
+
+  .danger-zone {
+    border-top: 1px solid var(--bs-border-color);
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 2.5rem;
+    max-width: 70ch;
+    padding-top: 1.5rem;
+  }
+}
+
+.form-panel {
+  background-color: var(--panel-bg);
+  border: 1px solid var(--bs-border-color);
+  border-radius: var(--bs-border-radius-lg);
+
+  .form-label {
+    color: var(--heading-color);
+    font-weight: 500;
+  }
+
+  legend.form-label {
+    float: none;
+    font-size: 1rem;
+    width: auto;
+  }
+}
+
+.form-panel-body {
+  padding: 1.5rem;
+}
+
+.form-panel-footer {
+  background-color: var(--panel-footer-bg);
+  border-radius: 0 0 var(--bs-border-radius-lg) var(--bs-border-radius-lg);
+  border-top: 1px solid var(--bs-border-color);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  padding: 1rem 1.5rem;
+}
+
+.dependent-field {
+  border-left: 2px solid var(--bs-border-color);
+  display: block;
+  margin-left: 0.5rem;
+  margin-top: 0.75rem;
+  padding-left: 1rem;
+
+  &[disabled] {
+    display: none;
   }
 }
 
