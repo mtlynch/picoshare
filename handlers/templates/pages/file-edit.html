@@ -2,13 +2,20 @@
   <script type="module" nonce="{{ .CspNonce }}">
     import { editFile } from "/js/controllers/files.js";
     import { showElement, hideElement } from "/js/lib/bulma.js";
-    import { enableElement, disableElement } from "/js/lib/html.js";
+    import {
+      convertDateInputValueToRfc3339,
+      formatDateInputValue,
+      parseRfc3339,
+    } from "/js/lib/time.js";
 
     const editForm = document.getElementById("edit-form");
     const errorContainer = document.getElementById("error");
     const progressSpinner = document.getElementById("progress-spinner");
     const expireCheckbox = document.getElementById("expire-checkbox");
-    const expirationPicker = document.getElementById("expiration-picker");
+    const expirationDateContainer = document.getElementById(
+      "expiration-date-container",
+    );
+    const expirationDateInput = document.getElementById("expiration-date");
 
     function readFilename() {
       return document.getElementById("filename").value || null;
@@ -16,6 +23,13 @@
 
     function readNote() {
       return document.getElementById("note").value || null;
+    }
+
+    function readExpiration() {
+      if (!expireCheckbox.checked) {
+        return null;
+      }
+      return convertDateInputValueToRfc3339(expirationDateInput.value);
     }
 
     document.getElementById("cancel-btn").addEventListener("click", () => {
@@ -35,7 +49,7 @@
       hideElement(editForm);
       showElement(progressSpinner);
 
-      editFile(id, readFilename(), expirationPicker.value, readNote())
+      editFile(id, readFilename(), readExpiration(), readNote())
         .then(() => {
           document.location = "/files";
         })
@@ -50,17 +64,26 @@
     });
 
     expireCheckbox.addEventListener("change", () => {
-      if (expireCheckbox.checked) {
-        enableElement(expirationPicker);
-      } else {
-        disableElement(expirationPicker);
-      }
+      expirationDateInput.disabled = !expireCheckbox.checked;
+      expirationDateContainer.classList.toggle(
+        "d-none",
+        !expireCheckbox.checked,
+      );
     });
-  </script>
-{{ end }}
 
-{{ define "custom-elements" }}
-  {{ template "expiration-picker.html" . }}
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    expirationDateInput.min = formatDateInputValue(tomorrow);
+
+    const expiration = parseRfc3339(expirationDateInput.dataset.expiration);
+    if (expiration) {
+      expirationDateInput.value = formatDateInputValue(expiration);
+    } else {
+      const defaultExpiration = new Date();
+      defaultExpiration.setDate(defaultExpiration.getDate() + 30);
+      expirationDateInput.value = formatDateInputValue(defaultExpiration);
+    }
+  </script>
 {{ end }}
 
 {{ define "content" }}
@@ -96,15 +119,26 @@
               Delete after expiration
             </label>
           </div>
-          <expiration-picker
-            id="expiration-picker"
-            class="dependent-field"
-            {{ if not (isNeverExpire .Expires) }}
-              value="{{ formatExpiration .Expires }}"
-            {{ else }}
-              disabled
-            {{ end }}
-          />
+          <div
+            id="expiration-date-container"
+            class="dependent-field {{ if isNeverExpire .Expires }}
+              d-none
+            {{ end }}"
+          >
+            <label class="form-label" for="expiration-date">
+              Expiration date
+            </label>
+            <input
+              id="expiration-date"
+              class="form-control"
+              type="date"
+              required
+              {{ if not (isNeverExpire .Expires) }}
+                data-expiration="{{ formatExpiration .Expires }}"
+              {{ end }}
+              {{ if isNeverExpire .Expires }}disabled{{ end }}
+            />
+          </div>
         </fieldset>
 
         <div>

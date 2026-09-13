@@ -211,7 +211,6 @@ func (s Server) fileEditGet() http.HandlerFunc {
 	}
 
 	t := parseTemplatesWithFuncs(fns,
-		"templates/custom-elements/expiration-picker.html",
 		"templates/pages/file-edit.html")
 
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -442,7 +441,6 @@ func (s Server) uploadGet() http.HandlerFunc {
 
 	t := parseTemplatesWithFuncs(
 		fns,
-		"templates/custom-elements/expiration-picker.html",
 		"templates/custom-elements/upload-link-box.html",
 		"templates/custom-elements/upload-links.html",
 		"templates/pages/upload.html")
@@ -523,7 +521,6 @@ func (s Server) guestUploadGet() http.HandlerFunc {
 
 	t := parseTemplatesWithFuncs(
 		fns,
-		"templates/custom-elements/expiration-picker.html",
 		"templates/custom-elements/upload-link-box.html",
 		"templates/custom-elements/upload-links.html",
 		"templates/pages/upload.html")

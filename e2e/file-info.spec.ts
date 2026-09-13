@@ -79,7 +79,7 @@ test("upload a file with a note and custom expiration, and verify the file info 
   await login(page);
 
   await page.locator("#expiration-select").selectOption({ label: "Custom" });
-  await page.locator("#expiration-picker #expiration").fill("2029-09-03");
+  await page.getByLabel("Expiration date").fill("2029-09-03");
 
   await page.locator("#note").fill("Please note that this upload has a note");
 
