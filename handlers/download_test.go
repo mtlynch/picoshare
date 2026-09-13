@@ -169,7 +169,6 @@ func TestEntryGet(t *testing.T) {
 			if got, want := res.Header.Get("Content-Security-Policy"), tt.expectedCSP; got != want {
 				t.Errorf("Content-Security-Policy=%s, want=%s", got, want)
 			}
-
 		})
 	}
 }
