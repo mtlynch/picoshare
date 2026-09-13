@@ -4,6 +4,7 @@ import (
 	"crypto/subtle"
 	"fmt"
 	"hash/fnv"
+	"strings"
 	"unicode/utf8"
 )
 
@@ -21,6 +22,12 @@ type Passphrase struct {
 func NewPassphrase(raw string) (Passphrase, error) {
 	if !utf8.ValidString(raw) {
 		return Passphrase{}, fmt.Errorf("%w: invalid UTF-8", ErrInvalidPassphrase)
+	}
+	// SQLite's length() function stops counting at the first NUL byte in a
+	// TEXT value, so a passphrase containing NUL would fail the database's
+	// CHECK constraint even though it satisfies the code point limits below.
+	if strings.ContainsRune(raw, 0) {
+		return Passphrase{}, fmt.Errorf("%w: NUL bytes are not allowed", ErrInvalidPassphrase)
 	}
 	if count := utf8.RuneCountInString(raw); count < 1 || count > MaxPassphraseCodePoints {
 		return Passphrase{}, ErrInvalidPassphrase
