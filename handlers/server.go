@@ -6,14 +6,9 @@ import (
 	"github.com/gorilla/mux"
 
 	"github.com/mtlynch/picoshare/garbagecollect"
-	"github.com/mtlynch/picoshare/space"
 )
 
 type (
-	SpaceChecker interface {
-		Check() (space.Usage, error)
-	}
-
 	Authenticator interface {
 		StartSession(w http.ResponseWriter, r *http.Request)
 		ClearSession(w http.ResponseWriter)
@@ -24,7 +19,7 @@ type (
 		router        *mux.Router
 		authenticator Authenticator
 		store         Store
-		spaceChecker  SpaceChecker
+		checkSpace    SpaceCheckFunc
 		collector     *garbagecollect.Collector
 		now           NowFunc
 	}
@@ -37,12 +32,12 @@ func (s Server) Router() *mux.Router {
 
 // New creates a new server with all the state it needs to satisfy HTTP
 // requests.
-func New(authenticator Authenticator, store Store, spaceChecker SpaceChecker, collector *garbagecollect.Collector, now NowFunc) Server {
+func New(authenticator Authenticator, store Store, checkSpace SpaceCheckFunc, collector *garbagecollect.Collector, now NowFunc) Server {
 	s := Server{
 		router:        mux.NewRouter(),
 		authenticator: authenticator,
 		store:         store,
-		spaceChecker:  spaceChecker,
+		checkSpace:    checkSpace,
 		collector:     collector,
 		now:           now,
 	}
