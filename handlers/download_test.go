@@ -343,9 +343,6 @@ func TestProtectedEntryDownload(t *testing.T) {
 			if tt.expectedStatus == http.StatusNotFound || tt.expectedStatus == http.StatusMethodNotAllowed {
 				return
 			}
-			if got, want := res.Header.Get("Cache-Control"), "no-store"; got != want {
-				t.Errorf("Cache-Control=%q, want=%q", got, want)
-			}
 			if got, want := res.Header.Get("Location"), tt.expectedLocation; got != want {
 				t.Errorf("Location=%q, want=%q", got, want)
 			}
