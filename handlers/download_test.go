@@ -177,8 +177,22 @@ func TestEntryGet(t *testing.T) {
 }
 
 func TestProtectedEntryDownload(t *testing.T) {
-	protectedData := "protected file contents"
-	passphrase := mustCreateDownloadPassphrase(t, "correct horse battery staple")
+	type fakeEntry struct {
+		ID                 picoshare.EntryID
+		Contents           string
+		DownloadPassphrase picoshare.DownloadPassphrase
+	}
+
+	protectedEntry := fakeEntry{
+		ID:                 "PPPPPPPPPP",
+		Contents:           "fake protexted data",
+		DownloadPassphrase: mustCreateDownloadPassphrase(t, "correct horse battery staple"),
+	}
+	unprotectedEntry := fakeEntry{
+		ID:       "UUUUUUUUUU",
+		Contents: "fake unprotexted data",
+	}
+
 	for _, tt := range []struct {
 		explanation      string
 		authenticated    bool
@@ -231,7 +245,7 @@ func TestProtectedEntryDownload(t *testing.T) {
 			passphrase:      "correct horse battery staple",
 			expectedStatus:  http.StatusOK,
 			hasSandboxedCSP: true,
-			expectedBody:    protectedData,
+			expectedBody:    protectedEntry.Contents,
 		},
 		{
 			explanation:    "POST to the download route is not allowed",
@@ -248,7 +262,7 @@ func TestProtectedEntryDownload(t *testing.T) {
 			route:           "/-PPPPPPPPPP",
 			expectedStatus:  http.StatusOK,
 			hasSandboxedCSP: true,
-			expectedBody:    protectedData,
+			expectedBody:    protectedEntry.Contents,
 		},
 		{
 			explanation:      "authenticated owner visiting the unlock page redirects to the download",
@@ -262,9 +276,9 @@ func TestProtectedEntryDownload(t *testing.T) {
 			explanation:      "unlock page for an unprotected entry redirects to the download",
 			authenticated:    false,
 			method:           http.MethodGet,
-			route:            "/-TTTTTTTTTT/unlock",
+			route:            "/-UUUUUUUUUU/unlock",
 			expectedStatus:   http.StatusFound,
-			expectedLocation: "/-TTTTTTTTTT",
+			expectedLocation: "/-UUUUUUUUUU",
 		},
 		{
 			explanation:    "unlock page for a non-existent entry returns 404",
@@ -276,25 +290,24 @@ func TestProtectedEntryDownload(t *testing.T) {
 	} {
 		t.Run(tt.explanation, func(t *testing.T) {
 			dataStore := test_sqlite.New(t)
-			if err := dataStore.InsertEntry(strings.NewReader(protectedData), picoshare.UploadMetadata{
-				ID:                 "PPPPPPPPPP",
+			if err := dataStore.InsertEntry(strings.NewReader(protectedEntry.Contents), picoshare.UploadMetadata{
+				ID:                 protectedEntry.ID,
 				Filename:           "protected.txt",
 				ContentType:        "text/plain",
 				Uploaded:           mustParseTime("2023-01-01T00:00:00Z"),
 				Expires:            picoshare.NeverExpire,
-				Size:               mustParseFileSize(len(protectedData)),
-				DownloadPassphrase: passphrase,
+				Size:               mustParseFileSize(len(protectedEntry.Contents)),
+				DownloadPassphrase: protectedEntry.DownloadPassphrase,
 			}); err != nil {
 				t.Fatalf("failed to insert protected entry: %v", err)
 			}
-			unprotectedData := "dummy data"
-			if err := dataStore.InsertEntry(strings.NewReader(unprotectedData), picoshare.UploadMetadata{
-				ID:          dummyTextEntry.ID,
-				Filename:    dummyTextEntry.Filename,
-				ContentType: dummyTextEntry.ContentType,
+			if err := dataStore.InsertEntry(strings.NewReader(unprotectedEntry.Contents), picoshare.UploadMetadata{
+				ID:          unprotectedEntry.ID,
+				Filename:    "unprotected.txt",
+				ContentType: "text/plain",
 				Uploaded:    mustParseTime("2023-01-01T00:00:00Z"),
 				Expires:     picoshare.NeverExpire,
-				Size:        mustParseFileSize(len(unprotectedData)),
+				Size:        mustParseFileSize(len(unprotectedEntry.Contents)),
 			}); err != nil {
 				t.Fatalf("failed to insert unprotected entry: %v", err)
 			}

@@ -99,12 +99,12 @@
     </section>
 
     <section>
-      <h2>Download passphrase</h2>
+      <h2>Passphrase protection</h2>
       <p class="value">
         {{ if not .DownloadPassphrase.Empty }}
-          {{ .DownloadPassphrase }}
+          Protected - Guest users must enter the file's passphrase
         {{ else }}
-          None
+          No passphrase required
         {{ end }}
       </p>
     </section>

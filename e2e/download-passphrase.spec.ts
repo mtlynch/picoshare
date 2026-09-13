@@ -38,10 +38,10 @@ test("requires a passphrase for a protected file download", async ({
     page
       .locator("section")
       .filter({
-        has: page.getByRole("heading", { name: "Download passphrase" }),
+        has: page.getByRole("heading", { name: "Passphrase protection" }),
       })
       .locator(".value"),
-  ).toHaveText("correct horse battery staple");
+  ).toHaveText("Protected - Guest users must enter the file's passphrase");
 
   // Try to download the file as an unauthenticated visitor.
   {
