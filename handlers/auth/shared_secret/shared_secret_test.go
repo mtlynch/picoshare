@@ -186,6 +186,15 @@ func TestClearSession(t *testing.T) {
 	}
 }
 
+func mustCreatePassphrase(t *testing.T, raw string) picoshare.Passphrase {
+	t.Helper()
+	passphrase, err := picoshare.NewPassphrase(raw)
+	if err != nil {
+		t.Fatalf("failed to create passphrase: %v", err)
+	}
+	return passphrase
+}
+
 // Helper function to get cookie from response
 func getCookie(t *testing.T, resp *http.Response) *http.Cookie {
 	t.Helper()
@@ -194,13 +203,4 @@ func getCookie(t *testing.T, resp *http.Response) *http.Cookie {
 		t.Fatalf("got %d cookies, want 1", len(cookies))
 	}
 	return cookies[0]
-}
-
-func mustCreatePassphrase(t *testing.T, raw string) picoshare.Passphrase {
-	t.Helper()
-	passphrase, err := picoshare.NewPassphrase(raw)
-	if err != nil {
-		t.Fatalf("failed to create passphrase: %v", err)
-	}
-	return passphrase
 }

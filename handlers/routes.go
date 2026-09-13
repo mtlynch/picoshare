@@ -64,10 +64,6 @@ func (s *Server) routes() {
 
 	downloadViews := s.router.PathPrefix("/").Subrouter()
 	downloadViews.Use(upgradeToHttps)
-	// The unlock route must precede the /-{id} prefix routes because mux
-	// matches routes in registration order. It renders an HTML form, so it needs
-	// the nonce policy; serving the unlocked file replaces it with the sandbox
-	// policy.
 	downloadViews.Handle("/-{id}/unlock", enforceContentSecurityPolicy(s.entryUnlock())).Methods(http.MethodGet, http.MethodPost)
 	downloadViews.PathPrefix("/-{id}").HandlerFunc(s.entryGet()).Methods(http.MethodGet)
 	downloadViews.PathPrefix("/-{id}/{filename}").HandlerFunc(s.entryGet()).Methods(http.MethodGet)
