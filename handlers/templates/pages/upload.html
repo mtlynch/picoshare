@@ -403,22 +403,23 @@
             />
             <div class="form-text">Note is only visible to you</div>
           </div>
+
+          <div class="mt-4">
+            <label class="form-label" for="download-passphrase">
+              Passphrase <i>(optional)</i>
+            </label>
+            <input
+              id="download-passphrase"
+              class="form-control"
+              type="text"
+              autocomplete="new-password"
+              maxlength="{{ .MaxPassphraseCodePoints }}"
+            />
+            <div class="form-text">
+              If set, guest users must enter this passphrase to download.
+            </div>
+          </div>
         {{ end }}
-      </div>
-      <div class="mb-4 field-max-width">
-        <label class="form-label" for="download-passphrase">
-          Passphrase <i>(optional)</i>
-        </label>
-        <input
-          id="download-passphrase"
-          class="form-control"
-          type="text"
-          autocomplete="new-password"
-          maxlength="{{ .MaxPassphraseCodePoints }}"
-        />
-        <p class="form-text">
-          If set, guest users must enter this passphrase to download.
-        </p>
       </div>
     {{ end }}
   </div>
