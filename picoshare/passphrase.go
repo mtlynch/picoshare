@@ -34,13 +34,7 @@ func NewPassphrase(raw string) (Passphrase, error) {
 	return Passphrase{value: raw}, nil
 }
 
-// Empty reports whether the passphrase is the empty passphrase.
-func (p Passphrase) Empty() bool {
-	return p.value == ""
-}
-
-// String returns the exact text supplied when constructing the passphrase, or
-// an empty string for the empty passphrase.
+// String returns the exact text supplied when constructing the passphrase.
 func (p Passphrase) String() string {
 	return p.value
 }
@@ -65,7 +59,7 @@ func NewDownloadPassphrase(raw string) (DownloadPassphrase, error) {
 
 // Empty reports whether the download passphrase is the empty passphrase.
 func (p DownloadPassphrase) Empty() bool {
-	return p.passphrase.Empty()
+	return p.String() == ""
 }
 
 // String returns the exact text of the download passphrase, or an empty string
