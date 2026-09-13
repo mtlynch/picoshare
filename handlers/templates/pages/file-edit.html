@@ -64,9 +64,9 @@
 {{ end }}
 
 {{ define "content" }}
-  {{ with .Metadata }}
-    <h1 class="h1">Edit File</h1>
+  <h1 class="h1">Edit File</h1>
 
+  {{ with .Metadata }}
     <form id="edit-form" class="form-panel" data-entry-id="{{ .ID }}">
       <div class="form-panel-body">
         <div class="mb-4">
