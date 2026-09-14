@@ -69,8 +69,9 @@ func (p DownloadPassphrase) Empty() bool {
 	return p.passphrase.Empty()
 }
 
-// String returns the exact text of the download passphrase, or an empty string
-// for the empty download passphrase.
+// String returns the exact text of the download passphrase.
+//
+// String panics if the download passphrase is empty.
 func (p DownloadPassphrase) String() string {
 	return p.passphrase.String()
 }
@@ -82,6 +83,9 @@ func (p DownloadPassphrase) String() string {
 // attack, but they wouldn't be able to go further than that (e.g., determining
 // which prefix letters match).
 func (p DownloadPassphrase) Equal(other DownloadPassphrase) bool {
+	if p.Empty() || other.Empty() {
+		return p.Empty() == other.Empty()
+	}
 	return subtle.ConstantTimeCompare(
 		[]byte(p.String()),
 		[]byte(other.String()),
