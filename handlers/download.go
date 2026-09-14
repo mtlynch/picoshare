@@ -35,6 +35,9 @@ func (s Server) entryGet() http.HandlerFunc {
 			return
 		}
 		if !entry.DownloadPassphrase.Empty() {
+			// Prevent caches from serving a password-bypassing download after an
+			// administrator downloads this entry with their session cookie.
+			w.Header().Set("Cache-Control", "no-store")
 			if !isAuthenticated(r.Context()) {
 				http.Redirect(w, r, entryUnlockPath(entry.ID), http.StatusFound)
 				return
@@ -63,6 +66,9 @@ func (s Server) entryUnlock() http.HandlerFunc {
 			http.Error(w, "failed to retrieve entry", http.StatusInternalServerError)
 			return
 		}
+		// Prevent caches from serving a password-bypassing redirect after an
+		// administrator accesses this page with their session cookie.
+		w.Header().Set("Cache-Control", "no-store")
 		if entry.DownloadPassphrase.Empty() || isAuthenticated(r.Context()) {
 			http.Redirect(w, r, entryDownloadPath(entry.ID), http.StatusFound)
 			return
