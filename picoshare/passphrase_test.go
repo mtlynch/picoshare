@@ -30,17 +30,17 @@ func TestNewPassphrase(t *testing.T) {
 		},
 		{
 			explanation:     "100 ASCII characters are valid",
-			input:           strings.Repeat("a", picoshare.MaxPassphraseCodePoints),
+			input:           strings.Repeat("a", picoshare.MaxPassphraseLength),
 			isValidExpected: true,
 		},
 		{
 			explanation:     "100 emoji are valid",
-			input:           strings.Repeat("🔒", picoshare.MaxPassphraseCodePoints),
+			input:           strings.Repeat("🔒", picoshare.MaxPassphraseLength),
 			isValidExpected: true,
 		},
 		{
 			explanation:     "101 Unicode code points are invalid",
-			input:           strings.Repeat("🔒", picoshare.MaxPassphraseCodePoints+1),
+			input:           strings.Repeat("🔒", picoshare.MaxPassphraseLength+1),
 			isValidExpected: false,
 		},
 		{
@@ -73,9 +73,23 @@ func TestNewPassphrase(t *testing.T) {
 			if !isValid {
 				return
 			}
-			if got, want := string(passphrase.Bytes()), tt.input; got != want {
+			if got, want := passphrase.String(), tt.input; got != want {
 				t.Errorf("passphrase=%q, want=%q", got, want)
 			}
 		})
+	}
+}
+
+func TestDownloadPassphraseEmpty(t *testing.T) {
+	if got, want := (picoshare.DownloadPassphrase{}).Empty(), true; got != want {
+		t.Errorf("empty=%v, want=%v", got, want)
+	}
+
+	passphrase, err := picoshare.NewDownloadPassphrase("correct horse battery staple")
+	if err != nil {
+		t.Fatalf("failed to create download passphrase: %v", err)
+	}
+	if got, want := passphrase.Empty(), false; got != want {
+		t.Errorf("empty=%v, want=%v", got, want)
 	}
 }

@@ -66,6 +66,36 @@ func (s Server) entryGet() http.HandlerFunc {
 	}
 }
 
+func (s Server) entryUnlock() http.HandlerFunc {
+	t := parseTemplates("templates/pages/download-passphrase.html")
+	return func(w http.ResponseWriter, r *http.Request) {
+		id, err := parseEntryID(mux.Vars(r)["id"])
+		if err != nil {
+			log.Printf("error parsing ID: %v", err)
+			http.Error(w, fmt.Sprintf("bad entry ID: %v", err), http.StatusBadRequest)
+			return
+		}
+
+		if _, err := s.store.GetEntryMetadata(id); err != nil {
+			if _, ok := errors.AsType[store.EntryNotFoundError](err); ok {
+				http.Error(w, "entry not found", http.StatusNotFound)
+				return
+			}
+			log.Printf("error retrieving entry with id %v: %v", id, err)
+			http.Error(w, "failed to retrieve entry", http.StatusInternalServerError)
+			return
+		}
+
+		renderTemplate(w, t, struct {
+			commonProps
+			IncorrectPassphrase bool
+		}{
+			commonProps:         makeCommonProps("PicoShare - Download", r.Context()),
+			IncorrectPassphrase: false,
+		})
+	}
+}
+
 func inferContentTypeFromFilename(f picoshare.Filename) (picoshare.ContentType, error) {
 	// For files that modern browser can play natively, infer the content type if
 	// none was specified at upload time.
