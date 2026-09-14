@@ -54,7 +54,7 @@ func (s Server) entryGet() http.HandlerFunc {
 }
 
 func (s Server) entryUnlock() http.HandlerFunc {
-	t := parseTemplates("templates/pages/download-passphrase.html")
+	t := parseTemplates("templates/pages/entry-unlock.html")
 	return func(w http.ResponseWriter, r *http.Request) {
 		id, err := parseEntryID(mux.Vars(r)["id"])
 		if err != nil {
