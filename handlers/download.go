@@ -67,7 +67,7 @@ func (s Server) entryUnlockGet() http.HandlerFunc {
 			return
 		}
 
-		entry, err := s.entryUnlockMetadata(id)
+		entry, err := s.store.GetEntryMetadata(id)
 		if _, ok := errors.AsType[store.EntryNotFoundError](err); ok {
 			http.Error(w, "entry not found", http.StatusNotFound)
 			return
@@ -106,7 +106,7 @@ func (s Server) entryUnlockPost() http.HandlerFunc {
 			return
 		}
 
-		entry, err := s.entryUnlockMetadata(unlockRequest.EntryID)
+		entry, err := s.store.GetEntryMetadata(unlockRequest.EntryID)
 		if _, ok := errors.AsType[store.EntryNotFoundError](err); ok {
 			http.Error(w, "entry not found", http.StatusNotFound)
 			return
@@ -135,10 +135,6 @@ func (s Server) entryUnlockPost() http.HandlerFunc {
 			IncorrectPassphrase: true,
 		})
 	}
-}
-
-func (s Server) entryUnlockMetadata(id picoshare.EntryID) (picoshare.UploadMetadata, error) {
-	return s.store.GetEntryMetadata(id)
 }
 
 func parseEntryUnlockRequest(r *http.Request) (entryUnlockRequest, error) {
