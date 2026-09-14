@@ -271,6 +271,7 @@ test("guest upload shows expiration dropdown with options limited by guest link"
 
     // Check that the expiration dropdown is visible.
     await expect(guestPage.locator("#expiration-select")).toBeVisible();
+    await expect(guestPage.getByLabel("Expiration date")).toHaveCount(0);
 
     // Check that only options up to 7 days are available.
     const expirationOptions = await guestPage

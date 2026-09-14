@@ -81,6 +81,10 @@
     import { guestUploadFile, uploadFile } from "/js/controllers/files.js";
     import { showElement, hideElement } from "/js/lib/bulma.js";
     import { sortClipboardItems } from "/js/lib/clipboard.js";
+    import {
+      convertDateInputValueToRfc3339,
+      formatDateInputValue,
+    } from "/js/lib/time.js";
 
     const uploadEl = document.querySelector(".file");
     const resultEl = document.getElementById("upload-result");
@@ -92,7 +96,10 @@
     const uploadForm = document.getElementById("upload-form");
     const expirationContainer = document.querySelector(".expiration-container");
     const expirationSelect = document.getElementById("expiration-select");
-    const expirationPicker = document.getElementById("expiration-picker");
+    const expirationDateContainer = document.getElementById(
+      "expiration-date-container",
+    );
+    const expirationDateInput = document.getElementById("expiration-date");
     const noteInput = document.getElementById("note");
     const uploadAnotherBtn = document.getElementById("upload-another-btn");
 
@@ -105,15 +112,14 @@
     }
 
     function isCustomExpirationSelected() {
-      return expirationPicker && expirationSelect.value === "";
+      return expirationDateInput && expirationSelect.value === "";
     }
 
     function readExpiration() {
       if (isCustomExpirationSelected()) {
-        return expirationPicker.value;
-      } else {
-        return expirationSelect.value;
+        return convertDateInputValueToRfc3339(expirationDateInput.value);
       }
+      return expirationSelect.value;
     }
 
     function readNote() {
@@ -146,6 +152,13 @@
 
     function doUpload(file) {
       const guestLinkMetadata = getGuestLinkMetdata();
+
+      if (
+        isCustomExpirationSelected() &&
+        !expirationDateInput.reportValidity()
+      ) {
+        return;
+      }
 
       if (
         guestLinkMetadata &&
@@ -295,11 +308,22 @@
     if (expirationSelect) {
       expirationSelect.addEventListener("change", () => {
         if (isCustomExpirationSelected()) {
-          showElement(expirationPicker);
+          expirationDateInput.disabled = false;
+          showElement(expirationDateContainer);
         } else {
-          hideElement(expirationPicker);
+          expirationDateInput.disabled = true;
+          hideElement(expirationDateContainer);
         }
       });
+    }
+
+    if (expirationDateInput) {
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const defaultExpiration = new Date();
+      defaultExpiration.setDate(defaultExpiration.getDate() + 30);
+      expirationDateInput.min = formatDateInputValue(tomorrow);
+      expirationDateInput.value = formatDateInputValue(defaultExpiration);
     }
 
     uploadAnotherBtn.addEventListener("click", () => {
@@ -325,7 +349,6 @@
 {{ end }}
 
 {{ define "custom-elements" }}
-  {{ template "expiration-picker.html" . }}
   {{ template "upload-link-box.html" . }}
   {{ template "upload-links.html" . }}
 {{ end }}
@@ -373,10 +396,23 @@
               {{ end }}
             </select>
 
-            <expiration-picker
-              id="expiration-picker"
-              class="dependent-field d-none"
-            />
+            {{ if not .GuestLinkMetadata.ID }}
+              <div
+                id="expiration-date-container"
+                class="dependent-field d-none"
+              >
+                <label class="form-label" for="expiration-date">
+                  Expiration date
+                </label>
+                <input
+                  id="expiration-date"
+                  class="form-control"
+                  type="date"
+                  required
+                  disabled
+                />
+              </div>
+            {{ end }}
           </div>
         {{ end }}
 
