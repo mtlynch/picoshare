@@ -30,17 +30,17 @@ func TestNewPassphrase(t *testing.T) {
 		},
 		{
 			explanation:     "100 ASCII characters are valid",
-			input:           strings.Repeat("a", picoshare.MaxPassphraseCodePoints),
+			input:           strings.Repeat("a", picoshare.MaxPassphraseLength),
 			isValidExpected: true,
 		},
 		{
 			explanation:     "100 emoji are valid",
-			input:           strings.Repeat("🔒", picoshare.MaxPassphraseCodePoints),
+			input:           strings.Repeat("🔒", picoshare.MaxPassphraseLength),
 			isValidExpected: true,
 		},
 		{
 			explanation:     "101 Unicode code points are invalid",
-			input:           strings.Repeat("🔒", picoshare.MaxPassphraseCodePoints+1),
+			input:           strings.Repeat("🔒", picoshare.MaxPassphraseLength+1),
 			isValidExpected: false,
 		},
 		{
