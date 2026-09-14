@@ -194,15 +194,15 @@ func TestProtectedEntryDownload(t *testing.T) {
 	}
 
 	for _, tt := range []struct {
-		explanation      string
-		authenticated    bool
-		method           string
-		route            string
-		passphrase       string
-		expectedStatus   int
-		expectedLocation string
-		hasSandboxedCSP  bool
-		expectedBody     string
+		explanation         string
+		authenticated       bool
+		method              string
+		route               string
+		passphrase          string
+		expectedStatus      int
+		expectedLocation    string
+		hasCSPSandboxHeader bool
+		expectedBody        string
 	}{
 		{
 			explanation:      "unauthenticated GET of a protected entry redirects to the unlock page",
@@ -238,14 +238,14 @@ func TestProtectedEntryDownload(t *testing.T) {
 			expectedBody:   "Incorrect passphrase.",
 		},
 		{
-			explanation:     "correct passphrase serves the file with sandbox CSP",
-			authenticated:   false,
-			method:          http.MethodPost,
-			route:           "/-PPPPPPPPPP/unlock",
-			passphrase:      "correct horse battery staple",
-			expectedStatus:  http.StatusOK,
-			hasSandboxedCSP: true,
-			expectedBody:    protectedEntry.Contents,
+			explanation:         "correct passphrase serves the file with sandbox CSP",
+			authenticated:       false,
+			method:              http.MethodPost,
+			route:               "/-PPPPPPPPPP/unlock",
+			passphrase:          "correct horse battery staple",
+			expectedStatus:      http.StatusOK,
+			hasCSPSandboxHeader: true,
+			expectedBody:        protectedEntry.Contents,
 		},
 		{
 			explanation:    "POST to the download route is not allowed",
@@ -256,13 +256,13 @@ func TestProtectedEntryDownload(t *testing.T) {
 			expectedStatus: http.StatusMethodNotAllowed,
 		},
 		{
-			explanation:     "authenticated owner downloads a protected entry without a challenge",
-			authenticated:   true,
-			method:          http.MethodGet,
-			route:           "/-PPPPPPPPPP",
-			expectedStatus:  http.StatusOK,
-			hasSandboxedCSP: true,
-			expectedBody:    protectedEntry.Contents,
+			explanation:         "authenticated owner downloads a protected entry without a challenge",
+			authenticated:       true,
+			method:              http.MethodGet,
+			route:               "/-PPPPPPPPPP",
+			expectedStatus:      http.StatusOK,
+			hasCSPSandboxHeader: true,
+			expectedBody:        protectedEntry.Contents,
 		},
 		{
 			explanation:      "authenticated owner visiting the unlock page redirects to the download",
@@ -337,7 +337,7 @@ func TestProtectedEntryDownload(t *testing.T) {
 			if got := res.Header.Get("Set-Cookie"); got != "" {
 				t.Errorf("Set-Cookie=%q, want empty", got)
 			}
-			if got, want := res.Header.Get("Content-Security-Policy") == "sandbox", tt.hasSandboxedCSP; got != want {
+			if got, want := res.Header.Get("Content-Security-Policy") == "sandbox", tt.hasCSPSandboxHeader; got != want {
 				t.Errorf("sandboxed CSP=%v, want=%v (Content-Security-Policy=%q)", got, want, res.Header.Get("Content-Security-Policy"))
 			}
 			if tt.expectedStatus == http.StatusNotFound || tt.expectedStatus == http.StatusMethodNotAllowed {
