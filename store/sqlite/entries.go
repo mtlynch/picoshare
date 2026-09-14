@@ -64,6 +64,7 @@ func (s Store) GetEntriesMetadata() ([]picoshare.UploadMetadata, error) {
 		if err != nil {
 			return []picoshare.UploadMetadata{}, err
 		}
+
 		ee = append(ee, picoshare.UploadMetadata{
 			ID:          picoshare.EntryID(id),
 			Filename:    picoshare.Filename(filename),
