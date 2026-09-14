@@ -43,6 +43,9 @@ test("requires a passphrase for a protected file download", async ({
       .locator(".value"),
   ).toHaveText("Protected - Guest users must enter the file's passphrase");
 
+  await page.goto(downloadURL);
+  await expect(page.locator("body")).toHaveText("This download is protected.");
+
   // Try to download the file as an unauthenticated visitor.
   {
     const visitorContext = await browser.newContext({ baseURL });
@@ -67,9 +70,6 @@ test("requires a passphrase for a protected file download", async ({
     );
     await visitorContext.close();
   }
-
-  await page.goto(downloadURL);
-  await expect(page.locator("body")).toHaveText("This download is protected.");
 });
 
 test("adds and removes a download passphrase from the edit page", async ({
