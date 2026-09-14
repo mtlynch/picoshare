@@ -44,54 +44,74 @@ func (s Server) entryGet() http.HandlerFunc {
 	}
 }
 
-func (s Server) entryUnlock() http.HandlerFunc {
+func (s Server) entryUnlockGet() http.HandlerFunc {
 	t := parseTemplates("templates/pages/entry-unlock.html")
 	return func(w http.ResponseWriter, r *http.Request) {
-		id, err := parseEntryID(mux.Vars(r)["id"])
-		if err != nil {
-			log.Printf("error parsing ID: %v", err)
-			http.Error(w, fmt.Sprintf("bad entry ID: %v", err), http.StatusBadRequest)
+		if _, ok := s.entryUnlockMetadata(w, r); !ok {
 			return
 		}
 
-		entry, err := s.getEntryMetadata(id)
-		if _, ok := errors.AsType[store.EntryNotFoundError](err); ok {
-			http.Error(w, "entry not found", http.StatusNotFound)
-			return
-		} else if err != nil {
-			log.Printf("error retrieving entry with id %v: %v", id, err)
-			http.Error(w, "failed to retrieve entry", http.StatusInternalServerError)
-			return
-		}
-		if entry.DownloadPassphrase.Empty() || isAuthenticated(r.Context()) {
-			http.Redirect(w, r, entryDownloadPath(entry.ID), http.StatusFound)
-			return
-		}
-
-		incorrectPassphrase := false
-		if r.Method == http.MethodPost {
-			if err := r.ParseForm(); err != nil {
-				http.Error(w, "invalid passphrase form", http.StatusBadRequest)
-				return
-			}
-			if r.FormValue("passphrase") == entry.DownloadPassphrase.String() {
-				s.serveEntryContent(w, r, entry)
-				return
-			}
-			incorrectPassphrase = true
-		}
-
-		if incorrectPassphrase {
-			w.WriteHeader(http.StatusUnauthorized)
-		}
 		renderTemplate(w, t, struct {
 			commonProps
 			IncorrectPassphrase bool
 		}{
 			commonProps:         makeCommonProps("PicoShare - Download", r.Context()),
-			IncorrectPassphrase: incorrectPassphrase,
+			IncorrectPassphrase: false,
 		})
 	}
+}
+
+func (s Server) entryUnlockPost() http.HandlerFunc {
+	t := parseTemplates("templates/pages/entry-unlock.html")
+	return func(w http.ResponseWriter, r *http.Request) {
+		entry, ok := s.entryUnlockMetadata(w, r)
+		if !ok {
+			return
+		}
+
+		if err := r.ParseForm(); err != nil {
+			http.Error(w, "invalid passphrase form", http.StatusBadRequest)
+			return
+		}
+		if r.FormValue("passphrase") == entry.DownloadPassphrase.String() {
+			s.serveEntryContent(w, r, entry)
+			return
+		}
+
+		w.WriteHeader(http.StatusUnauthorized)
+		renderTemplate(w, t, struct {
+			commonProps
+			IncorrectPassphrase bool
+		}{
+			commonProps:         makeCommonProps("PicoShare - Download", r.Context()),
+			IncorrectPassphrase: true,
+		})
+	}
+}
+
+func (s Server) entryUnlockMetadata(w http.ResponseWriter, r *http.Request) (picoshare.UploadMetadata, bool) {
+	id, err := parseEntryID(mux.Vars(r)["id"])
+	if err != nil {
+		log.Printf("error parsing ID: %v", err)
+		http.Error(w, fmt.Sprintf("bad entry ID: %v", err), http.StatusBadRequest)
+		return picoshare.UploadMetadata{}, false
+	}
+
+	entry, err := s.getEntryMetadata(id)
+	if _, ok := errors.AsType[store.EntryNotFoundError](err); ok {
+		http.Error(w, "entry not found", http.StatusNotFound)
+		return picoshare.UploadMetadata{}, false
+	} else if err != nil {
+		log.Printf("error retrieving entry with id %v: %v", id, err)
+		http.Error(w, "failed to retrieve entry", http.StatusInternalServerError)
+		return picoshare.UploadMetadata{}, false
+	}
+	if entry.DownloadPassphrase.Empty() || isAuthenticated(r.Context()) {
+		http.Redirect(w, r, entryDownloadPath(entry.ID), http.StatusFound)
+		return picoshare.UploadMetadata{}, false
+	}
+
+	return entry, true
 }
 
 func entryDownloadPath(id picoshare.EntryID) string {

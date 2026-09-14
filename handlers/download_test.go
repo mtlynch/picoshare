@@ -3,6 +3,7 @@ package handlers_test
 import (
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 	"time"
@@ -16,6 +17,16 @@ type mockEntry struct {
 	ID          picoshare.EntryID
 	Filename    picoshare.Filename
 	ContentType picoshare.ContentType
+}
+
+type downloadTestAuthenticator struct{}
+
+func (downloadTestAuthenticator) StartSession(http.ResponseWriter, *http.Request) {}
+
+func (downloadTestAuthenticator) ClearSession(http.ResponseWriter) {}
+
+func (downloadTestAuthenticator) Authenticate(r *http.Request) bool {
+	return r.Header.Get("X-Test-Authenticated") == "true"
 }
 
 var (
@@ -168,6 +179,102 @@ func TestEntryGet(t *testing.T) {
 
 			if got, want := res.Header.Get("Content-Security-Policy"), tt.expectedCSP; got != want {
 				t.Errorf("Content-Security-Policy=%s, want=%s", got, want)
+			}
+		})
+	}
+}
+
+func TestEntryUnlock(t *testing.T) {
+	for _, tt := range []struct {
+		explanation      string
+		method           string
+		passphrase       string
+		authenticated    bool
+		expectedStatus   int
+		expectedBody     string
+		expectedLocation string
+	}{
+		{
+			explanation:    "GET displays the passphrase form for a protected entry",
+			method:         http.MethodGet,
+			passphrase:     "",
+			expectedStatus: http.StatusOK,
+			expectedBody:   "Protected Download",
+		},
+		{
+			explanation:    "POST with the correct passphrase downloads the protected entry",
+			method:         http.MethodPost,
+			passphrase:     "correct horse battery staple",
+			expectedStatus: http.StatusOK,
+			expectedBody:   "protected data",
+		},
+		{
+			explanation:    "POST with an incorrect passphrase displays an authorization error",
+			method:         http.MethodPost,
+			passphrase:     "incorrect passphrase",
+			expectedStatus: http.StatusUnauthorized,
+			expectedBody:   "Incorrect passphrase.",
+		},
+		{
+			explanation:      "GET redirects an authenticated requester to the download",
+			method:           http.MethodGet,
+			authenticated:    true,
+			expectedStatus:   http.StatusFound,
+			expectedLocation: "/-TTTTTTTTTT",
+		},
+	} {
+		t.Run(tt.explanation, func(t *testing.T) {
+			dataStore := test_sqlite.New(t)
+			data := "protected data"
+			entry := picoshare.UploadEntry{
+				UploadMetadata: picoshare.UploadMetadata{
+					ID:       dummyTextEntry.ID,
+					Filename: dummyTextEntry.Filename,
+					Uploaded: mustParseTime("2023-01-01T00:00:00Z"),
+					Expires:  picoshare.NeverExpire,
+					Size:     mustParseFileSize(len(data)),
+				},
+				Reader: strings.NewReader(data),
+			}
+			if err := dataStore.InsertEntry(entry.Reader, entry.UploadMetadata); err != nil {
+				t.Fatalf("failed to insert protected entry: %v", err)
+			}
+
+			s := handlers.New(downloadTestAuthenticator{}, &dataStore, nilSpaceCheckFunc, nilGarbageCollector, time.Now)
+
+			updateRequest := httptest.NewRequest(
+				http.MethodPut,
+				"/api/entry/TTTTTTTTTT",
+				strings.NewReader(`{"filename":"test.txt","downloadPassphrase":"correct horse battery staple"}`),
+			)
+			updateRequest.Header.Set("Content-Type", "application/json")
+			updateRequest.Header.Set("X-Test-Authenticated", "true")
+			updateRecorder := httptest.NewRecorder()
+			s.Router().ServeHTTP(updateRecorder, updateRequest)
+			if got, want := updateRecorder.Code, http.StatusOK; got != want {
+				t.Fatalf("protected entry update status=%d, want=%d", got, want)
+			}
+
+			form := url.Values{"passphrase": {tt.passphrase}}
+			req := httptest.NewRequest(tt.method, "/-TTTTTTTTTT/unlock", strings.NewReader(form.Encode()))
+			if tt.method == http.MethodPost {
+				req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+			}
+			if tt.authenticated {
+				req.Header.Set("X-Test-Authenticated", "true")
+			}
+			rec := httptest.NewRecorder()
+			s.Router().ServeHTTP(rec, req)
+			res := rec.Result()
+
+			if got, want := res.StatusCode, tt.expectedStatus; got != want {
+				t.Fatalf("status=%d, want=%d", got, want)
+			}
+			if got, want := rec.Body.String(), tt.expectedBody; tt.expectedBody != "" && !strings.Contains(got, want) {
+				t.Errorf("response body does not contain %q", want)
+			}
+			if got, want := res.Header.Get("Location"), tt.expectedLocation; got != want {
+				t.Errorf("Location=%q, want=%q", got, want)
 			}
 		})
 	}
