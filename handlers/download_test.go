@@ -185,12 +185,12 @@ func TestProtectedEntryDownload(t *testing.T) {
 
 	protectedEntry := fakeEntry{
 		ID:                 "PPPPPPPPPP",
-		Contents:           "fake protexted data",
+		Contents:           "fake protected data",
 		DownloadPassphrase: mustCreateDownloadPassphrase(t, "correct horse battery staple"),
 	}
 	unprotectedEntry := fakeEntry{
 		ID:       "UUUUUUUUUU",
-		Contents: "fake unprotexted data",
+		Contents: "fake unprotected data",
 	}
 
 	for _, tt := range []struct {
@@ -198,7 +198,7 @@ func TestProtectedEntryDownload(t *testing.T) {
 		authenticated              bool
 		method                     string
 		route                      string
-		passphrase                 string
+		body                       string
 		expectedStatus             int
 		expectedLocation           string
 		expectedCacheControlHeader string
@@ -237,7 +237,7 @@ func TestProtectedEntryDownload(t *testing.T) {
 			authenticated:              false,
 			method:                     http.MethodPost,
 			route:                      "/-PPPPPPPPPP/unlock",
-			passphrase:                 "wrong passphrase",
+			body:                       "passphrase=wrong+passphrase",
 			expectedStatus:             http.StatusUnauthorized,
 			expectedCacheControlHeader: "no-store",
 			expectedBody:               "Incorrect passphrase.",
@@ -247,18 +247,54 @@ func TestProtectedEntryDownload(t *testing.T) {
 			authenticated:              false,
 			method:                     http.MethodPost,
 			route:                      "/-PPPPPPPPPP/unlock",
-			passphrase:                 "correct horse battery staple",
+			body:                       "passphrase=correct+horse+battery+staple",
 			expectedStatus:             http.StatusOK,
 			expectedCacheControlHeader: "no-store",
 			hasCSPSandboxHeader:        true,
 			expectedBody:               protectedEntry.Contents,
 		},
 		{
+			explanation:                "passphrase only in the query string does not unlock the entry",
+			authenticated:              false,
+			method:                     http.MethodPost,
+			route:                      "/-PPPPPPPPPP/unlock?passphrase=correct+horse+battery+staple",
+			expectedStatus:             http.StatusUnauthorized,
+			expectedCacheControlHeader: "no-store",
+			expectedBody:               "Incorrect passphrase.",
+		},
+		{
+			explanation:                "missing passphrase re-renders the challenge with 401",
+			authenticated:              false,
+			method:                     http.MethodPost,
+			route:                      "/-PPPPPPPPPP/unlock",
+			expectedStatus:             http.StatusUnauthorized,
+			expectedCacheControlHeader: "no-store",
+			expectedBody:               "Incorrect passphrase.",
+		},
+		{
+			explanation:                "oversized POST body is rejected",
+			authenticated:              false,
+			method:                     http.MethodPost,
+			route:                      "/-PPPPPPPPPP/unlock",
+			body:                       "passphrase=" + strings.Repeat("a", 4096),
+			expectedStatus:             http.StatusBadRequest,
+			expectedCacheControlHeader: "no-store",
+		},
+		{
+			explanation:                "malformed form body is rejected",
+			authenticated:              false,
+			method:                     http.MethodPost,
+			route:                      "/-PPPPPPPPPP/unlock",
+			body:                       "passphrase=%zz",
+			expectedStatus:             http.StatusBadRequest,
+			expectedCacheControlHeader: "no-store",
+		},
+		{
 			explanation:    "POST to the download route is not allowed",
 			authenticated:  false,
 			method:         http.MethodPost,
 			route:          "/-PPPPPPPPPP",
-			passphrase:     "correct horse battery staple",
+			body:           "passphrase=correct+horse+battery+staple",
 			expectedStatus: http.StatusMethodNotAllowed,
 		},
 		{
@@ -327,13 +363,9 @@ func TestProtectedEntryDownload(t *testing.T) {
 			}
 			s := handlers.New(authenticator, &dataStore, nilSpaceCheckFunc, nilGarbageCollector, time.Now)
 
-			var req *http.Request
+			req := httptest.NewRequest(tt.method, tt.route, strings.NewReader(tt.body))
 			if tt.method == http.MethodPost {
-				form := url.Values{"passphrase": {tt.passphrase}}
-				req = httptest.NewRequest(tt.method, tt.route, strings.NewReader(form.Encode()))
 				req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-			} else {
-				req = httptest.NewRequest(tt.method, tt.route, nil)
 			}
 			rec := httptest.NewRecorder()
 
@@ -351,9 +383,6 @@ func TestProtectedEntryDownload(t *testing.T) {
 			}
 			if got, want := res.Header.Get("Content-Security-Policy") == "sandbox", tt.hasCSPSandboxHeader; got != want {
 				t.Errorf("sandboxed CSP=%v, want=%v (Content-Security-Policy=%q)", got, want, res.Header.Get("Content-Security-Policy"))
-			}
-			if tt.expectedStatus == http.StatusNotFound || tt.expectedStatus == http.StatusMethodNotAllowed {
-				return
 			}
 			if got, want := res.Header.Get("Location"), tt.expectedLocation; got != want {
 				t.Errorf("Location=%q, want=%q", got, want)
@@ -435,80 +464,6 @@ func TestProtectedEntryDownloadRequiresPasswordEveryDownload(t *testing.T) {
 	}
 	if got, want := followUpRes.Header.Get("Location"), "/-PPPPPPPPPP/unlock"; got != want {
 		t.Errorf("follow-up Location=%q, want=%q", got, want)
-	}
-}
-
-func TestEntryUnlockPost(t *testing.T) {
-	dataStore := test_sqlite.New(t)
-	data := "protected file contents"
-	passphrase := mustCreateDownloadPassphrase(t, "correct horse battery staple")
-	if err := dataStore.InsertEntry(strings.NewReader(data), picoshare.UploadMetadata{
-		ID:                 "PPPPPPPPPP",
-		Filename:           "protected.txt",
-		ContentType:        "text/plain",
-		Uploaded:           mustParseTime("2023-01-01T00:00:00Z"),
-		Expires:            picoshare.NeverExpire,
-		Size:               mustParseFileSize(len(data)),
-		DownloadPassphrase: passphrase,
-	}); err != nil {
-		t.Fatalf("failed to insert protected entry: %v", err)
-	}
-	s := handlers.New(unauthenticatedAuthenticator{}, &dataStore, nilSpaceCheckFunc, nilGarbageCollector, time.Now)
-
-	for _, tt := range []struct {
-		explanation    string
-		route          string
-		body           string
-		expectedStatus int
-		expectedBody   string
-	}{
-		{
-			explanation:    "passphrase in POST body unlocks the entry",
-			route:          "/-PPPPPPPPPP/unlock",
-			body:           "passphrase=correct+horse+battery+staple",
-			expectedStatus: http.StatusOK,
-			expectedBody:   data,
-		},
-		{
-			explanation:    "passphrase only in query string does not unlock the entry",
-			route:          "/-PPPPPPPPPP/unlock?passphrase=correct+horse+battery+staple",
-			expectedStatus: http.StatusUnauthorized,
-		},
-		{
-			explanation:    "oversized POST body is rejected",
-			route:          "/-PPPPPPPPPP/unlock",
-			body:           "passphrase=" + strings.Repeat("a", 4096),
-			expectedStatus: http.StatusBadRequest,
-		},
-		{
-			explanation:    "missing passphrase does not panic",
-			route:          "/-PPPPPPPPPP/unlock",
-			expectedStatus: http.StatusUnauthorized,
-		},
-		{
-			explanation:    "malformed form passphrase does not panic",
-			route:          "/-PPPPPPPPPP/unlock",
-			body:           "passphrase=%zz",
-			expectedStatus: http.StatusBadRequest,
-		},
-	} {
-		t.Run(tt.explanation, func(t *testing.T) {
-			req := httptest.NewRequest(http.MethodPost, tt.route, strings.NewReader(tt.body))
-			req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-			rec := httptest.NewRecorder()
-
-			s.Router().ServeHTTP(rec, req)
-
-			if got, want := rec.Code, tt.expectedStatus; got != want {
-				t.Errorf("status=%d, want=%d", got, want)
-			}
-			if tt.expectedBody == "" {
-				return
-			}
-			if got, want := rec.Body.String(), tt.expectedBody; got != want {
-				t.Errorf("body=%q, want=%q", got, want)
-			}
-		})
 	}
 }
 
