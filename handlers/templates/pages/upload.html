@@ -124,7 +124,7 @@
     }
 
     function readDownloadPassphrase() {
-      return downloadPassphraseInput ? downloadPassphraseInput.value : null;
+      return downloadPassphraseInput.value || null;
     }
 
     function populateEditButton(entryId) {
