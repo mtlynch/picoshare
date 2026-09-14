@@ -121,19 +121,21 @@ func (s Server) entryUnlockPost() http.HandlerFunc {
 			return
 		}
 
-		if err == nil && entry.DownloadPassphrase.Equal(unlockRequest.Passphrase) {
-			s.serveEntryContent(w, r, entry)
+		// If password is incorrect, serve unlock page with error message.
+		if !entry.DownloadPassphrase.Equal(unlockRequest.Passphrase) {
+			w.WriteHeader(http.StatusUnauthorized)
+			renderTemplate(w, t, struct {
+				commonProps
+				IncorrectPassphrase bool
+			}{
+				commonProps:         makeCommonProps("PicoShare - Download", r.Context()),
+				IncorrectPassphrase: true,
+			})
 			return
 		}
 
-		w.WriteHeader(http.StatusUnauthorized)
-		renderTemplate(w, t, struct {
-			commonProps
-			IncorrectPassphrase bool
-		}{
-			commonProps:         makeCommonProps("PicoShare - Download", r.Context()),
-			IncorrectPassphrase: true,
-		})
+		// If password is correct, serve the content.
+		s.serveEntryContent(w, r, entry)
 	}
 }
 
