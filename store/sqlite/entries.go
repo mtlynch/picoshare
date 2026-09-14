@@ -20,7 +20,6 @@ func (s Store) GetEntriesMetadata() ([]picoshare.UploadMetadata, error) {
 		entries.content_type AS content_type,
 		entries.upload_time AS upload_time,
 		entries.expiration_time AS expiration_time,
-		entries.download_passphrase AS download_passphrase,
 		sizes.file_size AS file_size
 	FROM
 		entries
@@ -46,9 +45,8 @@ func (s Store) GetEntriesMetadata() ([]picoshare.UploadMetadata, error) {
 		var contentType string
 		var uploadTimeRaw string
 		var expirationTimeRaw string
-		var downloadPassphraseRaw *string
 		var fileSizeRaw uint64
-		if err = rows.Scan(&id, &filename, &note, &contentType, &uploadTimeRaw, &expirationTimeRaw, &downloadPassphraseRaw, &fileSizeRaw); err != nil {
+		if err = rows.Scan(&id, &filename, &note, &contentType, &uploadTimeRaw, &expirationTimeRaw, &fileSizeRaw); err != nil {
 			return []picoshare.UploadMetadata{}, err
 		}
 
@@ -66,20 +64,14 @@ func (s Store) GetEntriesMetadata() ([]picoshare.UploadMetadata, error) {
 		if err != nil {
 			return []picoshare.UploadMetadata{}, err
 		}
-		downloadPassphrase, err := parseDownloadPassphrase(downloadPassphraseRaw)
-		if err != nil {
-			return []picoshare.UploadMetadata{}, err
-		}
-
 		ee = append(ee, picoshare.UploadMetadata{
-			ID:                 picoshare.EntryID(id),
-			Filename:           picoshare.Filename(filename),
-			Note:               picoshare.FileNote{Value: note},
-			ContentType:        picoshare.ContentType(contentType),
-			Uploaded:           ut,
-			Expires:            picoshare.ExpirationTime(et),
-			Size:               fileSize,
-			DownloadPassphrase: downloadPassphrase,
+			ID:          picoshare.EntryID(id),
+			Filename:    picoshare.Filename(filename),
+			Note:        picoshare.FileNote{Value: note},
+			ContentType: picoshare.ContentType(contentType),
+			Uploaded:    ut,
+			Expires:     picoshare.ExpirationTime(et),
+			Size:        fileSize,
 		})
 	}
 

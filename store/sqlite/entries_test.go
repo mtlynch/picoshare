@@ -144,6 +144,17 @@ func TestUpdateEntryMetadata(t *testing.T) {
 		t.Errorf("download passphrase=%q, want=%q", got, want)
 	}
 
+	entries, err := dataStore.GetEntriesMetadata()
+	if err != nil {
+		t.Fatalf("failed to retrieve entries metadata: %v", err)
+	}
+	if got, want := len(entries), 1; got != want {
+		t.Fatalf("entries count=%d, want=%d", got, want)
+	}
+	if !entries[0].DownloadPassphrase.Empty() {
+		t.Errorf("bulk metadata download passphrase=%q, want empty", entries[0].DownloadPassphrase.String())
+	}
+
 	note := "updated note"
 	if err := dataStore.UpdateEntryMetadata("dummy-id", picoshare.UploadMetadata{
 		Filename:           "renamed-file.txt",
