@@ -155,11 +155,10 @@ func TestUpdateEntryMetadata(t *testing.T) {
 		t.Errorf("bulk metadata download passphrase=%q, want empty", entries[0].DownloadPassphrase.String())
 	}
 
-	note := "updated note"
 	if err := dataStore.UpdateEntryMetadata("dummy-id", picoshare.UploadMetadata{
 		Filename:           "renamed-file.txt",
 		Expires:            mustParseExpirationTime("2041-01-01T00:00:00Z"),
-		Note:               picoshare.FileNote{Value: &note},
+		Note:               picoshare.FileNote{Value: new("updated note")},
 		DownloadPassphrase: picoshare.DownloadPassphrase{},
 	}); err != nil {
 		t.Fatalf("failed to update entry metadata: %v", err)
