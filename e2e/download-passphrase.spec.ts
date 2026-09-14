@@ -106,7 +106,7 @@ test("adds and removes a download passphrase from the edit page", async ({
   await expect(page).toHaveURL(/\/files\/.+\/edit$/);
 
   const requirePassphrase = page.getByLabel(
-    "Require users to enter a passphrase before downloading",
+    "Require guests to enter a passphrase before downloading",
   );
   await expect(requirePassphrase).not.toBeChecked();
   await expect(page.locator("#download-passphrase")).toBeHidden();
