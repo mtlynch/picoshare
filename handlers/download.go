@@ -22,6 +22,7 @@ import (
 const maxEntryUnlockRequestBytes = 4096
 
 type entryUnlockRequest struct {
+	EntryID    picoshare.EntryID
 	Passphrase picoshare.DownloadPassphrase
 }
 
@@ -59,7 +60,28 @@ func (s Server) entryGet() http.HandlerFunc {
 func (s Server) entryUnlockGet() http.HandlerFunc {
 	t := parseTemplates("templates/pages/entry-unlock.html")
 	return func(w http.ResponseWriter, r *http.Request) {
-		if _, ok := s.entryUnlockMetadata(w, r); !ok {
+		id, err := parseEntryID(mux.Vars(r)["id"])
+		if err != nil {
+			log.Printf("error parsing ID: %v", err)
+			http.Error(w, fmt.Sprintf("bad entry ID: %v", err), http.StatusBadRequest)
+			return
+		}
+
+		entry, err := s.entryUnlockMetadata(id)
+		if _, ok := errors.AsType[store.EntryNotFoundError](err); ok {
+			http.Error(w, "entry not found", http.StatusNotFound)
+			return
+		} else if err != nil {
+			log.Printf("error retrieving entry with id %v: %v", id, err)
+			http.Error(w, "failed to retrieve entry", http.StatusInternalServerError)
+			return
+		}
+
+		// Prevent caches from serving a password-bypassing redirect after an
+		// administrator accesses this page with their session cookie.
+		w.Header().Set("Cache-Control", "no-store")
+		if entry.DownloadPassphrase.Empty() || isAuthenticated(r.Context()) {
+			http.Redirect(w, r, entryDownloadPath(entry.ID), http.StatusFound)
 			return
 		}
 
@@ -76,17 +98,29 @@ func (s Server) entryUnlockGet() http.HandlerFunc {
 func (s Server) entryUnlockPost() http.HandlerFunc {
 	t := parseTemplates("templates/pages/entry-unlock.html")
 	return func(w http.ResponseWriter, r *http.Request) {
-		entry, ok := s.entryUnlockMetadata(w, r)
-		if !ok {
-			return
-		}
-
+		w.Header().Set("Cache-Control", "no-store")
 		r.Body = http.MaxBytesReader(w, r.Body, maxEntryUnlockRequestBytes)
 		unlockRequest, err := parseEntryUnlockRequest(r)
 		if err != nil && !errors.Is(err, picoshare.ErrInvalidPassphrase) {
 			http.Error(w, "invalid passphrase form", http.StatusBadRequest)
 			return
 		}
+
+		entry, err := s.entryUnlockMetadata(unlockRequest.EntryID)
+		if _, ok := errors.AsType[store.EntryNotFoundError](err); ok {
+			http.Error(w, "entry not found", http.StatusNotFound)
+			return
+		} else if err != nil {
+			log.Printf("error retrieving entry with id %v: %v", unlockRequest.EntryID, err)
+			http.Error(w, "failed to retrieve entry", http.StatusInternalServerError)
+			return
+		}
+
+		if entry.DownloadPassphrase.Empty() || isAuthenticated(r.Context()) {
+			http.Redirect(w, r, entryDownloadPath(entry.ID), http.StatusFound)
+			return
+		}
+
 		if err == nil && entry.DownloadPassphrase.Equal(unlockRequest.Passphrase) {
 			s.serveEntryContent(w, r, entry)
 			return
@@ -103,43 +137,26 @@ func (s Server) entryUnlockPost() http.HandlerFunc {
 	}
 }
 
-func (s Server) entryUnlockMetadata(w http.ResponseWriter, r *http.Request) (picoshare.UploadMetadata, bool) {
-	id, err := parseEntryID(mux.Vars(r)["id"])
-	if err != nil {
-		log.Printf("error parsing ID: %v", err)
-		http.Error(w, fmt.Sprintf("bad entry ID: %v", err), http.StatusBadRequest)
-		return picoshare.UploadMetadata{}, false
-	}
-
-	entry, err := s.store.GetEntryMetadata(id)
-	if _, ok := errors.AsType[store.EntryNotFoundError](err); ok {
-		http.Error(w, "entry not found", http.StatusNotFound)
-		return picoshare.UploadMetadata{}, false
-	} else if err != nil {
-		log.Printf("error retrieving entry with id %v: %v", id, err)
-		http.Error(w, "failed to retrieve entry", http.StatusInternalServerError)
-		return picoshare.UploadMetadata{}, false
-	}
-	// Prevent caches from serving a password-bypassing redirect after an
-	// administrator accesses this page with their session cookie.
-	w.Header().Set("Cache-Control", "no-store")
-	if entry.DownloadPassphrase.Empty() || isAuthenticated(r.Context()) {
-		http.Redirect(w, r, entryDownloadPath(entry.ID), http.StatusFound)
-		return picoshare.UploadMetadata{}, false
-	}
-
-	return entry, true
+func (s Server) entryUnlockMetadata(id picoshare.EntryID) (picoshare.UploadMetadata, error) {
+	return s.store.GetEntryMetadata(id)
 }
 
 func parseEntryUnlockRequest(r *http.Request) (entryUnlockRequest, error) {
+	id, err := parseEntryID(mux.Vars(r)["id"])
+	if err != nil {
+		return entryUnlockRequest{}, err
+	}
 	if err := r.ParseForm(); err != nil {
 		return entryUnlockRequest{}, err
 	}
 	passphrase, err := picoshare.NewDownloadPassphrase(r.PostForm.Get("passphrase"))
 	if err != nil {
-		return entryUnlockRequest{}, err
+		return entryUnlockRequest{EntryID: id}, err
 	}
-	return entryUnlockRequest{Passphrase: passphrase}, nil
+	return entryUnlockRequest{
+		EntryID:    id,
+		Passphrase: passphrase,
+	}, nil
 }
 
 func entryDownloadPath(id picoshare.EntryID) string {
