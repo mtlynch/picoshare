@@ -16,6 +16,12 @@ import (
 	"github.com/mtlynch/picoshare/store"
 )
 
+const maxEntryUnlockRequestBytes = 4096
+
+type entryUnlockRequest struct {
+	Passphrase picoshare.DownloadPassphrase
+}
+
 func (s Server) entryGet() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id, err := parseEntryID(mux.Vars(r)["id"])
@@ -76,12 +82,13 @@ func (s Server) entryUnlock() http.HandlerFunc {
 
 		incorrectPassphrase := false
 		if r.Method == http.MethodPost {
-			if err := r.ParseForm(); err != nil {
+			r.Body = http.MaxBytesReader(w, r.Body, maxEntryUnlockRequestBytes)
+			unlockRequest, err := parseEntryUnlockRequest(r)
+			if err != nil && !errors.Is(err, picoshare.ErrInvalidPassphrase) {
 				http.Error(w, "invalid passphrase form", http.StatusBadRequest)
 				return
 			}
-			passphrase, err := picoshare.NewDownloadPassphrase(r.FormValue("passphrase"))
-			if err == nil && entry.DownloadPassphrase.Equal(passphrase) {
+			if err == nil && entry.DownloadPassphrase.Equal(unlockRequest.Passphrase) {
 				s.serveEntryContent(w, r, entry)
 				return
 			}
@@ -99,6 +106,17 @@ func (s Server) entryUnlock() http.HandlerFunc {
 			IncorrectPassphrase: incorrectPassphrase,
 		})
 	}
+}
+
+func parseEntryUnlockRequest(r *http.Request) (entryUnlockRequest, error) {
+	if err := r.ParseForm(); err != nil {
+		return entryUnlockRequest{}, err
+	}
+	passphrase, err := picoshare.NewDownloadPassphrase(r.PostForm.Get("passphrase"))
+	if err != nil {
+		return entryUnlockRequest{}, err
+	}
+	return entryUnlockRequest{Passphrase: passphrase}, nil
 }
 
 func entryDownloadPath(id picoshare.EntryID) string {

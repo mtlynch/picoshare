@@ -438,6 +438,80 @@ func TestProtectedEntryDownloadRequiresPasswordEveryDownload(t *testing.T) {
 	}
 }
 
+func TestEntryUnlockPost(t *testing.T) {
+	dataStore := test_sqlite.New(t)
+	data := "protected file contents"
+	passphrase := mustCreateDownloadPassphrase(t, "correct horse battery staple")
+	if err := dataStore.InsertEntry(strings.NewReader(data), picoshare.UploadMetadata{
+		ID:                 "PPPPPPPPPP",
+		Filename:           "protected.txt",
+		ContentType:        "text/plain",
+		Uploaded:           mustParseTime("2023-01-01T00:00:00Z"),
+		Expires:            picoshare.NeverExpire,
+		Size:               mustParseFileSize(len(data)),
+		DownloadPassphrase: passphrase,
+	}); err != nil {
+		t.Fatalf("failed to insert protected entry: %v", err)
+	}
+	s := handlers.New(unauthenticatedAuthenticator{}, &dataStore, nilSpaceCheckFunc, nilGarbageCollector, time.Now)
+
+	for _, tt := range []struct {
+		explanation    string
+		route          string
+		body           string
+		expectedStatus int
+		expectedBody   string
+	}{
+		{
+			explanation:    "passphrase in POST body unlocks the entry",
+			route:          "/-PPPPPPPPPP/unlock",
+			body:           "passphrase=correct+horse+battery+staple",
+			expectedStatus: http.StatusOK,
+			expectedBody:   data,
+		},
+		{
+			explanation:    "passphrase only in query string does not unlock the entry",
+			route:          "/-PPPPPPPPPP/unlock?passphrase=correct+horse+battery+staple",
+			expectedStatus: http.StatusUnauthorized,
+		},
+		{
+			explanation:    "oversized POST body is rejected",
+			route:          "/-PPPPPPPPPP/unlock",
+			body:           "passphrase=" + strings.Repeat("a", 4096),
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			explanation:    "missing passphrase does not panic",
+			route:          "/-PPPPPPPPPP/unlock",
+			expectedStatus: http.StatusUnauthorized,
+		},
+		{
+			explanation:    "malformed form passphrase does not panic",
+			route:          "/-PPPPPPPPPP/unlock",
+			body:           "passphrase=%zz",
+			expectedStatus: http.StatusBadRequest,
+		},
+	} {
+		t.Run(tt.explanation, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodPost, tt.route, strings.NewReader(tt.body))
+			req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+			rec := httptest.NewRecorder()
+
+			s.Router().ServeHTTP(rec, req)
+
+			if got, want := rec.Code, tt.expectedStatus; got != want {
+				t.Errorf("status=%d, want=%d", got, want)
+			}
+			if tt.expectedBody == "" {
+				return
+			}
+			if got, want := rec.Body.String(), tt.expectedBody; got != want {
+				t.Errorf("body=%q, want=%q", got, want)
+			}
+		})
+	}
+}
+
 func mustCreateDownloadPassphrase(t *testing.T, value string) picoshare.DownloadPassphrase {
 	t.Helper()
 
