@@ -3,7 +3,6 @@ package picoshare
 import (
 	"crypto/subtle"
 	"fmt"
-	"hash/fnv"
 	"strings"
 	"unicode/utf8"
 )
@@ -70,14 +69,13 @@ func (p DownloadPassphrase) String() string {
 
 // Equal performs constant-time comparison between this download passphrase and
 // another download passphrase. Two empty download passphrases are equal.
+// Passphrases of unequal lengths return immediately, which can allow a
+// determined attacker to discover the correct password length through a timing
+// attack, but they wouldn't be able to go further than that (e.g., determining
+// which prefix letters match).
 func (p DownloadPassphrase) Equal(other DownloadPassphrase) bool {
-	// subtle.ConstantTimeCompare returns early when its inputs differ in
-	// length, which would leak the length of the passphrase through timing.
-	// Hashing both values first produces fixed-length inputs so that the
-	// comparison always takes the same amount of time.
-	pHash := fnv.New64a()
-	_, _ = pHash.Write([]byte(p.String()))
-	otherHash := fnv.New64a()
-	_, _ = otherHash.Write([]byte(other.String()))
-	return subtle.ConstantTimeCompare(pHash.Sum(nil), otherHash.Sum(nil)) == 1
+	return subtle.ConstantTimeCompare(
+		[]byte(p.String()),
+		[]byte(other.String()),
+	) == 1
 }
