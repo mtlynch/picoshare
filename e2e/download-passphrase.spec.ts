@@ -48,7 +48,6 @@ test("requires a passphrase for a protected file download", async ({
     const visitorContext = await browser.newContext({ baseURL });
     const visitorPage = await visitorContext.newPage();
 
-    await visitorPage.goto("/");
     await visitorPage.goto(downloadURL);
     await expect(visitorPage).toHaveURL(/\/-[A-Za-z0-9]+\/unlock$/);
 
