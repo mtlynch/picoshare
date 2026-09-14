@@ -1,14 +1,18 @@
 package file
 
 import (
+	"database/sql"
 	"io"
 
 	"github.com/mtlynch/picoshare/picoshare"
-	"github.com/mtlynch/picoshare/store/sqlite/wrapped"
 )
 
+type sqlExecutor interface {
+	Exec(string, ...any) (sql.Result, error)
+}
+
 type writer struct {
-	ctx     wrapped.SqlDB
+	ctx     sqlExecutor
 	entryID picoshare.EntryID
 	buf     []byte
 	written int
@@ -16,7 +20,7 @@ type writer struct {
 
 // Create a new writer for the entry ID using the given SqlTx and splitting the
 // file into separate rows in the DB of at most chunkSize bytes.
-func NewWriter(ctx wrapped.SqlDB, id picoshare.EntryID, chunkSize uint64) io.WriteCloser {
+func NewWriter(ctx sqlExecutor, id picoshare.EntryID, chunkSize uint64) io.WriteCloser {
 	return new(writer{
 		ctx:     ctx,
 		entryID: id,
