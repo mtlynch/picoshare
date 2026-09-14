@@ -16,6 +16,9 @@ import (
 	"github.com/mtlynch/picoshare/store"
 )
 
+// maxEntryUnlockRequestBytes bounds the body of a request to unlock an entry.
+// Even a passphrase of MaxPassphraseLength code points that form encoding
+// percent-escapes entirely into 4-byte sequences fits well within it.
 const maxEntryUnlockRequestBytes = 4096
 
 type entryUnlockRequest struct {
