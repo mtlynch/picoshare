@@ -222,7 +222,7 @@ func (s Server) fileEditGet() http.HandlerFunc {
 			return
 		}
 
-		metadata, err := s.getEntryMetadata(id)
+		metadata, err := s.store.GetEntryMetadata(id)
 		if _, ok := errors.AsType[store.EntryNotFoundError](err); ok {
 			http.Error(w, "entry not found", http.StatusNotFound)
 			return
@@ -275,7 +275,7 @@ func (s Server) fileInfoGet() http.HandlerFunc {
 			return
 		}
 
-		metadata, err := s.getEntryMetadata(id)
+		metadata, err := s.store.GetEntryMetadata(id)
 		if _, ok := errors.AsType[store.EntryNotFoundError](err); ok {
 			http.Error(w, "entry not found", http.StatusNotFound)
 			return

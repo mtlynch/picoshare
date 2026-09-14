@@ -25,7 +25,7 @@ func (s Server) entryGet() http.HandlerFunc {
 			return
 		}
 
-		entry, err := s.getEntryMetadata(id)
+		entry, err := s.store.GetEntryMetadata(id)
 		if _, ok := errors.AsType[store.EntryNotFoundError](err); ok {
 			http.Error(w, "entry not found", http.StatusNotFound)
 			return
@@ -55,7 +55,7 @@ func (s Server) entryUnlock() http.HandlerFunc {
 			return
 		}
 
-		entry, err := s.getEntryMetadata(id)
+		entry, err := s.store.GetEntryMetadata(id)
 		if _, ok := errors.AsType[store.EntryNotFoundError](err); ok {
 			http.Error(w, "entry not found", http.StatusNotFound)
 			return
@@ -76,7 +76,8 @@ func (s Server) entryUnlock() http.HandlerFunc {
 				http.Error(w, "invalid passphrase form", http.StatusBadRequest)
 				return
 			}
-			if r.FormValue("passphrase") == entry.DownloadPassphrase.String() {
+			passphrase, err := picoshare.NewDownloadPassphrase(r.FormValue("passphrase"))
+			if err == nil && entry.DownloadPassphrase.Equal(passphrase) {
 				s.serveEntryContent(w, r, entry)
 				return
 			}
