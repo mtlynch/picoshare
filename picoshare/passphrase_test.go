@@ -95,12 +95,6 @@ func TestDownloadPassphraseEmpty(t *testing.T) {
 }
 
 func TestDownloadPassphraseEqual(t *testing.T) {
-	emptyPassphrase := picoshare.DownloadPassphrase{}
-	nonEmptyPassphrase, err := picoshare.NewDownloadPassphrase("correct horse battery staple")
-	if err != nil {
-		t.Fatalf("failed to create download passphrase: %v", err)
-	}
-
 	for _, tt := range []struct {
 		explanation   string
 		a             picoshare.DownloadPassphrase
@@ -109,20 +103,20 @@ func TestDownloadPassphraseEqual(t *testing.T) {
 	}{
 		{
 			explanation:   "two empty passphrases are equal",
-			a:             emptyPassphrase,
-			b:             emptyPassphrase,
+			a:             picoshare.DownloadPassphrase{},
+			b:             picoshare.DownloadPassphrase{},
 			equalExpected: true,
 		},
 		{
 			explanation:   "an empty passphrase does not equal a non-empty passphrase",
-			a:             emptyPassphrase,
-			b:             nonEmptyPassphrase,
+			a:             picoshare.DownloadPassphrase{},
+			b:             mustCreateDownloadPassphrase(t, "correct horse battery staple"),
 			equalExpected: false,
 		},
 		{
 			explanation:   "a non-empty passphrase does not equal an empty passphrase",
-			a:             nonEmptyPassphrase,
-			b:             emptyPassphrase,
+			a:             mustCreateDownloadPassphrase(t, "correct horse battery staple"),
+			b:             picoshare.DownloadPassphrase{},
 			equalExpected: false,
 		},
 		{
