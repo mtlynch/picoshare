@@ -32,8 +32,16 @@ func NewPassphrase(raw string) (Passphrase, error) {
 	return Passphrase{value: raw}, nil
 }
 
+// Empty reports whether the passphrase is the empty passphrase.
+func (p Passphrase) Empty() bool {
+	return p.value == ""
+}
+
 // String returns the exact text supplied when constructing the passphrase.
 func (p Passphrase) String() string {
+	if p.value == "" {
+		panic("cannot access an uninitialized passphrase")
+	}
 	return p.value
 }
 
@@ -57,7 +65,7 @@ func NewDownloadPassphrase(raw string) (DownloadPassphrase, error) {
 
 // Empty reports whether the download passphrase is the empty passphrase.
 func (p DownloadPassphrase) Empty() bool {
-	return p.String() == ""
+	return p.passphrase.Empty()
 }
 
 // String returns the exact text of the download passphrase, or an empty string
