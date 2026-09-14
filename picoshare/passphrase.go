@@ -32,10 +32,36 @@ func NewPassphrase(raw string) (Passphrase, error) {
 	return Passphrase{value: raw}, nil
 }
 
-// Bytes returns the exact UTF-8 bytes supplied when constructing the passphrase.
-func (p Passphrase) Bytes() []byte {
-	if p.value == "" {
-		panic("cannot access an uninitialized passphrase")
+// String returns the exact text supplied when constructing the passphrase.
+func (p Passphrase) String() string {
+	return p.value
+}
+
+// DownloadPassphrase is a passphrase that protects downloads of an entry.
+// PicoShare stores download passphrases in plaintext, so it is safe to compare
+// them directly. The zero value is the empty download passphrase, which
+// represents the absence of a passphrase.
+type DownloadPassphrase struct {
+	passphrase Passphrase
+}
+
+// NewDownloadPassphrase constructs a download passphrase from user-provided
+// text.
+func NewDownloadPassphrase(raw string) (DownloadPassphrase, error) {
+	passphrase, err := NewPassphrase(raw)
+	if err != nil {
+		return DownloadPassphrase{}, err
 	}
-	return []byte(p.value)
+	return DownloadPassphrase{passphrase: passphrase}, nil
+}
+
+// Empty reports whether the download passphrase is the empty passphrase.
+func (p DownloadPassphrase) Empty() bool {
+	return p.String() == ""
+}
+
+// String returns the exact text of the download passphrase, or an empty string
+// for the empty download passphrase.
+func (p DownloadPassphrase) String() string {
+	return p.passphrase.String()
 }

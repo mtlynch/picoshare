@@ -93,6 +93,7 @@ func (s Server) entryPut() http.HandlerFunc {
 			http.Error(w, fmt.Sprintf("Failed to save new entry data: %v", err), http.StatusInternalServerError)
 			return
 		}
+		s.protectedEntries.set(id, !metadata.DownloadPassphrase.Empty())
 	}
 }
 
@@ -161,9 +162,10 @@ func (s Server) guestEntryPost() http.HandlerFunc {
 
 func (s Server) entryMetadataFromRequest(r *http.Request) (picoshare.UploadMetadata, error) {
 	var payload struct {
-		Filename   string `json:"filename"`
-		Expiration string `json:"expiration"`
-		Note       string `json:"note"`
+		Filename           string `json:"filename"`
+		Expiration         string `json:"expiration"`
+		Note               string `json:"note"`
+		DownloadPassphrase string `json:"downloadPassphrase"`
 	}
 	err := json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil {
@@ -190,10 +192,18 @@ func (s Server) entryMetadataFromRequest(r *http.Request) (picoshare.UploadMetad
 		return picoshare.UploadMetadata{}, err
 	}
 
+	// Every protected entry uses the stub passphrase until the store persists
+	// per-entry passphrases.
+	downloadPassphrase := picoshare.DownloadPassphrase{}
+	if payload.DownloadPassphrase != "" {
+		downloadPassphrase = stubDownloadPassphrase()
+	}
+
 	return picoshare.UploadMetadata{
-		Filename: filename,
-		Expires:  expiration,
-		Note:     note,
+		Filename:           filename,
+		Expires:            expiration,
+		Note:               note,
+		DownloadPassphrase: downloadPassphrase,
 	}, nil
 }
 
@@ -262,6 +272,13 @@ func (s Server) insertFileFromRequest(r *http.Request, expiration picoshare.Expi
 		return picoshare.EntryID(""), errors.New("guest uploads cannot have file notes")
 	}
 
+	// Every protected entry uses the stub passphrase until the store persists
+	// per-entry passphrases.
+	downloadPassphrase := picoshare.DownloadPassphrase{}
+	if r.FormValue("downloadPassphrase") != "" {
+		downloadPassphrase = stubDownloadPassphrase()
+	}
+
 	id := generateEntryID()
 	err = s.store.InsertEntry(reader,
 		picoshare.UploadMetadata{
@@ -272,14 +289,16 @@ func (s Server) insertFileFromRequest(r *http.Request, expiration picoshare.Expi
 			GuestLink: picoshare.GuestLink{
 				ID: guestLinkID,
 			},
-			Uploaded: s.now(),
-			Expires:  expiration,
-			Size:     fileSize,
+			Uploaded:           s.now(),
+			Expires:            expiration,
+			Size:               fileSize,
+			DownloadPassphrase: downloadPassphrase,
 		})
 	if err != nil {
 		log.Printf("failed to save entry: %v", err)
 		return picoshare.EntryID(""), dbError{err}
 	}
+	s.protectedEntries.set(id, !downloadPassphrase.Empty())
 
 	return id, nil
 }

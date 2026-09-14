@@ -22,6 +22,8 @@ type (
 		checkSpace    SpaceCheckFunc
 		collector     *garbagecollect.Collector
 		now           NowFunc
+		// protectedEntries stands in for persisted download passphrases.
+		protectedEntries *protectedEntries
 	}
 )
 
@@ -40,6 +42,8 @@ func New(authenticator Authenticator, store Store, checkSpace SpaceCheckFunc, co
 		checkSpace:    checkSpace,
 		collector:     collector,
 		now:           now,
+		// TODO: Replace with persisted download passphrases.
+		protectedEntries: newProtectedEntries(),
 	}
 
 	s.routes()
