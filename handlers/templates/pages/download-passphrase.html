@@ -1,0 +1,21 @@
+{{ define "content" }}
+  <h1 class="h1">Protected Download</h1>
+  <p>Enter this file's passphrase to complete your download:</p>
+  <form method="post">
+    <div class="mb-4">
+      <label class="form-label" for="passphrase">Passphrase</label>
+      <input
+        id="passphrase"
+        class="form-control"
+        type="password"
+        name="passphrase"
+        autofocus
+        required
+      />
+    </div>
+    {{ if .IncorrectPassphrase }}
+      <div class="alert alert-danger" role="alert">Incorrect passphrase.</div>
+    {{ end }}
+    <button class="btn btn-primary">Download</button>
+  </form>
+{{ end }}

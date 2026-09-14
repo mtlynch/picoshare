@@ -44,11 +44,20 @@ function uploadFormData(url, formData, progressFn) {
     });
 }
 
-export async function uploadFile(file, expirationTime, note, progressFn) {
+export async function uploadFile(
+  file,
+  expirationTime,
+  note,
+  downloadPassphrase,
+  progressFn,
+) {
   const formData = new FormData();
   formData.append("file", file);
   if (note) {
     formData.append("note", note);
+  }
+  if (downloadPassphrase) {
+    formData.append("downloadPassphrase", downloadPassphrase);
   }
   return uploadFormData(
     `/api/entry?expiration=${encodeURIComponent(expirationTime)}`,
@@ -74,10 +83,17 @@ export async function guestUploadFile(
   );
 }
 
-export async function editFile(id, filename, expiration, note) {
+export async function editFile(
+  id,
+  filename,
+  expiration,
+  note,
+  downloadPassphrase,
+) {
   let payload = {
     filename,
     note,
+    downloadPassphrase,
   };
   if (expiration) {
     payload.expiration = expiration;
