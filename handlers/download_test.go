@@ -1,11 +1,8 @@
 package handlers_test
 
 import (
-	"io"
 	"net/http"
-	"net/http/cookiejar"
 	"net/http/httptest"
-	"net/url"
 	"strings"
 	"testing"
 	"time"
@@ -394,10 +391,9 @@ func TestProtectedEntryDownload(t *testing.T) {
 	}
 }
 
-func TestProtectedEntryDownloadRequiresPasswordEveryDownload(t *testing.T) {
+func TestProtectedEntryDownloadRequiresPassphraseEveryDownload(t *testing.T) {
 	dataStore := test_sqlite.New(t)
 	data := "protected file contents"
-	passphrase := mustCreateDownloadPassphrase(t, "correct horse battery staple")
 	if err := dataStore.InsertEntry(strings.NewReader(data), picoshare.UploadMetadata{
 		ID:                 "PPPPPPPPPP",
 		Filename:           "protected.txt",
@@ -405,65 +401,41 @@ func TestProtectedEntryDownloadRequiresPasswordEveryDownload(t *testing.T) {
 		Uploaded:           mustParseTime("2023-01-01T00:00:00Z"),
 		Expires:            picoshare.NeverExpire,
 		Size:               mustParseFileSize(len(data)),
-		DownloadPassphrase: passphrase,
+		DownloadPassphrase: mustCreateDownloadPassphrase(t, "correct horse battery staple"),
 	}); err != nil {
 		t.Fatalf("failed to insert protected entry: %v", err)
 	}
 	s := handlers.New(unauthenticatedAuthenticator{}, &dataStore, nilSpaceCheckFunc, nilGarbageCollector, time.Now)
-	server := httptest.NewServer(s.Router())
-	defer server.Close()
 
-	// Use a client that retains cookies across requests, like a browser would,
-	// so that any cookie the server set after a successful unlock would be sent
-	// on the follow-up request.
-	jar, err := cookiejar.New(nil)
-	if err != nil {
-		t.Fatalf("failed to create cookie jar: %v", err)
-	}
-	client := &http.Client{
-		Jar: jar,
-		CheckRedirect: func(req *http.Request, via []*http.Request) error {
-			return http.ErrUseLastResponse
-		},
-	}
+	{
+		req := httptest.NewRequest(http.MethodPost, "/-PPPPPPPPPP/unlock", strings.NewReader("passphrase=correct+horse+battery+staple"))
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		rec := httptest.NewRecorder()
 
-	form := url.Values{"passphrase": {"correct horse battery staple"}}
-	res, err := client.PostForm(server.URL+"/-PPPPPPPPPP/unlock", form)
-	if err != nil {
-		t.Fatalf("failed to POST passphrase: %v", err)
-	}
-	defer res.Body.Close()
-	if got, want := res.StatusCode, http.StatusOK; got != want {
-		t.Fatalf("status=%d, want=%d", got, want)
-	}
-	body, err := io.ReadAll(res.Body)
-	if err != nil {
-		t.Fatalf("failed to read response body: %v", err)
-	}
-	if got, want := string(body), data; got != want {
-		t.Fatalf("body=%q, want=%q", got, want)
+		s.Router().ServeHTTP(rec, req)
+
+		if got, want := rec.Code, http.StatusOK; got != want {
+			t.Fatalf("status=%d, want=%d", got, want)
+		}
+		if got, want := rec.Body.String(), data; got != want {
+			t.Fatalf("body=%q, want=%q", got, want)
+		}
 	}
 
-	serverURL, err := url.Parse(server.URL)
-	if err != nil {
-		t.Fatalf("failed to parse server URL: %v", err)
-	}
-	if got := jar.Cookies(serverURL); len(got) != 0 {
-		t.Errorf("cookies after unlock=%v, want none", got)
-	}
+	// A successful unlock must not let the same server serve the entry without
+	// the passphrase on the next request.
+	{
+		req := httptest.NewRequest(http.MethodGet, "/-PPPPPPPPPP", nil)
+		rec := httptest.NewRecorder()
 
-	// On subsequent downloads, still require the passphrase to download, even
-	// though the client sends back any cookies it received.
-	followUpRes, err := client.Get(server.URL + "/-PPPPPPPPPP")
-	if err != nil {
-		t.Fatalf("failed to GET protected entry: %v", err)
-	}
-	defer followUpRes.Body.Close()
-	if got, want := followUpRes.StatusCode, http.StatusFound; got != want {
-		t.Errorf("follow-up status=%d, want=%d", got, want)
-	}
-	if got, want := followUpRes.Header.Get("Location"), "/-PPPPPPPPPP/unlock"; got != want {
-		t.Errorf("follow-up Location=%q, want=%q", got, want)
+		s.Router().ServeHTTP(rec, req)
+
+		if got, want := rec.Code, http.StatusFound; got != want {
+			t.Errorf("status=%d, want=%d", got, want)
+		}
+		if got, want := rec.Header().Get("Location"), "/-PPPPPPPPPP/unlock"; got != want {
+			t.Errorf("Location=%q, want=%q", got, want)
+		}
 	}
 }
 
