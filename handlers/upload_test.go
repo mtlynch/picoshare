@@ -159,7 +159,13 @@ func TestEntryPost(t *testing.T) {
 				t.Errorf("expiration=%v, want=%v", got, want)
 			}
 
-			if got, want := entry.DownloadPassphrase.String(), tt.passphrase; got != want {
+			entryPassphrase := func() string {
+				if entry.DownloadPassphrase.Empty() {
+					return ""
+				}
+				return entry.DownloadPassphrase.String()
+			}()
+			if got, want := entryPassphrase, tt.passphrase; got != want {
 				t.Errorf("download passphrase=%q, want=%q", got, want)
 			}
 
@@ -399,7 +405,7 @@ func TestEntryPut(t *testing.T) {
 				t.Errorf("note=%v, want=%v", got, want)
 			}
 
-			if got, want := entry.DownloadPassphrase.String(), tt.passphraseExpected; got != want {
+			if got, want := downloadPassphraseToString(entry.DownloadPassphrase), tt.passphraseExpected; got != want {
 				t.Errorf("download passphrase=%q, want=%q", got, want)
 			}
 		})
@@ -934,6 +940,13 @@ func mustParseTime(s string) time.Time {
 
 func mustParseExpirationTime(s string) picoshare.ExpirationTime {
 	return picoshare.ExpirationTime(mustParseTime(s))
+}
+
+func downloadPassphraseToString(p picoshare.DownloadPassphrase) string {
+	if p.Empty() {
+		return ""
+	}
+	return p.String()
 }
 
 func mustReadAll(r io.Reader) []byte {
