@@ -68,8 +68,9 @@ func (p DownloadPassphrase) Empty() bool {
 	return p.passphrase.Empty()
 }
 
-// String returns the exact text of the download passphrase, or an empty string
-// for the empty download passphrase.
+// String returns the exact text of the download passphrase.
+//
+// String panics if the download passphrase is empty.
 func (p DownloadPassphrase) String() string {
 	return p.passphrase.String()
 }
