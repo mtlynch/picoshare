@@ -13,7 +13,7 @@ const (
 	authCookieName = "sharedSecret"
 
 	// maxSessionStartRequestBytes bounds the body of a request to start a
-	// session. Even a passphrase of MaxPassphraseCodePoints code points that
+	// session. Even a passphrase of MaxPassphraseLength code points that
 	// JSON encodes entirely as escaped surrogate pairs fits well within it.
 	maxSessionStartRequestBytes = 4096
 )
