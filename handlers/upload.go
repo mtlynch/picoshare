@@ -76,84 +76,24 @@ func (s Server) entryPut() http.HandlerFunc {
 			return
 		}
 
-		updateRequest, err := s.parseEntryUpdateRequest(r)
+		metadata, err := s.entryMetadataFromRequest(r)
 
 		if err != nil {
 			log.Printf("error parsing entry edit request: %v", err)
 			http.Error(w, fmt.Sprintf("Bad request: %v", err), http.StatusBadRequest)
 			return
 		}
-		if err := s.store.UpdateEntryMetadata(id, updateRequest.Metadata); err != nil {
+
+		if err := s.store.UpdateEntryMetadata(id, metadata); err != nil {
 			if _, ok := errors.AsType[store.EntryNotFoundError](err); ok {
 				http.Error(w, "Invalid entry ID", http.StatusNotFound)
 				return
 			}
 			log.Printf("error saving entry metadata: %v", err)
-			http.Error(w, fmt.Sprintf("Failed to save new entry data: %v", err), http.StatusInternalServerError)
+			http.Error(w, "Failed to save new entry data", http.StatusInternalServerError)
 			return
 		}
-		if updateRequest.DownloadPassphrase != nil {
-			if err := s.store.UpdateEntryDownloadPassphrase(id, *updateRequest.DownloadPassphrase); err != nil {
-				if _, ok := errors.AsType[store.EntryNotFoundError](err); ok {
-					http.Error(w, "Invalid entry ID", http.StatusNotFound)
-					return
-				}
-				log.Printf("error saving entry download passphrase: %v", err)
-				http.Error(w, fmt.Sprintf("Failed to save new entry data: %v", err), http.StatusInternalServerError)
-				return
-			}
-		}
 	}
-}
-
-type entryUpdateRequest struct {
-	Metadata picoshare.UploadMetadata
-	// DownloadPassphrase is nil when the request omits the passphrase, which
-	// keeps the entry's existing passphrase. It is the empty passphrase when the
-	// request removes the entry's passphrase.
-	DownloadPassphrase *picoshare.DownloadPassphrase
-}
-
-func (s Server) parseEntryUpdateRequest(r *http.Request) (entryUpdateRequest, error) {
-	var payload struct {
-		DownloadPassphrase *string `json:"downloadPassphrase"`
-		Filename           string  `json:"filename"`
-		Expiration         string  `json:"expiration"`
-		Note               string  `json:"note"`
-	}
-	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
-		return entryUpdateRequest{}, err
-	}
-	filename, err := parse.Filename(payload.Filename)
-	if err != nil {
-		return entryUpdateRequest{}, err
-	}
-	expiration := picoshare.NeverExpire
-	if payload.Expiration != "" {
-		expiration, err = parse.Expiration(payload.Expiration, s.now())
-		if err != nil {
-			return entryUpdateRequest{}, err
-		}
-	}
-	note, err := parse.FileNote(payload.Note)
-	if err != nil {
-		return entryUpdateRequest{}, err
-	}
-	var downloadPassphrase *picoshare.DownloadPassphrase
-	if payload.DownloadPassphrase != nil {
-		parsed := picoshare.DownloadPassphrase{}
-		if *payload.DownloadPassphrase != "" {
-			parsed, err = picoshare.NewDownloadPassphrase(*payload.DownloadPassphrase)
-			if err != nil {
-				return entryUpdateRequest{}, err
-			}
-		}
-		downloadPassphrase = &parsed
-	}
-	return entryUpdateRequest{
-		Metadata:           picoshare.UploadMetadata{Filename: filename, Expires: expiration, Note: note},
-		DownloadPassphrase: downloadPassphrase,
-	}, nil
 }
 
 func (s Server) guestEntryPost() http.HandlerFunc {
@@ -217,6 +157,55 @@ func (s Server) guestEntryPost() http.HandlerFunc {
 			}
 		}
 	}
+}
+
+func (s Server) entryMetadataFromRequest(r *http.Request) (picoshare.UploadMetadata, error) {
+	var payload struct {
+		Filename           string `json:"filename"`
+		Expiration         string `json:"expiration"`
+		Note               string `json:"note"`
+		DownloadPassphrase string `json:"downloadPassphrase"`
+	}
+	err := json.NewDecoder(r.Body).Decode(&payload)
+	if err != nil {
+		log.Printf("failed to decode JSON request: %v", err)
+		return picoshare.UploadMetadata{}, err
+	}
+
+	filename, err := parse.Filename(payload.Filename)
+	if err != nil {
+		return picoshare.UploadMetadata{}, err
+	}
+
+	// Treat an empty expiration string as NeverExpire.
+	expiration := picoshare.NeverExpire
+	if payload.Expiration != "" {
+		expiration, err = parse.Expiration(payload.Expiration, s.now())
+		if err != nil {
+			return picoshare.UploadMetadata{}, err
+		}
+	}
+
+	note, err := parse.FileNote(payload.Note)
+	if err != nil {
+		return picoshare.UploadMetadata{}, err
+	}
+
+	// An empty or missing passphrase removes the entry's download passphrase.
+	downloadPassphrase := picoshare.DownloadPassphrase{}
+	if payload.DownloadPassphrase != "" {
+		downloadPassphrase, err = picoshare.NewDownloadPassphrase(payload.DownloadPassphrase)
+		if err != nil {
+			return picoshare.UploadMetadata{}, err
+		}
+	}
+
+	return picoshare.UploadMetadata{
+		Filename:           filename,
+		Expires:            expiration,
+		Note:               note,
+		DownloadPassphrase: downloadPassphrase,
+	}, nil
 }
 
 func generateEntryID() picoshare.EntryID {

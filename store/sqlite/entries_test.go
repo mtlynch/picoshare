@@ -117,7 +117,7 @@ func TestReadLastByteOfEntry(t *testing.T) {
 	}
 }
 
-func TestUpdateEntryDownloadPassphrase(t *testing.T) {
+func TestUpdateEntryMetadata(t *testing.T) {
 	dataStore := test_sqlite.New(t)
 	passphrase, err := picoshare.NewDownloadPassphrase("correct horse battery staple")
 	if err != nil {
@@ -140,20 +140,32 @@ func TestUpdateEntryDownloadPassphrase(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to retrieve entry metadata: %v", err)
 	}
-	if metadata.DownloadPassphrase.Empty() {
-		t.Fatal("download passphrase is empty, want passphrase")
-	}
 	if got, want := metadata.DownloadPassphrase.String(), "correct horse battery staple"; got != want {
 		t.Errorf("download passphrase=%q, want=%q", got, want)
 	}
 
-	if err := dataStore.UpdateEntryDownloadPassphrase("dummy-id", picoshare.DownloadPassphrase{}); err != nil {
-		t.Fatalf("failed to clear download passphrase: %v", err)
+	note := "updated note"
+	if err := dataStore.UpdateEntryMetadata("dummy-id", picoshare.UploadMetadata{
+		Filename:           "renamed-file.txt",
+		Expires:            mustParseExpirationTime("2041-01-01T00:00:00Z"),
+		Note:               picoshare.FileNote{Value: &note},
+		DownloadPassphrase: picoshare.DownloadPassphrase{},
+	}); err != nil {
+		t.Fatalf("failed to update entry metadata: %v", err)
 	}
 
 	metadata, err = dataStore.GetEntryMetadata("dummy-id")
 	if err != nil {
 		t.Fatalf("failed to retrieve entry metadata: %v", err)
+	}
+	if got, want := metadata.Filename, picoshare.Filename("renamed-file.txt"); got != want {
+		t.Errorf("filename=%q, want=%q", got, want)
+	}
+	if got, want := metadata.Expires, mustParseExpirationTime("2041-01-01T00:00:00Z"); got != want {
+		t.Errorf("expiration=%v, want=%v", got, want)
+	}
+	if got, want := metadata.Note.String(), "updated note"; got != want {
+		t.Errorf("note=%q, want=%q", got, want)
 	}
 	if !metadata.DownloadPassphrase.Empty() {
 		t.Errorf("download passphrase=%q, want empty", metadata.DownloadPassphrase.String())

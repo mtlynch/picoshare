@@ -325,7 +325,7 @@ func TestEntryPut(t *testing.T) {
 			status:             http.StatusOK,
 		},
 		{
-			description: "keeps the download passphrase when the request omits it",
+			description: "removes the download passphrase when the request omits it",
 			targetID:    "AAAAAAAAAA",
 			payload: `{
 				"filename": "cool-song.mp3",
@@ -336,7 +336,7 @@ func TestEntryPut(t *testing.T) {
 			noteExpected:       makeNote("My latest track"),
 			expiresExpected:    mustParseExpirationTime("2029-01-02T01:02:03Z"),
 			passphraseInStore:  "correct horse battery staple",
-			passphraseExpected: "correct horse battery staple",
+			passphraseExpected: "",
 			status:             http.StatusOK,
 		},
 		{

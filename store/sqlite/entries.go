@@ -222,29 +222,6 @@ func (s Store) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) 
 	return nil
 }
 
-// UpdateEntryDownloadPassphrase sets the entry's download passphrase. An empty
-// passphrase removes the download passphrase.
-func (s Store) UpdateEntryDownloadPassphrase(id picoshare.EntryID, passphrase picoshare.DownloadPassphrase) error {
-	res, err := s.db.Exec(`
-	UPDATE entries
-	SET download_passphrase = :download_passphrase
-	WHERE id = :entry_id`,
-		sql.Named("download_passphrase", downloadPassphraseString(passphrase)),
-		sql.Named("entry_id", id))
-	if err != nil {
-		return err
-	}
-
-	rows, err := res.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if rows == 0 {
-		return store.EntryNotFoundError{ID: id}
-	}
-	return nil
-}
-
 func parseDownloadPassphrase(raw *string) (picoshare.DownloadPassphrase, error) {
 	if raw == nil {
 		return picoshare.DownloadPassphrase{}, nil
@@ -268,12 +245,14 @@ func (s Store) UpdateEntryMetadata(id picoshare.EntryID, metadata picoshare.Uplo
 	SET
 		filename = :filename,
 		expiration_time = :expiration_time,
-		note = :note
+		note = :note,
+		download_passphrase = :download_passphrase
 	WHERE
 		id = :entry_id`,
 		sql.Named("filename", metadata.Filename),
 		sql.Named("expiration_time", formatExpirationTime(metadata.Expires)),
 		sql.Named("note", metadata.Note.Value),
+		sql.Named("download_passphrase", downloadPassphraseString(metadata.DownloadPassphrase)),
 		sql.Named("entry_id", id))
 	if err != nil {
 		return err
