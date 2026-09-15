@@ -73,9 +73,23 @@ func TestNewPassphrase(t *testing.T) {
 			if !isValid {
 				return
 			}
-			if got, want := string(passphrase.Bytes()), tt.input; got != want {
+			if got, want := passphrase.String(), tt.input; got != want {
 				t.Errorf("passphrase=%q, want=%q", got, want)
 			}
 		})
+	}
+}
+
+func TestDownloadPassphraseEmpty(t *testing.T) {
+	if got, want := (picoshare.DownloadPassphrase{}).Empty(), true; got != want {
+		t.Errorf("empty=%v, want=%v", got, want)
+	}
+
+	passphrase, err := picoshare.NewDownloadPassphrase("correct horse battery staple")
+	if err != nil {
+		t.Fatalf("failed to create download passphrase: %v", err)
+	}
+	if got, want := passphrase.Empty(), false; got != want {
+		t.Errorf("empty=%v, want=%v", got, want)
 	}
 }

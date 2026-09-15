@@ -9,6 +9,15 @@
     const progressSpinner = document.getElementById("progress-spinner");
     const expireCheckbox = document.getElementById("expire-checkbox");
     const expirationPicker = document.getElementById("expiration-picker");
+    const requirePassphraseCheckbox = document.getElementById(
+      "require-passphrase-checkbox",
+    );
+    const downloadPassphraseFields = document.getElementById(
+      "download-passphrase-fields",
+    );
+    const downloadPassphraseInput = document.getElementById(
+      "download-passphrase",
+    );
 
     function readFilename() {
       return document.getElementById("filename").value || null;
@@ -16,6 +25,14 @@
 
     function readNote() {
       return document.getElementById("note").value || null;
+    }
+
+    function readDownloadPassphrase() {
+      // An empty passphrase tells the server to remove any existing passphrase.
+      if (!requirePassphraseCheckbox.checked) {
+        return "";
+      }
+      return downloadPassphraseInput.value;
     }
 
     document.getElementById("cancel-btn").addEventListener("click", () => {
@@ -35,7 +52,13 @@
       hideElement(editForm);
       showElement(progressSpinner);
 
-      editFile(id, readFilename(), expirationPicker.value, readNote())
+      editFile(
+        id,
+        readFilename(),
+        expirationPicker.value,
+        readNote(),
+        readDownloadPassphrase(),
+      )
         .then(() => {
           document.location = "/files";
         })
@@ -54,6 +77,17 @@
         enableElement(expirationPicker);
       } else {
         disableElement(expirationPicker);
+      }
+    });
+
+    requirePassphraseCheckbox.addEventListener("change", () => {
+      // Requiring a passphrase means the user must enter one before the form
+      // submits.
+      downloadPassphraseInput.required = requirePassphraseCheckbox.checked;
+      if (requirePassphraseCheckbox.checked) {
+        showElement(downloadPassphraseFields);
+      } else {
+        hideElement(downloadPassphraseFields);
       }
     });
   </script>
@@ -105,6 +139,44 @@
               disabled
             {{ end }}
           />
+        </fieldset>
+
+        <fieldset class="mb-4">
+          <legend class="form-label">
+            <i class="fa-solid fa-lock fa-fw label-icon"></i>Passphrase
+          </legend>
+
+          <div class="form-check">
+            <input
+              class="form-check-input"
+              type="checkbox"
+              id="require-passphrase-checkbox"
+              {{ if not .DownloadPassphrase.Empty }}checked{{ end }}
+            />
+            <label class="form-check-label" for="require-passphrase-checkbox">
+              Require guests to enter a passphrase before downloading
+            </label>
+          </div>
+          <div
+            id="download-passphrase-fields"
+            {{ if not .DownloadPassphrase.Empty }}
+              class="dependent-field"
+            {{ else }}
+              class="dependent-field d-none"
+            {{ end }}
+          >
+            <input
+              id="download-passphrase"
+              class="form-control"
+              type="text"
+              autocomplete="off"
+              maxlength="{{ $.MaxPassphraseLength }}"
+              placeholder="Enter a passphrase"
+              {{ if not .DownloadPassphrase.Empty }}
+                value="{{ .DownloadPassphrase }}" required
+              {{ end }}
+            />
+          </div>
         </fieldset>
 
         <div>

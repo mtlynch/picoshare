@@ -99,6 +99,17 @@
     </section>
 
     <section>
+      <h2>Passphrase protection</h2>
+      <p class="value">
+        {{ if not .DownloadPassphrase.Empty }}
+          Protected - Guest users must enter the file's passphrase
+        {{ else }}
+          No passphrase required
+        {{ end }}
+      </p>
+    </section>
+
+    <section>
       <h2>Uploaded by</h2>
       <p class="value">
         {{ if .GuestLink.Empty }}

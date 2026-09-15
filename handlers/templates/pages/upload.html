@@ -94,6 +94,9 @@
     const expirationSelect = document.getElementById("expiration-select");
     const expirationPicker = document.getElementById("expiration-picker");
     const noteInput = document.getElementById("note");
+    const downloadPassphraseInput = document.getElementById(
+      "download-passphrase",
+    );
     const uploadAnotherBtn = document.getElementById("upload-another-btn");
 
     function getGuestLinkMetdata() {
@@ -118,6 +121,10 @@
 
     function readNote() {
       return noteInput.value || null;
+    }
+
+    function readDownloadPassphrase() {
+      return downloadPassphraseInput.value || null;
     }
 
     function populateEditButton(entryId) {
@@ -163,7 +170,13 @@
       showElement(progressBar);
 
       let uploader = () => {
-        return uploadFile(file, readExpiration(), readNote(), updateProgress);
+        return uploadFile(
+          file,
+          readExpiration(),
+          readNote(),
+          readDownloadPassphrase(),
+          updateProgress,
+        );
       };
       if (guestLinkMetadata) {
         uploader = () => {
@@ -394,6 +407,22 @@
               maxlength="{{ .MaxNoteLength }}"
             />
             <div class="form-text">Note is only visible to you</div>
+          </div>
+          <div class="mt-4">
+            <label class="form-label" for="download-passphrase">
+              <i class="fa-solid fa-lock fa-fw label-icon"></i>Passphrase
+              <i>(optional)</i>
+            </label>
+            <input
+              id="download-passphrase"
+              class="form-control"
+              type="text"
+              autocomplete="off"
+              maxlength="{{ .MaxPassphraseLength }}"
+            />
+            <div class="form-text">
+              If set, guest users must enter this passphrase to download.
+            </div>
           </div>
         {{ end }}
       </div>
