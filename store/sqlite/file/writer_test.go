@@ -42,7 +42,7 @@ func (db *mockSqlDB) Exec(query string, args ...any) (sql.Result, error) {
 }
 
 func TestWriteFile(t *testing.T) {
-	entryID := mustCreateEntryID(t, "abcdefghij")
+	entryID := picoshare.MustCreateEntryID("abcdefghij")
 	for _, tt := range []struct {
 		explanation  string
 		id           picoshare.EntryID
@@ -150,14 +150,4 @@ func TestWriteFile(t *testing.T) {
 			}
 		})
 	}
-}
-
-func mustCreateEntryID(t *testing.T, raw string) picoshare.EntryID {
-	t.Helper()
-
-	id, err := picoshare.NewEntryID(raw)
-	if err != nil {
-		t.Fatalf("failed to create entry ID %q: %v", raw, err)
-	}
-	return id
 }

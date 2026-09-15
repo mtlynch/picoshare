@@ -128,7 +128,7 @@ func TestEntryGet(t *testing.T) {
 				data := "dummy data"
 				entry := picoshare.UploadEntry{
 					UploadMetadata: picoshare.UploadMetadata{
-						ID:          mustCreateEntryID(t, mockEntry.ID),
+						ID:          picoshare.MustCreateEntryID(mockEntry.ID),
 						Filename:    mockEntry.Filename,
 						ContentType: mockEntry.ContentType,
 						Uploaded:    mustParseTime("2023-01-01T00:00:00Z"),
@@ -395,7 +395,7 @@ func TestProtectedEntryDownload(t *testing.T) {
 		t.Run(tt.explanation, func(t *testing.T) {
 			dataStore := test_sqlite.New(t)
 			if err := dataStore.InsertEntry(strings.NewReader(tt.entryInStore.Contents), picoshare.UploadMetadata{
-				ID:                 mustCreateEntryID(t, tt.entryInStore.ID),
+				ID:                 picoshare.MustCreateEntryID(tt.entryInStore.ID),
 				Filename:           "test.txt",
 				ContentType:        "text/plain",
 				Uploaded:           mustParseTime("2023-01-01T00:00:00Z"),
@@ -448,7 +448,7 @@ func TestProtectedEntryDownloadRequiresPassphraseEveryDownload(t *testing.T) {
 	dataStore := test_sqlite.New(t)
 	data := "protected file contents"
 	if err := dataStore.InsertEntry(strings.NewReader(data), picoshare.UploadMetadata{
-		ID:                 mustCreateEntryID(t, "PPPPPPPPPP"),
+		ID:                 picoshare.MustCreateEntryID("PPPPPPPPPP"),
 		Filename:           "protected.txt",
 		ContentType:        "text/plain",
 		Uploaded:           mustParseTime("2023-01-01T00:00:00Z"),
@@ -501,14 +501,4 @@ func mustCreateDownloadPassphrase(t *testing.T, value string) picoshare.Download
 	}
 
 	return passphrase
-}
-
-func mustCreateEntryID(t *testing.T, raw string) picoshare.EntryID {
-	t.Helper()
-
-	id, err := picoshare.NewEntryID(raw)
-	if err != nil {
-		t.Fatalf("failed to create entry ID %q: %v", raw, err)
-	}
-	return id
 }

@@ -15,7 +15,7 @@ import (
 func TestInsertDeleteSingleEntry(t *testing.T) {
 	chunkSize := uint64(5)
 	dataStore := test_sqlite.NewWithChunkSize(t, chunkSize)
-	entryID := mustCreateEntryID(t, "abcdefghij")
+	entryID := picoshare.MustCreateEntryID("abcdefghij")
 
 	input := "hello, world!"
 	if err := dataStore.InsertEntry(bytes.NewBufferString(input), picoshare.UploadMetadata{
@@ -81,7 +81,7 @@ func TestInsertDeleteSingleEntry(t *testing.T) {
 func TestReadLastByteOfEntry(t *testing.T) {
 	chunkSize := uint64(5)
 	db := test_sqlite.NewWithChunkSize(t, chunkSize)
-	entryID := mustCreateEntryID(t, "abcdefghij")
+	entryID := picoshare.MustCreateEntryID("abcdefghij")
 
 	input := "hello, world!"
 	if err := db.InsertEntry(bytes.NewBufferString(input), picoshare.UploadMetadata{
@@ -121,7 +121,7 @@ func TestReadLastByteOfEntry(t *testing.T) {
 
 func TestUpdateEntryMetadata(t *testing.T) {
 	dataStore := test_sqlite.New(t)
-	entryID := mustCreateEntryID(t, "abcdefghij")
+	entryID := picoshare.MustCreateEntryID("abcdefghij")
 	passphrase, err := picoshare.NewDownloadPassphrase("correct horse battery staple")
 	if err != nil {
 		t.Fatalf("failed to create download passphrase: %v", err)
@@ -179,7 +179,7 @@ func TestUpdateEntryMetadata(t *testing.T) {
 // leaves them out.
 func TestGetEntriesMetadataOmitsDownloadPassphrase(t *testing.T) {
 	dataStore := test_sqlite.New(t)
-	entryID := mustCreateEntryID(t, "abcdefghij")
+	entryID := picoshare.MustCreateEntryID("abcdefghij")
 	passphrase, err := picoshare.NewDownloadPassphrase("correct horse battery staple")
 	if err != nil {
 		t.Fatalf("failed to create download passphrase: %v", err)
@@ -232,14 +232,4 @@ func mustParseFileSize(val int) picoshare.FileSize {
 	}
 
 	return fileSize
-}
-
-func mustCreateEntryID(t *testing.T, raw string) picoshare.EntryID {
-	t.Helper()
-
-	id, err := picoshare.NewEntryID(raw)
-	if err != nil {
-		t.Fatalf("failed to create entry ID %q: %v", raw, err)
-	}
-	return id
 }

@@ -81,6 +81,15 @@ func NewEntryID(raw string) (EntryID, error) {
 	return EntryID{value: raw}, nil
 }
 
+// MustCreateEntryID constructs an entry ID or panics when raw is invalid.
+func MustCreateEntryID(raw string) EntryID {
+	id, err := NewEntryID(raw)
+	if err != nil {
+		panic(fmt.Sprintf("failed to create entry ID: %v", err))
+	}
+	return id
+}
+
 func (f Filename) String() string {
 	return string(f)
 }
