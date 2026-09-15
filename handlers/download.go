@@ -28,7 +28,7 @@ type entryUnlockRequest struct {
 
 func (s Server) entryGet() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		id, err := parseEntryID(mux.Vars(r)["id"])
+		id, err := picoshare.EntryIDFromString(mux.Vars(r)["id"])
 		if err != nil {
 			log.Printf("error parsing ID: %v", err)
 			http.Error(w, fmt.Sprintf("bad entry ID: %v", err), http.StatusBadRequest)
@@ -60,7 +60,7 @@ func (s Server) entryGet() http.HandlerFunc {
 func (s Server) entryUnlockGet() http.HandlerFunc {
 	t := parseTemplates("templates/pages/entry-unlock.html")
 	return func(w http.ResponseWriter, r *http.Request) {
-		id, err := parseEntryID(mux.Vars(r)["id"])
+		id, err := picoshare.EntryIDFromString(mux.Vars(r)["id"])
 		if err != nil {
 			log.Printf("error parsing ID: %v", err)
 			http.Error(w, fmt.Sprintf("bad entry ID: %v", err), http.StatusBadRequest)
@@ -140,7 +140,7 @@ func (s Server) entryUnlockPost() http.HandlerFunc {
 }
 
 func parseEntryUnlockRequest(r *http.Request) (entryUnlockRequest, error) {
-	id, err := parseEntryID(mux.Vars(r)["id"])
+	id, err := picoshare.EntryIDFromString(mux.Vars(r)["id"])
 	if err != nil {
 		return entryUnlockRequest{}, err
 	}

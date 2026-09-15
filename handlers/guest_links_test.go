@@ -308,7 +308,7 @@ func TestDeleteExistingGuestLink(t *testing.T) {
 
 	_, err := dataStore.GetGuestLink(picoshare.GuestLinkID("dummy-guest-link-id"))
 	if _, ok := err.(store.GuestLinkNotFoundError); !ok {
-		t.Fatalf("expected entry %v to be deleted, got: %v", picoshare.EntryID("abcdefgh23456789"), err)
+		t.Fatalf("expected entry %v to be deleted, got: %v", "abcdefgh23456789", err)
 	}
 }
 

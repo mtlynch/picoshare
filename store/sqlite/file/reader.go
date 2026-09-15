@@ -100,7 +100,7 @@ func (fr *fileReader) populateBuffer() error {
 			ORDER BY
 				chunk_index ASC
 			`,
-		sql.Named("id", fr.entryID),
+		sql.Named("id", fr.entryID.String()),
 		sql.Named("chunk_index", chunkIndex),
 	).Scan(&chunk); err != nil {
 		log.Printf("reading chunk failed: %v", err)
@@ -131,7 +131,7 @@ func getFileLength(db *sql.DB, id picoshare.EntryID, chunkSize int64) (int64, er
 		chunk_index DESC
 	LIMIT 1
 	`,
-		sql.Named("id", id),
+		sql.Named("id", id.String()),
 	).Scan(&chunkIndex, &chunkLen); err != nil {
 		return 0, err
 	}
@@ -155,7 +155,7 @@ func getChunkSize(db *sql.DB, id picoshare.EntryID) (int64, error) {
 		chunk_index ASC
 	LIMIT 1
 	`,
-		sql.Named("id", id),
+		sql.Named("id", id.String()),
 	).Scan(&chunkSize); err != nil {
 		return 0, err
 	}
