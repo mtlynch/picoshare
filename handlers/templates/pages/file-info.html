@@ -1,12 +1,22 @@
 {{ define "style-tags" }}
   <style nonce="{{ .CspNonce }}">
-    .content section {
+    .form-panel section + section {
       margin-top: 1.5rem;
-      margin-bottom: 1.5rem;
+    }
 
-      & h2 {
-        font-size: 1.2em;
-      }
+    .form-panel section h2 {
+      color: var(--heading-color);
+      font-size: 1rem;
+      font-weight: 500;
+      margin: 0 0 0.25rem;
+    }
+
+    .form-panel .value {
+      margin-bottom: 0;
+    }
+
+    .form-panel .filename-value {
+      font-size: 1.25rem;
     }
   </style>
 {{ end }}
@@ -57,88 +67,104 @@
 
   {{ $downloadCount := .DownloadCount }}
   {{ with .Metadata }}
+    <div class="form-panel">
+      <div class="form-panel-body">
+        <section>
+          <h2>Filename</h2>
+          <p class="value filename-value">{{ .Filename }}</p>
+        </section>
 
-    <section>
-      <h2>Links</h2>
+        <section>
+          <h2>Links</h2>
 
-      <upload-links file-id="{{ .ID }}" filename="{{ .Filename }}">
-      </upload-links>
-    </section>
+          <upload-links file-id="{{ .ID }}" filename="{{ .Filename }}">
+          </upload-links>
+        </section>
+      </div>
 
-    <section>
-      <h2>Filename</h2>
-      <p class="value">{{ .Filename }}</p>
-    </section>
+      <div class="form-panel-body">
+        <section>
+          <h2><i class="fa-solid fa-hard-drive fa-fw label-icon"></i>Size</h2>
+          <p class="value">{{ formatFileSize .Size }}</p>
+        </section>
 
-    <section>
-      <h2>Size</h2>
-      <p class="value">{{ formatFileSize .Size }}</p>
-    </section>
+        <section>
+          <h2><i class="fa-solid fa-clock fa-fw label-icon"></i>Expires</h2>
+          <p class="value">{{ formatExpiration .Expires }}</p>
+        </section>
 
-    <section>
-      <h2>Expires</h2>
-      <p class="value">{{ formatExpiration .Expires }}</p>
-    </section>
+        <section>
+          <h2>
+            <i class="fa-solid fa-download fa-fw label-icon"></i>Downloads
+          </h2>
+          <p class="value">
+            {{ $downloadCount }} (<a href="/files/{{ .ID }}/downloads"
+              >History</a
+            >)
+          </p>
+        </section>
 
-    <section>
-      <h2>Downloads</h2>
-      <p class="value">
-        {{ $downloadCount }} (<a href="/files/{{ .ID }}/downloads">History</a>)
-      </p>
-    </section>
+        <section>
+          <h2><i class="fa-solid fa-note-sticky fa-fw label-icon"></i>Note</h2>
+          <p class="value">
+            {{ if .Note.Value }}
+              {{ .Note }}
+            {{ else }}
+              None
+            {{ end }}
+          </p>
+        </section>
 
-    <section>
-      <h2>Note</h2>
-      <p class="value">
-        {{ if .Note.Value }}
-          {{ .Note }}
-        {{ else }}
-          None
-        {{ end }}
-      </p>
-    </section>
+        <section>
+          <h2>
+            <i class="fa-solid fa-lock fa-fw label-icon"></i>Passphrase
+            protection
+          </h2>
+          <p class="value">
+            {{ if not .DownloadPassphrase.Empty }}
+              Protected - Guest users must enter the file's passphrase
+            {{ else }}
+              Unprotected - Anyone with the link can download
+            {{ end }}
+          </p>
+        </section>
 
-    <section>
-      <h2>Passphrase protection</h2>
-      <p class="value">
-        {{ if not .DownloadPassphrase.Empty }}
-          Protected - Guest users must enter the file's passphrase
-        {{ else }}
-          Unprotected - Anyone with the link can download
-        {{ end }}
-      </p>
-    </section>
+        <section>
+          <h2><i class="fa-solid fa-user fa-fw label-icon"></i>Uploaded by</h2>
+          <p class="value">
+            {{ if .GuestLink.Empty }}
+              You
+            {{ else }}
+              {{ $label := .GuestLink.ID }}
+              {{ if not .GuestLink.Label.Empty }}
+                {{ $label = .GuestLink.Label }}
+              {{ end }}
 
-    <section>
-      <h2>Uploaded by</h2>
-      <p class="value">
-        {{ if .GuestLink.Empty }}
-          You
-        {{ else }}
-          {{ $label := .GuestLink.ID }}
-          {{ if not .GuestLink.Label.Empty }}
-            {{ $label = .GuestLink.Label }}
-          {{ end }}
+              Guest link:
+              <a href="/g/{{ .GuestLink.ID.String }}">{{ $label.String }}</a>
+            {{ end }}
+          </p>
+        </section>
 
-          Guest link:
-          <a href="/g/{{ .GuestLink.ID.String }}">{{ $label.String }}</a>
-        {{ end }}
-      </p>
-    </section>
+        <section>
+          <h2>
+            <i class="fa-solid fa-calendar fa-fw label-icon"></i>Upload time
+          </h2>
+          <p id="upload-timestamp" class="value">
+            {{ formatTimestamp .Uploaded }}
+          </p>
+        </section>
+      </div>
 
-    <section>
-      <h2>Upload time</h2>
-      <span id="upload-timestamp" class="value"
-        >{{ formatTimestamp .Uploaded }}</span
-      >
-    </section>
-
-    <div class="d-flex flex-wrap gap-2">
-      <button class="btn btn-outline-primary" id="close-btn">Close</button>
-      <a class="btn btn-primary" role="button" href="/files/{{ .ID }}/edit">
-        <i class="fa-solid fa-pen-to-square me-2"></i>
-        Edit</a
-      >
+      <div class="form-panel-footer">
+        <button class="btn btn-outline-primary" id="close-btn" type="button">
+          Close
+        </button>
+        <a class="btn btn-primary" role="button" href="/files/{{ .ID }}/edit">
+          <i class="fa-solid fa-pen-to-square me-2"></i>
+          Edit
+        </a>
+      </div>
     </div>
   {{ end }}
 {{ end }}

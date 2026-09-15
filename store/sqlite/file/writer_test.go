@@ -26,16 +26,17 @@ type (
 var errMockSqlFailure = errors.New("fake SQL error")
 
 func (db *mockSqlDB) Exec(query string, args ...any) (sql.Result, error) {
-	id, err := picoshare.NewEntryID(args[0].(string))
+	id, err := picoshare.NewEntryID(args[0].(sql.NamedArg).Value.(string))
 	if err != nil {
 		return nil, err
 	}
-	chunk := args[2].([]byte)
+	chunkIndex := args[1].(sql.NamedArg).Value.(int)
+	chunk := args[2].(sql.NamedArg).Value.([]byte)
 	chunkCopy := make([]byte, len(chunk))
 	copy(chunkCopy, chunk)
 	db.rows = append(db.rows, mockChunkRow{
 		id:         id,
-		chunkIndex: args[1].(int),
+		chunkIndex: chunkIndex,
 		chunk:      chunkCopy,
 	})
 	return nil, db.err
