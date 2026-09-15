@@ -155,17 +155,15 @@ func TestEntryPost(t *testing.T) {
 }
 
 func TestEntryPut(t *testing.T) {
-	originalEntry := picoshare.UploadMetadata{
-		ID:          picoshare.EntryID("AAAAAAAAAA"),
-		Filename:    picoshare.Filename("original-filename.mp3"),
-		ContentType: picoshare.ContentType("audio/mpeg"),
-		Uploaded:    mustParseTime("2023-01-01T00:00:00Z"),
-		Expires:     mustParseExpirationTime("2024-12-15T21:52:33Z"),
-		Note:        picoshare.FileNote{},
+	type fakeEntry struct {
+		ID       picoshare.EntryID
+		Filename picoshare.Filename
+		Expires  picoshare.ExpirationTime
 	}
 	for _, tt := range []struct {
 		description      string
-		targetID         string
+		entryInStore     fakeEntry
+		path             string
 		payload          string
 		filenameExpected string
 		expiresExpected  picoshare.ExpirationTime
@@ -174,7 +172,12 @@ func TestEntryPut(t *testing.T) {
 	}{
 		{
 			description: "updates metadata for valid request",
-			targetID:    "AAAAAAAAAA",
+			entryInStore: fakeEntry{
+				ID:       "AAAAAAAAAA",
+				Filename: "original-filename.mp3",
+				Expires:  mustParseExpirationTime("2024-12-15T21:52:33Z"),
+			},
+			path: "/api/entry/AAAAAAAAAA",
 			payload: `{
 				"filename": "cool-song.mp3",
 				"expiration": "2029-01-02T01:02:03Z",
@@ -187,7 +190,12 @@ func TestEntryPut(t *testing.T) {
 		},
 		{
 			description: "treats missing expiration time as NeverExpire",
-			targetID:    "AAAAAAAAAA",
+			entryInStore: fakeEntry{
+				ID:       "AAAAAAAAAA",
+				Filename: "original-filename.mp3",
+				Expires:  mustParseExpirationTime("2024-12-15T21:52:33Z"),
+			},
+			path: "/api/entry/AAAAAAAAAA",
 			payload: `{
 				"filename": "cool-song.mp3",
 				"note":"My latest track"
@@ -199,7 +207,12 @@ func TestEntryPut(t *testing.T) {
 		},
 		{
 			description: "rejects update when filename is invalid",
-			targetID:    "AAAAAAAAAA",
+			entryInStore: fakeEntry{
+				ID:       "AAAAAAAAAA",
+				Filename: "original-filename.mp3",
+				Expires:  mustParseExpirationTime("2024-12-15T21:52:33Z"),
+			},
+			path: "/api/entry/AAAAAAAAAA",
 			payload: `{
 				"filename": "",
 				"expiration": "2029-01-02T01:02:03Z",
@@ -212,7 +225,12 @@ func TestEntryPut(t *testing.T) {
 		},
 		{
 			description: "rejects update when note is invalid",
-			targetID:    "AAAAAAAAAA",
+			entryInStore: fakeEntry{
+				ID:       "AAAAAAAAAA",
+				Filename: "original-filename.mp3",
+				Expires:  mustParseExpirationTime("2024-12-15T21:52:33Z"),
+			},
+			path: "/api/entry/AAAAAAAAAA",
 			payload: `{
 				"filename": "cool-song.mp3",
 				"expiration": "2029-01-02T01:02:03Z",
@@ -225,7 +243,12 @@ func TestEntryPut(t *testing.T) {
 		},
 		{
 			description: "ignores non-existent entry ID",
-			targetID:    "BBBBBBBBBB",
+			entryInStore: fakeEntry{
+				ID:       "AAAAAAAAAA",
+				Filename: "original-filename.mp3",
+				Expires:  mustParseExpirationTime("2024-12-15T21:52:33Z"),
+			},
+			path: "/api/entry/BBBBBBBBBB",
 			payload: `{
 				"filename": "cool-song.mp3",
 				"expiration": "2029-01-02T01:02:03Z",
@@ -240,14 +263,21 @@ func TestEntryPut(t *testing.T) {
 		t.Run(tt.description, func(t *testing.T) {
 			dataStore := test_sqlite.New(t)
 			originalData := "dummy original data"
-			metadata := originalEntry
+			metadata := picoshare.UploadMetadata{
+				ID:          tt.entryInStore.ID,
+				Filename:    tt.entryInStore.Filename,
+				ContentType: picoshare.ContentType("audio/mpeg"),
+				Uploaded:    mustParseTime("2023-01-01T00:00:00Z"),
+				Expires:     tt.entryInStore.Expires,
+				Note:        picoshare.FileNote{},
+			}
 			metadata.Size = mustParseFileSize(len(originalData))
 			dataStore.InsertEntry(strings.NewReader((originalData)), metadata)
 			s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceCheckFunc, nilGarbageCollector, time.Now)
 
 			req := httptest.NewRequest(
 				http.MethodPut,
-				"/api/entry/"+tt.targetID,
+				tt.path,
 				strings.NewReader(tt.payload),
 			)
 			req.Header.Add("Content-Type", "text/json")
@@ -260,9 +290,9 @@ func TestEntryPut(t *testing.T) {
 				t.Fatalf("status=%d, want=%d", got, want)
 			}
 
-			entry, err := dataStore.GetEntryMetadata(picoshare.EntryID(originalEntry.ID))
+			entry, err := dataStore.GetEntryMetadata(tt.entryInStore.ID)
 			if err != nil {
-				t.Fatalf("failed to get expected entry %v from data store: %v", originalEntry.ID, err)
+				t.Fatalf("failed to get expected entry %v from data store: %v", tt.entryInStore.ID, err)
 			}
 
 			if got, want := entry.Filename, picoshare.Filename(tt.filenameExpected); got != want {
