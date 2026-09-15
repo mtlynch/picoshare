@@ -59,3 +59,15 @@ func TestEntryIDFromString(t *testing.T) {
 		})
 	}
 }
+
+func TestNewEntryID(t *testing.T) {
+	id := picoshare.NewEntryID()
+	if got, want := len(id.String()), picoshare.EntryIDLength; got != want {
+		t.Errorf("length=%d, want=%d", got, want)
+	}
+
+	_, err := picoshare.EntryIDFromString(id.String())
+	if err != nil {
+		t.Errorf("failed to parse generated entry ID: %v", err)
+	}
+}

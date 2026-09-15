@@ -12,12 +12,8 @@ import (
 
 	"github.com/mtlynch/picoshare/handlers/parse"
 	"github.com/mtlynch/picoshare/picoshare"
-	"github.com/mtlynch/picoshare/random"
 	"github.com/mtlynch/picoshare/store"
 )
-
-// Omit visually similar characters (I,l,1), (0,O)
-var entryIDCharacters = []rune("abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789")
 
 type (
 	EntryPostResponse struct {
@@ -206,15 +202,6 @@ func (s Server) entryMetadataFromRequest(r *http.Request) (picoshare.UploadMetad
 	}, nil
 }
 
-func generateEntryID() picoshare.EntryID {
-	raw := random.String(picoshare.EntryIDLength, entryIDCharacters)
-	id, err := picoshare.EntryIDFromString(raw)
-	if err != nil {
-		panic(fmt.Sprintf("generated invalid entry ID: %v", err))
-	}
-	return id
-}
-
 func (s Server) insertFileFromRequest(r *http.Request, expiration picoshare.ExpirationTime, guestLinkID picoshare.GuestLinkID) (picoshare.EntryID, error) {
 	// ParseMultipartForm can go above the limit we set, so set a conservative RAM
 	// limit to avoid exhausting RAM on servers with limited resources.
@@ -268,7 +255,7 @@ func (s Server) insertFileFromRequest(r *http.Request, expiration picoshare.Expi
 		}
 	}
 
-	id := generateEntryID()
+	id := picoshare.NewEntryID()
 	err = s.store.InsertEntry(reader,
 		picoshare.UploadMetadata{
 			ID:          id,

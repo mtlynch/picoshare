@@ -5,6 +5,8 @@ import (
 	"io"
 	"strings"
 	"time"
+
+	"github.com/mtlynch/picoshare/random"
 )
 
 type (
@@ -79,6 +81,11 @@ func EntryIDFromString(raw string) (EntryID, error) {
 	}
 
 	return EntryID{value: raw}, nil
+}
+
+// NewEntryID generates an entry ID.
+func NewEntryID() EntryID {
+	return EntryID{value: random.String(EntryIDLength, []rune(entryIDCharacters))}
 }
 
 // MustCreateEntryID constructs an entry ID or panics when raw is invalid.
