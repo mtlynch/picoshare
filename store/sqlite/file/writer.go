@@ -1,6 +1,7 @@
 package file
 
 import (
+	"database/sql"
 	"io"
 
 	"github.com/mtlynch/picoshare/picoshare"
@@ -73,7 +74,11 @@ func (w *writer) flush(n int) error {
 		chunk_index,
 		chunk
 	)
-	VALUES(?,?,?)`, w.entryID, idx, w.buf[0:n])
+	VALUES(:id,:chunk_index,:chunk)`,
+		sql.Named("id", w.entryID),
+		sql.Named("chunk_index", idx),
+		sql.Named("chunk", w.buf[0:n]),
+	)
 
 	return err
 }
