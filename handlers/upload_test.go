@@ -176,31 +176,31 @@ func TestEntryPost(t *testing.T) {
 }
 
 func TestEntryPut(t *testing.T) {
-	originalEntry := picoshare.UploadMetadata{
-		ID:          picoshare.EntryID("AAAAAAAAAA"),
-		Filename:    picoshare.Filename("original-filename.mp3"),
-		ContentType: picoshare.ContentType("audio/mpeg"),
-		Uploaded:    mustParseTime("2023-01-01T00:00:00Z"),
-		Expires:     mustParseExpirationTime("2024-12-15T21:52:33Z"),
-		Note:        picoshare.FileNote{},
+	type fakeEntry struct {
+		ID                 picoshare.EntryID
+		Filename           picoshare.Filename
+		Expires            picoshare.ExpirationTime
+		DownloadPassphrase string
 	}
 	for _, tt := range []struct {
-		description      string
-		targetID         string
-		payload          string
-		filenameExpected string
-		expiresExpected  picoshare.ExpirationTime
-		noteExpected     picoshare.FileNote
-		// downloadPassphraseInStore protects the original entry when non-empty.
-		downloadPassphraseInStore string
-		// downloadPassphraseExpected is the passphrase the entry must accept after
-		// the request, or empty if the entry must be unprotected.
+		description                string
+		entryInStore               fakeEntry
+		path                       string
+		payload                    string
+		filenameExpected           string
+		expiresExpected            picoshare.ExpirationTime
+		noteExpected               picoshare.FileNote
 		downloadPassphraseExpected string
 		status                     int
 	}{
 		{
 			description: "updates metadata for valid request",
-			targetID:    "AAAAAAAAAA",
+			entryInStore: fakeEntry{
+				ID:       "AAAAAAAAAA",
+				Filename: "original-filename.mp3",
+				Expires:  mustParseExpirationTime("2024-12-15T21:52:33Z"),
+			},
+			path: "/api/entry/AAAAAAAAAA",
 			payload: `{
 				"filename": "cool-song.mp3",
 				"expiration": "2029-01-02T01:02:03Z",
@@ -213,7 +213,12 @@ func TestEntryPut(t *testing.T) {
 		},
 		{
 			description: "treats missing expiration time as NeverExpire",
-			targetID:    "AAAAAAAAAA",
+			entryInStore: fakeEntry{
+				ID:       "AAAAAAAAAA",
+				Filename: "original-filename.mp3",
+				Expires:  mustParseExpirationTime("2024-12-15T21:52:33Z"),
+			},
+			path: "/api/entry/AAAAAAAAAA",
 			payload: `{
 				"filename": "cool-song.mp3",
 				"note":"My latest track"
@@ -225,7 +230,12 @@ func TestEntryPut(t *testing.T) {
 		},
 		{
 			description: "rejects update when filename is invalid",
-			targetID:    "AAAAAAAAAA",
+			entryInStore: fakeEntry{
+				ID:       "AAAAAAAAAA",
+				Filename: "original-filename.mp3",
+				Expires:  mustParseExpirationTime("2024-12-15T21:52:33Z"),
+			},
+			path: "/api/entry/AAAAAAAAAA",
 			payload: `{
 				"filename": "",
 				"expiration": "2029-01-02T01:02:03Z",
@@ -238,7 +248,12 @@ func TestEntryPut(t *testing.T) {
 		},
 		{
 			description: "rejects update when note is invalid",
-			targetID:    "AAAAAAAAAA",
+			entryInStore: fakeEntry{
+				ID:       "AAAAAAAAAA",
+				Filename: "original-filename.mp3",
+				Expires:  mustParseExpirationTime("2024-12-15T21:52:33Z"),
+			},
+			path: "/api/entry/AAAAAAAAAA",
 			payload: `{
 				"filename": "cool-song.mp3",
 				"expiration": "2029-01-02T01:02:03Z",
@@ -251,7 +266,12 @@ func TestEntryPut(t *testing.T) {
 		},
 		{
 			description: "ignores non-existent entry ID",
-			targetID:    "BBBBBBBBBB",
+			entryInStore: fakeEntry{
+				ID:       "AAAAAAAAAA",
+				Filename: "original-filename.mp3",
+				Expires:  mustParseExpirationTime("2024-12-15T21:52:33Z"),
+			},
+			path: "/api/entry/BBBBBBBBBB",
 			payload: `{
 				"filename": "cool-song.mp3",
 				"expiration": "2029-01-02T01:02:03Z",
@@ -264,7 +284,12 @@ func TestEntryPut(t *testing.T) {
 		},
 		{
 			description: "sets a download passphrase",
-			targetID:    "AAAAAAAAAA",
+			entryInStore: fakeEntry{
+				ID:       "AAAAAAAAAA",
+				Filename: "original-filename.mp3",
+				Expires:  mustParseExpirationTime("2024-12-15T21:52:33Z"),
+			},
+			path: "/api/entry/AAAAAAAAAA",
 			payload: `{
 				"filename": "cool-song.mp3",
 				"expiration": "2029-01-02T01:02:03Z",
@@ -279,7 +304,13 @@ func TestEntryPut(t *testing.T) {
 		},
 		{
 			description: "replaces an existing download passphrase",
-			targetID:    "AAAAAAAAAA",
+			entryInStore: fakeEntry{
+				ID:                 "AAAAAAAAAA",
+				Filename:           "original-filename.mp3",
+				Expires:            mustParseExpirationTime("2024-12-15T21:52:33Z"),
+				DownloadPassphrase: "correct horse battery staple",
+			},
+			path: "/api/entry/AAAAAAAAAA",
 			payload: `{
 				"filename": "cool-song.mp3",
 				"expiration": "2029-01-02T01:02:03Z",
@@ -289,13 +320,18 @@ func TestEntryPut(t *testing.T) {
 			filenameExpected:           "cool-song.mp3",
 			noteExpected:               makeNote("My latest track"),
 			expiresExpected:            mustParseExpirationTime("2029-01-02T01:02:03Z"),
-			downloadPassphraseInStore:  "correct horse battery staple",
 			downloadPassphraseExpected: "new passphrase",
 			status:                     http.StatusOK,
 		},
 		{
 			description: "removes the download passphrase",
-			targetID:    "AAAAAAAAAA",
+			entryInStore: fakeEntry{
+				ID:                 "AAAAAAAAAA",
+				Filename:           "original-filename.mp3",
+				Expires:            mustParseExpirationTime("2024-12-15T21:52:33Z"),
+				DownloadPassphrase: "correct horse battery staple",
+			},
+			path: "/api/entry/AAAAAAAAAA",
 			payload: `{
 				"filename": "cool-song.mp3",
 				"expiration": "2029-01-02T01:02:03Z",
@@ -305,13 +341,17 @@ func TestEntryPut(t *testing.T) {
 			filenameExpected:           "cool-song.mp3",
 			noteExpected:               makeNote("My latest track"),
 			expiresExpected:            mustParseExpirationTime("2029-01-02T01:02:03Z"),
-			downloadPassphraseInStore:  "correct horse battery staple",
 			downloadPassphraseExpected: "",
 			status:                     http.StatusOK,
 		},
 		{
 			description: "keeps an unprotected entry unprotected when the passphrase is empty",
-			targetID:    "AAAAAAAAAA",
+			entryInStore: fakeEntry{
+				ID:       "AAAAAAAAAA",
+				Filename: "original-filename.mp3",
+				Expires:  mustParseExpirationTime("2024-12-15T21:52:33Z"),
+			},
+			path: "/api/entry/AAAAAAAAAA",
 			payload: `{
 				"filename": "cool-song.mp3",
 				"expiration": "2029-01-02T01:02:03Z",
@@ -326,7 +366,13 @@ func TestEntryPut(t *testing.T) {
 		},
 		{
 			description: "removes the download passphrase when the request omits it",
-			targetID:    "AAAAAAAAAA",
+			entryInStore: fakeEntry{
+				ID:                 "AAAAAAAAAA",
+				Filename:           "original-filename.mp3",
+				Expires:            mustParseExpirationTime("2024-12-15T21:52:33Z"),
+				DownloadPassphrase: "correct horse battery staple",
+			},
+			path: "/api/entry/AAAAAAAAAA",
 			payload: `{
 				"filename": "cool-song.mp3",
 				"expiration": "2029-01-02T01:02:03Z",
@@ -335,13 +381,18 @@ func TestEntryPut(t *testing.T) {
 			filenameExpected:           "cool-song.mp3",
 			noteExpected:               makeNote("My latest track"),
 			expiresExpected:            mustParseExpirationTime("2029-01-02T01:02:03Z"),
-			downloadPassphraseInStore:  "correct horse battery staple",
 			downloadPassphraseExpected: "",
 			status:                     http.StatusOK,
 		},
 		{
 			description: "rejects update when download passphrase is too long",
-			targetID:    "AAAAAAAAAA",
+			entryInStore: fakeEntry{
+				ID:                 "AAAAAAAAAA",
+				Filename:           "original-filename.mp3",
+				Expires:            mustParseExpirationTime("2024-12-15T21:52:33Z"),
+				DownloadPassphrase: "correct horse battery staple",
+			},
+			path: "/api/entry/AAAAAAAAAA",
 			payload: `{
 				"filename": "cool-song.mp3",
 				"expiration": "2029-01-02T01:02:03Z",
@@ -351,7 +402,6 @@ func TestEntryPut(t *testing.T) {
 			filenameExpected:           "original-filename.mp3",
 			noteExpected:               picoshare.FileNote{},
 			expiresExpected:            mustParseExpirationTime("2024-12-15T21:52:33Z"),
-			downloadPassphraseInStore:  "correct horse battery staple",
 			downloadPassphraseExpected: "correct horse battery staple",
 			status:                     http.StatusBadRequest,
 		},
@@ -359,17 +409,24 @@ func TestEntryPut(t *testing.T) {
 		t.Run(tt.description, func(t *testing.T) {
 			dataStore := test_sqlite.New(t)
 			originalData := "dummy original data"
-			metadata := originalEntry
+			metadata := picoshare.UploadMetadata{
+				ID:          tt.entryInStore.ID,
+				Filename:    tt.entryInStore.Filename,
+				ContentType: picoshare.ContentType("audio/mpeg"),
+				Uploaded:    mustParseTime("2023-01-01T00:00:00Z"),
+				Expires:     tt.entryInStore.Expires,
+				Note:        picoshare.FileNote{},
+			}
 			metadata.Size = mustParseFileSize(len(originalData))
-			if tt.downloadPassphraseInStore != "" {
-				metadata.DownloadPassphrase = mustCreateDownloadPassphrase(t, tt.downloadPassphraseInStore)
+			if tt.entryInStore.DownloadPassphrase != "" {
+				metadata.DownloadPassphrase = mustCreateDownloadPassphrase(t, tt.entryInStore.DownloadPassphrase)
 			}
 			dataStore.InsertEntry(strings.NewReader((originalData)), metadata)
 			s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceCheckFunc, nilGarbageCollector, time.Now)
 
 			req := httptest.NewRequest(
 				http.MethodPut,
-				"/api/entry/"+tt.targetID,
+				tt.path,
 				strings.NewReader(tt.payload),
 			)
 			req.Header.Add("Content-Type", "text/json")
@@ -382,9 +439,9 @@ func TestEntryPut(t *testing.T) {
 				t.Fatalf("status=%d, want=%d", got, want)
 			}
 
-			entry, err := dataStore.GetEntryMetadata(picoshare.EntryID(originalEntry.ID))
+			entry, err := dataStore.GetEntryMetadata(tt.entryInStore.ID)
 			if err != nil {
-				t.Fatalf("failed to get expected entry %v from data store: %v", originalEntry.ID, err)
+				t.Fatalf("failed to get expected entry %v from data store: %v", tt.entryInStore.ID, err)
 			}
 
 			if got, want := entry.Filename, picoshare.Filename(tt.filenameExpected); got != want {
