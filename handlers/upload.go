@@ -255,7 +255,6 @@ func (s Server) insertFileFromRequest(r *http.Request, expiration picoshare.Expi
 		}
 	}
 
-	// NewEntryID omits visually similar characters (I, l, 1), (0, O).
 	id := picoshare.NewEntryID()
 	err = s.store.InsertEntry(reader,
 		picoshare.UploadMetadata{
