@@ -279,3 +279,74 @@ func TestEntryUnlock(t *testing.T) {
 		})
 	}
 }
+
+func TestEntryUnlockPostParsesBoundedFormBody(t *testing.T) {
+	dataStore := test_sqlite.New(t)
+	data := "protected data"
+	entry := picoshare.UploadEntry{
+		UploadMetadata: picoshare.UploadMetadata{
+			ID:       dummyTextEntry.ID,
+			Filename: dummyTextEntry.Filename,
+			Uploaded: mustParseTime("2023-01-01T00:00:00Z"),
+			Expires:  picoshare.NeverExpire,
+			Size:     mustParseFileSize(len(data)),
+		},
+		Reader: strings.NewReader(data),
+	}
+	if err := dataStore.InsertEntry(entry.Reader, entry.UploadMetadata); err != nil {
+		t.Fatalf("failed to insert protected entry: %v", err)
+	}
+
+	now := mustParseTime("2023-01-01T00:00:00Z")
+	s := handlers.New(downloadTestAuthenticator{}, &dataStore, nilSpaceCheckFunc, nilGarbageCollector, func() time.Time { return now })
+
+	updateRequest := httptest.NewRequest(
+		http.MethodPut,
+		"/api/entry/TTTTTTTTTT",
+		strings.NewReader(`{"filename":"test.txt","downloadPassphrase":"correct horse battery staple"}`),
+	)
+	updateRequest.Header.Set("Content-Type", "application/json")
+	updateRequest.Header.Set("X-Test-Authenticated", "true")
+	updateRecorder := httptest.NewRecorder()
+	s.Router().ServeHTTP(updateRecorder, updateRequest)
+	if got, want := updateRecorder.Code, http.StatusOK; got != want {
+		t.Fatalf("protected entry update status=%d, want=%d", got, want)
+	}
+
+	for _, tt := range []struct {
+		explanation    string
+		route          string
+		body           string
+		expectedStatus int
+	}{
+		{
+			explanation:    "passphrase only in query string does not unlock the entry",
+			route:          "/-TTTTTTTTTT/unlock?passphrase=correct+horse+battery+staple",
+			expectedStatus: http.StatusUnauthorized,
+		},
+		{
+			explanation:    "oversized POST body is rejected",
+			route:          "/-TTTTTTTTTT/unlock",
+			body:           "passphrase=" + strings.Repeat("a", 4096),
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			explanation:    "malformed form body is rejected",
+			route:          "/-TTTTTTTTTT/unlock",
+			body:           "passphrase=%zz",
+			expectedStatus: http.StatusBadRequest,
+		},
+	} {
+		t.Run(tt.explanation, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodPost, tt.route, strings.NewReader(tt.body))
+			req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+			rec := httptest.NewRecorder()
+
+			s.Router().ServeHTTP(rec, req)
+
+			if got, want := rec.Code, tt.expectedStatus; got != want {
+				t.Errorf("status=%d, want=%d", got, want)
+			}
+		})
+	}
+}
