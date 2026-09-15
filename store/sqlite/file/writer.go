@@ -73,7 +73,7 @@ func (w *writer) flush(n int) error {
 		chunk_index,
 		chunk
 	)
-	VALUES(?,?,?)`, w.entryID, idx, w.buf[0:n])
+	VALUES(?,?,?)`, w.entryID.String(), idx, w.buf[0:n])
 
 	return err
 }

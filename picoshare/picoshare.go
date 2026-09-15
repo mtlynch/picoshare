@@ -1,12 +1,13 @@
 package picoshare
 
 import (
+	"fmt"
 	"io"
+	"strings"
 	"time"
 )
 
 type (
-	EntryID        string
 	Filename       string
 	ContentType    string
 	ExpirationTime time.Time
@@ -46,11 +47,38 @@ type (
 	}
 )
 
+// entryIDCharacters omits visually similar characters (I, l, 1), (0, O).
+const (
+	entryIDLength     = 10
+	entryIDCharacters = "abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+)
+
+// EntryID identifies an uploaded entry.
+type EntryID struct {
+	value string
+}
+
 // Treat a distant expiration time as sort of a sentinel value signifying a "never expire" option.
 var NeverExpire = ExpirationTime(time.Date(2999, time.December, 31, 0, 0, 0, 0, time.UTC))
 
 func (id EntryID) String() string {
-	return string(id)
+	return id.value
+}
+
+// NewEntryID constructs an entry ID from user-provided text.
+func NewEntryID(raw string) (EntryID, error) {
+	if len(raw) != entryIDLength {
+		return EntryID{}, fmt.Errorf(
+			"entry ID has invalid length: got %d, want %d", len(raw), entryIDLength)
+	}
+
+	for _, character := range raw {
+		if !strings.ContainsRune(entryIDCharacters, character) {
+			return EntryID{}, fmt.Errorf("entry ID contains invalid character: %q", character)
+		}
+	}
+
+	return EntryID{value: raw}, nil
 }
 
 func (f Filename) String() string {

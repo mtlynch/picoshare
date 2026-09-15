@@ -6,11 +6,13 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+
+	"github.com/mtlynch/picoshare/picoshare"
 )
 
 func (s Server) entryDelete() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		id, err := parseEntryID(mux.Vars(r)["id"])
+		id, err := picoshare.NewEntryID(mux.Vars(r)["id"])
 		if err != nil {
 			log.Printf("error parsing ID: %v", err)
 			http.Error(w, fmt.Sprintf("bad entry ID: %v", err), http.StatusBadRequest)

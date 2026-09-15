@@ -41,7 +41,7 @@ func (s Store) GetEntryDownloads(id picoshare.EntryID) ([]picoshare.DownloadReco
 	WHERE
 		entry_id=:entry_id
 	ORDER BY
-		download_timestamp DESC`, sql.Named("entry_id", id))
+		download_timestamp DESC`, sql.Named("entry_id", id.String()))
 	if err == sql.ErrNoRows {
 		return []picoshare.DownloadRecord{}, nil
 	} else if err != nil {

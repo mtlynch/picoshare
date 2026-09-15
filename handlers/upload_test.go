@@ -146,7 +146,7 @@ func TestEntryPost(t *testing.T) {
 				t.Fatalf("response is not valid JSON: %v", body)
 			}
 
-			entry, err := dataStore.GetEntryMetadata(picoshare.EntryID(response.ID))
+			entry, err := dataStore.GetEntryMetadata(mustCreateEntryID(t, response.ID))
 			if err != nil {
 				t.Fatalf("failed to get expected entry %v from data store: %v", response.ID, err)
 			}
@@ -177,7 +177,7 @@ func TestEntryPost(t *testing.T) {
 
 func TestEntryPut(t *testing.T) {
 	type fakeEntry struct {
-		ID                 picoshare.EntryID
+		ID                 string
 		Filename           picoshare.Filename
 		Expires            picoshare.ExpirationTime
 		DownloadPassphrase string
@@ -410,7 +410,7 @@ func TestEntryPut(t *testing.T) {
 			dataStore := test_sqlite.New(t)
 			originalData := "dummy original data"
 			metadata := picoshare.UploadMetadata{
-				ID:          tt.entryInStore.ID,
+				ID:          mustCreateEntryID(t, tt.entryInStore.ID),
 				Filename:    tt.entryInStore.Filename,
 				ContentType: picoshare.ContentType("audio/mpeg"),
 				Uploaded:    mustParseTime("2023-01-01T00:00:00Z"),
@@ -439,7 +439,7 @@ func TestEntryPut(t *testing.T) {
 				t.Fatalf("status=%d, want=%d", got, want)
 			}
 
-			entry, err := dataStore.GetEntryMetadata(tt.entryInStore.ID)
+			entry, err := dataStore.GetEntryMetadata(mustCreateEntryID(t, tt.entryInStore.ID))
 			if err != nil {
 				t.Fatalf("failed to get expected entry %v from data store: %v", tt.entryInStore.ID, err)
 			}
@@ -596,7 +596,7 @@ func TestGuestUpload(t *testing.T) {
 			entriesInStore: []picoshare.UploadEntry{
 				{
 					UploadMetadata: picoshare.UploadMetadata{
-						ID:       picoshare.EntryID("dummy-entry1"),
+						ID:       mustCreateEntryID(t, "AAAAAAAAAA"),
 						Uploaded: mustParseTime("2024-02-01T00:00:00Z"),
 						GuestLink: picoshare.GuestLink{
 							ID: picoshare.GuestLinkID("abcdefgh23456789"),
@@ -606,7 +606,7 @@ func TestGuestUpload(t *testing.T) {
 				},
 				{
 					UploadMetadata: picoshare.UploadMetadata{
-						ID:       picoshare.EntryID("dummy-entry2"),
+						ID:       mustCreateEntryID(t, "BBBBBBBBBB"),
 						Uploaded: mustParseTime("2024-02-02T00:00:00Z"),
 						GuestLink: picoshare.GuestLink{
 							ID: picoshare.GuestLinkID("abcdefgh23456789"),
@@ -817,7 +817,7 @@ func TestGuestUpload(t *testing.T) {
 				t.Fatalf("response is not valid JSON: %v", body)
 			}
 
-			entry, err := dataStore.GetEntryMetadata(picoshare.EntryID(response.ID))
+			entry, err := dataStore.GetEntryMetadata(mustCreateEntryID(t, response.ID))
 			if err != nil {
 				t.Fatalf("failed to get expected entry %v from data store: %v", response.ID, err)
 			}
