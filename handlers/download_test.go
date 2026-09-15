@@ -3,6 +3,7 @@ package handlers_test
 import (
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 	"time"
@@ -180,22 +181,13 @@ func TestProtectedEntryDownload(t *testing.T) {
 		DownloadPassphrase picoshare.DownloadPassphrase
 	}
 
-	protectedEntry := fakeEntry{
-		ID:                 "PPPPPPPPPP",
-		Contents:           "fake protected data",
-		DownloadPassphrase: mustCreateDownloadPassphrase(t, "correct horse battery staple"),
-	}
-	unprotectedEntry := fakeEntry{
-		ID:       "UUUUUUUUUU",
-		Contents: "fake unprotected data",
-	}
-
 	for _, tt := range []struct {
 		explanation                string
+		entryInStore               fakeEntry
 		authenticated              bool
 		method                     string
 		route                      string
-		body                       string
+		passphrase                 string
 		expectedStatus             int
 		expectedLocation           string
 		expectedCacheControlHeader string
@@ -203,7 +195,12 @@ func TestProtectedEntryDownload(t *testing.T) {
 		expectedBody               string
 	}{
 		{
-			explanation:                "unauthenticated GET of a protected entry redirects to the unlock page",
+			explanation: "unauthenticated GET of a protected entry redirects to the unlock page",
+			entryInStore: fakeEntry{
+				ID:                 "PPPPPPPPPP",
+				Contents:           "fake protected data",
+				DownloadPassphrase: mustCreateDownloadPassphrase(t, "correct horse battery staple"),
+			},
 			authenticated:              false,
 			method:                     http.MethodGet,
 			route:                      "/-PPPPPPPPPP",
@@ -212,7 +209,12 @@ func TestProtectedEntryDownload(t *testing.T) {
 			expectedCacheControlHeader: "no-store",
 		},
 		{
-			explanation:                "unauthenticated GET of a protected entry with a filename redirects to the unlock page",
+			explanation: "unauthenticated GET of a protected entry with a filename redirects to the unlock page",
+			entryInStore: fakeEntry{
+				ID:                 "PPPPPPPPPP",
+				Contents:           "fake protected data",
+				DownloadPassphrase: mustCreateDownloadPassphrase(t, "correct horse battery staple"),
+			},
 			authenticated:              false,
 			method:                     http.MethodGet,
 			route:                      "/-PPPPPPPPPP/protected.txt",
@@ -221,7 +223,12 @@ func TestProtectedEntryDownload(t *testing.T) {
 			expectedCacheControlHeader: "no-store",
 		},
 		{
-			explanation:                "unauthenticated GET of the unlock page renders the challenge form",
+			explanation: "unauthenticated GET of the unlock page renders the challenge form",
+			entryInStore: fakeEntry{
+				ID:                 "PPPPPPPPPP",
+				Contents:           "fake protected data",
+				DownloadPassphrase: mustCreateDownloadPassphrase(t, "correct horse battery staple"),
+			},
 			authenticated:              false,
 			method:                     http.MethodGet,
 			route:                      "/-PPPPPPPPPP/unlock",
@@ -230,28 +237,43 @@ func TestProtectedEntryDownload(t *testing.T) {
 			expectedBody:               "Protected Download",
 		},
 		{
-			explanation:                "incorrect passphrase re-renders the challenge with 401",
+			explanation: "incorrect passphrase re-renders the challenge with 401",
+			entryInStore: fakeEntry{
+				ID:                 "PPPPPPPPPP",
+				Contents:           "fake protected data",
+				DownloadPassphrase: mustCreateDownloadPassphrase(t, "correct horse battery staple"),
+			},
 			authenticated:              false,
 			method:                     http.MethodPost,
 			route:                      "/-PPPPPPPPPP/unlock",
-			body:                       "passphrase=wrong+passphrase",
+			passphrase:                 "wrong passphrase",
 			expectedStatus:             http.StatusUnauthorized,
 			expectedCacheControlHeader: "no-store",
 			expectedBody:               "Incorrect passphrase.",
 		},
 		{
-			explanation:                "correct passphrase serves the file with sandbox CSP",
+			explanation: "correct passphrase serves the file with sandbox CSP",
+			entryInStore: fakeEntry{
+				ID:                 "PPPPPPPPPP",
+				Contents:           "fake protected data",
+				DownloadPassphrase: mustCreateDownloadPassphrase(t, "correct horse battery staple"),
+			},
 			authenticated:              false,
 			method:                     http.MethodPost,
 			route:                      "/-PPPPPPPPPP/unlock",
-			body:                       "passphrase=correct+horse+battery+staple",
+			passphrase:                 "correct horse battery staple",
 			expectedStatus:             http.StatusOK,
 			expectedCacheControlHeader: "no-store",
 			hasCSPSandboxHeader:        true,
-			expectedBody:               protectedEntry.Contents,
+			expectedBody:               "fake protected data",
 		},
 		{
-			explanation:                "passphrase only in the query string does not unlock the entry",
+			explanation: "passphrase only in the query string does not unlock the entry",
+			entryInStore: fakeEntry{
+				ID:                 "PPPPPPPPPP",
+				Contents:           "fake protected data",
+				DownloadPassphrase: mustCreateDownloadPassphrase(t, "correct horse battery staple"),
+			},
 			authenticated:              false,
 			method:                     http.MethodPost,
 			route:                      "/-PPPPPPPPPP/unlock?passphrase=correct+horse+battery+staple",
@@ -260,7 +282,12 @@ func TestProtectedEntryDownload(t *testing.T) {
 			expectedBody:               "Incorrect passphrase.",
 		},
 		{
-			explanation:                "missing passphrase re-renders the challenge with 401",
+			explanation: "missing passphrase re-renders the challenge with 401",
+			entryInStore: fakeEntry{
+				ID:                 "PPPPPPPPPP",
+				Contents:           "fake protected data",
+				DownloadPassphrase: mustCreateDownloadPassphrase(t, "correct horse battery staple"),
+			},
 			authenticated:              false,
 			method:                     http.MethodPost,
 			route:                      "/-PPPPPPPPPP/unlock",
@@ -269,43 +296,69 @@ func TestProtectedEntryDownload(t *testing.T) {
 			expectedBody:               "Incorrect passphrase.",
 		},
 		{
-			explanation:                "oversized POST body is rejected",
+			explanation: "oversized POST body is rejected",
+			entryInStore: fakeEntry{
+				ID:                 "PPPPPPPPPP",
+				Contents:           "fake protected data",
+				DownloadPassphrase: mustCreateDownloadPassphrase(t, "correct horse battery staple"),
+			},
 			authenticated:              false,
 			method:                     http.MethodPost,
 			route:                      "/-PPPPPPPPPP/unlock",
-			body:                       "passphrase=" + strings.Repeat("a", 4096),
+			passphrase:                 strings.Repeat("a", 4096),
 			expectedStatus:             http.StatusBadRequest,
 			expectedCacheControlHeader: "no-store",
 		},
 		{
-			explanation:                "malformed form body is rejected",
+			explanation: "passphrase with percent characters is rejected",
+			entryInStore: fakeEntry{
+				ID:                 "PPPPPPPPPP",
+				Contents:           "fake protected data",
+				DownloadPassphrase: mustCreateDownloadPassphrase(t, "correct horse battery staple"),
+			},
 			authenticated:              false,
 			method:                     http.MethodPost,
 			route:                      "/-PPPPPPPPPP/unlock",
-			body:                       "passphrase=%zz",
-			expectedStatus:             http.StatusBadRequest,
+			passphrase:                 "%zz",
+			expectedStatus:             http.StatusUnauthorized,
 			expectedCacheControlHeader: "no-store",
+			expectedBody:               "Incorrect passphrase.",
 		},
 		{
-			explanation:    "POST to the download route is not allowed",
+			explanation: "POST to the download route is not allowed",
+			entryInStore: fakeEntry{
+				ID:                 "PPPPPPPPPP",
+				Contents:           "fake protected data",
+				DownloadPassphrase: mustCreateDownloadPassphrase(t, "correct horse battery staple"),
+			},
 			authenticated:  false,
 			method:         http.MethodPost,
 			route:          "/-PPPPPPPPPP",
-			body:           "passphrase=correct+horse+battery+staple",
+			passphrase:     "correct horse battery staple",
 			expectedStatus: http.StatusMethodNotAllowed,
 		},
 		{
-			explanation:                "authenticated owner downloads a protected entry without a challenge",
+			explanation: "authenticated owner downloads a protected entry without a challenge",
+			entryInStore: fakeEntry{
+				ID:                 "PPPPPPPPPP",
+				Contents:           "fake protected data",
+				DownloadPassphrase: mustCreateDownloadPassphrase(t, "correct horse battery staple"),
+			},
 			authenticated:              true,
 			method:                     http.MethodGet,
 			route:                      "/-PPPPPPPPPP",
 			expectedStatus:             http.StatusOK,
 			expectedCacheControlHeader: "no-store",
 			hasCSPSandboxHeader:        true,
-			expectedBody:               protectedEntry.Contents,
+			expectedBody:               "fake protected data",
 		},
 		{
-			explanation:                "authenticated owner visiting the unlock page redirects to the download",
+			explanation: "authenticated owner visiting the unlock page redirects to the download",
+			entryInStore: fakeEntry{
+				ID:                 "PPPPPPPPPP",
+				Contents:           "fake protected data",
+				DownloadPassphrase: mustCreateDownloadPassphrase(t, "correct horse battery staple"),
+			},
 			authenticated:              true,
 			method:                     http.MethodGet,
 			route:                      "/-PPPPPPPPPP/unlock",
@@ -314,7 +367,11 @@ func TestProtectedEntryDownload(t *testing.T) {
 			expectedCacheControlHeader: "no-store",
 		},
 		{
-			explanation:                "unlock page for an unprotected entry redirects to the download",
+			explanation: "unlock page for an unprotected entry redirects to the download",
+			entryInStore: fakeEntry{
+				ID:       "UUUUUUUUUU",
+				Contents: "fake unprotected data",
+			},
 			authenticated:              false,
 			method:                     http.MethodGet,
 			route:                      "/-UUUUUUUUUU/unlock",
@@ -323,7 +380,12 @@ func TestProtectedEntryDownload(t *testing.T) {
 			expectedCacheControlHeader: "no-store",
 		},
 		{
-			explanation:    "unlock page for a non-existent entry returns 404",
+			explanation: "unlock page for a non-existent entry returns 404",
+			entryInStore: fakeEntry{
+				ID:                 "PPPPPPPPPP",
+				Contents:           "fake protected data",
+				DownloadPassphrase: mustCreateDownloadPassphrase(t, "correct horse battery staple"),
+			},
 			authenticated:  false,
 			method:         http.MethodGet,
 			route:          "/-ZZZZZZZZZZ/unlock",
@@ -332,26 +394,16 @@ func TestProtectedEntryDownload(t *testing.T) {
 	} {
 		t.Run(tt.explanation, func(t *testing.T) {
 			dataStore := test_sqlite.New(t)
-			if err := dataStore.InsertEntry(strings.NewReader(protectedEntry.Contents), picoshare.UploadMetadata{
-				ID:                 protectedEntry.ID,
-				Filename:           "protected.txt",
+			if err := dataStore.InsertEntry(strings.NewReader(tt.entryInStore.Contents), picoshare.UploadMetadata{
+				ID:                 tt.entryInStore.ID,
+				Filename:           "test.txt",
 				ContentType:        "text/plain",
 				Uploaded:           mustParseTime("2023-01-01T00:00:00Z"),
 				Expires:            picoshare.NeverExpire,
-				Size:               mustParseFileSize(len(protectedEntry.Contents)),
-				DownloadPassphrase: protectedEntry.DownloadPassphrase,
+				Size:               mustParseFileSize(len(tt.entryInStore.Contents)),
+				DownloadPassphrase: tt.entryInStore.DownloadPassphrase,
 			}); err != nil {
-				t.Fatalf("failed to insert protected entry: %v", err)
-			}
-			if err := dataStore.InsertEntry(strings.NewReader(unprotectedEntry.Contents), picoshare.UploadMetadata{
-				ID:          unprotectedEntry.ID,
-				Filename:    "unprotected.txt",
-				ContentType: "text/plain",
-				Uploaded:    mustParseTime("2023-01-01T00:00:00Z"),
-				Expires:     picoshare.NeverExpire,
-				Size:        mustParseFileSize(len(unprotectedEntry.Contents)),
-			}); err != nil {
-				t.Fatalf("failed to insert unprotected entry: %v", err)
+				t.Fatalf("failed to insert entry: %v", err)
 			}
 
 			var authenticator handlers.Authenticator = unauthenticatedAuthenticator{}
@@ -360,7 +412,8 @@ func TestProtectedEntryDownload(t *testing.T) {
 			}
 			s := handlers.New(authenticator, &dataStore, nilSpaceCheckFunc, nilGarbageCollector, time.Now)
 
-			req := httptest.NewRequest(tt.method, tt.route, strings.NewReader(tt.body))
+			body := url.Values{"passphrase": {tt.passphrase}}.Encode()
+			req := httptest.NewRequest(tt.method, tt.route, strings.NewReader(body))
 			if tt.method == http.MethodPost {
 				req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 			}
