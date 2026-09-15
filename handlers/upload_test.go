@@ -159,13 +159,7 @@ func TestEntryPost(t *testing.T) {
 				t.Errorf("expiration=%v, want=%v", got, want)
 			}
 
-			entryPassphrase := func() string {
-				if entry.DownloadPassphrase.Empty() {
-					return ""
-				}
-				return entry.DownloadPassphrase.String()
-			}()
-			if got, want := entryPassphrase, tt.downloadPassphrase; got != want {
+			if got, want := downloadPassphraseToString(entry.DownloadPassphrase), tt.downloadPassphrase; got != want {
 				t.Errorf("download passphrase=%q, want=%q", got, want)
 			}
 
