@@ -67,7 +67,7 @@ func (s Server) entryPost() http.HandlerFunc {
 
 func (s Server) entryPut() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		id, err := picoshare.NewEntryID(mux.Vars(r)["id"])
+		id, err := picoshare.EntryIDFromString(mux.Vars(r)["id"])
 		if err != nil {
 			log.Printf("error parsing ID: %v", err)
 			http.Error(w, fmt.Sprintf("bad entry ID: %v", err), http.StatusBadRequest)
@@ -208,7 +208,7 @@ func (s Server) entryMetadataFromRequest(r *http.Request) (picoshare.UploadMetad
 
 func generateEntryID() picoshare.EntryID {
 	raw := random.String(picoshare.EntryIDLength, entryIDCharacters)
-	id, err := picoshare.NewEntryID(raw)
+	id, err := picoshare.EntryIDFromString(raw)
 	if err != nil {
 		panic(fmt.Sprintf("generated invalid entry ID: %v", err))
 	}

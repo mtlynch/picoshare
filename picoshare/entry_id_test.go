@@ -1,12 +1,13 @@
 package picoshare_test
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/mtlynch/picoshare/picoshare"
 )
 
-func TestNewEntryID(t *testing.T) {
+func TestEntryIDFromString(t *testing.T) {
 	for _, tt := range []struct {
 		explanation     string
 		input           string
@@ -14,40 +15,40 @@ func TestNewEntryID(t *testing.T) {
 	}{
 		{
 			explanation:     "ten allowed characters are valid",
-			input:           "aA23456789",
+			input:           strings.Repeat("a", picoshare.EntryIDLength),
 			isValidExpected: true,
 		},
 		{
 			explanation:     "an ID shorter than ten characters is invalid",
-			input:           "aA2345678",
+			input:           strings.Repeat("a", picoshare.EntryIDLength-1),
 			isValidExpected: false,
 		},
 		{
 			explanation:     "an ID longer than ten characters is invalid",
-			input:           "aA23456789a",
+			input:           strings.Repeat("a", picoshare.EntryIDLength+1),
 			isValidExpected: false,
 		},
 		{
 			explanation:     "a visually ambiguous uppercase I is invalid",
-			input:           "aA2345678I",
+			input:           strings.Repeat("a", picoshare.EntryIDLength-1) + "I",
 			isValidExpected: false,
 		},
 		{
 			explanation:     "a visually ambiguous lowercase l is invalid",
-			input:           "aA2345678l",
+			input:           strings.Repeat("a", picoshare.EntryIDLength-1) + "l",
 			isValidExpected: false,
 		},
 		{
 			explanation:     "a Unicode character is invalid",
-			input:           "aA2345678é",
+			input:           strings.Repeat("a", picoshare.EntryIDLength-1) + "é",
 			isValidExpected: false,
 		},
 	} {
 		t.Run(tt.explanation, func(t *testing.T) {
-			id, err := picoshare.NewEntryID(tt.input)
+			id, err := picoshare.EntryIDFromString(tt.input)
 			isValid := err == nil
 			if got, want := isValid, tt.isValidExpected; got != want {
-				t.Fatalf("NewEntryID validity=%t, want=%t", got, want)
+				t.Fatalf("EntryIDFromString validity=%t, want=%t", got, want)
 			}
 			if !isValid {
 				return

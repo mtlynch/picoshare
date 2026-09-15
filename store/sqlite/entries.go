@@ -50,7 +50,7 @@ func (s Store) GetEntriesMetadata() ([]picoshare.UploadMetadata, error) {
 		if err = rows.Scan(&id, &filename, &note, &contentType, &uploadTimeRaw, &expirationTimeRaw, &fileSizeRaw); err != nil {
 			return []picoshare.UploadMetadata{}, err
 		}
-		entryID, err := picoshare.NewEntryID(id)
+		entryID, err := picoshare.EntryIDFromString(id)
 		if err != nil {
 			return []picoshare.UploadMetadata{}, fmt.Errorf("failed to parse entry ID from database: %w", err)
 		}

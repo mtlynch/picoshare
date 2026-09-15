@@ -65,8 +65,8 @@ func (id EntryID) String() string {
 	return id.value
 }
 
-// NewEntryID constructs an entry ID from user-provided text.
-func NewEntryID(raw string) (EntryID, error) {
+// EntryIDFromString constructs an entry ID from user-provided text.
+func EntryIDFromString(raw string) (EntryID, error) {
 	if len(raw) != EntryIDLength {
 		return EntryID{}, fmt.Errorf(
 			"entry ID has invalid length: got %d, want %d", len(raw), EntryIDLength)
@@ -83,7 +83,7 @@ func NewEntryID(raw string) (EntryID, error) {
 
 // MustCreateEntryID constructs an entry ID or panics when raw is invalid.
 func MustCreateEntryID(raw string) EntryID {
-	id, err := NewEntryID(raw)
+	id, err := EntryIDFromString(raw)
 	if err != nil {
 		panic(fmt.Sprintf("failed to create entry ID: %v", err))
 	}

@@ -26,7 +26,7 @@ type (
 var errMockSqlFailure = errors.New("fake SQL error")
 
 func (db *mockSqlDB) Exec(query string, args ...any) (sql.Result, error) {
-	id, err := picoshare.NewEntryID(args[0].(sql.NamedArg).Value.(string))
+	id, err := picoshare.EntryIDFromString(args[0].(sql.NamedArg).Value.(string))
 	if err != nil {
 		return nil, err
 	}
@@ -43,7 +43,6 @@ func (db *mockSqlDB) Exec(query string, args ...any) (sql.Result, error) {
 }
 
 func TestWriteFile(t *testing.T) {
-	entryID := picoshare.MustCreateEntryID("abcdefghij")
 	for _, tt := range []struct {
 		explanation  string
 		id           picoshare.EntryID
@@ -55,12 +54,12 @@ func TestWriteFile(t *testing.T) {
 	}{
 		{
 			explanation: "data is smaller than chunk size",
-			id:          entryID,
+			id:          picoshare.MustCreateEntryID("abcdefghij"),
 			data:        []byte("hello, world!"),
 			chunkSize:   25,
 			rowsExpected: []mockChunkRow{
 				{
-					id:         entryID,
+					id:         picoshare.MustCreateEntryID("abcdefghij"),
 					chunkIndex: 0,
 					chunk:      []byte("hello, world!"),
 				},
@@ -68,12 +67,12 @@ func TestWriteFile(t *testing.T) {
 		},
 		{
 			explanation: "data fits exactly in single chunk",
-			id:          entryID,
+			id:          picoshare.MustCreateEntryID("abcdefghij"),
 			data:        []byte("01234"),
 			chunkSize:   5,
 			rowsExpected: []mockChunkRow{
 				{
-					id:         entryID,
+					id:         picoshare.MustCreateEntryID("abcdefghij"),
 					chunkIndex: 0,
 					chunk:      []byte("01234"),
 				},
@@ -81,17 +80,17 @@ func TestWriteFile(t *testing.T) {
 		},
 		{
 			explanation: "data occupies a partial chunk after the first",
-			id:          entryID,
+			id:          picoshare.MustCreateEntryID("abcdefghij"),
 			data:        []byte("0123456"),
 			chunkSize:   5,
 			rowsExpected: []mockChunkRow{
 				{
-					id:         entryID,
+					id:         picoshare.MustCreateEntryID("abcdefghij"),
 					chunkIndex: 0,
 					chunk:      []byte("01234"),
 				},
 				{
-					id:         entryID,
+					id:         picoshare.MustCreateEntryID("abcdefghij"),
 					chunkIndex: 1,
 					chunk:      []byte("56"),
 				},
@@ -99,17 +98,17 @@ func TestWriteFile(t *testing.T) {
 		},
 		{
 			explanation: "data spans exactly two chunks",
-			id:          entryID,
+			id:          picoshare.MustCreateEntryID("abcdefghij"),
 			data:        []byte("0123456789"),
 			chunkSize:   5,
 			rowsExpected: []mockChunkRow{
 				{
-					id:         entryID,
+					id:         picoshare.MustCreateEntryID("abcdefghij"),
 					chunkIndex: 0,
 					chunk:      []byte("01234"),
 				},
 				{
-					id:         entryID,
+					id:         picoshare.MustCreateEntryID("abcdefghij"),
 					chunkIndex: 1,
 					chunk:      []byte("56789"),
 				},
@@ -117,7 +116,7 @@ func TestWriteFile(t *testing.T) {
 		},
 		{
 			explanation: "write fails when SQL transaction returns error",
-			id:          entryID,
+			id:          picoshare.MustCreateEntryID("abcdefghij"),
 			data:        []byte("0123456789"),
 			chunkSize:   5,
 			sqlExecErr:  errMockSqlFailure,
