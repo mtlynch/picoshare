@@ -90,10 +90,9 @@ func (s Server) entryPut() http.HandlerFunc {
 				return
 			}
 			log.Printf("error saving entry metadata: %v", err)
-			http.Error(w, fmt.Sprintf("Failed to save new entry data: %v", err), http.StatusInternalServerError)
+			http.Error(w, "Failed to save new entry data", http.StatusInternalServerError)
 			return
 		}
-		s.protectedEntries.set(id, metadata.DownloadPassphrase)
 	}
 }
 
@@ -192,6 +191,7 @@ func (s Server) entryMetadataFromRequest(r *http.Request) (picoshare.UploadMetad
 		return picoshare.UploadMetadata{}, err
 	}
 
+	// An empty or missing passphrase removes the entry's download passphrase.
 	downloadPassphrase := picoshare.DownloadPassphrase{}
 	if payload.DownloadPassphrase != "" {
 		downloadPassphrase, err = picoshare.NewDownloadPassphrase(payload.DownloadPassphrase)
@@ -274,8 +274,11 @@ func (s Server) insertFileFromRequest(r *http.Request, expiration picoshare.Expi
 	}
 
 	downloadPassphrase := picoshare.DownloadPassphrase{}
-	if r.FormValue("downloadPassphrase") != "" {
-		downloadPassphrase, err = picoshare.NewDownloadPassphrase(r.FormValue("downloadPassphrase"))
+	if rawDownloadPassphrase := r.FormValue("downloadPassphrase"); rawDownloadPassphrase != "" {
+		if guestLinkID != "" {
+			return picoshare.EntryID(""), errors.New("guest uploads cannot have download passphrases")
+		}
+		downloadPassphrase, err = picoshare.NewDownloadPassphrase(rawDownloadPassphrase)
 		if err != nil {
 			return picoshare.EntryID(""), err
 		}
@@ -300,7 +303,6 @@ func (s Server) insertFileFromRequest(r *http.Request, expiration picoshare.Expi
 		log.Printf("failed to save entry: %v", err)
 		return picoshare.EntryID(""), dbError{err}
 	}
-	s.protectedEntries.set(id, downloadPassphrase)
 
 	return id, nil
 }

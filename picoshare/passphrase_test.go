@@ -93,3 +93,71 @@ func TestDownloadPassphraseEmpty(t *testing.T) {
 		t.Errorf("empty=%v, want=%v", got, want)
 	}
 }
+
+func TestDownloadPassphraseEqual(t *testing.T) {
+	for _, tt := range []struct {
+		explanation   string
+		a             picoshare.DownloadPassphrase
+		b             picoshare.DownloadPassphrase
+		equalExpected bool
+	}{
+		{
+			explanation:   "two empty passphrases are equal",
+			a:             picoshare.DownloadPassphrase{},
+			b:             picoshare.DownloadPassphrase{},
+			equalExpected: true,
+		},
+		{
+			explanation:   "an empty passphrase does not equal a non-empty passphrase",
+			a:             picoshare.DownloadPassphrase{},
+			b:             mustCreateDownloadPassphrase(t, "correct horse battery staple"),
+			equalExpected: false,
+		},
+		{
+			explanation:   "a non-empty passphrase does not equal an empty passphrase",
+			a:             mustCreateDownloadPassphrase(t, "correct horse battery staple"),
+			b:             picoshare.DownloadPassphrase{},
+			equalExpected: false,
+		},
+		{
+			explanation:   "identical passphrases are equal",
+			a:             mustCreateDownloadPassphrase(t, "correct horse battery staple"),
+			b:             mustCreateDownloadPassphrase(t, "correct horse battery staple"),
+			equalExpected: true,
+		},
+		{
+			explanation:   "passphrases that differ by case are not equal",
+			a:             mustCreateDownloadPassphrase(t, "correct horse battery staple"),
+			b:             mustCreateDownloadPassphrase(t, "Correct horse battery staple"),
+			equalExpected: false,
+		},
+		{
+			explanation:   "passphrases that differ by trailing whitespace are not equal",
+			a:             mustCreateDownloadPassphrase(t, "correct horse battery staple"),
+			b:             mustCreateDownloadPassphrase(t, "correct horse battery staple "),
+			equalExpected: false,
+		},
+		{
+			explanation:   "passphrases of different lengths are not equal",
+			a:             mustCreateDownloadPassphrase(t, "correct horse battery staple"),
+			b:             mustCreateDownloadPassphrase(t, "correct"),
+			equalExpected: false,
+		},
+	} {
+		t.Run(tt.explanation, func(t *testing.T) {
+			if got, want := tt.a.Equal(tt.b), tt.equalExpected; got != want {
+				t.Errorf("equal=%v, want=%v", got, want)
+			}
+		})
+	}
+}
+
+func mustCreateDownloadPassphrase(t *testing.T, raw string) picoshare.DownloadPassphrase {
+	t.Helper()
+
+	passphrase, err := picoshare.NewDownloadPassphrase(raw)
+	if err != nil {
+		t.Fatalf("failed to create download passphrase %q: %v", raw, err)
+	}
+	return passphrase
+}

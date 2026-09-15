@@ -35,7 +35,7 @@ func (s Server) entryGet() http.HandlerFunc {
 			return
 		}
 
-		entry, err := s.getEntryMetadata(id)
+		entry, err := s.store.GetEntryMetadata(id)
 		if _, ok := errors.AsType[store.EntryNotFoundError](err); ok {
 			http.Error(w, "entry not found", http.StatusNotFound)
 			return
@@ -45,6 +45,9 @@ func (s Server) entryGet() http.HandlerFunc {
 			return
 		}
 		if !entry.DownloadPassphrase.Empty() {
+			// Prevent caches from serving a password-bypassing download after an
+			// administrator downloads this entry with their session cookie.
+			w.Header().Set("Cache-Control", "no-store")
 			if !isAuthenticated(r.Context()) {
 				http.Redirect(w, r, entryUnlockPath(entry.ID), http.StatusFound)
 				return
@@ -64,7 +67,7 @@ func (s Server) entryUnlockGet() http.HandlerFunc {
 			return
 		}
 
-		entry, err := s.getEntryMetadata(id)
+		entry, err := s.store.GetEntryMetadata(id)
 		if _, ok := errors.AsType[store.EntryNotFoundError](err); ok {
 			http.Error(w, "entry not found", http.StatusNotFound)
 			return
@@ -74,6 +77,9 @@ func (s Server) entryUnlockGet() http.HandlerFunc {
 			return
 		}
 
+		// Prevent caches from serving a password-bypassing redirect after an
+		// administrator accesses this page with their session cookie.
+		w.Header().Set("Cache-Control", "no-store")
 		if entry.DownloadPassphrase.Empty() || isAuthenticated(r.Context()) {
 			http.Redirect(w, r, entryDownloadPath(entry.ID), http.StatusFound)
 			return
@@ -92,6 +98,7 @@ func (s Server) entryUnlockGet() http.HandlerFunc {
 func (s Server) entryUnlockPost() http.HandlerFunc {
 	t := parseTemplates("templates/pages/entry-unlock.html")
 	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Cache-Control", "no-store")
 		r.Body = http.MaxBytesReader(w, r.Body, maxEntryUnlockRequestBytes)
 		unlockRequest, err := parseEntryUnlockRequest(r)
 		if err != nil && !errors.Is(err, picoshare.ErrInvalidPassphrase) {
@@ -99,12 +106,12 @@ func (s Server) entryUnlockPost() http.HandlerFunc {
 			return
 		}
 
-		entry, lookupErr := s.getEntryMetadata(unlockRequest.EntryID)
-		if _, ok := errors.AsType[store.EntryNotFoundError](lookupErr); ok {
+		entry, err := s.store.GetEntryMetadata(unlockRequest.EntryID)
+		if _, ok := errors.AsType[store.EntryNotFoundError](err); ok {
 			http.Error(w, "entry not found", http.StatusNotFound)
 			return
-		} else if lookupErr != nil {
-			log.Printf("error retrieving entry with id %v: %v", unlockRequest.EntryID, lookupErr)
+		} else if err != nil {
+			log.Printf("error retrieving entry with id %v: %v", unlockRequest.EntryID, err)
 			http.Error(w, "failed to retrieve entry", http.StatusInternalServerError)
 			return
 		}
@@ -114,7 +121,8 @@ func (s Server) entryUnlockPost() http.HandlerFunc {
 			return
 		}
 
-		if err != nil || unlockRequest.Passphrase.Empty() || unlockRequest.Passphrase.String() != entry.DownloadPassphrase.String() {
+		// If password is incorrect, serve unlock page with error message.
+		if !entry.DownloadPassphrase.Equal(unlockRequest.Passphrase) {
 			w.WriteHeader(http.StatusUnauthorized)
 			renderTemplate(w, t, struct {
 				commonProps
@@ -126,6 +134,7 @@ func (s Server) entryUnlockPost() http.HandlerFunc {
 			return
 		}
 
+		// If password is correct, serve the content.
 		s.serveEntryContent(w, r, entry)
 	}
 }

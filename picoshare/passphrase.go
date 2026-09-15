@@ -1,6 +1,7 @@
 package picoshare
 
 import (
+	"crypto/subtle"
 	"fmt"
 	"strings"
 	"unicode/utf8"
@@ -73,4 +74,20 @@ func (p DownloadPassphrase) Empty() bool {
 // String panics if the download passphrase is empty.
 func (p DownloadPassphrase) String() string {
 	return p.passphrase.String()
+}
+
+// Equal performs constant-time comparison between this download passphrase and
+// another download passphrase. Two empty download passphrases are equal.
+// Passphrases of unequal lengths return immediately, which can allow a
+// determined attacker to discover the correct password length through a timing
+// attack, but they wouldn't be able to go further than that (e.g., determining
+// which prefix letters match).
+func (p DownloadPassphrase) Equal(other DownloadPassphrase) bool {
+	if p.Empty() || other.Empty() {
+		return p.Empty() == other.Empty()
+	}
+	return subtle.ConstantTimeCompare(
+		[]byte(p.String()),
+		[]byte(other.String()),
+	) == 1
 }
