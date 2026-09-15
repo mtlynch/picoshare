@@ -47,11 +47,11 @@ type (
 	}
 )
 
+// EntryIDLength is the number of characters in an entry ID.
+const EntryIDLength = 10
+
 // entryIDCharacters omits visually similar characters (I, l, 1), (0, O).
-const (
-	entryIDLength     = 10
-	entryIDCharacters = "abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789"
-)
+const entryIDCharacters = "abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 
 // EntryID identifies an uploaded entry.
 type EntryID struct {
@@ -67,9 +67,9 @@ func (id EntryID) String() string {
 
 // NewEntryID constructs an entry ID from user-provided text.
 func NewEntryID(raw string) (EntryID, error) {
-	if len(raw) != entryIDLength {
+	if len(raw) != EntryIDLength {
 		return EntryID{}, fmt.Errorf(
-			"entry ID has invalid length: got %d, want %d", len(raw), entryIDLength)
+			"entry ID has invalid length: got %d, want %d", len(raw), EntryIDLength)
 	}
 
 	for _, character := range raw {

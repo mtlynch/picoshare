@@ -207,7 +207,7 @@ func (s Server) entryMetadataFromRequest(r *http.Request) (picoshare.UploadMetad
 }
 
 func generateEntryID() picoshare.EntryID {
-	raw := random.String(10, entryIDCharacters)
+	raw := random.String(picoshare.EntryIDLength, entryIDCharacters)
 	id, err := picoshare.NewEntryID(raw)
 	if err != nil {
 		panic(fmt.Sprintf("generated invalid entry ID: %v", err))
