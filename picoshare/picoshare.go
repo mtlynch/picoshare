@@ -3,7 +3,6 @@ package picoshare
 import (
 	"fmt"
 	"io"
-	"strings"
 	"time"
 
 	"github.com/mtlynch/picoshare/random"
@@ -55,6 +54,14 @@ const EntryIDLength = 10
 // entryIDCharacters omits visually similar characters (I, l, 1), (0, O).
 const entryIDCharacters = "abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 
+var entryIDCharacterSet = func() map[rune]struct{} {
+	characters := make(map[rune]struct{}, len(entryIDCharacters))
+	for _, character := range entryIDCharacters {
+		characters[character] = struct{}{}
+	}
+	return characters
+}()
+
 // EntryID identifies an uploaded entry.
 type EntryID struct {
 	value string
@@ -75,7 +82,7 @@ func EntryIDFromString(raw string) (EntryID, error) {
 	}
 
 	for _, character := range raw {
-		if !strings.ContainsRune(entryIDCharacters, character) {
+		if _, ok := entryIDCharacterSet[character]; !ok {
 			return EntryID{}, fmt.Errorf("entry ID contains invalid character: %q", character)
 		}
 	}
