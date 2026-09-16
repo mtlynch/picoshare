@@ -215,7 +215,7 @@ func (s Server) fileEditGet() http.HandlerFunc {
 		"templates/pages/file-edit.html")
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		id, err := parseEntryID(mux.Vars(r)["id"])
+		id, err := picoshare.EntryIDFromString(mux.Vars(r)["id"])
 		if err != nil {
 			log.Printf("error parsing ID: %v", err)
 			http.Error(w, fmt.Sprintf("bad entry ID: %v", err), http.StatusBadRequest)
@@ -268,7 +268,7 @@ func (s Server) fileInfoGet() http.HandlerFunc {
 		"templates/pages/file-info.html")
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		id, err := parseEntryID(mux.Vars(r)["id"])
+		id, err := picoshare.EntryIDFromString(mux.Vars(r)["id"])
 		if err != nil {
 			log.Printf("error parsing ID: %v", err)
 			http.Error(w, fmt.Sprintf("bad entry ID: %v", err), http.StatusBadRequest)
@@ -316,7 +316,7 @@ func (s Server) fileDownloadsGet() http.HandlerFunc {
 	t := parseTemplatesWithFuncs(fns, "templates/pages/file-downloads.html")
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		id, err := parseEntryID(mux.Vars(r)["id"])
+		id, err := picoshare.EntryIDFromString(mux.Vars(r)["id"])
 		if err != nil {
 			log.Printf("error parsing ID: %v", err)
 			http.Error(w, fmt.Sprintf("bad entry ID: %v", err), http.StatusBadRequest)
@@ -394,7 +394,7 @@ func (s Server) fileConfirmDeleteGet() http.HandlerFunc {
 	t := parseTemplates("templates/pages/file-delete.html")
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		id, err := parseEntryID(mux.Vars(r)["id"])
+		id, err := picoshare.EntryIDFromString(mux.Vars(r)["id"])
 		if err != nil {
 			log.Printf("error parsing ID: %v", err)
 			http.Error(w, fmt.Sprintf("bad entry ID: %v", err), http.StatusBadRequest)

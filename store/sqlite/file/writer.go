@@ -75,7 +75,7 @@ func (w *writer) flush(n int) error {
 		chunk
 	)
 	VALUES(:id,:chunk_index,:chunk)`,
-		sql.Named("id", w.entryID),
+		sql.Named("id", w.entryID.String()),
 		sql.Named("chunk_index", idx),
 		sql.Named("chunk", w.buf[0:n]),
 	)

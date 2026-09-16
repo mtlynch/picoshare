@@ -3,6 +3,7 @@ package sqlite
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"io"
 	"log"
 
@@ -49,6 +50,10 @@ func (s Store) GetEntriesMetadata() ([]picoshare.UploadMetadata, error) {
 		if err = rows.Scan(&id, &filename, &note, &contentType, &uploadTimeRaw, &expirationTimeRaw, &fileSizeRaw); err != nil {
 			return []picoshare.UploadMetadata{}, err
 		}
+		entryID, err := picoshare.EntryIDFromString(id)
+		if err != nil {
+			return []picoshare.UploadMetadata{}, fmt.Errorf("failed to parse entry ID from database: %w", err)
+		}
 
 		ut, err := parseDatetime(uploadTimeRaw)
 		if err != nil {
@@ -66,7 +71,7 @@ func (s Store) GetEntriesMetadata() ([]picoshare.UploadMetadata, error) {
 		}
 
 		ee = append(ee, picoshare.UploadMetadata{
-			ID:          picoshare.EntryID(id),
+			ID:          entryID,
 			Filename:    picoshare.Filename(filename),
 			Note:        picoshare.FileNote{Value: note},
 			ContentType: picoshare.ContentType(contentType),
@@ -120,7 +125,7 @@ func (s Store) GetEntryMetadata(id picoshare.EntryID) (picoshare.UploadMetadata,
 				id
 		) sizes ON entries.id = sizes.id
 	WHERE
-		entries.id = :entry_id`, sql.Named("entry_id", id)).Scan(&filename, &note, &contentType, &uploadTimeRaw, &expirationTimeRaw, &downloadPassphraseRaw, &fileSizeRaw, &guestLinkID)
+		entries.id = :entry_id`, sql.Named("entry_id", id.String())).Scan(&filename, &note, &contentType, &uploadTimeRaw, &expirationTimeRaw, &downloadPassphraseRaw, &fileSizeRaw, &guestLinkID)
 	if err == sql.ErrNoRows {
 		return picoshare.UploadMetadata{}, store.EntryNotFoundError{ID: id}
 	} else if err != nil {
@@ -198,7 +203,7 @@ func (s Store) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) 
 		download_passphrase
 	)
 	VALUES(:entry_id, NULLIF(:guest_link_id, ''), :filename, :note, :content_type, :upload_time, :expiration_time, :download_passphrase)`,
-		sql.Named("entry_id", metadata.ID),
+		sql.Named("entry_id", metadata.ID.String()),
 		sql.Named("guest_link_id", metadata.GuestLink.ID),
 		sql.Named("filename", metadata.Filename),
 		sql.Named("note", metadata.Note.Value),
@@ -246,7 +251,7 @@ func (s Store) UpdateEntryMetadata(id picoshare.EntryID, metadata picoshare.Uplo
 		sql.Named("expiration_time", formatExpirationTime(metadata.Expires)),
 		sql.Named("note", metadata.Note.Value),
 		sql.Named("download_passphrase", downloadPassphraseString(metadata.DownloadPassphrase)),
-		sql.Named("entry_id", id))
+		sql.Named("entry_id", id.String()))
 	if err != nil {
 		return err
 	}
@@ -280,7 +285,7 @@ func (s Store) DeleteEntry(id picoshare.EntryID) error {
 	DELETE FROM
 		downloads
 	WHERE
-		entry_id = :entry_id`, sql.Named("entry_id", id)); err != nil {
+		entry_id = :entry_id`, sql.Named("entry_id", id.String())); err != nil {
 		log.Printf("delete from downloads table failed, aborting transaction: %v", err)
 		return err
 	}
@@ -289,7 +294,7 @@ func (s Store) DeleteEntry(id picoshare.EntryID) error {
 	DELETE FROM
 		entries_data
 	WHERE
-		id = :entry_id`, sql.Named("entry_id", id)); err != nil {
+		id = :entry_id`, sql.Named("entry_id", id.String())); err != nil {
 		log.Printf("delete from entries_data table failed, aborting transaction: %v", err)
 		return err
 	}
@@ -298,7 +303,7 @@ func (s Store) DeleteEntry(id picoshare.EntryID) error {
 	DELETE FROM
 		entries
 	WHERE
-		id = :entry_id`, sql.Named("entry_id", id)); err != nil {
+		id = :entry_id`, sql.Named("entry_id", id.String())); err != nil {
 		log.Printf("delete from entries table failed, aborting transaction: %v", err)
 		return err
 	}

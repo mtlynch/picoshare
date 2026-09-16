@@ -14,7 +14,7 @@ import (
 )
 
 type mockEntry struct {
-	ID          picoshare.EntryID
+	ID          string
 	Filename    picoshare.Filename
 	ContentType picoshare.ContentType
 }
@@ -128,7 +128,7 @@ func TestEntryGet(t *testing.T) {
 				data := "dummy data"
 				entry := picoshare.UploadEntry{
 					UploadMetadata: picoshare.UploadMetadata{
-						ID:          mockEntry.ID,
+						ID:          picoshare.MustCreateEntryID(mockEntry.ID),
 						Filename:    mockEntry.Filename,
 						ContentType: mockEntry.ContentType,
 						Uploaded:    mustParseTime("2023-01-01T00:00:00Z"),
@@ -176,7 +176,7 @@ func TestEntryGet(t *testing.T) {
 
 func TestProtectedEntryDownload(t *testing.T) {
 	type fakeEntry struct {
-		ID                 picoshare.EntryID
+		ID                 string
 		Contents           string
 		DownloadPassphrase picoshare.DownloadPassphrase
 	}
@@ -395,7 +395,7 @@ func TestProtectedEntryDownload(t *testing.T) {
 		t.Run(tt.explanation, func(t *testing.T) {
 			dataStore := test_sqlite.New(t)
 			if err := dataStore.InsertEntry(strings.NewReader(tt.entryInStore.Contents), picoshare.UploadMetadata{
-				ID:                 tt.entryInStore.ID,
+				ID:                 picoshare.MustCreateEntryID(tt.entryInStore.ID),
 				Filename:           "test.txt",
 				ContentType:        "text/plain",
 				Uploaded:           mustParseTime("2023-01-01T00:00:00Z"),
@@ -448,7 +448,7 @@ func TestProtectedEntryDownloadRequiresPassphraseEveryDownload(t *testing.T) {
 	dataStore := test_sqlite.New(t)
 	data := "protected file contents"
 	if err := dataStore.InsertEntry(strings.NewReader(data), picoshare.UploadMetadata{
-		ID:                 "PPPPPPPPPP",
+		ID:                 picoshare.MustCreateEntryID("PPPPPPPPPP"),
 		Filename:           "protected.txt",
 		ContentType:        "text/plain",
 		Uploaded:           mustParseTime("2023-01-01T00:00:00Z"),

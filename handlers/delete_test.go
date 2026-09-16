@@ -22,7 +22,7 @@ func TestDeleteExistingFile(t *testing.T) {
 	fileContents := "dummy data"
 	dataStore.InsertEntry(strings.NewReader(fileContents),
 		picoshare.UploadMetadata{
-			ID:       picoshare.EntryID("hR87apiUCj"),
+			ID:       picoshare.MustCreateEntryID("hR87apiUCj"),
 			Uploaded: mustParseTime("2023-01-01T00:00:00Z"),
 			Expires:  mustParseExpirationTime("2024-01-01T00:00:00Z"),
 			Size:     mustParseFileSize(len(fileContents)),
@@ -40,9 +40,9 @@ func TestDeleteExistingFile(t *testing.T) {
 			status, http.StatusOK)
 	}
 
-	_, err := dataStore.GetEntryMetadata(picoshare.EntryID("hR87apiUCj"))
+	_, err := dataStore.GetEntryMetadata(picoshare.MustCreateEntryID("hR87apiUCj"))
 	if _, ok := err.(store.EntryNotFoundError); !ok {
-		t.Fatalf("expected entry %v to be deleted", picoshare.EntryID("hR87apiUCj"))
+		t.Fatalf("expected entry %v to be deleted", picoshare.MustCreateEntryID("hR87apiUCj"))
 	}
 }
 

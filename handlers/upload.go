@@ -12,14 +12,8 @@ import (
 
 	"github.com/mtlynch/picoshare/handlers/parse"
 	"github.com/mtlynch/picoshare/picoshare"
-	"github.com/mtlynch/picoshare/random"
 	"github.com/mtlynch/picoshare/store"
 )
-
-const EntryIDLength = 10
-
-// Omit visually similar characters (I,l,1), (0,O)
-var entryIDCharacters = []rune("abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789")
 
 type (
 	EntryPostResponse struct {
@@ -69,7 +63,7 @@ func (s Server) entryPost() http.HandlerFunc {
 
 func (s Server) entryPut() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		id, err := parseEntryID(mux.Vars(r)["id"])
+		id, err := picoshare.EntryIDFromString(mux.Vars(r)["id"])
 		if err != nil {
 			log.Printf("error parsing ID: %v", err)
 			http.Error(w, fmt.Sprintf("bad entry ID: %v", err), http.StatusBadRequest)
@@ -208,35 +202,12 @@ func (s Server) entryMetadataFromRequest(r *http.Request) (picoshare.UploadMetad
 	}, nil
 }
 
-func generateEntryID() picoshare.EntryID {
-	return picoshare.EntryID(random.String(EntryIDLength, entryIDCharacters))
-}
-
-func parseEntryID(s string) (picoshare.EntryID, error) {
-	if len(s) != EntryIDLength {
-		return picoshare.EntryID(""), fmt.Errorf("entry ID (%v) has invalid length: got %d, want %d", s, len(s), EntryIDLength)
-	}
-
-	// We could do this outside the function and store the result.
-	idCharsHash := map[rune]bool{}
-	for _, c := range entryIDCharacters {
-		idCharsHash[c] = true
-	}
-
-	for _, c := range s {
-		if _, ok := idCharsHash[c]; !ok {
-			return picoshare.EntryID(""), fmt.Errorf("entry ID (%s) contains invalid character: %v", s, c)
-		}
-	}
-	return picoshare.EntryID(s), nil
-}
-
 func (s Server) insertFileFromRequest(r *http.Request, expiration picoshare.ExpirationTime, guestLinkID picoshare.GuestLinkID) (picoshare.EntryID, error) {
 	// ParseMultipartForm can go above the limit we set, so set a conservative RAM
 	// limit to avoid exhausting RAM on servers with limited resources.
 	multipartMaxMemory := mibToBytes(1)
 	if err := r.ParseMultipartForm(multipartMaxMemory); err != nil {
-		return picoshare.EntryID(""), err
+		return picoshare.EntryID{}, err
 	}
 	defer func() {
 		if err := r.MultipartForm.RemoveAll(); err != nil {
@@ -246,45 +217,45 @@ func (s Server) insertFileFromRequest(r *http.Request, expiration picoshare.Expi
 
 	reader, metadata, err := r.FormFile("file")
 	if err != nil {
-		return picoshare.EntryID(""), err
+		return picoshare.EntryID{}, err
 	}
 
 	fileSize, err := picoshare.FileSizeFromInt64(metadata.Size)
 	if err != nil {
-		return picoshare.EntryID(""), err
+		return picoshare.EntryID{}, err
 	}
 
 	filename, err := parse.Filename(metadata.Filename)
 	if err != nil {
-		return picoshare.EntryID(""), err
+		return picoshare.EntryID{}, err
 	}
 
 	contentType, err := parseContentType(metadata.Header.Get("Content-Type"))
 	if err != nil {
-		return picoshare.EntryID(""), err
+		return picoshare.EntryID{}, err
 	}
 
 	note, err := parse.FileNote(r.FormValue("note"))
 	if err != nil {
-		return picoshare.EntryID(""), err
+		return picoshare.EntryID{}, err
 	}
 
 	if guestLinkID != "" && note.Value != nil {
-		return picoshare.EntryID(""), errors.New("guest uploads cannot have file notes")
+		return picoshare.EntryID{}, errors.New("guest uploads cannot have file notes")
 	}
 
 	downloadPassphrase := picoshare.DownloadPassphrase{}
 	if rawDownloadPassphrase := r.FormValue("downloadPassphrase"); rawDownloadPassphrase != "" {
 		if guestLinkID != "" {
-			return picoshare.EntryID(""), errors.New("guest uploads cannot have download passphrases")
+			return picoshare.EntryID{}, errors.New("guest uploads cannot have download passphrases")
 		}
 		downloadPassphrase, err = picoshare.NewDownloadPassphrase(rawDownloadPassphrase)
 		if err != nil {
-			return picoshare.EntryID(""), err
+			return picoshare.EntryID{}, err
 		}
 	}
 
-	id := generateEntryID()
+	id := picoshare.NewEntryID()
 	err = s.store.InsertEntry(reader,
 		picoshare.UploadMetadata{
 			ID:          id,
@@ -301,7 +272,7 @@ func (s Server) insertFileFromRequest(r *http.Request, expiration picoshare.Expi
 		})
 	if err != nil {
 		log.Printf("failed to save entry: %v", err)
-		return picoshare.EntryID(""), dbError{err}
+		return picoshare.EntryID{}, dbError{err}
 	}
 
 	return id, nil
