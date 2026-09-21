@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+
+# Reports functions unreachable from the application's main function or tests.
+
+# Exit on first failure.
+set -e
+
+# Echo commands to stdout.
+set -x
+
+# Exit on unset variable.
+set -u
+
+# Change directory to repository root.
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+readonly SCRIPT_DIR
+cd "${SCRIPT_DIR}/.."
+
+GOBIN="$(go env GOBIN)"
+if [[ -z "${GOBIN}" ]]; then
+  GOBIN="$(go env GOPATH)/bin"
+fi
+readonly GOBIN
+
+# Use Nix's pinned picoshare-deadcode when available. Outside Nix, install the
+# same version in GOBIN.
+readonly DEADCODE_VERSION="v0.42.0"
+DEADCODE_PATH="$(command -v picoshare-deadcode || true)"
+if [[ -z "${DEADCODE_PATH}" ]]; then
+  DEADCODE_PATH="${GOBIN}/deadcode"
+  deadcode_build_info="$(go version -m "${DEADCODE_PATH}" 2> /dev/null || true)"
+  if [[ "${deadcode_build_info}" != *$'mod\tgolang.org/x/tools\t'"${DEADCODE_VERSION}"$'\t'* ]]; then
+    CGO_ENABLED=0 go install \
+      "golang.org/x/tools/cmd/deadcode@${DEADCODE_VERSION}"
+  fi
+fi
+readonly DEADCODE_PATH
+
+project_go_files="$(git ls-files --cached --others --exclude-standard -- '*.go')"
+readonly project_go_files
+GO_PACKAGE_DIRS=()
+declare -A seen_go_package_dirs=()
+while IFS= read -r go_file; do
+  if [[ -z "${go_file}" || ! -f "${go_file}" ]]; then
+    continue
+  fi
+  go_package_dir="${go_file%/*}"
+  if [[ "${go_package_dir}" == "${go_file}" ]]; then
+    go_package_dir="."
+  fi
+  if [[ -n "${seen_go_package_dirs["${go_package_dir}"]+present}" ]]; then
+    continue
+  fi
+  seen_go_package_dirs["${go_package_dir}"]=1
+  GO_PACKAGE_DIRS+=("./${go_package_dir}")
+done <<< "${project_go_files}"
+readonly GO_PACKAGE_DIRS
+
+if ! deadcode_output="$("${DEADCODE_PATH}" \
+  -test \
+  -tags=netgo,osusergo,sqlite_json \
+  "${GO_PACKAGE_DIRS[@]}")"; then
+  printf '%s\n' "${deadcode_output}" >&2
+  exit 1
+fi
+readonly deadcode_output
+if [[ -n "${deadcode_output}" ]]; then
+  printf '%s\n' "${deadcode_output}" >&2
+  printf 'Unreachable Go functions found.\n' >&2
+  exit 1
+fi
