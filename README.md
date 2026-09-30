@@ -144,6 +144,7 @@ Due to time limitations, I keep PicoShare's scope limited to only the features t
 PicoShare is easy to deploy to cloud hosting platforms:
 
 - [fly.io](docs/deployment/fly.io.md)
+- [![Deploy on nibrun](https://nibrun.com/button.svg)](https://nibrun.com/deploy/picoshare)
 
 ## Third-party clients
 
