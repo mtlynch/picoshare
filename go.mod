@@ -3,7 +3,7 @@ module github.com/mtlynch/picoshare
 go 1.26
 
 require (
-	codeberg.org/mtlynch/go-evolutionary-migrate v0.0.1
+	codefloe.com/mtlynch/go-evolutionary-migrate/v2 v2.0.0-20260917185754-fdf050969c49
 	github.com/go-test/deep v1.1.1
 	github.com/gorilla/mux v1.8.0
 	github.com/mattn/go-sqlite3 v1.14.22

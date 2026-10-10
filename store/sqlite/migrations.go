@@ -7,7 +7,7 @@ import (
 	"io/fs"
 	"log"
 
-	migrate "codeberg.org/mtlynch/go-evolutionary-migrate"
+	migrate "codefloe.com/mtlynch/go-evolutionary-migrate/v2"
 )
 
 //go:embed migrations/*.sql
