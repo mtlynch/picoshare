@@ -10,6 +10,7 @@ set -x
 set -u
 
 ./node_modules/.bin/prettier --check .
+./node_modules/.bin/tsc --noEmit --project e2e
 mapfile -t frontend_files < <(
   git ls-files -- '*.js' '*.ts' 'handlers/templates/**/*.html'
 )
