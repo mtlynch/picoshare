@@ -3,7 +3,7 @@
 ## Defining symbols
 
 - Define variables and structs as close as possible to when they're first used.
-  - Exception: Declare all package-level variables and structs at the top of the file above imports.
+  - Exception: Declare all package-level variables and structs at the top of the file immediately after imports.
 - Name helper functions with an explicit verb, e.g. `mustCreateUser` instead of `mustNewUser`.
 
 ## Formatting
@@ -103,6 +103,7 @@ func parseEntryUpdateRequest(r *http.Request) (entryUpdateRequest, error) {
 - Go tests should be in a separate `_test` package so they don't test non-exported interfaces.
 - Test HTTP handlers by sending requests to the relevant routes.
   - Minimize test coupling by avoiding tests that call HTTP handler functions directly.
+  - The HTTP route and method a test exercises should be visible in the test body or testcase struct. Never hide the route or method in a helper function.
 - When a Go test performs multiple HTTP requests in one flow, keep shared fixture setup at the top of the test and isolate each request in its own lexical scope.
   - Share state between request blocks explicitly through variables such as cookies or IDs.
   - Example pattern:
@@ -137,9 +138,10 @@ func parseEntryUpdateRequest(r *http.Request) (entryUpdateRequest, error) {
     }
     ```
 
-- Use `t.Fatalf` for assertions where the test cannot continue if the assertion fails.
-  - Typically, fail with `t.Fatalf` if a function returned an error when the test expected a nil error.
-  - If the test is only checking that a function's output matches the expected value, use `t.Errorf`, not `t.Fatalf`.
+- Use `t.Fatalf` when a failed assertion leaves nothing useful to test because the remaining values would be invalid or undefined.
+  - For example, stop after an unexpected error when subsequent assertions depend on the returned value.
+  - An HTTP status mismatch is almost always a fatal error, as there's no reason to check the body when the status is not what the test expected.
+  - Otherwise, use `t.Errorf` so independent assertions still run.
 - Do not write tests that scrape information from `log.Print*` calls.
 - Test domain-value validation in the package that defines the typed value, not only through HTTP handler tests.
 
@@ -190,6 +192,7 @@ func TestParseEntryID(t *testing.T) {
 - Use an `explanation string` field as the first field in table-driven test cases.
 - When testing HTTP handlers, place the expected HTTP status first among the outputs.
 - The test cases should all have keyed field names like `explanation: "..."` for easier readability.
+  - The field names should always start on a new line.
 
 # Callsite legibility
 
@@ -266,11 +269,15 @@ s.ReadEntries(
 
 ## HTTP errors
 
-- Keep internal error details private in user-facing HTTP responses.
-  - No: `http.Error(w, fmt.Sprintf("Failed to retrieve entries: %v", err), http.StatusInternalServerError)`
-  - Yes: `http.Error(w, "Failed to retrieve entries", http.StatusInternalServerError)`
-- Log contextual server-side error details alongside the corresponding `http.Error` call so operators can diagnose the failure without exposing it to clients.
-  - Example: `log.Printf("failed to retrieve entries: %v", err)`
+- Include the failed operation and underlying error in user-facing HTTP error messages instead of generic messages like `Internal Server Error`.
+  - No: `http.Error(w, "Internal Server Error", http.StatusInternalServerError)`
+  - Yes: `http.Error(w, fmt.Sprintf("Failed to retrieve reactions: %v", err), http.StatusInternalServerError)`
+- Keep the server-side log call alongside the corresponding `http.Error` call.
+  - Log messages are internally-facing and should include more context when possible, such as the input data that the server caused a failure.
+    - Log messages should not be capitalized unless they begin with a word that is always capitalized, such as a proper noun.
+  - HTTP error messages are user-facing and should include friendlier, less technical language. They should include errors to help the user report failures to the developers, but they should avoid leaking too many implementation details.
+    - HTTP error messages should be capitalized.
+  - Do not repeat the request method or URL in handler error logs; `LoggingHandler` already logs them.
 
 ## Design for testing
 
@@ -329,6 +336,7 @@ If you learned that methods shouldn't be exported just for testing, add to `AGEN
 
 - Do not embed scripts in Nix files when the script is longer than 15 lines of code.
   - Keep scripts as standalone files and call them from the flake.
+  - Exception: The development shell hook may remain embedded regardless of its length.
 - Avoid string substitution to inject large shell scripts into the flake.
 - When communicating executable locations from the flake to shell scripts, prefer updating `PATH` so scripts can execute binaries by name.
 
@@ -346,7 +354,8 @@ If you learned that methods shouldn't be exported just for testing, add to `AGEN
 
 # Style conventions
 
-- End comments with trailing punctuation.
+- End complete sentences in comments with trailing punctuation. Do not add punctuation to headings or sentence fragments, including inline labels such as `# Replace` and `# Optional` or section headings such as `// Static files`.
+- Do not add a period immediately after a URL, even at the end of a sentence.
 - Break code comment lines at 80 characters.
   - Treat tabs as two spaces.
 - Do not make assumptions about external clients or deployment environments in code comments unless they impose a relevant design constraint.
@@ -386,7 +395,7 @@ If you learned that methods shouldn't be exported just for testing, add to `AGEN
 - After every code change, run `nix flake check` before presenting the solution to the user.
 - After every code change, run `dev-scripts/git-hooks/pre-commit` before presenting the solution to the user.
 - To run Go unit tests, run `./dev-scripts/run-go-tests`.
-- Do not write to the filesystem in tests.
+- Do not write to the filesystem in unit tests. End-to-end tests may write to the filesystem.
   - Design production interfaces around file readers or filesystem interfaces rather than the local filesystem.
 - Avoid testing implementation-dependent call counts when you can assert a more meaningful signal that is part of the function contract.
 - When writing tests to verify a bugfix, follow TDD conventions: write the test first, verify that it fails, fix the bug, and verify that the test passes.
@@ -464,11 +473,13 @@ def test_increase_score(self):
 
 ### Use locators
 
-- Prefer user-facing locators in this order: role, text, test ID.
+- Prefer user-facing locators: role first, then text.
   - `page.getByRole('button', { name: 'Submit' })`
   - `page.getByText('Welcome')`
-  - `page.getByTestId('submit-btn')`
-- Avoid CSS selectors and XPath because DOM changes can make them brittle and couple tests to implementation details.
+- Add `data-testid` attributes only as a last resort.
+  - When neither role nor text identifies an element, give it a real accessible name or role instead of a test-only hook.
+  - Don't add a production class or ID purely for the sake of testing.
+- Avoid CSS selectors and XPath — the DOM changes frequently and they couple tests to implementation.
 - Narrow locators to a specific section of the page using chaining and filtering:
 
   ```ts
