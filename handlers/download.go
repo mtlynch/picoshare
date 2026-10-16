@@ -179,13 +179,15 @@ func (s Server) serveEntryContent(w http.ResponseWriter, r *http.Request, entry 
 	}
 	w.Header().Set("Content-Type", contentType.String())
 
-	policy := "sandbox"
-	mediaType, _, err := mime.ParseMediaType(contentType.String())
-	if err == nil && (strings.HasPrefix(mediaType, "audio/") || strings.HasPrefix(mediaType, "video/")) {
-		// Browser-generated media players need their original origin for media
-		// requests. The sandbox still blocks scripts from running.
-		policy += " allow-same-origin"
-	}
+	policy := func() string {
+		mediaType, _, err := mime.ParseMediaType(contentType.String())
+		if err == nil && (strings.HasPrefix(mediaType, "audio/") || strings.HasPrefix(mediaType, "video/")) {
+			// Browser-generated media players need their original origin for media
+			// requests. The sandbox still blocks scripts from running.
+			return "sandbox allow-same-origin"
+		}
+		return "sandbox"
+	}()
 	w.Header().Set("Content-Security-Policy", policy)
 
 	entryFile, err := s.store.ReadEntryFile(entry.ID)
