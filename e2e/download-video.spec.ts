@@ -1,12 +1,12 @@
-import { resolve } from "node:path";
 import { test, expect } from "./fixtures";
 import { login } from "./helpers/login";
 
 test("plays an uploaded video", async ({ page }) => {
   await login(page);
 
-  const videoPath = resolve("e2e/fixtures/tiny-video.mp4");
-  await page.getByLabel("Choose a file…").setInputFiles(videoPath);
+  await page
+    .getByLabel("Choose a file…")
+    .setInputFiles("e2e/fixtures/tiny-video.mp4");
   await expect(page.locator("#upload-result .message-body")).toHaveText(
     "Upload complete!",
   );
