@@ -44,10 +44,25 @@ var (
 		Filename:    picoshare.Filename("test0.mp4"),
 		ContentType: picoshare.ContentType("application/octet-stream"),
 	}
-	dummyHTMLEntry = mockEntry{
+	dummyVideoEntryWithContentTypeParameters = mockEntry{
+		ID:          "VVVVVVVV33",
+		Filename:    picoshare.Filename("test1.mp4"),
+		ContentType: picoshare.ContentType(`video/mp4; codecs="vp09"`),
+	}
+	dummyHTMLEntryWithVideoFilename = mockEntry{
 		ID:          "HHHHHHHHHH",
-		Filename:    picoshare.Filename("payload.html"),
+		Filename:    picoshare.Filename("payload.mp4"),
 		ContentType: picoshare.ContentType("text/html"),
+	}
+	dummySVGEntry = mockEntry{
+		ID:          "SSSSSSSSSS",
+		Filename:    picoshare.Filename("payload.svg"),
+		ContentType: picoshare.ContentType("image/svg+xml"),
+	}
+	dummyHTMLEntryWithMalformedMediaType = mockEntry{
+		ID:          "MMMMMMMMMM",
+		Filename:    picoshare.Filename("payload.html"),
+		ContentType: picoshare.ContentType("video/mp4 text/html"),
 	}
 )
 
@@ -74,7 +89,7 @@ func TestEntryGet(t *testing.T) {
 			expectedStatus:             http.StatusOK,
 			expectedContentDisposition: `filename="test.mp3"`,
 			expectedContentType:        "audio/mpeg",
-			expectedCSP:                "sandbox",
+			expectedCSP:                "sandbox allow-same-origin",
 		},
 		{
 			description:                "retrieves audio entry and infers content-type when it wasn't specified at upload time",
@@ -82,7 +97,7 @@ func TestEntryGet(t *testing.T) {
 			expectedStatus:             http.StatusOK,
 			expectedContentDisposition: `filename="test0.mp3"`,
 			expectedContentType:        "audio/mpeg",
-			expectedCSP:                "sandbox",
+			expectedCSP:                "sandbox allow-same-origin",
 		},
 		{
 			description:                "retrieves video entry",
@@ -90,7 +105,7 @@ func TestEntryGet(t *testing.T) {
 			expectedStatus:             http.StatusOK,
 			expectedContentDisposition: `filename="test.mp4"`,
 			expectedContentType:        "video/mp4",
-			expectedCSP:                "sandbox",
+			expectedCSP:                "sandbox allow-same-origin",
 		},
 		{
 			description:                "retrieves video entry and infers content-type when it wasn't specified at upload time",
@@ -98,14 +113,38 @@ func TestEntryGet(t *testing.T) {
 			expectedStatus:             http.StatusOK,
 			expectedContentDisposition: `filename="test0.mp4"`,
 			expectedContentType:        "video/mp4",
+			expectedCSP:                "sandbox allow-same-origin",
+		},
+		{
+			description:                "retrieves video entry with content-type parameters",
+			requestRoute:               "/-VVVVVVVV33",
+			expectedStatus:             http.StatusOK,
+			expectedContentDisposition: `filename="test1.mp4"`,
+			expectedContentType:        `video/mp4; codecs="vp09"`,
+			expectedCSP:                "sandbox allow-same-origin",
+		},
+		{
+			description:                "retrieves HTML entry with a video filename",
+			requestRoute:               "/-HHHHHHHHHH",
+			expectedStatus:             http.StatusOK,
+			expectedContentDisposition: `filename="payload.mp4"`,
+			expectedContentType:        "text/html",
 			expectedCSP:                "sandbox",
 		},
 		{
-			description:                "retrieves html entry",
-			requestRoute:               "/-HHHHHHHHHH",
+			description:                "retrieves SVG entry",
+			requestRoute:               "/-SSSSSSSSSS",
+			expectedStatus:             http.StatusOK,
+			expectedContentDisposition: `filename="payload.svg"`,
+			expectedContentType:        "image/svg+xml",
+			expectedCSP:                "sandbox",
+		},
+		{
+			description:                "retrieves HTML entry with a malformed media type and keeps the strict sandbox",
+			requestRoute:               "/-MMMMMMMMMM",
 			expectedStatus:             http.StatusOK,
 			expectedContentDisposition: `filename="payload.html"`,
-			expectedContentType:        "text/html",
+			expectedContentType:        "video/mp4 text/html",
 			expectedCSP:                "sandbox",
 		},
 		{
@@ -123,7 +162,10 @@ func TestEntryGet(t *testing.T) {
 				dummyAudioEntryWithoutContentType,
 				dummyVideoEntry,
 				dummyVideoEntryWithGenericContentType,
-				dummyHTMLEntry,
+				dummyVideoEntryWithContentTypeParameters,
+				dummyHTMLEntryWithVideoFilename,
+				dummySVGEntry,
+				dummyHTMLEntryWithMalformedMediaType,
 			} {
 				data := "dummy data"
 				entry := picoshare.UploadEntry{

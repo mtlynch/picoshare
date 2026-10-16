@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/http"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -166,10 +167,6 @@ func entryUnlockPath(id picoshare.EntryID) string {
 }
 
 func (s Server) serveEntryContent(w http.ResponseWriter, r *http.Request, entry picoshare.UploadMetadata) {
-	// Serve response in a sandbox so that if a user uploads JavaScript, it
-	// doesn't run in the same domain as the server.
-	w.Header().Set("Content-Security-Policy", "sandbox")
-
 	if entry.Filename != "" {
 		w.Header().Set("Content-Disposition", fmt.Sprintf(`filename="%s"`, entry.Filename))
 	}
@@ -181,6 +178,22 @@ func (s Server) serveEntryContent(w http.ResponseWriter, r *http.Request, entry 
 		}
 	}
 	w.Header().Set("Content-Type", contentType.String())
+
+	// Serve the response in a sandbox so that an uploaded HTML or SVG file
+	// cannot run scripts in the server's origin.
+	policy := func() string {
+		// Parse the media type instead of matching a prefix of the raw header so
+		// that a malformed Content-Type, which browsers would ignore and sniff,
+		// keeps the strict policy.
+		mediaType, _, err := mime.ParseMediaType(contentType.String())
+		if err == nil && (strings.HasPrefix(mediaType, "audio/") || strings.HasPrefix(mediaType, "video/")) {
+			// Browser-generated media players need their original origin for media
+			// requests. The sandbox still blocks scripts from running.
+			return "sandbox allow-same-origin"
+		}
+		return "sandbox"
+	}()
+	w.Header().Set("Content-Security-Policy", policy)
 
 	entryFile, err := s.store.ReadEntryFile(entry.ID)
 	if err != nil {
