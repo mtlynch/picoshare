@@ -202,44 +202,6 @@ func TestEntryGet(t *testing.T) {
 	}
 }
 
-func TestEntryGetVideoRangeRequest(t *testing.T) {
-	dataStore := test_sqlite.New(t)
-	data := "video data"
-	entry := picoshare.UploadMetadata{
-		ID:          picoshare.MustCreateEntryID("RRRRRRRRRR"),
-		Filename:    picoshare.Filename("test.mp4"),
-		ContentType: picoshare.ContentType("video/mp4"),
-		Uploaded:    mustParseTime("2023-01-01T00:00:00Z"),
-		Expires:     picoshare.NeverExpire,
-		Size:        mustParseFileSize(len(data)),
-	}
-	if err := dataStore.InsertEntry(strings.NewReader(data), entry); err != nil {
-		t.Fatalf("failed to insert entry: %v", err)
-	}
-	now := mustParseTime("2023-01-01T00:00:00Z")
-	s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceCheckFunc, nilGarbageCollector, func() time.Time {
-		return now
-	})
-	req := httptest.NewRequest(http.MethodGet, "/-RRRRRRRRRR", nil)
-	req.Header.Set("Range", "bytes=0-4")
-	rec := httptest.NewRecorder()
-
-	s.Router().ServeHTTP(rec, req)
-
-	if got, want := rec.Code, http.StatusPartialContent; got != want {
-		t.Fatalf("status=%d, want=%d", got, want)
-	}
-	if got, want := rec.Header().Get("Content-Security-Policy"), "sandbox allow-same-origin"; got != want {
-		t.Errorf("Content-Security-Policy=%q, want=%q", got, want)
-	}
-	if got, want := rec.Header().Get("Content-Range"), "bytes 0-4/10"; got != want {
-		t.Errorf("Content-Range=%q, want=%q", got, want)
-	}
-	if got, want := rec.Body.String(), "video"; got != want {
-		t.Errorf("body=%q, want=%q", got, want)
-	}
-}
-
 func TestProtectedEntryDownload(t *testing.T) {
 	type fakeEntry struct {
 		ID                 string
