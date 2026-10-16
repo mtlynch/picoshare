@@ -44,10 +44,20 @@ var (
 		Filename:    picoshare.Filename("test0.mp4"),
 		ContentType: picoshare.ContentType("application/octet-stream"),
 	}
+	dummyVideoEntryWithContentTypeParameters = mockEntry{
+		ID:          "VVVVVVVV33",
+		Filename:    picoshare.Filename("test1.mp4"),
+		ContentType: picoshare.ContentType(`video/mp4; codecs="vp09"`),
+	}
 	dummyHTMLEntry = mockEntry{
 		ID:          "HHHHHHHHHH",
-		Filename:    picoshare.Filename("payload.html"),
+		Filename:    picoshare.Filename("payload.mp4"),
 		ContentType: picoshare.ContentType("text/html"),
+	}
+	dummySVGEntry = mockEntry{
+		ID:          "SSSSSSSSSS",
+		Filename:    picoshare.Filename("payload.svg"),
+		ContentType: picoshare.ContentType("image/svg+xml"),
 	}
 )
 
@@ -74,7 +84,7 @@ func TestEntryGet(t *testing.T) {
 			expectedStatus:             http.StatusOK,
 			expectedContentDisposition: `filename="test.mp3"`,
 			expectedContentType:        "audio/mpeg",
-			expectedCSP:                "sandbox",
+			expectedCSP:                "sandbox allow-same-origin",
 		},
 		{
 			description:                "retrieves audio entry and infers content-type when it wasn't specified at upload time",
@@ -82,7 +92,7 @@ func TestEntryGet(t *testing.T) {
 			expectedStatus:             http.StatusOK,
 			expectedContentDisposition: `filename="test0.mp3"`,
 			expectedContentType:        "audio/mpeg",
-			expectedCSP:                "sandbox",
+			expectedCSP:                "sandbox allow-same-origin",
 		},
 		{
 			description:                "retrieves video entry",
@@ -90,7 +100,7 @@ func TestEntryGet(t *testing.T) {
 			expectedStatus:             http.StatusOK,
 			expectedContentDisposition: `filename="test.mp4"`,
 			expectedContentType:        "video/mp4",
-			expectedCSP:                "sandbox",
+			expectedCSP:                "sandbox allow-same-origin",
 		},
 		{
 			description:                "retrieves video entry and infers content-type when it wasn't specified at upload time",
@@ -98,14 +108,30 @@ func TestEntryGet(t *testing.T) {
 			expectedStatus:             http.StatusOK,
 			expectedContentDisposition: `filename="test0.mp4"`,
 			expectedContentType:        "video/mp4",
+			expectedCSP:                "sandbox allow-same-origin",
+		},
+		{
+			description:                "retrieves video entry with content-type parameters",
+			requestRoute:               "/-VVVVVVVV33",
+			expectedStatus:             http.StatusOK,
+			expectedContentDisposition: `filename="test1.mp4"`,
+			expectedContentType:        `video/mp4; codecs="vp09"`,
+			expectedCSP:                "sandbox allow-same-origin",
+		},
+		{
+			description:                "retrieves HTML entry with a video filename",
+			requestRoute:               "/-HHHHHHHHHH",
+			expectedStatus:             http.StatusOK,
+			expectedContentDisposition: `filename="payload.mp4"`,
+			expectedContentType:        "text/html",
 			expectedCSP:                "sandbox",
 		},
 		{
-			description:                "retrieves html entry",
-			requestRoute:               "/-HHHHHHHHHH",
+			description:                "retrieves SVG entry",
+			requestRoute:               "/-SSSSSSSSSS",
 			expectedStatus:             http.StatusOK,
-			expectedContentDisposition: `filename="payload.html"`,
-			expectedContentType:        "text/html",
+			expectedContentDisposition: `filename="payload.svg"`,
+			expectedContentType:        "image/svg+xml",
 			expectedCSP:                "sandbox",
 		},
 		{
@@ -123,7 +149,9 @@ func TestEntryGet(t *testing.T) {
 				dummyAudioEntryWithoutContentType,
 				dummyVideoEntry,
 				dummyVideoEntryWithGenericContentType,
+				dummyVideoEntryWithContentTypeParameters,
 				dummyHTMLEntry,
+				dummySVGEntry,
 			} {
 				data := "dummy data"
 				entry := picoshare.UploadEntry{
@@ -171,6 +199,44 @@ func TestEntryGet(t *testing.T) {
 				t.Errorf("Content-Security-Policy=%s, want=%s", got, want)
 			}
 		})
+	}
+}
+
+func TestEntryGetVideoRangeRequest(t *testing.T) {
+	dataStore := test_sqlite.New(t)
+	data := "video data"
+	entry := picoshare.UploadMetadata{
+		ID:          picoshare.MustCreateEntryID("RRRRRRRRRR"),
+		Filename:    picoshare.Filename("test.mp4"),
+		ContentType: picoshare.ContentType("video/mp4"),
+		Uploaded:    mustParseTime("2023-01-01T00:00:00Z"),
+		Expires:     picoshare.NeverExpire,
+		Size:        mustParseFileSize(len(data)),
+	}
+	if err := dataStore.InsertEntry(strings.NewReader(data), entry); err != nil {
+		t.Fatalf("failed to insert entry: %v", err)
+	}
+	now := mustParseTime("2023-01-01T00:00:00Z")
+	s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceCheckFunc, nilGarbageCollector, func() time.Time {
+		return now
+	})
+	req := httptest.NewRequest(http.MethodGet, "/-RRRRRRRRRR", nil)
+	req.Header.Set("Range", "bytes=0-4")
+	rec := httptest.NewRecorder()
+
+	s.Router().ServeHTTP(rec, req)
+
+	if got, want := rec.Code, http.StatusPartialContent; got != want {
+		t.Fatalf("status=%d, want=%d", got, want)
+	}
+	if got, want := rec.Header().Get("Content-Security-Policy"), "sandbox allow-same-origin"; got != want {
+		t.Errorf("Content-Security-Policy=%q, want=%q", got, want)
+	}
+	if got, want := rec.Header().Get("Content-Range"), "bytes 0-4/10"; got != want {
+		t.Errorf("Content-Range=%q, want=%q", got, want)
+	}
+	if got, want := rec.Body.String(), "video"; got != want {
+		t.Errorf("body=%q, want=%q", got, want)
 	}
 }
 
