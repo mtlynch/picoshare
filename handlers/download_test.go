@@ -59,6 +59,11 @@ var (
 		Filename:    picoshare.Filename("payload.svg"),
 		ContentType: picoshare.ContentType("image/svg+xml"),
 	}
+	dummyHTMLEntryWithMalformedMediaType = mockEntry{
+		ID:          "MMMMMMMMMM",
+		Filename:    picoshare.Filename("payload.html"),
+		ContentType: picoshare.ContentType("video/mp4 text/html"),
+	}
 )
 
 func TestEntryGet(t *testing.T) {
@@ -135,6 +140,14 @@ func TestEntryGet(t *testing.T) {
 			expectedCSP:                "sandbox",
 		},
 		{
+			description:                "retrieves HTML entry with a malformed media type and keeps the strict sandbox",
+			requestRoute:               "/-MMMMMMMMMM",
+			expectedStatus:             http.StatusOK,
+			expectedContentDisposition: `filename="payload.html"`,
+			expectedContentType:        "video/mp4 text/html",
+			expectedCSP:                "sandbox",
+		},
+		{
 			description:    "request for non-existent entry returns 404",
 			requestRoute:   "/-ZZZZZZZZZZ",
 			expectedStatus: http.StatusNotFound,
@@ -152,6 +165,7 @@ func TestEntryGet(t *testing.T) {
 				dummyVideoEntryWithContentTypeParameters,
 				dummyHTMLEntryWithVideoFilename,
 				dummySVGEntry,
+				dummyHTMLEntryWithMalformedMediaType,
 			} {
 				data := "dummy data"
 				entry := picoshare.UploadEntry{

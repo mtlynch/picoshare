@@ -179,7 +179,12 @@ func (s Server) serveEntryContent(w http.ResponseWriter, r *http.Request, entry 
 	}
 	w.Header().Set("Content-Type", contentType.String())
 
+	// Serve the response in a sandbox so that an uploaded HTML or SVG file
+	// cannot run scripts in the server's origin.
 	policy := func() string {
+		// Parse the media type instead of matching a prefix of the raw header so
+		// that a malformed Content-Type, which browsers would ignore and sniff,
+		// keeps the strict policy.
 		mediaType, _, err := mime.ParseMediaType(contentType.String())
 		if err == nil && (strings.HasPrefix(mediaType, "audio/") || strings.HasPrefix(mediaType, "video/")) {
 			// Browser-generated media players need their original origin for media
