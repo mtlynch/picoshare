@@ -49,7 +49,7 @@ var (
 		Filename:    picoshare.Filename("test1.mp4"),
 		ContentType: picoshare.ContentType(`video/mp4; codecs="vp09"`),
 	}
-	dummyHTMLEntry = mockEntry{
+	dummyHTMLEntryWithVideoFilename = mockEntry{
 		ID:          "HHHHHHHHHH",
 		Filename:    picoshare.Filename("payload.mp4"),
 		ContentType: picoshare.ContentType("text/html"),
@@ -150,7 +150,7 @@ func TestEntryGet(t *testing.T) {
 				dummyVideoEntry,
 				dummyVideoEntryWithGenericContentType,
 				dummyVideoEntryWithContentTypeParameters,
-				dummyHTMLEntry,
+				dummyHTMLEntryWithVideoFilename,
 				dummySVGEntry,
 			} {
 				data := "dummy data"
