@@ -1,4 +1,3 @@
-import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { test, expect } from "./fixtures";
 import { login } from "./helpers/login";
@@ -7,14 +6,7 @@ test("plays an uploaded video", async ({ page }) => {
   await login(page);
 
   const videoPath = resolve("e2e/fixtures/tiny-video.mp4");
-  const video = await readFile(videoPath);
-  await page.getByLabel("Choose a file…").setInputFiles([
-    {
-      name: "tiny-video.mp4",
-      mimeType: "video/mp4",
-      buffer: video,
-    },
-  ]);
+  await page.getByLabel("Choose a file…").setInputFiles(videoPath);
   await expect(page.locator("#upload-result .message-body")).toHaveText(
     "Upload complete!",
   );
