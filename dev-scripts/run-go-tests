@@ -42,99 +42,43 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 readonly SCRIPT_DIR
 cd "${SCRIPT_DIR}/.."
 
-GOBIN="$(go env GOBIN)"
-if [[ -z "${GOBIN}" ]]; then
-  GOBIN="$(go env GOPATH)/bin"
-fi
-readonly GOBIN
-
-project_go_files="$(git ls-files --cached --others --exclude-standard -- '*.go')"
-readonly project_go_files
-GO_PACKAGE_DIRS=()
-declare -A seen_go_package_dirs=()
-while IFS= read -r go_file; do
-  if [[ -z "${go_file}" ]]; then
-    continue
-  fi
-  go_package_dir="${go_file%/*}"
-  if [[ "${go_package_dir}" == "${go_file}" ]]; then
-    go_package_dir="."
-  fi
-  if [[ -n "${seen_go_package_dirs["${go_package_dir}"]+present}" ]]; then
-    continue
-  fi
-  seen_go_package_dirs["${go_package_dir}"]=1
-  GO_PACKAGE_DIRS+=("./${go_package_dir}")
-done <<< "${project_go_files}"
-readonly GO_PACKAGE_DIRS
-
-go test "${go_test_flags[@]}" "${GO_PACKAGE_DIRS[@]}"
+go test "${go_test_flags[@]}" ./...
 if [[ -n "$full_test" ]]; then
   go tool cover -html "${COVERAGE_FILE_RAW}" -o "${COVERAGE_FILE_HTML}"
 fi
 
-go vet "${GO_PACKAGE_DIRS[@]}"
+go vet ./...
 
-# Use Nix's pinned gci when available. Outside Nix, install the same version in
-# GOBIN and replace stale checkout-local binaries.
-readonly GCI_VERSION="v0.13.7"
-GCI_PATH="$(command -v gci || true)"
-if [[ -z "${GCI_PATH}" ]]; then
-  GCI_PATH="${GOBIN}/gci"
-fi
-if [[ -x "${GCI_PATH}" ]]; then
-  gci_version_output="$("${GCI_PATH}" --version)"
-fi
-if [[ "${gci_version_output:-}" != "gci version ${GCI_VERSION#v}" ]]; then
-  GCI_PATH="${GOBIN}/gci"
-  CGO_ENABLED=0 go install "github.com/daixiang0/gci@${GCI_VERSION}"
-fi
-readonly GCI_PATH
-GCI_DIFF=$("${GCI_PATH}" diff \
-  --skip-generated \
-  --section standard \
-  --section default \
-  --section "prefix(github.com/mtlynch/picoshare)" \
-  "${GO_PACKAGE_DIRS[@]}")
-readonly GCI_DIFF
-if [[ -n "${GCI_DIFF}" ]]; then
-  echo "${GCI_DIFF}"
-  echo >&2 "Go imports are not grouped correctly. Run:"
-  echo >&2 "  ${GCI_PATH} write --skip-generated --section standard \\"
-  echo >&2 "    --section default \\"
-  echo >&2 "    --section 'prefix(github.com/mtlynch/picoshare)' \\"
-  printf >&2 "    %q" "${GO_PACKAGE_DIRS[@]}"
-  printf >&2 '\n'
+go_package_dirs=()
+while IFS= read -r go_package_dir; do
+  go_package_dirs+=("${go_package_dir}")
+done < <(go list -f '{{.Dir}}' ./...)
+readonly go_package_dirs
+
+gci_sections=(
+  "--section=standard"
+  "--section=default"
+  "--section=localmodule"
+)
+readonly gci_sections
+gci_output="$(
+  gci list \
+    --skip-generated \
+    --skip-vendor \
+    "${gci_sections[@]}" \
+    "${go_package_dirs[@]}"
+)"
+if [[ -n "${gci_output}" ]]; then
+  printf 'Go imports are not gci-formatted:\n%s\n' "${gci_output}" >&2
+  gci diff \
+    --skip-generated \
+    --skip-vendor \
+    "${gci_sections[@]}" \
+    "${go_package_dirs[@]}"
   exit 1
 fi
 
-# Install go-critic if it's not present.
-GOCRITIC_PATH="${GOBIN}/go-critic"
-readonly GOCRITIC_PATH
-readonly GOCRITIC_VERSION="v0.14.3"
-if [[ ! -f "${GOCRITIC_PATH}" ]]; then
-  CGO_ENABLED=0 go install \
-    "github.com/go-critic/go-critic/cmd/go-critic@${GOCRITIC_VERSION}"
-fi
-"${GOCRITIC_PATH}" check "${GO_PACKAGE_DIRS[@]}"
-"${GOCRITIC_PATH}" check -enable=returnAfterHttpError "${GO_PACKAGE_DIRS[@]}"
-
-# Install staticcheck if it's not present.
-STATICCHECK_PATH="${GOBIN}/staticcheck"
-readonly STATICCHECK_PATH
-readonly STATICCHECK_VERSION="v0.7.0"
-if [[ ! -f "${STATICCHECK_PATH}" ]]; then
-  CGO_ENABLED=0 go install \
-    "honnef.co/go/tools/cmd/staticcheck@${STATICCHECK_VERSION}"
-fi
-"${STATICCHECK_PATH}" "${GO_PACKAGE_DIRS[@]}"
-
-# Install errcheck if it's not present.
-ERRCHECK_PATH="${GOBIN}/errcheck"
-readonly ERRCHECK_PATH
-readonly ERRCHECK_VERSION="v1.10.0"
-if [[ ! -f "${ERRCHECK_PATH}" ]]; then
-  CGO_ENABLED=0 go install \
-    "github.com/kisielk/errcheck@${ERRCHECK_VERSION}"
-fi
-"${ERRCHECK_PATH}" -ignoretests "${GO_PACKAGE_DIRS[@]}"
+gocritic check ./...
+gocritic check -enable=returnAfterHttpError ./...
+staticcheck ./...
+errcheck -ignoretests ./...

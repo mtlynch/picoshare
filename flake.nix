@@ -19,6 +19,9 @@
     # 0.9.0 release
     shellcheck-nixpkgs.url = "github:NixOS/nixpkgs/8b5ab8341e33322e5b66fb46ce23d724050f6606";
 
+    # 0.14.0 release
+    gci-nixpkgs.url = "github:NixOS/nixpkgs/29916453413845e54a65b8a1cf996842300cd299";
+
     # 3.1.1 release
     sqlfluff-nixpkgs.url = "github:NixOS/nixpkgs/5629520edecb69630a3f4d17d3d33fc96c13f6fe";
 
@@ -42,6 +45,7 @@
     sqlite-nixpkgs,
     nodejs-nixpkgs,
     shellcheck-nixpkgs,
+    gci-nixpkgs,
     sqlfluff-nixpkgs,
     playwright-nixpkgs,
     flyctl-nixpkgs,
@@ -49,7 +53,14 @@
     air-nixpkgs,
   } @ inputs:
     flake-utils.lib.eachDefaultSystem (system: let
-      gopkg = go-nixpkgs.legacyPackages.${system};
+      gopkg = import go-nixpkgs {
+        inherit system;
+        overlays = [
+          (final: prev: {
+            buildGoModule = prev.buildGoModule.override {go = final.go_1_26;};
+          })
+        ];
+      };
       go = gopkg.go_1_26;
       buildGoModule = gopkg.buildGoModule.override {
         inherit go;
@@ -60,10 +71,16 @@
       nodejs = nodepkgs.nodejs_24;
       buildNpmPackage = nodepkgs.buildNpmPackage.override {inherit nodejs;};
       shellcheck = shellcheck-nixpkgs.legacyPackages.${system}.shellcheck;
+      gci = gci-nixpkgs.legacyPackages.${system}.gci;
       sqlfluff = sqlfluff-nixpkgs.legacyPackages.${system}.sqlfluff;
       flyctl = flyctl-nixpkgs.legacyPackages.${system}.flyctl;
       litestream = litestream-nixpkgs.legacyPackages.${system}.litestream;
       air = air-nixpkgs.legacyPackages.${system}.air;
+
+      # Go static analysis tools, including Staticcheck
+      go-tools = gopkg.go-tools.override {buildGoModule = gopkg.buildGoModule;};
+      errcheck = gopkg.errcheck.override {buildGoModule = gopkg.buildGoModule;};
+      go-critic = gopkg.go-critic.override {buildGoModule = gopkg.buildGoModule;};
 
       goVendorHash = "sha256-nsMr0i3nZeMNxEbHrgQTimVjOQpRFvIhWcistX2vGUI=";
 
@@ -205,6 +222,52 @@
         "${appName}" = appPackage;
         "${appNameDev}" = appPackageDev;
         inherit frontend-check;
+
+        go-tests = mkBuildStep {
+          name = "go-tests";
+          command = "./dev-scripts/run-go-tests";
+          src = gopkg.lib.fileset.toSource {
+            root = ./.;
+            fileset = gopkg.lib.fileset.unions [
+              ./go.mod
+              ./go.sum
+              ./dev-scripts/run-go-tests
+              (gopkg.lib.fileset.fileFilter (file: file.hasExt "go") ./.)
+              ./handlers/static
+              ./handlers/templates
+              ./store/sqlite/migrations
+            ];
+          };
+          extraInputs = [
+            go
+            sqlite
+            gopkg.gcc
+            gopkg.binutils
+            go-tools
+            errcheck
+            go-critic
+            gci
+          ];
+          setup = ''
+            export HOME="$TMPDIR/home"
+            mkdir -p "$HOME"
+
+            # Use pre-fetched Go modules to avoid network access.
+            cp -r ${appPackage.goModules} vendor
+            chmod -R u+w vendor
+            export GOFLAGS="-mod=vendor"
+          '';
+        };
+
+        check-bash = mkBuildStep {
+          name = "check-bash";
+          command = "./dev-scripts/check-bash";
+          extraInputs = [gopkg.git shellcheck];
+          setup = ''
+            git init --quiet
+            git add --all
+          '';
+        };
 
         lint-sql = mkBuildStep {
           name = "lint-sql";
@@ -354,7 +417,10 @@
             go-nixpkgs.legacyPackages.${system}.gocode-gomod
             go-nixpkgs.legacyPackages.${system}.godef
             go-nixpkgs.legacyPackages.${system}.golint
-            go-nixpkgs.legacyPackages.${system}.gci
+            gci
+            go-tools
+            go-critic
+            errcheck
             go
             sqlite
             nodejs
@@ -366,11 +432,14 @@
           ];
 
           shellHook = ''
-            # Ignore user-level Go settings and keep installed tools local to
-            # this checkout.
-            export GOENV=off
-            export GOTOOLCHAIN=local
-            export GOBIN="$PWD/bin"
+            # Ignore user Go settings so Nix's pinned toolchain is authoritative.
+            export GOENV='off'
+            export GOTOOLCHAIN='local'
+            unset GOROOT
+
+            # Isolate `go install`ed binaries per checkout, while sharing Go's
+            # default, content-addressed module cache across projects.
+            export GOBIN="$PWD/bin/.go"
             export PATH="$GOBIN:$PATH"
 
             # Restore the exact lockfile dependency set when manifests change.

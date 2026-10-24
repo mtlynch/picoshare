@@ -60,8 +60,17 @@ jobs:
           keys:
             - go-mod-v3-{{ checksum "go.sum" }}
       - run:
+          name: Install Go analyzers
+          command: |
+            CGO_ENABLED=0 go install github.com/daixiang0/gci@v0.14.0
+            CGO_ENABLED=0 go install github.com/go-critic/go-critic/cmd/gocritic@v0.14.3
+            CGO_ENABLED=0 go install honnef.co/go/tools/cmd/staticcheck@v0.7.0
+            CGO_ENABLED=0 go install github.com/kisielk/errcheck@v1.10.0
+      - run:
           name: Test go packages
-          command: dev-scripts/run-go-tests --full
+          command: |
+            export PATH="$(go env GOPATH)/bin:$PATH"
+            dev-scripts/run-go-tests --full
       - store_artifacts:
           path: .coverage.html
       - run:
