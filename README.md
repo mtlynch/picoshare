@@ -123,7 +123,7 @@ You can adjust behavior of the Docker container by specifying these Docker-speci
 | `LITESTREAM_ACCESS_KEY_ID`     | Litestream-compatible cloud storage access key ID to the bucket where you want to replicate data.     |
 | `LITESTREAM_SECRET_ACCESS_KEY` | Litestream-compatible cloud storage secret access key to the bucket where you want to replicate data. |
 | `LITESTREAM_PATH`              | Path within the Litestream bucket where Litestream should replicate data (defaults to `db`).          |
-| `LITESTREAM_RETENTION`         | The amount of time Litestream snapshots & WAL files will be kept (defaults to 72h).                   |
+| `LITESTREAM_RETENTION`         | The amount of time Litestream snapshots and transaction logs will be kept (defaults to 72h).          |
 
 ### Docker build args
 
@@ -131,7 +131,7 @@ If you rebuild the Docker image from source, you can adjust the build behavior w
 
 | Build Arg            | Meaning                                                                     | Default Value |
 | -------------------- | --------------------------------------------------------------------------- | ------------- |
-| `litestream_version` | Version of [Litestream](https://litestream.io/) to use for data replication | `0.3.13`      |
+| `litestream_version` | Version of [Litestream](https://litestream.io/) to use for data replication | `0.5.11`      |
 
 ## PicoShare's scope and future
 

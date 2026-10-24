@@ -31,8 +31,8 @@
     # 0.4.59 release
     flyctl-nixpkgs.url = "github:NixOS/nixpkgs/5a722a7155bfc9fbe657f28d26b71860d95324bc";
 
-    # 0.3.13 release
-    litestream-nixpkgs.url = "github:NixOS/nixpkgs/a343533bccc62400e8a9560423486a3b6c11a23b";
+    # 0.5.11 release
+    litestream-nixpkgs.url = "github:NixOS/nixpkgs/49a4bd0573c376468dd7996ddb6f9fa31d8c4d97";
 
     # 1.67.4 release
     air-nixpkgs.url = "github:NixOS/nixpkgs/f2154edcc6bedad158da01133795b2cfafb3fa6a";

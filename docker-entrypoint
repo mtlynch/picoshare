@@ -40,7 +40,7 @@ quote_litestream_command() {
   local RESULT=''
   local ARG
 
-  # Litestream 0.3 accepts -exec as one string and parses it with shellwords.
+  # Litestream accepts -exec as one string and parses it with shellwords.
   # Single-quote each argument so it reconstructs the original boundaries.
   for ARG in "$@"; do
     ARG=${ARG//\'/\'\\\'\'}

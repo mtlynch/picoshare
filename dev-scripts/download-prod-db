@@ -35,8 +35,9 @@ export LITESTREAM_PATH
 # litestream.yml.
 export DB_PATH
 
-litestream snapshots -config litestream.yml "${DB_PATH}"
+litestream ltx -config litestream.yml -level 9 "${DB_PATH}"
 
 # Retrieve live DB.
+mkdir -p "$(dirname "${DB_COPY_PATH}")"
 litestream restore -config litestream.yml -o "${DB_COPY_PATH}" "${DB_PATH}"
 cp "${DB_COPY_PATH}" "${DB_PATH}"

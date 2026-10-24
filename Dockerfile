@@ -25,7 +25,7 @@ COPY --from=builder /app/bin/picoshare ./
 FROM debian:stable-20240311-slim AS litestream_downloader
 
 ARG TARGETPLATFORM
-ARG litestream_version="v0.3.13"
+ARG litestream_version="v0.5.11"
 
 WORKDIR /litestream
 
@@ -37,14 +37,14 @@ RUN set -x && \
 
 RUN set -x && \
     if [ "$TARGETPLATFORM" = "linux/arm/v7" ]; then \
-      ARCH="arm7" ; \
+      ARCH="armv7" ; \
     elif [ "$TARGETPLATFORM" = "linux/arm64" ]; then \
       ARCH="arm64" ; \
     else \
-      ARCH="amd64" ; \
+      ARCH="x86_64" ; \
     fi && \
     set -u && \
-    litestream_binary_tgz_filename="litestream-${litestream_version}-linux-${ARCH}.tar.gz" && \
+    litestream_binary_tgz_filename="litestream-${litestream_version#v}-linux-${ARCH}.tar.gz" && \
     wget "https://github.com/benbjohnson/litestream/releases/download/${litestream_version}/${litestream_binary_tgz_filename}" && \
     mv "${litestream_binary_tgz_filename}" litestream.tgz
 RUN tar -xvzf litestream.tgz
