@@ -22,8 +22,8 @@
     # 0.14.0 release
     gci-nixpkgs.url = "github:NixOS/nixpkgs/29916453413845e54a65b8a1cf996842300cd299";
 
-    # 3.1.1 release
-    sqlfluff-nixpkgs.url = "github:NixOS/nixpkgs/5629520edecb69630a3f4d17d3d33fc96c13f6fe";
+    # 3.5.0 release
+    sqlfluff-nixpkgs.url = "github:NixOS/nixpkgs/8b6600824693a9c706ef09bd86711ca393703466";
 
     # 1.59.1
     playwright-nixpkgs.url = "github:NixOS/nixpkgs/7aaa00e7cc9be6c316cb5f6617bd740dd435c59d";
