@@ -82,7 +82,7 @@
       errcheck = gopkg.errcheck.override {buildGoModule = gopkg.buildGoModule;};
       go-critic = gopkg.go-critic.override {buildGoModule = gopkg.buildGoModule;};
 
-      goVendorHash = "sha256-nsMr0i3nZeMNxEbHrgQTimVjOQpRFvIhWcistX2vGUI=";
+      goVendorHash = "sha256-QpeLePk1OcgNAnIPtOV5HSPq1YS/YX4TfIqJIio6Czc=";
 
       npmDepsHash = "sha256-vlpvjZBjSn+dx4s+mdp/2kI4TbXmpP+kWYwjwRLhBxE=";
 
@@ -94,10 +94,7 @@
         fileset = gopkg.lib.fileset.unions [
           ./go.mod
           ./go.sum
-          (gopkg.lib.fileset.fileFilter (
-              file: file.hasExt "go" && !(gopkg.lib.hasSuffix "_test.go" file.name)
-            )
-            ./.)
+          (gopkg.lib.fileset.fileFilter (file: file.hasExt "go") ./.)
           ./handlers/static
           ./handlers/templates
           ./store/sqlite/migrations
