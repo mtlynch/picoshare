@@ -194,6 +194,11 @@ func TestParseEntryID(t *testing.T) {
 - The test cases should all have keyed field names like `explanation: "..."` for easier readability.
   - The field names should always start on a new line.
 
+## SQL placeholders
+
+- Always use `sql.Named` for placeholders in SQL queries rather than `?` placeholders. Generate a unique named placeholder for every value in dynamically sized lists.
+  - Use the `:varname` syntax and not the `@varname` syntax.
+
 # Callsite legibility
 
 Function calls should be legible from the callsite.
@@ -348,9 +353,11 @@ If you learned that methods shouldn't be exported just for testing, add to `AGEN
 
 # dev-scripts
 
-- Prefer cached Nix test targets when the flake exposes an equivalent target.
+- In general, prefer to test with `nix build` commands rather than `dev-scripts` scripts because the `nix build` commands leverage caching better.
+  - The exception is `dev-scripts/build-all-flake-targets` which is a wrapper around `nix flake check`.
 - Do not depend on Nix in `dev-scripts`.
   - Nix build targets should leverage scripts from `dev-scripts` rather than reimplementing the same logic in Nix.
+  - Exceptions: `build-all-flake-targets` and `upload-to-nixci-cache` may depend on Nix.
 
 # Style conventions
 
@@ -377,6 +384,7 @@ If you learned that methods shouldn't be exported just for testing, add to `AGEN
 
 ## JavaScript
 
+- Prefer htmx for UI flows when it reduces custom JavaScript code.
 - Do not use `alert()` or `confirm()`.
   - Use PicoShare's custom dialog UI instead.
 - Do not embed Go template conditionals inside JavaScript. Instead, render a data attribute or hidden input in HTML and read it from JavaScript.
@@ -392,9 +400,9 @@ If you learned that methods shouldn't be exported just for testing, add to `AGEN
 
 # Testing
 
-- After every code change, run `nix flake check` before presenting the solution to the user.
+- After every code change, run `dev-scripts/build-all-flake-targets` before presenting the solution to the user.
 - After every code change, run `dev-scripts/git-hooks/pre-commit` before presenting the solution to the user.
-- To run Go unit tests, run `./dev-scripts/run-go-tests`.
+- To run Go unit tests, run `nix build .#go-tests`.
 - Do not write to the filesystem in unit tests. End-to-end tests may write to the filesystem.
   - Design production interfaces around file readers or filesystem interfaces rather than the local filesystem.
 - Avoid testing implementation-dependent call counts when you can assert a more meaningful signal that is part of the function contract.
