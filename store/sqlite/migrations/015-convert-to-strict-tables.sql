@@ -102,7 +102,9 @@ SELECT
     CASE
         WHEN
             guest_link_id IS NOT NULL AND guest_link_id != ''
-            AND guest_link_id IN (SELECT id FROM guest_links_new)
+            AND guest_link_id IN (
+                SELECT guest_links_new.id FROM guest_links_new
+            )
             THEN guest_link_id
     END AS guest_link_id,
     note

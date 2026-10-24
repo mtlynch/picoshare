@@ -15,7 +15,7 @@ SELECT
     chunk_index,
     chunk
 FROM entries_data
-WHERE id IN (SELECT id FROM entries);
+WHERE id IN (SELECT entries.id FROM entries);
 
 DROP TABLE entries_data;
 

@@ -16,7 +16,7 @@ SELECT
     client_ip,
     user_agent
 FROM downloads
-WHERE entry_id IN (SELECT id FROM entries);
+WHERE entry_id IN (SELECT entries.id FROM entries);
 
 DROP TABLE downloads;
 
