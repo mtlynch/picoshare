@@ -13,6 +13,8 @@ The steps below show you how to quickly set up a development environment for Pic
 - Go 1.26 or higher
 - Node.js 24.x or higher
 
+Use `nix develop` to enter the pinned development environment. The shell supplies the Go analyzers and restores the npm lockfile dependencies. Direct callers of `dev-scripts/run-go-tests` must provide `gci`, `gocritic`, `staticcheck`, and `errcheck` on `PATH`; the script no longer installs tools.
+
 ### Install frontend dev dependencies
 
 PicoShare uses the several Node.js packages to format and perform static analysis of the code. To install those dependencies, run:
@@ -26,7 +28,7 @@ npm install
 To run PicoShare's build scripts before making a PR, run:
 
 ```bash
-dev-scripts/git-hooks/pre-commit
+dev-scripts/build-all-flake-targets
 ```
 
 ### Enable Git hooks
@@ -42,7 +44,7 @@ If you're planning to contribute code to PicoShare, it's a good idea to enable t
 To run PicoShare locally with hot-reloading, run:
 
 ```bash
-./dev-scripts/serve-dev
+./dev-scripts/serve
 ```
 
 The default password is `somepassword`.
