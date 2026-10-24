@@ -40,7 +40,7 @@ jobs:
           command: ./dev-scripts/lint-sql
   check_frontend:
     docker:
-      - image: cimg/node:24.11.1
+      - image: cimg/node:24.15.0
     steps:
       - checkout
       - run:
