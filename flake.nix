@@ -305,17 +305,7 @@
           };
       };
 
-      checks = {
-        inherit frontend-check;
-        inherit
-          (self.packages.${system})
-          check-go-formatting
-          check-go-test-packages
-          check-trailing-newline
-          check-trailing-whitespace
-          lint-sql
-          ;
-      };
+      checks.all = gopkg.linkFarm "all-flake-targets" self.packages.${system};
 
       devShells.default =
         go-nixpkgs.legacyPackages.${system}.mkShell.override

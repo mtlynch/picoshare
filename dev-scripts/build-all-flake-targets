@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+
+# Runs flake checks for the current system, then an optional upload hook.
+
+# Exit on first failure.
+set -e
+
+# Echo commands before executing them, by default to stderr.
+set -x
+
+# Fail when piped commands fail.
+set -o pipefail
+
+# Exit on unset variable.
+set -u
+
+build_options=(--max-jobs auto)
+if [ "$#" -ne 0 ]; then
+  build_options=("$@")
+fi
+readonly build_options
+
+# Change directory to repository root.
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+readonly SCRIPT_DIR
+cd "${SCRIPT_DIR}/.."
+
+nix flake check "${build_options[@]}"
+
+upload_script="${SCRIPT_DIR}/upload-to-nixci-cache"
+readonly upload_script
+if [ -e "${upload_script}" ]; then
+  "${upload_script}"
+fi
