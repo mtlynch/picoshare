@@ -84,7 +84,7 @@
 
       goVendorHash = "sha256-QpeLePk1OcgNAnIPtOV5HSPq1YS/YX4TfIqJIio6Czc=";
 
-      npmDepsHash = "sha256-vlpvjZBjSn+dx4s+mdp/2kI4TbXmpP+kWYwjwRLhBxE=";
+      npmDepsHash = "sha256-Y/RE2xR1bBApeSqKG+6f89lQ8b6NAEE3lV0b0z2ACu4=";
 
       appName = "picoshare";
       appNameDev = "${appName}-dev";
@@ -206,6 +206,7 @@
           runHook preCheck
           git init --quiet
           git add --all
+          patchShebangs ./dev-scripts
           ./dev-scripts/build-frontend
           runHook postCheck
         '';
