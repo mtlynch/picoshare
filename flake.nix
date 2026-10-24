@@ -16,8 +16,8 @@
     # 24.15.0 release
     nodejs-nixpkgs.url = "github:NixOS/nixpkgs/9eac87a12312b8f60dd52e1c6e1a265f6fc7f5fc";
 
-    # 0.9.0 release
-    shellcheck-nixpkgs.url = "github:NixOS/nixpkgs/8b5ab8341e33322e5b66fb46ce23d724050f6606";
+    # 0.11.0 release
+    shellcheck-nixpkgs.url = "github:NixOS/nixpkgs/1d4c88323ac36805d09657d13a5273aea1b34f0c";
 
     # 0.14.0 release
     gci-nixpkgs.url = "github:NixOS/nixpkgs/29916453413845e54a65b8a1cf996842300cd299";
