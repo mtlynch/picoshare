@@ -42,18 +42,33 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 readonly SCRIPT_DIR
 cd "${SCRIPT_DIR}/.."
 
-go test "${go_test_flags[@]}" ./...
+project_go_files="$(git ls-files --cached --others --exclude-standard \
+  -- '*.go' ':!vendor')"
+readonly project_go_files
+GO_PACKAGE_DIRS=()
+declare -A seen_go_package_dirs=()
+while IFS= read -r go_file; do
+  if [[ -z "${go_file}" ]]; then
+    continue
+  fi
+  go_package_dir="${go_file%/*}"
+  if [[ "${go_package_dir}" == "${go_file}" ]]; then
+    go_package_dir="."
+  fi
+  if [[ -n "${seen_go_package_dirs["${go_package_dir}"]+present}" ]]; then
+    continue
+  fi
+  seen_go_package_dirs["${go_package_dir}"]=1
+  GO_PACKAGE_DIRS+=("./${go_package_dir}")
+done <<< "${project_go_files}"
+readonly GO_PACKAGE_DIRS
+
+go test "${go_test_flags[@]}" "${GO_PACKAGE_DIRS[@]}"
 if [[ -n "$full_test" ]]; then
   go tool cover -html "${COVERAGE_FILE_RAW}" -o "${COVERAGE_FILE_HTML}"
 fi
 
-go vet ./...
-
-go_package_dirs=()
-while IFS= read -r go_package_dir; do
-  go_package_dirs+=("${go_package_dir}")
-done < <(go list -f '{{.Dir}}' ./...)
-readonly go_package_dirs
+go vet "${GO_PACKAGE_DIRS[@]}"
 
 gci_sections=(
   "--section=standard"
@@ -66,7 +81,7 @@ gci_output="$(
     --skip-generated \
     --skip-vendor \
     "${gci_sections[@]}" \
-    "${go_package_dirs[@]}"
+    "${GO_PACKAGE_DIRS[@]}"
 )"
 if [[ -n "${gci_output}" ]]; then
   printf 'Go imports are not gci-formatted:\n%s\n' "${gci_output}" >&2
@@ -74,11 +89,11 @@ if [[ -n "${gci_output}" ]]; then
     --skip-generated \
     --skip-vendor \
     "${gci_sections[@]}" \
-    "${go_package_dirs[@]}"
+    "${GO_PACKAGE_DIRS[@]}"
   exit 1
 fi
 
-gocritic check ./...
-gocritic check -enable=returnAfterHttpError ./...
-staticcheck ./...
-errcheck -ignoretests ./...
+gocritic check "${GO_PACKAGE_DIRS[@]}"
+gocritic check -enable=returnAfterHttpError "${GO_PACKAGE_DIRS[@]}"
+staticcheck "${GO_PACKAGE_DIRS[@]}"
+errcheck -ignoretests "${GO_PACKAGE_DIRS[@]}"

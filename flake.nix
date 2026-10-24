@@ -239,6 +239,7 @@
           extraInputs = [
             go
             sqlite
+            gopkg.git
             gopkg.gcc
             gopkg.binutils
             go-tools
@@ -249,6 +250,9 @@
           setup = ''
             export HOME="$TMPDIR/home"
             mkdir -p "$HOME"
+
+            git init --quiet
+            git add --all
 
             # Use pre-fetched Go modules to avoid network access.
             cp -r ${appPackage.goModules} vendor
