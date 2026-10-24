@@ -445,7 +445,7 @@
                 || [ package.json -nt node_modules ] \
                 || [ package-lock.json -nt node_modules ]; then
                 echo "Installing npm packages..."
-                if npm ci; then
+                if CI=true npm ci; then
                   touch node_modules
                 else
                   echo "Failed to install npm packages" >&2

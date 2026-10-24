@@ -45,7 +45,7 @@ jobs:
       - checkout
       - run:
           name: Download npm packages
-          command: npm install
+          command: CI=true npm ci
       - run:
           name: Run frontend checks
           command: ./dev-scripts/build-frontend
@@ -116,7 +116,7 @@ jobs:
           at: ./
       - run:
           name: Install dependencies
-          command: cd e2e && npm install
+          command: CI=true npm ci
       - run:
           name: Run end-to-end tests
           command: ./dev-scripts/run-e2e-tests --skip-build
