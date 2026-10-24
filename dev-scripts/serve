@@ -6,7 +6,7 @@ set -e
 # Exit on unset variable.
 set -u
 
-# Echo commands
+# Echo commands.
 set -x
 
 # Change directory to repository root.
@@ -29,4 +29,4 @@ if [[ ! -f "${AIR_PATH}" ]]; then
 fi
 
 # Run air for hot reloading.
-"${AIR_PATH}"
+"${AIR_PATH}" -c .air.toml
