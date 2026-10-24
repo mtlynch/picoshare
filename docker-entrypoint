@@ -74,7 +74,7 @@ if [[ "${IS_LITESTREAM_ENABLED}" == 'true' ]]; then
     /app/litestream restore -if-replica-exists "${DB_PATH}"
   fi
 
-  # Let Litestream start PicoShare as a child process
+  # Let Litestream start PicoShare as a child process.
   exec /app/litestream replicate -exec "$PS_LAUNCH_CMD"
 else
   echo "Starting without litestream"

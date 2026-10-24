@@ -6,7 +6,7 @@ set -e
 # Exit on unset variable.
 set -u
 
-# Echo commands
+# Echo commands.
 set -x
 
 # Change directory to repository root.
@@ -37,6 +37,6 @@ export DB_PATH
 
 litestream snapshots -config litestream.yml "${DB_PATH}"
 
-# Retrieve live DB
+# Retrieve live DB.
 litestream restore -config litestream.yml -o "${DB_COPY_PATH}" "${DB_PATH}"
 cp "${DB_COPY_PATH}" "${DB_PATH}"

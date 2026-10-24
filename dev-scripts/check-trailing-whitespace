@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Check for trailing whitespace
+# Check for trailing whitespace.
 
 # Exit on first failure.
 set -e

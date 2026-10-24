@@ -47,7 +47,7 @@ fi
 readonly GOARCH
 export GOARCH
 
-# Join together build tags
+# Join together build tags.
 BUILD_TAGS_JOINED=""
 for tag in "${GO_BUILD_TAGS[@]}"; do
     BUILD_TAGS_JOINED+=" $tag"
