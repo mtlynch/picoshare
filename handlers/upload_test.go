@@ -11,6 +11,7 @@ import (
 	"net/http/httptest"
 	"reflect"
 	"strings"
+	"syscall"
 	"testing"
 	"time"
 
@@ -22,6 +23,16 @@ import (
 )
 
 type mockAuthenticator struct{}
+
+type brokenPipeResponseWriter struct {
+	*httptest.ResponseRecorder
+}
+
+func (w brokenPipeResponseWriter) Write([]byte) (int, error) {
+	// Match net/http by committing the status before the connection write fails.
+	w.WriteHeader(http.StatusOK)
+	return 0, syscall.EPIPE
+}
 
 func (ma mockAuthenticator) StartSession(w http.ResponseWriter, r *http.Request) {}
 
@@ -945,6 +956,90 @@ func TestGuestUploadAcceptHeader(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestGuestUploadBrokenPipe(t *testing.T) {
+	dataStore := test_sqlite.New(t)
+	now := time.Date(2025, time.January, 1, 0, 0, 0, 0, time.UTC)
+	guestLink := picoshare.GuestLink{
+		ID:              picoshare.GuestLinkID("abcdefgh23456789"),
+		Created:         now,
+		UrlExpires:      picoshare.NeverExpire,
+		MaxFileLifetime: picoshare.FileLifetimeInfinite,
+	}
+	if err := dataStore.InsertGuestLink(guestLink); err != nil {
+		t.Fatalf("failed to insert guest link: %v", err)
+	}
+	s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceCheckFunc, nilGarbageCollector, func() time.Time { return now })
+
+	{
+		filename := "disconnected-upload.txt"
+		contents := "persisted despite the disconnected client"
+		formData, contentType := createMultipartFormBody(filename, "", "", strings.NewReader(contents))
+		req := httptest.NewRequest(http.MethodPost, "/api/guest/abcdefgh23456789", formData)
+		req.Header.Set("Content-Type", contentType)
+		// A long Host enlarges the plaintext URL response in the reported failure.
+		req.Host = strings.Repeat("a", 16<<10) + ".example.com"
+		rec := httptest.NewRecorder()
+		w := brokenPipeResponseWriter{ResponseRecorder: rec}
+
+		s.Router().ServeHTTP(w, req)
+
+		// A response write commits HTTP 200 even when the connection write fails.
+		if got, want := rec.Result().StatusCode, http.StatusOK; got != want {
+			t.Fatalf("status=%d, want=%d", got, want)
+		}
+		entries, err := dataStore.GetEntriesMetadata()
+		if err != nil {
+			t.Fatalf("failed to retrieve uploaded entries: %v", err)
+		}
+		if got, want := len(entries), 1; got != want {
+			t.Fatalf("stored entry count=%d, want=%d", got, want)
+		}
+		if got, want := entries[0].Filename, picoshare.Filename(filename); got != want {
+			t.Errorf("filename=%v, want=%v", got, want)
+		}
+		file, err := dataStore.ReadEntryFile(entries[0].ID)
+		if err != nil {
+			t.Fatalf("failed to read uploaded file: %v", err)
+		}
+		if got, want := string(mustReadAll(file)), contents; got != want {
+			t.Errorf("stored contents=%q, want=%q", got, want)
+		}
+	}
+
+	{
+		filename := "subsequent-upload.txt"
+		contents := "the server still accepts uploads"
+		formData, contentType := createMultipartFormBody(filename, "", "", strings.NewReader(contents))
+		req := httptest.NewRequest(http.MethodPost, "/api/guest/abcdefgh23456789", formData)
+		req.Header.Set("Content-Type", contentType)
+		rec := httptest.NewRecorder()
+
+		s.Router().ServeHTTP(rec, req)
+
+		if got, want := rec.Result().StatusCode, http.StatusOK; got != want {
+			t.Fatalf("status=%d, want=%d", got, want)
+		}
+		id, err := picoshare.EntryIDFromString(strings.TrimPrefix(strings.TrimSpace(rec.Body.String()), "http://example.com/-"))
+		if err != nil {
+			t.Fatalf("failed to parse entry ID from plaintext response %q: %v", rec.Body.String(), err)
+		}
+		entry, err := dataStore.GetEntryMetadata(id)
+		if err != nil {
+			t.Fatalf("failed to retrieve subsequent upload: %v", err)
+		}
+		if got, want := entry.Filename, picoshare.Filename(filename); got != want {
+			t.Errorf("filename=%v, want=%v", got, want)
+		}
+		file, err := dataStore.ReadEntryFile(id)
+		if err != nil {
+			t.Fatalf("failed to read subsequent upload: %v", err)
+		}
+		if got, want := string(mustReadAll(file)), contents; got != want {
+			t.Errorf("stored contents=%q, want=%q", got, want)
+		}
 	}
 }
 
