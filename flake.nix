@@ -159,6 +159,7 @@
         doCheck = true;
         checkPhase = ''
           runHook preCheck
+          patchShebangs ./dev-scripts
           git init --quiet
           git add --all
           ./dev-scripts/build-frontend
