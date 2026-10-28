@@ -149,6 +149,7 @@ func (s Server) guestEntryPost() http.HandlerFunc {
 			if _, err := fmt.Fprintf(w, "%s/-%s\r\n", baseURLFromRequest(r), id.String()); err != nil {
 				// Clients can disconnect before reading the response.
 				log.Printf("failed to write HTTP response for entry %s: %v", id.String(), err)
+				return
 			}
 		}
 	}
