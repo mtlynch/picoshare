@@ -109,7 +109,7 @@
           ]);
       };
 
-      goVendorHash = "sha256-BpK0sq2foM6tQ5avwdNSIliNt/0x3/mz6h1I/86Ny0k=";
+      goVendorHash = "sha256-uQtdmACCuJPbfjP8bOv842w+F9WeIwgdlkStPIhJbT4=";
 
       npmDepsHash = "sha256-vlpvjZBjSn+dx4s+mdp/2kI4TbXmpP+kWYwjwRLhBxE=";
 
