@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+
+# Uploads all packages through checks.<system>.all to the NixCI cache.
+
+# Exit on first failure.
+set -e
+
+# Echo commands before executing them, by default to stderr.
+set -x
+
+# Fail when piped commands fail.
+set -o pipefail
+
+# Exit on unset variable.
+set -u
+
+# Change directory to repository root.
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+readonly SCRIPT_DIR
+cd "${SCRIPT_DIR}/.."
+
+system="$(nix config show system)"
+readonly system
+nix copy ".#checks.${system}.all" \
+  --to 'https://cache.nix-ci.com?compression=xz&parallel-compression=true'

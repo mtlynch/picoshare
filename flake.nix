@@ -218,6 +218,23 @@
       packages = {
         inherit backend-dev frontend-check;
 
+        check-bash = mkBuildStep {
+          name = "check-bash";
+          command = "./dev-scripts/check-bash";
+          src = gopkg.lib.fileset.toSource {
+            root = ./.;
+            fileset =
+              gopkg.lib.fileset.intersection
+              (gopkg.lib.fileset.gitTracked ./.)
+              ./dev-scripts;
+          };
+          extraInputs = [gopkg.git shellcheck];
+          setup = ''
+            git init -q
+            git add -A
+          '';
+        };
+
         go-tests = mkBuildStep {
           name = "go-tests";
           command = "./dev-scripts/run-go-tests";
@@ -379,17 +396,7 @@
           };
       };
 
-      checks = {
-        inherit frontend-check;
-        inherit
-          (self.packages.${system})
-          check-go-formatting
-          check-go-test-packages
-          check-trailing-newline
-          check-trailing-whitespace
-          lint-sql
-          ;
-      };
+      checks.all = gopkg.linkFarm "all-flake-targets" self.packages.${system};
 
       devShells.default =
         go-nixpkgs.legacyPackages.${system}.mkShell.override

@@ -402,9 +402,11 @@ s.ReadEntries(
 
 # dev-scripts
 
-- Prefer cached Nix test targets when the flake exposes an equivalent target.
+- In general, prefer to test with `nix build` commands rather than `dev-scripts` scripts because the `nix build` commands leverage caching better.
+  - The exception is `dev-scripts/build-all-flake-targets` which is a wrapper around `nix flake check`.
 - Do not depend on Nix in `dev-scripts`.
   - Nix build targets should leverage scripts from `dev-scripts` rather than reimplementing the same logic in Nix.
+  - Exceptions: `build-all-flake-targets` and `upload-to-nixci-cache` may depend on Nix.
 
 # Style conventions
 
@@ -446,9 +448,9 @@ s.ReadEntries(
 
 # Testing
 
-- After every code change, run `nix flake check` before presenting the solution to the user.
+- After every code change, run `dev-scripts/build-all-flake-targets` before presenting the solution to the user.
 - After every code change, run `dev-scripts/git-hooks/pre-commit` before presenting the solution to the user.
-- To run Go unit tests, run `./dev-scripts/run-go-tests`.
+- To run Go unit tests, run `nix build .#go-tests`
 - Do not write to the filesystem in unit tests. End-to-end tests may write to the filesystem.
   - Design production interfaces around file readers or filesystem interfaces rather than the local filesystem.
 - Avoid testing implementation-dependent call counts when you can assert a more meaningful signal that is part of the function contract.
