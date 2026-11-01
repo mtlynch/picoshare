@@ -10,17 +10,17 @@
     # 1.26.1 release
     go-nixpkgs.url = "github:NixOS/nixpkgs/e607cb5360ff1234862ac9f8839522becb853bb9";
 
-    # 3.44.2 release
-    sqlite-nixpkgs.url = "github:NixOS/nixpkgs/5ad9903c16126a7d949101687af0aa589b1d7d3d";
+    # 3.51.1 release
+    sqlite-nixpkgs.url = "github:NixOS/nixpkgs/13868c071cc73a5e9f610c47d7bb08e5da64fdd5";
 
-    # 24.11.1 release
-    nodejs-nixpkgs.url = "github:NixOS/nixpkgs/af84f9d270d404c17699522fab95bbf928a2d92f";
+    # 24.15.0 release
+    nodejs-nixpkgs.url = "github:NixOS/nixpkgs/9eac87a12312b8f60dd52e1c6e1a265f6fc7f5fc";
 
-    # 0.9.0 release
-    shellcheck-nixpkgs.url = "github:NixOS/nixpkgs/8b5ab8341e33322e5b66fb46ce23d724050f6606";
+    # 0.11.0 release
+    shellcheck-nixpkgs.url = "github:NixOS/nixpkgs/1d4c88323ac36805d09657d13a5273aea1b34f0c";
 
-    # 3.1.1 release
-    sqlfluff-nixpkgs.url = "github:NixOS/nixpkgs/5629520edecb69630a3f4d17d3d33fc96c13f6fe";
+    # 3.5.0 release
+    sqlfluff-nixpkgs.url = "github:NixOS/nixpkgs/8b6600824693a9c706ef09bd86711ca393703466";
 
     # 0.14.0 release
     gci-nixpkgs.url = "github:NixOS/nixpkgs/29916453413845e54a65b8a1cf996842300cd299";
@@ -86,14 +86,14 @@
         root = ./.;
         fileset =
           gopkg.lib.fileset.intersection
-          (gopkg.lib.fileset.gitTracked ./. )
+          (gopkg.lib.fileset.gitTracked ./.)
           (gopkg.lib.fileset.unions [
             ./dev-scripts/run-go-tests
             ./dev-scripts/run-go-rule-tests
             ./dev-scripts/gorules
             ./go.mod
             ./go.sum
-            (gopkg.lib.fileset.fileFilter (file: file.hasExt "go") ./. )
+            (gopkg.lib.fileset.fileFilter (file: file.hasExt "go") ./.)
             ./handlers/static
             ./handlers/templates
             ./store/sqlite/migrations
