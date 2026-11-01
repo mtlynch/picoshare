@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+
+# Verify custom lint rules against passing and failing Go fixtures.
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+readonly SCRIPT_DIR
+cd "${SCRIPT_DIR}/.."
+
+gocritic_args=(
+  check
+  -enable=ruleguard
+  -@ruleguard.rules=dev-scripts/gorules/rules.go
+  -@ruleguard.failOn=all
+)
+readonly gocritic_args
+
+gocritic "${gocritic_args[@]}" ./dev-scripts/gorules/testdata/valid
+
+output_file=$(mktemp)
+readonly output_file
+trap 'rm --force "$output_file"' EXIT
+
+status=0
+gocritic "${gocritic_args[@]}" ./dev-scripts/gorules/testdata/invalid \
+  > "$output_file" 2>&1 || status=$?
+if [[ "$status" -ne 1 ]]; then
+  cat "$output_file" >&2
+  printf 'Invalid fixtures returned status %s, want 1\n' "$status" >&2
+  exit 1
+fi
+
+diff --unified dev-scripts/gorules/testdata/invalid/want.txt "$output_file"

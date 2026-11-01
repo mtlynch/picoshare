@@ -50,7 +50,10 @@ jobs:
           name: Run frontend checks
           command: ./dev-scripts/build-frontend
   test_go:
-    executor: go
+    docker:
+      - image: nixos/nix:2.35.2
+    environment:
+      NIX_CONFIG: experimental-features = nix-command flakes
     resource_class: medium
     steps:
       - checkout
@@ -61,12 +64,14 @@ jobs:
             - go-mod-v3-{{ checksum "go.sum" }}
       - run:
           name: Test go packages
-          command: dev-scripts/run-go-tests --full
+          # The static app shell cannot link all race-test binaries. Use the
+          # native compiler and analyzers from the Go test derivation.
+          command: nix develop .#go-tests --command ./dev-scripts/run-go-tests --full
       - store_artifacts:
           path: .coverage.html
       - run:
           name: Verify golang formatting
-          command: dev-scripts/check-go-formatting
+          command: nix develop .#go-tests --command ./dev-scripts/check-go-formatting
       - save_cache:
           key: go-mod-v3-{{ checksum "go.sum" }}
           paths:

@@ -22,6 +22,9 @@
     # 3.1.1 release
     sqlfluff-nixpkgs.url = "github:NixOS/nixpkgs/5629520edecb69630a3f4d17d3d33fc96c13f6fe";
 
+    # 0.14.0 release
+    gci-nixpkgs.url = "github:NixOS/nixpkgs/29916453413845e54a65b8a1cf996842300cd299";
+
     # 1.59.1
     playwright-nixpkgs.url = "github:NixOS/nixpkgs/7aaa00e7cc9be6c316cb5f6617bd740dd435c59d";
 
@@ -43,13 +46,21 @@
     nodejs-nixpkgs,
     shellcheck-nixpkgs,
     sqlfluff-nixpkgs,
+    gci-nixpkgs,
     playwright-nixpkgs,
     flyctl-nixpkgs,
     litestream-nixpkgs,
     air-nixpkgs,
   } @ inputs:
     flake-utils.lib.eachDefaultSystem (system: let
-      gopkg = go-nixpkgs.legacyPackages.${system};
+      gopkg = import go-nixpkgs {
+        inherit system;
+        overlays = [
+          (final: prev: {
+            buildGoModule = prev.buildGoModule.override {go = final.go_1_26;};
+          })
+        ];
+      };
       go = gopkg.go_1_26;
       buildGoModule = gopkg.buildGoModule.override {
         inherit go;
@@ -65,7 +76,31 @@
       litestream = litestream-nixpkgs.legacyPackages.${system}.litestream;
       air = air-nixpkgs.legacyPackages.${system}.air;
 
-      goVendorHash = "sha256-nsMr0i3nZeMNxEbHrgQTimVjOQpRFvIhWcistX2vGUI=";
+      # Go static analysis tools, including Staticcheck
+      go-tools = gopkg.go-tools.override {buildGoModule = gopkg.buildGoModule;};
+      errcheck = gopkg.errcheck.override {buildGoModule = gopkg.buildGoModule;};
+      go-critic = gopkg.go-critic.override {buildGoModule = gopkg.buildGoModule;};
+      gci = gci-nixpkgs.legacyPackages.${system}.gci;
+
+      goTestSrc = gopkg.lib.fileset.toSource {
+        root = ./.;
+        fileset =
+          gopkg.lib.fileset.intersection
+          (gopkg.lib.fileset.gitTracked ./. )
+          (gopkg.lib.fileset.unions [
+            ./dev-scripts/run-go-tests
+            ./dev-scripts/run-go-rule-tests
+            ./dev-scripts/gorules
+            ./go.mod
+            ./go.sum
+            (gopkg.lib.fileset.fileFilter (file: file.hasExt "go") ./. )
+            ./handlers/static
+            ./handlers/templates
+            ./store/sqlite/migrations
+          ]);
+      };
+
+      goVendorHash = "sha256-BpK0sq2foM6tQ5avwdNSIliNt/0x3/mz6h1I/86Ny0k=";
 
       npmDepsHash = "sha256-vlpvjZBjSn+dx4s+mdp/2kI4TbXmpP+kWYwjwRLhBxE=";
 
@@ -173,6 +208,35 @@
     in {
       packages = {
         inherit backend-dev frontend-check;
+
+        go-tests = mkBuildStep {
+          name = "go-tests";
+          command = "./dev-scripts/run-go-tests";
+          src = goTestSrc;
+          extraInputs = [
+            go
+            sqlite
+            gopkg.git
+            gopkg.gcc
+            gopkg.binutils
+            go-tools
+            errcheck
+            go-critic
+            gci
+          ];
+          setup = ''
+            export HOME="$TMPDIR/home"
+            mkdir -p "$HOME"
+
+            git init --quiet
+            git add --all
+
+            # Use pre-fetched Go modules to avoid network access.
+            cp -r ${backend-dev.goModules} vendor
+            chmod -R u+w vendor
+            export GOFLAGS="-mod=vendor"
+          '';
+        };
 
         lint-sql = mkBuildStep {
           name = "lint-sql";
@@ -332,7 +396,10 @@
             go-nixpkgs.legacyPackages.${system}.gocode-gomod
             go-nixpkgs.legacyPackages.${system}.godef
             go-nixpkgs.legacyPackages.${system}.golint
-            go-nixpkgs.legacyPackages.${system}.gci
+            gci
+            go-tools
+            go-critic
+            errcheck
             go
             sqlite
             nodejs

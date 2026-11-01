@@ -1,0 +1,2 @@
+./dev-scripts/gorules/testdata/invalid/alias_test.go:9:6: ruleguard: use a fixed time instead of time.Now() in tests
+./dev-scripts/gorules/testdata/invalid/clock_test.go:9:6: ruleguard: use a fixed time instead of time.Now() in tests
