@@ -91,6 +91,24 @@
       go-critic = gopkg.go-critic.override {buildGoModule = gopkg.buildGoModule;};
       gci = gci-nixpkgs.legacyPackages.${system}.gci;
 
+      appName = "picoshare";
+      appNameDev = "${appName}-dev";
+
+      backendSrc = gopkg.lib.fileset.toSource {
+        root = ./.;
+        fileset = gopkg.lib.fileset.unions [
+          ./go.mod
+          ./go.sum
+          (gopkg.lib.fileset.fileFilter (
+              file: file.hasExt "go" && !(gopkg.lib.hasSuffix "_test.go" file.name)
+            )
+            ./.)
+          ./handlers/static
+          ./handlers/templates
+          ./store/sqlite/migrations
+        ];
+      };
+
       goTestSrc = gopkg.lib.fileset.toSource {
         root = ./.;
         fileset =
@@ -154,18 +172,36 @@
           }
           // extraAttrs);
 
-      backend-dev = buildGoModule {
-        pname = "picoshare-dev";
-        version = "0.0.1";
-        src = gopkg.lib.cleanSource ./.;
-        vendorHash = goVendorHash;
-        subPackages = ["cmd/picoshare"];
-        env.CGO_ENABLED = "1";
-        tags = ["netgo" "sqlite_omit_load_extension" "dev"];
-        ldflags = ["-w" "-extldflags '-static'"];
-        postInstall = ''
-          mv "$out/bin/picoshare" "$out/bin/picoshare-dev"
-        '';
+      mkAppPackage = {
+        pname,
+        extraTags ? [],
+      }:
+        buildGoModule {
+          inherit pname;
+          version = "0.0.1";
+          src = backendSrc;
+          vendorHash = goVendorHash;
+          overrideModAttrs = _: {
+            name = "${appName}-0.0.1-go-modules";
+            # Include test imports in the shared offline module cache.
+            src = goTestSrc;
+          };
+          subPackages = ["cmd/picoshare"];
+          env.CGO_ENABLED = "1";
+          tags = ["netgo" "sqlite_omit_load_extension"] ++ extraTags;
+          ldflags = ["-w" "-extldflags '-static'"];
+          postInstall = gopkg.lib.optionalString (pname != appName) ''
+            mv "$out/bin/picoshare" "$out/bin/${pname}"
+          '';
+        };
+
+      appPackage = mkAppPackage {
+        pname = appName;
+      };
+
+      appPackageDev = mkAppPackage {
+        pname = appNameDev;
+        extraTags = ["dev"];
       };
 
       frontend-check = buildNpmPackage {
@@ -216,7 +252,9 @@
       };
     in {
       packages = {
-        inherit backend-dev frontend-check;
+        "${appName}" = appPackage;
+        "${appNameDev}" = appPackageDev;
+        inherit frontend-check;
 
         check-bash = mkBuildStep {
           name = "check-bash";
@@ -258,7 +296,7 @@
             git add --all
 
             # Use pre-fetched Go modules to avoid network access.
-            cp -r ${backend-dev.goModules} vendor
+            cp -r ${appPackage.goModules} vendor
             chmod -R u+w vendor
             export GOFLAGS="-mod=vendor"
           '';
@@ -370,7 +408,7 @@
             inherit npmDeps;
             npmInstallFlags = ["--ignore-scripts"];
             dontNpmBuild = true;
-            nativeBuildInputs = [nodejs playwrightBrowsers backend-dev];
+            nativeBuildInputs = [nodejs playwrightBrowsers appPackageDev];
             doCheck = true;
             checkPhase = ''
               export HOME="$PWD/.home"
@@ -384,7 +422,7 @@
               export FONTCONFIG_FILE=${fontsConf}
 
               mkdir -p ./bin
-              cp ${backend-dev}/bin/picoshare-dev ./bin/picoshare-dev
+              cp ${appPackageDev}/bin/${appNameDev} ./bin/${appNameDev}
 
               patchShebangs ./dev-scripts
               ./dev-scripts/run-e2e-tests --skip-build --project=chromium
