@@ -28,8 +28,8 @@
     # 1.59.1
     playwright-nixpkgs.url = "github:NixOS/nixpkgs/7aaa00e7cc9be6c316cb5f6617bd740dd435c59d";
 
-    # 0.4.59 release
-    flyctl-nixpkgs.url = "github:NixOS/nixpkgs/5a722a7155bfc9fbe657f28d26b71860d95324bc";
+    # 0.4.111 release
+    flyctl-nixpkgs.url = "github:NixOS/nixpkgs/e2ccecbf30866802b1db536246e0939eccbd7bfb";
 
     # 0.3.13 release
     litestream-nixpkgs.url = "github:NixOS/nixpkgs/a343533bccc62400e8a9560423486a3b6c11a23b";
@@ -72,7 +72,16 @@
       buildNpmPackage = nodepkgs.buildNpmPackage.override {inherit nodejs;};
       shellcheck = shellcheck-nixpkgs.legacyPackages.${system}.shellcheck;
       sqlfluff = sqlfluff-nixpkgs.legacyPackages.${system}.sqlfluff;
-      flyctl = flyctl-nixpkgs.legacyPackages.${system}.flyctl;
+      # Newer Flyctl package sets no longer support Intel macOS. Use the
+      # shared Go package set to retain all four template platforms.
+      flyctlGo = gopkg.callPackage "${flyctl-nixpkgs}/pkgs/development/compilers/go/1.26.nix" {
+        buildGo126Module = gopkg.buildGoModule;
+      };
+      flyctl = gopkg.callPackage "${flyctl-nixpkgs}/pkgs/by-name/fl/flyctl/package.nix" {
+        inherit flyctl;
+        # Flyctl requires a newer Go patch release than the application.
+        buildGoModule = gopkg.buildGoModule.override {go = flyctlGo;};
+      };
       litestream = litestream-nixpkgs.legacyPackages.${system}.litestream;
       air = air-nixpkgs.legacyPackages.${system}.air;
 
