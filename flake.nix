@@ -111,7 +111,7 @@
 
       goVendorHash = "sha256-uQtdmACCuJPbfjP8bOv842w+F9WeIwgdlkStPIhJbT4=";
 
-      npmDepsHash = "sha256-vlpvjZBjSn+dx4s+mdp/2kI4TbXmpP+kWYwjwRLhBxE=";
+      npmDepsHash = "sha256-Y8wzYTNYYz/H4yEeIzyvVpWBJwuyDTySovAV01HzhC0=";
 
       npmDependenciesSrc = gopkg.lib.fileset.toSource {
         root = ./.;
