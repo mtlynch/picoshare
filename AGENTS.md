@@ -91,6 +91,7 @@ func parseEntryUpdateRequest(r *http.Request) (entryUpdateRequest, error) {
 - When writing new test cases, avoid having `t.Run` have special-case behavior for particular inputs.
   - Instead, use general purpose logic that doesn't assume particular inputs.
 - Design test table fields to describe the scenario at a high level (e.g., `priorUploadsForUser int`) rather than exposing raw data structures the reader must mentally reconstruct (e.g., `recordedEntries []recordedEntry`). A reader should understand the test behavior from the table alone, before reading the test body.
+- Name simulated failures after the failing operation (e.g., `insertEntryError`), not a generic `err`, so readers can distinguish injected failures from expected results.
 - An `explanation` should state its condition and expected outcome.
   - Good: `"files with empty names should return an error"`
   - Bad: `"empty name"`

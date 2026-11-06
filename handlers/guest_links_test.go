@@ -278,34 +278,34 @@ func TestGuestLinksPost(t *testing.T) {
 
 type failingUploadStore struct {
 	handlers.Store
-	err error
+	insertEntryError error
 }
 
 func (s failingUploadStore) InsertEntry(io.Reader, picoshare.UploadMetadata) error {
-	return s.err
+	return s.insertEntryError
 }
 
 func TestUploadPostPersistenceErrors(t *testing.T) {
 	for _, tt := range []struct {
-		explanation string
-		path        string
-		err         error
-		status      int
-		message     string
+		explanation      string
+		path             string
+		insertEntryError error
+		expectedStatus   int
+		expectedMessage  string
 	}{
 		{
-			explanation: "a guest database failure returns a server error with its cause",
-			path:        "/api/guest/abcdefgh23456789",
-			err:         errors.New("dummy database failure"),
-			status:      http.StatusInternalServerError,
-			message:     "Failed to save uploaded file: database error: dummy database failure",
+			explanation:      "a guest database failure returns a server error with its cause",
+			path:             "/api/guest/abcdefgh23456789",
+			insertEntryError: errors.New("dummy database failure"),
+			expectedStatus:   http.StatusInternalServerError,
+			expectedMessage:  "Failed to save uploaded file: database error: dummy database failure",
 		},
 		{
-			explanation: "an owner database failure returns a server error with its cause",
-			path:        "/api/entry?expiration=2030-01-01T00:00:00Z",
-			err:         errors.New("dummy database failure"),
-			status:      http.StatusInternalServerError,
-			message:     "Failed to save uploaded file: database error: dummy database failure",
+			explanation:      "an owner database failure returns a server error with its cause",
+			path:             "/api/entry?expiration=2030-01-01T00:00:00Z",
+			insertEntryError: errors.New("dummy database failure"),
+			expectedStatus:   http.StatusInternalServerError,
+			expectedMessage:  "Failed to save uploaded file: database error: dummy database failure",
 		},
 	} {
 		t.Run(tt.explanation, func(t *testing.T) {
@@ -319,17 +319,17 @@ func TestUploadPostPersistenceErrors(t *testing.T) {
 			}); err != nil {
 				t.Fatalf("failed to insert guest link: %v", err)
 			}
-			failingStore := failingUploadStore{Store: &dataStore, err: tt.err}
+			failingStore := failingUploadStore{Store: &dataStore, insertEntryError: tt.insertEntryError}
 			s := handlers.New(mockAuthenticator{}, failingStore, nilSpaceCheckFunc, nilGarbageCollector, func() time.Time { return now })
 			body, contentType := createMultipartFormBody("upload.txt", "", "", strings.NewReader("payload"))
 			req := httptest.NewRequest(http.MethodPost, tt.path, body)
 			req.Header.Set("Content-Type", contentType)
 			rec := httptest.NewRecorder()
 			s.Router().ServeHTTP(rec, req)
-			if got, want := rec.Code, tt.status; got != want {
+			if got, want := rec.Code, tt.expectedStatus; got != want {
 				t.Fatalf("upload status=%d, want=%d: %s", got, want, rec.Body.String())
 			}
-			if got, want := strings.TrimSpace(rec.Body.String()), tt.message; got != want {
+			if got, want := strings.TrimSpace(rec.Body.String()), tt.expectedMessage; got != want {
 				t.Errorf("response=%q, want=%q", got, want)
 			}
 		})
