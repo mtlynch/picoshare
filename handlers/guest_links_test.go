@@ -285,54 +285,54 @@ func (s failingUploadStore) InsertEntry(io.Reader, picoshare.UploadMetadata) err
 	return s.insertEntryError
 }
 
-func TestUploadPostPersistenceErrors(t *testing.T) {
-	for _, tt := range []struct {
-		explanation      string
-		path             string
-		insertEntryError error
-		expectedStatus   int
-		expectedMessage  string
-	}{
-		{
-			explanation:      "a guest database failure returns a server error with its cause",
-			path:             "/api/guest/abcdefgh23456789",
-			insertEntryError: errors.New("dummy database failure"),
-			expectedStatus:   http.StatusInternalServerError,
-			expectedMessage:  "Failed to save uploaded file: database error: dummy database failure",
-		},
-		{
-			explanation:      "an owner database failure returns a server error with its cause",
-			path:             "/api/entry?expiration=2030-01-01T00:00:00Z",
-			insertEntryError: errors.New("dummy database failure"),
-			expectedStatus:   http.StatusInternalServerError,
-			expectedMessage:  "Failed to save uploaded file: database error: dummy database failure",
-		},
-	} {
-		t.Run(tt.explanation, func(t *testing.T) {
-			now := mustParseTime("2025-01-01T00:00:00Z")
-			dataStore := test_sqlite.NewWithClock(t, func() time.Time { return now })
-			if err := dataStore.InsertGuestLink(picoshare.GuestLink{
-				ID:              "abcdefgh23456789",
-				Created:         now,
-				UrlExpires:      picoshare.NeverExpire,
-				MaxFileLifetime: picoshare.FileLifetimeInfinite,
-			}); err != nil {
-				t.Fatalf("failed to insert guest link: %v", err)
-			}
-			failingStore := failingUploadStore{Store: &dataStore, insertEntryError: tt.insertEntryError}
-			s := handlers.New(mockAuthenticator{}, failingStore, nilSpaceCheckFunc, nilGarbageCollector, func() time.Time { return now })
-			body, contentType := createMultipartFormBody("upload.txt", "", "", strings.NewReader("payload"))
-			req := httptest.NewRequest(http.MethodPost, tt.path, body)
-			req.Header.Set("Content-Type", contentType)
-			rec := httptest.NewRecorder()
-			s.Router().ServeHTTP(rec, req)
-			if got, want := rec.Code, tt.expectedStatus; got != want {
-				t.Fatalf("upload status=%d, want=%d: %s", got, want, rec.Body.String())
-			}
-			if got, want := strings.TrimSpace(rec.Body.String()), tt.expectedMessage; got != want {
-				t.Errorf("response=%q, want=%q", got, want)
-			}
-		})
+func TestGuestUploadPostPersistenceError(t *testing.T) {
+	now := mustParseTime("2025-01-01T00:00:00Z")
+	dataStore := test_sqlite.New(t)
+	guestLinkID := picoshare.GuestLinkID("abcdefgh23456789")
+	if err := dataStore.InsertGuestLink(picoshare.GuestLink{
+		ID:              guestLinkID,
+		Created:         now,
+		UrlExpires:      picoshare.NeverExpire,
+		MaxFileLifetime: picoshare.FileLifetimeInfinite,
+	}); err != nil {
+		t.Fatalf("failed to insert guest link: %v", err)
+	}
+	failingStore := failingUploadStore{
+		Store:            &dataStore,
+		insertEntryError: errors.New("dummy database failure"),
+	}
+	s := handlers.New(mockAuthenticator{}, failingStore, nilSpaceCheckFunc, nilGarbageCollector, func() time.Time { return now })
+	body, contentType := createMultipartFormBody("upload.txt", "", "", strings.NewReader("payload"))
+	req := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/api/guest/%s", guestLinkID), body)
+	req.Header.Set("Content-Type", contentType)
+	rec := httptest.NewRecorder()
+	s.Router().ServeHTTP(rec, req)
+	if got, want := rec.Code, http.StatusInternalServerError; got != want {
+		t.Fatalf("upload status=%d, want=%d: %s", got, want, rec.Body.String())
+	}
+	if got, want := strings.TrimSpace(rec.Body.String()), "Failed to save uploaded file: database error: dummy database failure"; got != want {
+		t.Errorf("response=%q, want=%q", got, want)
+	}
+}
+
+func TestOwnerUploadPostPersistenceError(t *testing.T) {
+	now := mustParseTime("2025-01-01T00:00:00Z")
+	dataStore := test_sqlite.New(t)
+	failingStore := failingUploadStore{
+		Store:            &dataStore,
+		insertEntryError: errors.New("dummy database failure"),
+	}
+	s := handlers.New(mockAuthenticator{}, failingStore, nilSpaceCheckFunc, nilGarbageCollector, func() time.Time { return now })
+	body, contentType := createMultipartFormBody("upload.txt", "", "", strings.NewReader("payload"))
+	req := httptest.NewRequest(http.MethodPost, "/api/entry?expiration=2030-01-01T00:00:00Z", body)
+	req.Header.Set("Content-Type", contentType)
+	rec := httptest.NewRecorder()
+	s.Router().ServeHTTP(rec, req)
+	if got, want := rec.Code, http.StatusInternalServerError; got != want {
+		t.Fatalf("upload status=%d, want=%d: %s", got, want, rec.Body.String())
+	}
+	if got, want := strings.TrimSpace(rec.Body.String()), "Failed to save uploaded file: database error: dummy database failure"; got != want {
+		t.Errorf("response=%q, want=%q", got, want)
 	}
 }
 

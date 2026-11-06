@@ -13,30 +13,23 @@ const optimizeForLitestream = false
 
 func New(t testing.TB) sqlite.Store {
 	t.Helper()
-	return newWithChunkSize(0, getFixedTime)
+	return newWithChunkSize(0)
 }
 
 func NewWithChunkSize(t testing.TB, chunkSize uint64) sqlite.Store {
 	t.Helper()
-	return newWithChunkSize(chunkSize, getFixedTime)
+	return newWithChunkSize(chunkSize)
 }
 
-func NewWithClock(t testing.TB, now func() time.Time) sqlite.Store {
-	t.Helper()
-	return newWithChunkSize(0, now)
-}
-
-func newWithChunkSize(chunkSize uint64, now func() time.Time) sqlite.Store {
+func newWithChunkSize(chunkSize uint64) sqlite.Store {
 	return sqlite.New(sqlite.Params{
 		Path:                  ephemeralDbURI(),
 		OptimizeForLitestream: optimizeForLitestream,
-		Now:                   now,
-		PicoShareChunkSize:    chunkSize,
+		Now: func() time.Time {
+			return time.Date(2025, time.January, 1, 0, 0, 0, 0, time.UTC)
+		},
+		PicoShareChunkSize: chunkSize,
 	})
-}
-
-func getFixedTime() time.Time {
-	return time.Date(2025, time.January, 1, 0, 0, 0, 0, time.UTC)
 }
 
 func ephemeralDbURI() string {
