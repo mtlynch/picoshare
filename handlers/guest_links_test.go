@@ -285,7 +285,7 @@ func TestGuestLinksPost(t *testing.T) {
 	}
 }
 
-func TestUploadPersistenceErrors(t *testing.T) {
+func TestUploadPostPersistenceErrors(t *testing.T) {
 	for _, tt := range []struct {
 		explanation string
 		path        string
