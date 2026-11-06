@@ -306,7 +306,9 @@ func TestGuestUploadPostPersistenceError(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/api/guest/%s", guestLinkID), body)
 	req.Header.Set("Content-Type", contentType)
 	rec := httptest.NewRecorder()
+
 	s.Router().ServeHTTP(rec, req)
+
 	if got, want := rec.Code, http.StatusInternalServerError; got != want {
 		t.Fatalf("upload status=%d, want=%d: %s", got, want, rec.Body.String())
 	}
@@ -327,7 +329,9 @@ func TestOwnerUploadPostPersistenceError(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "/api/entry?expiration=2030-01-01T00:00:00Z", body)
 	req.Header.Set("Content-Type", contentType)
 	rec := httptest.NewRecorder()
+
 	s.Router().ServeHTTP(rec, req)
+
 	if got, want := rec.Code, http.StatusInternalServerError; got != want {
 		t.Fatalf("upload status=%d, want=%d: %s", got, want, rec.Body.String())
 	}
