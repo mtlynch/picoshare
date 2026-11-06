@@ -18,15 +18,6 @@ import (
 	"github.com/mtlynch/picoshare/store/test_sqlite"
 )
 
-type failingUploadStore struct {
-	handlers.Store
-	err error
-}
-
-func (s failingUploadStore) InsertEntry(io.Reader, picoshare.UploadMetadata) error {
-	return s.err
-}
-
 func TestGuestLinksPost(t *testing.T) {
 	for _, tt := range []struct {
 		description string
@@ -283,6 +274,15 @@ func TestGuestLinksPost(t *testing.T) {
 			}
 		})
 	}
+}
+
+type failingUploadStore struct {
+	handlers.Store
+	err error
+}
+
+func (s failingUploadStore) InsertEntry(io.Reader, picoshare.UploadMetadata) error {
+	return s.err
 }
 
 func TestUploadPostPersistenceErrors(t *testing.T) {
