@@ -47,15 +47,15 @@ func (gl GuestLink) CanAcceptMoreFiles() bool {
 	return gl.FilesUploaded < *gl.MaxFileUploads
 }
 
-func (gl GuestLink) IsExpired() bool {
+func (gl GuestLink) isExpired(now time.Time) bool {
 	if gl.UrlExpires == NeverExpire {
 		return false
 	}
-	return time.Now().After(time.Time(gl.UrlExpires))
+	return !now.Before(time.Time(gl.UrlExpires))
 }
 
-func (gl GuestLink) IsActive() bool {
-	return !gl.IsExpired() && gl.CanAcceptMoreFiles() && !gl.IsDisabled
+func (gl GuestLink) IsActive(now time.Time) bool {
+	return !gl.isExpired(now) && gl.CanAcceptMoreFiles() && !gl.IsDisabled
 }
 
 func (label GuestLinkLabel) Empty() bool {

@@ -104,10 +104,12 @@ func (s Server) guestLinkIndexGet() http.HandlerFunc {
 
 		renderTemplate(w, t, struct {
 			commonProps
-			GuestLinks []picoshare.GuestLink
+			GuestLinks  []picoshare.GuestLink
+			CurrentTime time.Time
 		}{
 			commonProps: makeCommonProps("PicoShare - Guest Links", r.Context()),
 			GuestLinks:  links,
+			CurrentTime: s.now(),
 		})
 	}
 }
@@ -552,7 +554,7 @@ func (s Server) guestUploadGet() http.HandlerFunc {
 			return
 		}
 
-		if !gl.IsActive() {
+		if !gl.IsActive(s.now()) {
 			renderTemplate(w, tInactive, struct {
 				commonProps
 			}{

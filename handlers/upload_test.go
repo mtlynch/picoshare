@@ -509,7 +509,7 @@ func TestGuestUpload(t *testing.T) {
 				UrlExpires:      mustParseExpirationTime("2024-01-02T03:04:25Z"),
 				MaxFileLifetime: picoshare.FileLifetimeInfinite,
 			},
-			currentTime:                mustParseTime("2024-01-01T00:00:00Z"),
+			currentTime:                mustParseTime("2024-01-03T00:00:00Z"),
 			url:                        "/api/guest/abcdefgh23456789?expiration=2030-01-01T00:00:00Z",
 			status:                     http.StatusUnauthorized,
 			fileExpirationTimeExpected: picoshare.NeverExpire,

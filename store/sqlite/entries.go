@@ -175,21 +175,48 @@ func (s Store) GetEntryMetadata(id picoshare.EntryID) (picoshare.UploadMetadata,
 func (s Store) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) error {
 	log.Printf("saving new entry %s", metadata.ID)
 
-	// Note: We deliberately don't use a transaction here, as it bloats memory, so
-	// we can end up in a state with orphaned entries data. We clean it up in
-	// Purge().
+	// Keep chunk writes outside the metadata transaction to avoid bloating memory.
 	// See: https://github.com/mtlynch/picoshare/issues/284
 	w := file.NewWriter(s.db, metadata.ID, s.chunkSize)
-	if _, err := io.Copy(w, reader); err != nil {
-		return err
+	written, err := io.Copy(w, reader)
+	if err != nil {
+		return s.removeFailedUpload(metadata.ID, err)
 	}
 
 	// Close() flushes the buffer, and it can fail.
 	if err := w.Close(); err != nil {
-		return err
+		return s.removeFailedUpload(metadata.ID, err)
 	}
 
-	_, err := s.db.Exec(`
+	if err := s.insertEntryMetadata(metadata, written); err != nil {
+		return s.removeFailedUpload(metadata.ID, err)
+	}
+	return nil
+}
+
+func (s Store) insertEntryMetadata(metadata picoshare.UploadMetadata, written int64) (err error) {
+	tx, err := s.db.BeginTx(context.Background(), nil)
+	if err != nil {
+		return fmt.Errorf("failed to begin entry metadata transaction: %w", err)
+	}
+	defer func() {
+		if rollbackErr := tx.Rollback(); rollbackErr != nil && rollbackErr != sql.ErrTxDone {
+			err = fmt.Errorf("failed to roll back entry metadata after %v: %w", err, rollbackErr)
+		}
+	}()
+
+	if !metadata.GuestLink.ID.Empty() {
+		// Acquire SQLite's write lock before sampling the clock. Policy changes
+		// and other uploads cannot interleave with the final authorization, even
+		// across processes. Do not include payload writes in this transaction.
+		if _, err := tx.Exec(`
+			UPDATE guest_links SET id = id WHERE id = :guest_link_id`,
+			sql.Named("guest_link_id", metadata.GuestLink.ID)); err != nil {
+			return fmt.Errorf("failed to lock guest upload policy: %w", err)
+		}
+	}
+
+	result, err := tx.Exec(`
 	INSERT INTO
 		entries
 	(
@@ -202,7 +229,17 @@ func (s Store) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) 
 		expiration_time,
 		download_passphrase
 	)
-	VALUES(:entry_id, NULLIF(:guest_link_id, ''), :filename, :note, :content_type, :upload_time, :expiration_time, :download_passphrase)`,
+	SELECT :entry_id, NULLIF(:guest_link_id, ''), :filename, :note, :content_type, :upload_time, :expiration_time, :download_passphrase
+	WHERE :guest_link_id = '' OR EXISTS (
+		SELECT 1 FROM guest_links
+		WHERE id = :guest_link_id
+			AND is_disabled = 0
+			AND (url_expiration_time = :never_expire OR url_expiration_time > :current_time)
+			AND (max_file_bytes IS NULL OR :file_size <= max_file_bytes)
+			AND (max_file_uploads IS NULL OR (
+				SELECT COUNT(*) FROM entries WHERE guest_link_id = :guest_link_id
+			) < max_file_uploads)
+	)`,
 		sql.Named("entry_id", metadata.ID.String()),
 		sql.Named("guest_link_id", metadata.GuestLink.ID),
 		sql.Named("filename", metadata.Filename),
@@ -211,13 +248,38 @@ func (s Store) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) 
 		sql.Named("upload_time", formatTime(metadata.Uploaded)),
 		sql.Named("expiration_time", formatExpirationTime(metadata.Expires)),
 		sql.Named("download_passphrase", downloadPassphraseString(metadata.DownloadPassphrase)),
+		sql.Named("current_time", formatTime(s.now())),
+		sql.Named("never_expire", formatExpirationTime(picoshare.NeverExpire)),
+		sql.Named("file_size", written),
 	)
 	if err != nil {
-		log.Printf("insert into entries table failed, aborting transaction: %v", err)
-		return err
+		return fmt.Errorf("failed to insert entry metadata: %w", err)
 	}
 
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to read inserted entry count: %w", err)
+	}
+	if rows == 0 {
+		return store.GuestUploadRejectedError{ID: metadata.GuestLink.ID}
+	}
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("failed to commit entry metadata: %w", err)
+	}
 	return nil
+}
+
+func (s Store) removeFailedUpload(id picoshare.EntryID, uploadErr error) error {
+	// Preserve an existing entry's chunks if an ID collision caused the failure.
+	if _, err := s.db.Exec(`
+		DELETE FROM entries_data
+		WHERE id = :entry_id
+			AND NOT EXISTS (SELECT 1 FROM entries WHERE id = :entry_id)`,
+		sql.Named("entry_id", id.String())); err != nil {
+		// A cleanup failure is a database error, not an authorization rejection.
+		return fmt.Errorf("failed to remove chunks for upload %s after %v: %w", id, uploadErr, err)
+	}
+	return uploadErr
 }
 
 func parseDownloadPassphrase(raw *string) (picoshare.DownloadPassphrase, error) {
