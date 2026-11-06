@@ -49,7 +49,7 @@ func (s Server) entryPost() http.HandlerFunc {
 		if err != nil {
 			if _, ok := errors.AsType[*dbError](err); ok {
 				log.Printf("failed to insert uploaded file into data store: %v", err)
-				http.Error(w, fmt.Sprintf("Failed to save uploaded file: %v", err), http.StatusInternalServerError)
+				http.Error(w, "failed to insert file into database", http.StatusInternalServerError)
 			} else {
 				log.Printf("invalid upload: %v", err)
 				http.Error(w, fmt.Sprintf("invalid request: %s", err), http.StatusBadRequest)
@@ -132,7 +132,7 @@ func (s Server) guestEntryPost() http.HandlerFunc {
 		if err != nil {
 			if _, ok := errors.AsType[*dbError](err); ok {
 				log.Printf("failed to insert uploaded file into data store: %v", err)
-				http.Error(w, fmt.Sprintf("Failed to save uploaded file: %v", err), http.StatusInternalServerError)
+				http.Error(w, "failed to insert file into database", http.StatusInternalServerError)
 			} else {
 				log.Printf("invalid upload: %v", err)
 				http.Error(w, fmt.Sprintf("invalid request: %s", err), http.StatusBadRequest)

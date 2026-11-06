@@ -312,7 +312,7 @@ func TestGuestUploadPostPersistenceError(t *testing.T) {
 	if got, want := rec.Code, http.StatusInternalServerError; got != want {
 		t.Fatalf("upload status=%d, want=%d: %s", got, want, rec.Body.String())
 	}
-	if got, want := strings.TrimSpace(rec.Body.String()), "Failed to save uploaded file: database error: dummy database failure"; got != want {
+	if got, want := strings.TrimSpace(rec.Body.String()), "failed to insert file into database"; got != want {
 		t.Errorf("response=%q, want=%q", got, want)
 	}
 }
@@ -335,7 +335,7 @@ func TestOwnerUploadPostPersistenceError(t *testing.T) {
 	if got, want := rec.Code, http.StatusInternalServerError; got != want {
 		t.Fatalf("upload status=%d, want=%d: %s", got, want, rec.Body.String())
 	}
-	if got, want := strings.TrimSpace(rec.Body.String()), "Failed to save uploaded file: database error: dummy database failure"; got != want {
+	if got, want := strings.TrimSpace(rec.Body.String()), "failed to insert file into database"; got != want {
 		t.Errorf("response=%q, want=%q", got, want)
 	}
 }
