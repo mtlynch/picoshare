@@ -34,16 +34,16 @@ func TestUploadPersistenceErrors(t *testing.T) {
 		{
 			explanation: "a guest database failure returns a server error with its cause",
 			path:        "/api/guest/abcdefgh23456789",
-			err:         errors.New("failed to remove upload chunks"),
+			err:         errors.New("dummy database failure"),
 			status:      http.StatusInternalServerError,
-			message:     "Failed to save uploaded file: database error: failed to remove upload chunks",
+			message:     "Failed to save uploaded file: database error: dummy database failure",
 		},
 		{
 			explanation: "an owner database failure returns a server error with its cause",
 			path:        "/api/entry?expiration=2030-01-01T00:00:00Z",
-			err:         errors.New("failed to insert entry metadata"),
+			err:         errors.New("dummy database failure"),
 			status:      http.StatusInternalServerError,
-			message:     "Failed to save uploaded file: database error: failed to insert entry metadata",
+			message:     "Failed to save uploaded file: database error: dummy database failure",
 		},
 	} {
 		t.Run(tt.explanation, func(t *testing.T) {
