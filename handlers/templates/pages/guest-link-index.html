@@ -195,9 +195,9 @@
       </thead>
       <tbody>
         {{ range .GuestLinks }}
-          <tr {{ if not (.IsActive $.CurrentTime) }}class="inactive"{{ end }}>
+          <tr {{ if not .IsActive }}class="inactive"{{ end }}>
             <td class="align-middle">
-              {{ if .IsActive $.CurrentTime }}
+              {{ if .IsActive }}
                 <a href="/g/{{ .ID }}">
                   {{ template "label-formatted" . }}
                 </a>

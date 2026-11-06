@@ -31,6 +31,11 @@ type commonProps struct {
 	CspNonce        string
 }
 
+type guestLinkRow struct {
+	picoshare.GuestLink
+	IsActive bool
+}
+
 func (s Server) indexGet() http.HandlerFunc {
 	t := parseTemplates("templates/pages/index.html")
 
@@ -102,14 +107,21 @@ func (s Server) guestLinkIndexGet() http.HandlerFunc {
 			return links[i].Created.After(links[j].Created)
 		})
 
+		now := s.now()
+		rows := make([]guestLinkRow, 0, len(links))
+		for _, link := range links {
+			rows = append(rows, guestLinkRow{
+				GuestLink: link,
+				IsActive:  link.IsActive(now),
+			})
+		}
+
 		renderTemplate(w, t, struct {
 			commonProps
-			GuestLinks  []picoshare.GuestLink
-			CurrentTime time.Time
+			GuestLinks []guestLinkRow
 		}{
 			commonProps: makeCommonProps("PicoShare - Guest Links", r.Context()),
-			GuestLinks:  links,
-			CurrentTime: s.now(),
+			GuestLinks:  rows,
 		})
 	}
 }
