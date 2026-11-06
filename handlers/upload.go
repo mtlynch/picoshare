@@ -109,7 +109,7 @@ func (s Server) guestEntryPost() http.HandlerFunc {
 			return
 		}
 
-		if !gl.IsActive() {
+		if !gl.IsActive(s.now()) {
 			http.Error(w, "Guest link is no longer active", http.StatusUnauthorized)
 			return
 		}
