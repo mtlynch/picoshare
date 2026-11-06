@@ -54,6 +54,8 @@ func (gl GuestLink) isExpired(now time.Time) bool {
 	return !now.Before(time.Time(gl.UrlExpires))
 }
 
+// IsActive checks current link availability. SQLite also enforces this policy
+// atomically when finalizing guest uploads; keep the two checks aligned.
 func (gl GuestLink) IsActive(now time.Time) bool {
 	return !gl.isExpired(now) && gl.CanAcceptMoreFiles() && !gl.IsDisabled
 }

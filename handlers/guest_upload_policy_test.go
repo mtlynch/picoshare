@@ -12,7 +12,7 @@ import (
 	"github.com/mtlynch/picoshare/handlers"
 	"github.com/mtlynch/picoshare/picoshare"
 	"github.com/mtlynch/picoshare/store"
-	"github.com/mtlynch/picoshare/store/sqlite"
+	"github.com/mtlynch/picoshare/store/test_sqlite"
 )
 
 type beforeReadReader struct {
@@ -60,10 +60,7 @@ func TestGuestUploadRevokedWhileBodyWithheld(t *testing.T) {
 	} {
 		t.Run(tt.explanation, func(t *testing.T) {
 			now := mustParseTime("2025-01-01T00:00:00Z")
-			dataStore := sqlite.New(sqlite.Params{
-				Path: ":memory:",
-				Now:  func() time.Time { return now },
-			})
+			dataStore := test_sqlite.NewWithClock(t, func() time.Time { return now })
 			if err := dataStore.InsertGuestLink(picoshare.GuestLink{
 				ID:              "abcdefgh23456789",
 				Created:         now,
@@ -109,10 +106,7 @@ func TestGuestUploadRevokedWhileBodyWithheld(t *testing.T) {
 
 func TestGuestUploadExpiresWhileBodyWithheld(t *testing.T) {
 	now := mustParseTime("2025-01-01T00:00:00Z")
-	dataStore := sqlite.New(sqlite.Params{
-		Path: ":memory:",
-		Now:  func() time.Time { return now },
-	})
+	dataStore := test_sqlite.NewWithClock(t, func() time.Time { return now })
 	if err := dataStore.InsertGuestLink(picoshare.GuestLink{
 		ID:              "abcdefgh23456789",
 		Created:         now,
@@ -185,10 +179,7 @@ func TestUploadPersistenceErrors(t *testing.T) {
 	} {
 		t.Run(tt.explanation, func(t *testing.T) {
 			now := mustParseTime("2025-01-01T00:00:00Z")
-			dataStore := sqlite.New(sqlite.Params{
-				Path: ":memory:",
-				Now:  func() time.Time { return now },
-			})
+			dataStore := test_sqlite.NewWithClock(t, func() time.Time { return now })
 			if err := dataStore.InsertGuestLink(picoshare.GuestLink{
 				ID:              "abcdefgh23456789",
 				Created:         now,
@@ -232,10 +223,7 @@ func TestGuestLinkIndexUsesCurrentTime(t *testing.T) {
 		},
 	} {
 		t.Run(tt.explanation, func(t *testing.T) {
-			dataStore := sqlite.New(sqlite.Params{
-				Path: ":memory:",
-				Now:  func() time.Time { return tt.now },
-			})
+			dataStore := test_sqlite.NewWithClock(t, func() time.Time { return tt.now })
 			if err := dataStore.InsertGuestLink(picoshare.GuestLink{
 				ID:              "abcdefgh23456789",
 				Label:           "Guest uploads",

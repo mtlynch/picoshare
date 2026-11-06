@@ -3,6 +3,7 @@ package sqlite
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -176,20 +177,24 @@ func (s Store) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) 
 	log.Printf("saving new entry %s", metadata.ID)
 
 	// Keep chunk writes outside the metadata transaction to avoid bloating memory.
+	// Purge removes orphaned chunks if an unexpected write or read error occurs.
 	// See: https://github.com/mtlynch/picoshare/issues/284
 	w := file.NewWriter(s.db, metadata.ID, s.chunkSize)
 	written, err := io.Copy(w, reader)
 	if err != nil {
-		return s.removeFailedUpload(metadata.ID, err)
+		return err
 	}
 
 	// Close() flushes the buffer, and it can fail.
 	if err := w.Close(); err != nil {
-		return s.removeFailedUpload(metadata.ID, err)
+		return err
 	}
 
 	if err := s.insertEntryMetadata(metadata, written); err != nil {
-		return s.removeFailedUpload(metadata.ID, err)
+		if _, ok := errors.AsType[store.GuestUploadRejectedError](err); ok {
+			return s.removeRejectedUpload(metadata.ID, err)
+		}
+		return err
 	}
 	return nil
 }
@@ -206,9 +211,9 @@ func (s Store) insertEntryMetadata(metadata picoshare.UploadMetadata, written in
 	}()
 
 	if !metadata.GuestLink.ID.Empty() {
-		// Acquire SQLite's write lock before sampling the clock. Policy changes
-		// and other uploads cannot interleave with the final authorization, even
-		// across processes. Do not include payload writes in this transaction.
+		// Acquire SQLite's database-wide write lock before sampling the clock:
+		// waiting for the lock could otherwise carry a pre-sampled timestamp past
+		// the link's expiration. This locks even if the link has been deleted.
 		if _, err := tx.Exec(`
 			UPDATE guest_links SET id = id WHERE id = :guest_link_id`,
 			sql.Named("guest_link_id", metadata.GuestLink.ID)); err != nil {
@@ -216,6 +221,8 @@ func (s Store) insertEntryMetadata(metadata picoshare.UploadMetadata, written in
 		}
 	}
 
+	// Keep this final policy check aligned with GuestLink.IsActive. The early
+	// handler check only rejects invalid requests before receiving their bodies.
 	result, err := tx.Exec(`
 	INSERT INTO
 		entries
@@ -269,8 +276,9 @@ func (s Store) insertEntryMetadata(metadata picoshare.UploadMetadata, written in
 	return nil
 }
 
-func (s Store) removeFailedUpload(id picoshare.EntryID, uploadErr error) error {
-	// Preserve an existing entry's chunks if an ID collision caused the failure.
+func (s Store) removeRejectedUpload(id picoshare.EntryID, uploadErr error) error {
+	// An empty upload writes no chunks, so an ID collision might not have failed
+	// before the policy rejection. Preserve any existing entry's chunks.
 	if _, err := s.db.Exec(`
 		DELETE FROM entries_data
 		WHERE id = :entry_id
