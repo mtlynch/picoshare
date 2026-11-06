@@ -2,6 +2,7 @@ package handlers_test
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -272,6 +273,70 @@ func TestGuestLinksPost(t *testing.T) {
 				t.Fatalf("guestLink=%+v, want=%+v", got, want)
 			}
 		})
+	}
+}
+
+type failingUploadStore struct {
+	handlers.Store
+	insertEntryError error
+}
+
+func (s failingUploadStore) InsertEntry(io.Reader, picoshare.UploadMetadata) error {
+	return s.insertEntryError
+}
+
+func TestGuestUploadPostPersistenceError(t *testing.T) {
+	now := mustParseTime("2025-01-01T00:00:00Z")
+	dataStore := test_sqlite.New(t)
+	guestLinkID := picoshare.GuestLinkID("abcdefgh23456789")
+	if err := dataStore.InsertGuestLink(picoshare.GuestLink{
+		ID:              guestLinkID,
+		Created:         now,
+		UrlExpires:      picoshare.NeverExpire,
+		MaxFileLifetime: picoshare.FileLifetimeInfinite,
+	}); err != nil {
+		t.Fatalf("failed to insert guest link: %v", err)
+	}
+	failingStore := failingUploadStore{
+		Store:            &dataStore,
+		insertEntryError: errors.New("dummy database failure"),
+	}
+	s := handlers.New(mockAuthenticator{}, failingStore, nilSpaceCheckFunc, nilGarbageCollector, func() time.Time { return now })
+	body, contentType := createMultipartFormBody("upload.txt", "", "", strings.NewReader("payload"))
+	req := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/api/guest/%s", guestLinkID), body)
+	req.Header.Set("Content-Type", contentType)
+	rec := httptest.NewRecorder()
+
+	s.Router().ServeHTTP(rec, req)
+
+	if got, want := rec.Code, http.StatusInternalServerError; got != want {
+		t.Fatalf("upload status=%d, want=%d: %s", got, want, rec.Body.String())
+	}
+	if got, want := strings.TrimSpace(rec.Body.String()), "failed to insert file into database"; got != want {
+		t.Errorf("response=%q, want=%q", got, want)
+	}
+}
+
+func TestOwnerUploadPostPersistenceError(t *testing.T) {
+	now := mustParseTime("2025-01-01T00:00:00Z")
+	dataStore := test_sqlite.New(t)
+	failingStore := failingUploadStore{
+		Store:            &dataStore,
+		insertEntryError: errors.New("dummy database failure"),
+	}
+	s := handlers.New(mockAuthenticator{}, failingStore, nilSpaceCheckFunc, nilGarbageCollector, func() time.Time { return now })
+	body, contentType := createMultipartFormBody("upload.txt", "", "", strings.NewReader("payload"))
+	req := httptest.NewRequest(http.MethodPost, "/api/entry?expiration=2030-01-01T00:00:00Z", body)
+	req.Header.Set("Content-Type", contentType)
+	rec := httptest.NewRecorder()
+
+	s.Router().ServeHTTP(rec, req)
+
+	if got, want := rec.Code, http.StatusInternalServerError; got != want {
+		t.Fatalf("upload status=%d, want=%d: %s", got, want, rec.Body.String())
+	}
+	if got, want := strings.TrimSpace(rec.Body.String()), "failed to insert file into database"; got != want {
+		t.Errorf("response=%q, want=%q", got, want)
 	}
 }
 

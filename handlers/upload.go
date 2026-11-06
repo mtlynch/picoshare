@@ -273,8 +273,7 @@ func (s Server) insertFileFromRequest(r *http.Request, expiration picoshare.Expi
 			DownloadPassphrase: downloadPassphrase,
 		})
 	if err != nil {
-		log.Printf("failed to save entry: %v", err)
-		return picoshare.EntryID{}, dbError{err}
+		return picoshare.EntryID{}, &dbError{err}
 	}
 
 	return id, nil
