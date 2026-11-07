@@ -130,6 +130,12 @@ func (s Server) guestEntryPost() http.HandlerFunc {
 
 		id, err := s.insertFileFromRequest(r, expiration, guestLinkID)
 		if err != nil {
+			// Initial request-size violations return 400. A policy rejection at
+			// finalization means this link no longer authorizes the upload.
+			if _, ok := errors.AsType[store.GuestUploadRejectedError](err); ok {
+				http.Error(w, "Guest link no longer permits this upload", http.StatusUnauthorized)
+				return
+			}
 			if _, ok := errors.AsType[*dbError](err); ok {
 				log.Printf("failed to insert uploaded file into data store: %v", err)
 				http.Error(w, "failed to insert file into database", http.StatusInternalServerError)
@@ -221,7 +227,6 @@ func (s Server) insertFileFromRequest(r *http.Request, expiration picoshare.Expi
 	if err != nil {
 		return picoshare.EntryID{}, err
 	}
-
 	fileSize, err := picoshare.FileSizeFromInt64(metadata.Size)
 	if err != nil {
 		return picoshare.EntryID{}, err
