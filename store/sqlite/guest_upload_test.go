@@ -24,6 +24,7 @@ func (f guestUploadReadFunc) Read(p []byte) (int, error) {
 func TestInsertEntryRejectsGuestUploadWhenCountLimitDropsToExistingCount(t *testing.T) {
 	now := mustParseTime("2035-01-01T00:00:00Z")
 	dataStore, db, _ := openGuestUploadStore(t, func() time.Time { return now })
+	// Use one of two upload slots so the next upload is initially allowed.
 	link := picoshare.GuestLink{
 		ID:              "guest-link",
 		Created:         now,
@@ -45,6 +46,7 @@ func TestInsertEntryRejectsGuestUploadWhenCountLimitDropsToExistingCount(t *test
 	reader := io.MultiReader(strings.NewReader("abcdefgh"), guestUploadReadFunc(func([]byte) (int, error) {
 		// Both full chunks have been persisted before the policy changes.
 		assertGuestUploadRows(t, db, metadata.ID, 0, 2)
+		// Remove the remaining slot before InsertEntry commits the upload.
 		if _, err := db.Exec(`UPDATE guest_links SET max_file_uploads = 1 WHERE id = ?`, link.ID); err != nil {
 			t.Fatalf("failed to reduce guest link upload limit during payload read: %v", err)
 		}
@@ -56,6 +58,7 @@ func TestInsertEntryRejectsGuestUploadWhenCountLimitDropsToExistingCount(t *test
 	if got, want := policyApplied, true; got != want {
 		t.Fatalf("final policy applied=%v, want=%v", got, want)
 	}
+	// The current limit must reject the upload and leave no staged data behind.
 	if got, want := errors.Is(err, store.ErrGuestUploadRejected), true; got != want {
 		t.Fatalf("policy rejection=%v, want=%v (err=%v)", got, want, err)
 	}
@@ -65,6 +68,7 @@ func TestInsertEntryRejectsGuestUploadWhenCountLimitDropsToExistingCount(t *test
 func TestInsertEntryAcceptsGuestUploadInLastAvailableSlot(t *testing.T) {
 	now := mustParseTime("2035-01-01T00:00:00Z")
 	dataStore, db, _ := openGuestUploadStore(t, func() time.Time { return now })
+	// A new link with a limit of one has exactly one available upload slot.
 	link := picoshare.GuestLink{
 		ID:              "guest-link",
 		Created:         now,
@@ -80,6 +84,7 @@ func TestInsertEntryAcceptsGuestUploadInLastAvailableSlot(t *testing.T) {
 	if err := dataStore.InsertEntry(strings.NewReader("abcdefgh"), metadata); err != nil {
 		t.Fatalf("failed to insert upload in last available slot: %v", err)
 	}
+	// Filling the last slot must persist the file and count it as one upload.
 	assertGuestUploadRows(t, db, metadata.ID, 1, 2)
 	stored, err := dataStore.GetEntryMetadata(metadata.ID)
 	if err != nil {
@@ -103,6 +108,7 @@ func TestInsertEntryExcludesOtherGuestLinksUploadsFromCountLimit(t *testing.T) {
 	if err := dataStore.InsertGuestLink(link); err != nil {
 		t.Fatalf("failed to insert guest link: %v", err)
 	}
+	// Exhaust a separate link's capacity while leaving this link unused.
 	otherLink := link
 	otherLink.ID = "other-link"
 	if err := dataStore.InsertGuestLink(otherLink); err != nil {
@@ -114,9 +120,11 @@ func TestInsertEntryExcludesOtherGuestLinksUploadsFromCountLimit(t *testing.T) {
 	}
 	metadata := createGuestUploadMetadata(picoshare.MustCreateEntryID("newentryab"), link, now)
 
+	// The other link's upload must not prevent this link from accepting one.
 	if err := dataStore.InsertEntry(strings.NewReader("abcdefgh"), metadata); err != nil {
 		t.Fatalf("failed to insert upload with capacity consumed only on another link: %v", err)
 	}
+	// This link's count must include only its own newly accepted upload.
 	assertGuestUploadRows(t, db, metadata.ID, 1, 2)
 	stored, err := dataStore.GetEntryMetadata(metadata.ID)
 	if err != nil {
@@ -130,6 +138,7 @@ func TestInsertEntryExcludesOtherGuestLinksUploadsFromCountLimit(t *testing.T) {
 func TestInsertEntryAcceptsAdditionalGuestUploadWithoutCountLimit(t *testing.T) {
 	now := mustParseTime("2035-01-01T00:00:00Z")
 	dataStore, db, _ := openGuestUploadStore(t, func() time.Time { return now })
+	// Leave MaxFileUploads unset so the link permits unlimited uploads.
 	link := picoshare.GuestLink{
 		ID:              "guest-link",
 		Created:         now,
@@ -139,6 +148,7 @@ func TestInsertEntryAcceptsAdditionalGuestUploadWithoutCountLimit(t *testing.T) 
 	if err := dataStore.InsertGuestLink(link); err != nil {
 		t.Fatalf("failed to insert guest link: %v", err)
 	}
+	// Give the link an existing upload before attempting another.
 	priorMetadata := createGuestUploadMetadata(picoshare.MustCreateEntryID("priorentry"), link, now)
 	if err := dataStore.InsertEntry(strings.NewReader("prior"), priorMetadata); err != nil {
 		t.Fatalf("failed to insert prior upload: %v", err)
@@ -148,6 +158,7 @@ func TestInsertEntryAcceptsAdditionalGuestUploadWithoutCountLimit(t *testing.T) 
 	if err := dataStore.InsertEntry(strings.NewReader("abcdefgh"), metadata); err != nil {
 		t.Fatalf("failed to insert additional upload without count limit: %v", err)
 	}
+	// Unlimited links still count uploads even though the count cannot reject one.
 	assertGuestUploadRows(t, db, metadata.ID, 1, 2)
 	stored, err := dataStore.GetEntryMetadata(metadata.ID)
 	if err != nil {
@@ -199,6 +210,8 @@ func TestInsertEntryEnforcesGuestUploadByteLimitUsingActualSize(t *testing.T) {
 			if err := dataStore.InsertGuestLink(link); err != nil {
 				t.Fatalf("failed to insert guest link: %v", err)
 			}
+			// Keep the payload at eight bytes while varying the reported size
+			// and byte limit independently.
 			metadata := createGuestUploadMetadata(picoshare.MustCreateEntryID("newentryab"), link, now)
 			metadata.Size = mustParseFileSize(tt.reportedSize)
 			payload := "abcdefgh"
@@ -208,12 +221,14 @@ func TestInsertEntryEnforcesGuestUploadByteLimitUsingActualSize(t *testing.T) {
 				t.Fatalf("upload rejected=%v, want=%v (err=%v)", got, want, err)
 			}
 			if tt.wantRejected {
+				// An oversized payload must leave neither metadata nor chunks.
 				if got, want := errors.Is(err, store.ErrGuestUploadRejected), true; got != want {
 					t.Fatalf("policy rejection=%v, want=%v (err=%v)", got, want, err)
 				}
 				assertGuestUploadRows(t, db, metadata.ID, 0, 0)
 				return
 			}
+			// Accepted uploads must store their actual size, not the supplied size.
 			assertGuestUploadRows(t, db, metadata.ID, 1, 2)
 			stored, err := dataStore.GetEntryMetadata(metadata.ID)
 			if err != nil {
@@ -232,6 +247,7 @@ func TestInsertEntryEnforcesGuestUploadByteLimitUsingActualSize(t *testing.T) {
 func TestInsertEntryRejectsGuestUploadWhenByteLimitDropsBelowPayloadSize(t *testing.T) {
 	now := mustParseTime("2035-01-01T00:00:00Z")
 	dataStore, db, _ := openGuestUploadStore(t, func() time.Time { return now })
+	// Initially allow the entire eight-byte payload.
 	link := picoshare.GuestLink{
 		ID:              "guest-link",
 		Created:         now,
@@ -249,6 +265,7 @@ func TestInsertEntryRejectsGuestUploadWhenByteLimitDropsBelowPayloadSize(t *test
 	reader := io.MultiReader(strings.NewReader("abcdefgh"), guestUploadReadFunc(func([]byte) (int, error) {
 		// Both full chunks have been persisted before the policy changes.
 		assertGuestUploadRows(t, db, metadata.ID, 0, 2)
+		// Make the staged payload too large before InsertEntry commits it.
 		if _, err := db.Exec(`UPDATE guest_links SET max_file_bytes = 7 WHERE id = ?`, link.ID); err != nil {
 			t.Fatalf("failed to reduce guest link byte limit during payload read: %v", err)
 		}
@@ -260,6 +277,7 @@ func TestInsertEntryRejectsGuestUploadWhenByteLimitDropsBelowPayloadSize(t *test
 	if got, want := policyApplied, true; got != want {
 		t.Fatalf("final policy applied=%v, want=%v", got, want)
 	}
+	// Recheck the new limit despite the permissive snapshot and remove the chunks.
 	if got, want := errors.Is(err, store.ErrGuestUploadRejected), true; got != want {
 		t.Fatalf("policy rejection=%v, want=%v (err=%v)", got, want, err)
 	}
