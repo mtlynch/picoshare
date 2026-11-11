@@ -3,7 +3,8 @@
 ## Defining symbols
 
 - Define variables and structs as close as possible to when they're first used.
-  - Exception: Declare all package-level variables and structs at the top of the file immediately after imports.
+  - Exception: Declare package-level variables immediately after imports.
+- Place a struct's methods immediately after its definition, before declaring another type.
 - Name helper functions with an explicit verb, e.g. `mustCreateUser` instead of `mustNewUser`.
 
 ## Formatting
