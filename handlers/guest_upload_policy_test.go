@@ -152,7 +152,7 @@ func TestGuestUploadPostPolicyRejection(t *testing.T) {
 	}
 	failingStore := failingUploadStore{
 		Store:            &dataStore,
-		insertEntryError: store.GuestUploadRejectedError{ID: guestLinkID},
+		insertEntryError: store.ErrGuestUploadRejected,
 	}
 	s := handlers.New(mockAuthenticator{}, failingStore, nilSpaceCheckFunc, nilGarbageCollector, func() time.Time { return now })
 	body, contentType := createMultipartFormBody("upload.txt", "", "", strings.NewReader("payload"))

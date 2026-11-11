@@ -261,23 +261,19 @@ func (s Store) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) 
 		return fmt.Errorf("failed to read inserted entry count: %w", err)
 	}
 	if rows == 0 {
-		return s.removeRejectedUpload(metadata.ID, store.GuestUploadRejectedError{ID: metadata.GuestLink.ID})
+		// An empty upload writes no chunks, so an ID collision might not have
+		// failed before policy rejection. Preserve any existing entry's chunks.
+		if _, err := s.db.Exec(`
+			DELETE FROM entries_data
+			WHERE id = :entry_id
+				AND NOT EXISTS (SELECT 1 FROM entries WHERE id = :entry_id)`,
+			sql.Named("entry_id", metadata.ID.String())); err != nil {
+			// Cleanup failure is a database error, not an authorization rejection.
+			return fmt.Errorf("failed to remove chunks for rejected upload %s: %w", metadata.ID, err)
+		}
+		return store.ErrGuestUploadRejected
 	}
 	return nil
-}
-
-func (s Store) removeRejectedUpload(id picoshare.EntryID, uploadErr error) error {
-	// An empty upload writes no chunks, so an ID collision might not have failed
-	// before the policy rejection. Preserve any existing entry's chunks.
-	if _, err := s.db.Exec(`
-		DELETE FROM entries_data
-		WHERE id = :entry_id
-			AND NOT EXISTS (SELECT 1 FROM entries WHERE id = :entry_id)`,
-		sql.Named("entry_id", id.String())); err != nil {
-		// A cleanup failure is a database error, not an authorization rejection.
-		return fmt.Errorf("failed to remove chunks for upload %s after %v: %w", id, uploadErr, err)
-	}
-	return uploadErr
 }
 
 func parseDownloadPassphrase(raw *string) (picoshare.DownloadPassphrase, error) {

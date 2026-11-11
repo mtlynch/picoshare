@@ -181,11 +181,8 @@ func TestInsertEntryGuestUploadPolicy(t *testing.T) {
 				t.Fatalf("upload rejected=%v, want=%v (err=%v)", got, want, err)
 			}
 			if tt.wantRejected {
-				var rejected store.GuestUploadRejectedError
-				if !errors.As(err, &rejected) {
-					t.Errorf("error=%v, want GuestUploadRejectedError", err)
-				} else if got, want := rejected.ID, link.ID; got != want {
-					t.Errorf("rejected guest link ID=%s, want=%s", got, want)
+				if got, want := errors.Is(err, store.ErrGuestUploadRejected), true; got != want {
+					t.Errorf("policy rejection=%v, want=%v (err=%v)", got, want, err)
 				}
 				assertGuestUploadRows(t, db, metadata.ID, 0, 0)
 				return
@@ -259,11 +256,8 @@ func TestInsertEntryGuestUploadsCompeteForLastSlot(t *testing.T) {
 	close(releaseFirst)
 	err := <-firstResult
 	firstJoined = true
-	var rejected store.GuestUploadRejectedError
-	if !errors.As(err, &rejected) {
-		t.Errorf("error=%v, want GuestUploadRejectedError for the first store's upload", err)
-	} else if got, want := rejected.ID, link.ID; got != want {
-		t.Errorf("rejected guest link ID=%s, want=%s", got, want)
+	if got, want := errors.Is(err, store.ErrGuestUploadRejected), true; got != want {
+		t.Errorf("first upload policy rejection=%v, want=%v (err=%v)", got, want, err)
 	}
 	assertGuestUploadRows(t, db, firstMetadata.ID, 0, 0)
 	assertGuestUploadRows(t, db, secondMetadata.ID, 1, 2)
@@ -298,9 +292,8 @@ func TestInsertEntryRejectedGuestUploadCleanupFailure(t *testing.T) {
 	if err == nil {
 		t.Fatal("upload unexpectedly succeeded despite policy rejection and failed cleanup")
 	}
-	var rejected store.GuestUploadRejectedError
-	if errors.As(err, &rejected) {
-		t.Errorf("error=%v matches GuestUploadRejectedError despite failed cleanup", err)
+	if got, want := errors.Is(err, store.ErrGuestUploadRejected), false; got != want {
+		t.Errorf("policy rejection despite failed cleanup=%v, want=%v (err=%v)", got, want, err)
 	}
 	if got, want := err.Error(), "failed to remove chunks"; !strings.Contains(got, want) {
 		t.Errorf("error=%q, want containing %q", got, want)
@@ -342,11 +335,8 @@ func TestInsertEntryGuestRejectionPreservesExistingEntry(t *testing.T) {
 
 	// An empty payload reaches policy rejection without a chunk-key collision.
 	err = dataStore.InsertEntry(strings.NewReader(""), retryMetadata)
-	var rejected store.GuestUploadRejectedError
-	if !errors.As(err, &rejected) {
-		t.Errorf("error=%v, want GuestUploadRejectedError", err)
-	} else if got, want := rejected.ID, link.ID; got != want {
-		t.Errorf("rejected guest link ID=%s, want=%s", got, want)
+	if got, want := errors.Is(err, store.ErrGuestUploadRejected), true; got != want {
+		t.Errorf("policy rejection=%v, want=%v (err=%v)", got, want, err)
 	}
 	assertGuestUploadRows(t, db, metadata.ID, 1, 2)
 	storedMetadata, err := dataStore.GetEntryMetadata(metadata.ID)
