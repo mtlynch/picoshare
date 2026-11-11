@@ -176,7 +176,7 @@ func (s Store) GetEntryMetadata(id picoshare.EntryID) (picoshare.UploadMetadata,
 func (s Store) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) error {
 	log.Printf("saving new entry %s", metadata.ID)
 
-	// Keep chunk writes outside the metadata transaction to avoid bloating memory.
+	// Write chunks without a surrounding transaction to avoid bloating memory.
 	// Purge removes orphaned chunks if an unexpected write or read error occurs.
 	// See: https://github.com/mtlynch/picoshare/issues/284
 	w := file.NewWriter(s.db, metadata.ID, s.chunkSize)
@@ -199,31 +199,13 @@ func (s Store) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) 
 	return nil
 }
 
-func (s Store) insertEntryMetadata(metadata picoshare.UploadMetadata, written int64) (err error) {
-	tx, err := s.db.BeginTx(context.Background(), nil)
-	if err != nil {
-		return fmt.Errorf("failed to begin entry metadata transaction: %w", err)
-	}
-	defer func() {
-		if rollbackErr := tx.Rollback(); rollbackErr != nil && rollbackErr != sql.ErrTxDone {
-			err = fmt.Errorf("failed to roll back entry metadata after %v: %w", err, rollbackErr)
-		}
-	}()
-
-	if !metadata.GuestLink.ID.Empty() {
-		// Acquire SQLite's database-wide write lock before sampling the clock:
-		// waiting for the lock could otherwise carry a pre-sampled timestamp past
-		// the link's expiration. This locks even if the link has been deleted.
-		if _, err := tx.Exec(`
-			UPDATE guest_links SET id = id WHERE id = :guest_link_id`,
-			sql.Named("guest_link_id", metadata.GuestLink.ID)); err != nil {
-			return fmt.Errorf("failed to lock guest upload policy: %w", err)
-		}
-	}
-
+func (s Store) insertEntryMetadata(metadata picoshare.UploadMetadata, written int64) error {
 	// Keep this final policy check aligned with GuestLink.IsActive. The early
 	// handler check only rejects invalid requests before receiving their bodies.
-	result, err := tx.Exec(`
+	// A single statement checks policy and inserts atomically, preventing upload
+	// count overshoot. Expiration uses the clock sampled before waiting for a
+	// database write lock, so a delayed insert can finish after the link expires.
+	result, err := s.db.Exec(`
 	INSERT INTO
 		entries
 	(
@@ -269,9 +251,6 @@ func (s Store) insertEntryMetadata(metadata picoshare.UploadMetadata, written in
 	}
 	if rows == 0 {
 		return store.GuestUploadRejectedError{ID: metadata.GuestLink.ID}
-	}
-	if err := tx.Commit(); err != nil {
-		return fmt.Errorf("failed to commit entry metadata: %w", err)
 	}
 	return nil
 }
