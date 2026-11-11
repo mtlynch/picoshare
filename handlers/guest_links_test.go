@@ -377,6 +377,57 @@ func TestDeleteExistingGuestLink(t *testing.T) {
 	}
 }
 
+func TestDeletingGuestLinkRejectsInFlightUpload(t *testing.T) {
+	// Create an active link so the upload passes its initial authorization check.
+	now := mustParseTime("2025-01-01T00:00:00Z")
+	dataStore := test_sqlite.NewWithClock(t, func() time.Time { return now })
+	if err := dataStore.InsertGuestLink(picoshare.GuestLink{
+		ID:              "abcdefgh23456789",
+		Created:         now,
+		UrlExpires:      picoshare.NeverExpire,
+		MaxFileLifetime: picoshare.FileLifetimeInfinite,
+	}); err != nil {
+		t.Fatalf("failed to insert guest link: %v", err)
+	}
+	s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceCheckFunc, nilGarbageCollector, func() time.Time { return now })
+
+	// Withhold the body until the handler first tries to read it. Delete the
+	// link at that point, then release the body to resume the in-flight upload.
+	body, contentType := createMultipartFormBody("held.txt", "", "", strings.NewReader("held payload"))
+	heldBody := &beforeReadReader{
+		Reader: body,
+		beforeRead: func() {
+			req := httptest.NewRequest(http.MethodDelete, "/api/guest-links/abcdefgh23456789", http.NoBody)
+			rec := httptest.NewRecorder()
+			s.Router().ServeHTTP(rec, req)
+			if got, want := rec.Code, http.StatusOK; got != want {
+				t.Fatalf("delete status=%d, want=%d: %s", got, want, rec.Body.String())
+			}
+		},
+	}
+
+	// Start the upload while the link is active. Even though it was initially
+	// authorized, it must be rejected after the link is deleted during the read.
+	{
+		req := httptest.NewRequest(http.MethodPost, "/api/guest/abcdefgh23456789", heldBody)
+		req.Header.Set("Content-Type", contentType)
+		rec := httptest.NewRecorder()
+		s.Router().ServeHTTP(rec, req)
+		if got, want := rec.Code, http.StatusUnauthorized; got != want {
+			t.Fatalf("upload status=%d, want=%d: %s", got, want, rec.Body.String())
+		}
+	}
+
+	// Rejection must also prevent the uploaded file from being persisted.
+	entries, err := dataStore.GetEntriesMetadata()
+	if err != nil {
+		t.Fatalf("failed to list entries: %v", err)
+	}
+	if got, want := len(entries), 0; got != want {
+		t.Errorf("stored entries=%d, want=%d", got, want)
+	}
+}
+
 func TestDeleteNonExistentGuestLink(t *testing.T) {
 	dataStore := test_sqlite.New(t)
 	s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceCheckFunc, nilGarbageCollector, time.Now)
@@ -413,6 +464,57 @@ func TestDeleteInvalidGuestLink(t *testing.T) {
 
 	if got, want := res.StatusCode, http.StatusBadRequest; got != want {
 		t.Fatalf("status=%d, want=%d", got, want)
+	}
+}
+
+func TestDisablingGuestLinkRejectsInFlightUpload(t *testing.T) {
+	// Create an active link so the upload passes its initial authorization check.
+	now := mustParseTime("2025-01-01T00:00:00Z")
+	dataStore := test_sqlite.NewWithClock(t, func() time.Time { return now })
+	if err := dataStore.InsertGuestLink(picoshare.GuestLink{
+		ID:              "abcdefgh23456789",
+		Created:         now,
+		UrlExpires:      picoshare.NeverExpire,
+		MaxFileLifetime: picoshare.FileLifetimeInfinite,
+	}); err != nil {
+		t.Fatalf("failed to insert guest link: %v", err)
+	}
+	s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceCheckFunc, nilGarbageCollector, func() time.Time { return now })
+
+	// Withhold the body until the handler first tries to read it. Disable the
+	// link at that point, then release the body to resume the in-flight upload.
+	body, contentType := createMultipartFormBody("held.txt", "", "", strings.NewReader("held payload"))
+	heldBody := &beforeReadReader{
+		Reader: body,
+		beforeRead: func() {
+			req := httptest.NewRequest(http.MethodPut, "/api/guest-links/abcdefgh23456789/disable", http.NoBody)
+			rec := httptest.NewRecorder()
+			s.Router().ServeHTTP(rec, req)
+			if got, want := rec.Code, http.StatusNoContent; got != want {
+				t.Fatalf("disable status=%d, want=%d: %s", got, want, rec.Body.String())
+			}
+		},
+	}
+
+	// Start the upload while the link is active. Even though it was initially
+	// authorized, it must be rejected after the link is disabled during the read.
+	{
+		req := httptest.NewRequest(http.MethodPost, "/api/guest/abcdefgh23456789", heldBody)
+		req.Header.Set("Content-Type", contentType)
+		rec := httptest.NewRecorder()
+		s.Router().ServeHTTP(rec, req)
+		if got, want := rec.Code, http.StatusUnauthorized; got != want {
+			t.Fatalf("upload status=%d, want=%d: %s", got, want, rec.Body.String())
+		}
+	}
+
+	// Rejection must also prevent the uploaded file from being persisted.
+	entries, err := dataStore.GetEntriesMetadata()
+	if err != nil {
+		t.Fatalf("failed to list entries: %v", err)
+	}
+	if got, want := len(entries), 0; got != want {
+		t.Errorf("stored entries=%d, want=%d", got, want)
 	}
 }
 

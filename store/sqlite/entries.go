@@ -175,12 +175,12 @@ func (s Store) GetEntryMetadata(id picoshare.EntryID) (picoshare.UploadMetadata,
 func (s Store) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) error {
 	log.Printf("saving new entry %s", metadata.ID)
 
-	// Note: We deliberately don't use a transaction here, as it bloats memory, so
-	// we can end up in a state with orphaned entries data. We clean it up in
-	// Purge().
+	// Write chunks without a surrounding transaction to avoid bloating memory.
+	// Purge removes orphaned chunks if an unexpected write or read error occurs.
 	// See: https://github.com/mtlynch/picoshare/issues/284
 	w := file.NewWriter(s.db, metadata.ID, s.chunkSize)
-	if _, err := io.Copy(w, reader); err != nil {
+	written, err := io.Copy(w, reader)
+	if err != nil {
 		return err
 	}
 
@@ -189,7 +189,12 @@ func (s Store) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) 
 		return err
 	}
 
-	_, err := s.db.Exec(`
+	// Keep this final policy check aligned with GuestLink.IsActive. The early
+	// handler check only rejects invalid requests before receiving their bodies.
+	// A single statement checks policy and inserts atomically, preventing upload
+	// count overshoot. Expiration uses the clock sampled before waiting for a
+	// database write lock, so a delayed insert can finish after the link expires.
+	result, err := s.db.Exec(`
 	INSERT INTO
 		entries
 	(
@@ -202,7 +207,39 @@ func (s Store) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) 
 		expiration_time,
 		download_passphrase
 	)
-	VALUES(:entry_id, NULLIF(:guest_link_id, ''), :filename, :note, :content_type, :upload_time, :expiration_time, :download_passphrase)`,
+	SELECT
+		:entry_id,
+		NULLIF(:guest_link_id, ''),
+		:filename,
+		:note,
+		:content_type,
+		:upload_time,
+		:expiration_time,
+		:download_passphrase
+	-- Admin uploads bypass guest-link checks.
+	WHERE :guest_link_id = '' OR EXISTS (
+		-- Guest links must still exist and remain enabled.
+		SELECT 1 FROM guest_links
+		WHERE id = :guest_link_id
+			AND is_disabled = 0
+			-- Accept unexpired links or links that never expire.
+			AND (
+				url_expiration_time = :never_expire
+				OR url_expiration_time > :current_time
+			)
+			-- Check actual bytes received; NULL means unlimited.
+			AND (
+				max_file_bytes IS NULL
+				OR :file_size <= max_file_bytes
+			)
+			-- Claim a remaining slot atomically with this insert.
+			AND (
+				max_file_uploads IS NULL OR (
+					SELECT COUNT(*) FROM entries
+					WHERE guest_link_id = :guest_link_id
+				) < max_file_uploads
+			)
+	)`,
 		sql.Named("entry_id", metadata.ID.String()),
 		sql.Named("guest_link_id", metadata.GuestLink.ID),
 		sql.Named("filename", metadata.Filename),
@@ -211,12 +248,31 @@ func (s Store) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) 
 		sql.Named("upload_time", formatTime(metadata.Uploaded)),
 		sql.Named("expiration_time", formatExpirationTime(metadata.Expires)),
 		sql.Named("download_passphrase", downloadPassphraseString(metadata.DownloadPassphrase)),
+		sql.Named("current_time", formatTime(s.now())),
+		sql.Named("never_expire", formatExpirationTime(picoshare.NeverExpire)),
+		sql.Named("file_size", written),
 	)
 	if err != nil {
-		log.Printf("insert into entries table failed, aborting transaction: %v", err)
-		return err
+		return fmt.Errorf("failed to insert entry metadata: %w", err)
 	}
 
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to read inserted entry count: %w", err)
+	}
+	if rows == 0 {
+		// An empty upload writes no chunks, so an ID collision might not have
+		// failed before policy rejection. Preserve any existing entry's chunks.
+		if _, err := s.db.Exec(`
+			DELETE FROM entries_data
+			WHERE id = :entry_id
+				AND NOT EXISTS (SELECT 1 FROM entries WHERE id = :entry_id)`,
+			sql.Named("entry_id", metadata.ID.String())); err != nil {
+			// Cleanup failure is a database error, not an authorization rejection.
+			return fmt.Errorf("failed to remove chunks for rejected upload %s: %w", metadata.ID, err)
+		}
+		return store.ErrGuestUploadRejected
+	}
 	return nil
 }
 

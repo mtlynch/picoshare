@@ -1,10 +1,14 @@
 package store
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/mtlynch/picoshare/picoshare"
 )
+
+// ErrGuestUploadRejected indicates that a guest link cannot accept an upload.
+var ErrGuestUploadRejected = errors.New("guest link no longer permits this upload")
 
 // EntryNotFoundError occurs when no entry exists with the given ID.
 type EntryNotFoundError struct {
