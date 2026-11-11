@@ -3,7 +3,6 @@ package sqlite
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -190,16 +189,6 @@ func (s Store) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) 
 		return err
 	}
 
-	if err := s.insertEntryMetadata(metadata, written); err != nil {
-		if _, ok := errors.AsType[store.GuestUploadRejectedError](err); ok {
-			return s.removeRejectedUpload(metadata.ID, err)
-		}
-		return err
-	}
-	return nil
-}
-
-func (s Store) insertEntryMetadata(metadata picoshare.UploadMetadata, written int64) error {
 	// Keep this final policy check aligned with GuestLink.IsActive. The early
 	// handler check only rejects invalid requests before receiving their bodies.
 	// A single statement checks policy and inserts atomically, preventing upload
@@ -250,7 +239,7 @@ func (s Store) insertEntryMetadata(metadata picoshare.UploadMetadata, written in
 		return fmt.Errorf("failed to read inserted entry count: %w", err)
 	}
 	if rows == 0 {
-		return store.GuestUploadRejectedError{ID: metadata.GuestLink.ID}
+		return s.removeRejectedUpload(metadata.ID, store.GuestUploadRejectedError{ID: metadata.GuestLink.ID})
 	}
 	return nil
 }
