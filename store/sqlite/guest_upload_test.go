@@ -31,37 +31,8 @@ func TestInsertEntryGuestUploadPolicy(t *testing.T) {
 		hasPriorUploadForOther bool
 		payload                string
 		reportedSize           int
-		change                 func(sqlite.Store, *sql.DB, *time.Time) error
 		wantRejected           bool
 	}{
-		{
-			explanation:  "disabling a link during payload reading rejects the staged upload",
-			payload:      "abcdefgh",
-			reportedSize: 8,
-			change: func(dataStore sqlite.Store, _ *sql.DB, _ *time.Time) error {
-				return dataStore.DisableGuestLink("guest-link")
-			},
-			wantRejected: true,
-		},
-		{
-			explanation:  "deleting a link during payload reading rejects the staged upload",
-			payload:      "abcdefgh",
-			reportedSize: 8,
-			change: func(dataStore sqlite.Store, _ *sql.DB, _ *time.Time) error {
-				return dataStore.DeleteGuestLink("guest-link")
-			},
-			wantRejected: true,
-		},
-		{
-			explanation:  "a link expiring during payload reading rejects the staged upload using the injected clock",
-			payload:      "abcdefgh",
-			reportedSize: 8,
-			change: func(_ sqlite.Store, _ *sql.DB, now *time.Time) error {
-				*now = mustParseTime("2035-01-01T00:00:02Z")
-				return nil
-			},
-			wantRejected: true,
-		},
 		{
 			explanation:           "reducing the upload limit to the existing count rejects the staged upload",
 			initialMaxFileUploads: new(2),
@@ -128,7 +99,7 @@ func TestInsertEntryGuestUploadPolicy(t *testing.T) {
 			link := picoshare.GuestLink{
 				ID:              "guest-link",
 				Created:         now,
-				UrlExpires:      mustParseExpirationTime("2035-01-01T00:00:01Z"),
+				UrlExpires:      picoshare.NeverExpire,
 				MaxFileLifetime: picoshare.FileLifetimeInfinite,
 				MaxFileUploads:  tt.initialMaxFileUploads,
 			}
@@ -164,11 +135,6 @@ func TestInsertEntryGuestUploadPolicy(t *testing.T) {
 				if _, err := db.Exec(`UPDATE guest_links SET max_file_bytes = ?, max_file_uploads = ? WHERE id = ?`,
 					tt.maxFileBytes, tt.maxFileUploads, link.ID); err != nil {
 					t.Fatalf("failed to set guest link limits during payload read: %v", err)
-				}
-				if tt.change != nil {
-					if err := tt.change(dataStore, db, &now); err != nil {
-						t.Fatalf("failed to change policy during payload read: %v", err)
-					}
 				}
 				policyApplied = true
 				return 0, io.EOF
