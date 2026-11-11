@@ -3,6 +3,7 @@ package handlers_test
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -19,6 +20,7 @@ import (
 	"github.com/mtlynch/picoshare/handlers/auth/shared_secret"
 	"github.com/mtlynch/picoshare/handlers/parse"
 	"github.com/mtlynch/picoshare/picoshare"
+	"github.com/mtlynch/picoshare/store/sqlite"
 	"github.com/mtlynch/picoshare/store/test_sqlite"
 )
 
@@ -764,19 +766,29 @@ func TestGuestUpload(t *testing.T) {
 		},
 	} {
 		t.Run(tt.description, func(t *testing.T) {
-			dataStore := test_sqlite.New(t)
+			now := tt.currentTime
+			dataStore := sqlite.New(sqlite.Params{
+				Path: fmt.Sprintf("file:%s?mode=memory&cache=shared", picoshare.NewEntryID()),
+				Now:  func() time.Time { return now },
+			})
 			if err := dataStore.InsertGuestLink(tt.guestLinkInStore); err != nil {
 				t.Fatalf("failed to insert dummy guest link: %v", err)
 			}
 			for _, entry := range tt.entriesInStore {
 				data := "dummy data"
 				entry.UploadMetadata.Size = mustParseFileSize(len(data))
-				if err := dataStore.InsertEntry(strings.NewReader(data), entry.UploadMetadata); err != nil {
-					t.Fatalf("failed to insert dummy entry: %v", err)
+				reservation, err := dataStore.ReserveGuestUpload(context.Background(), entry.GuestLink.ID)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if err := dataStore.WriteGuestUpload(context.Background(), reservation, strings.NewReader(data)); err != nil {
+					t.Fatal(err)
+				}
+				if err := dataStore.CompleteGuestUpload(context.Background(), reservation, entry.UploadMetadata); err != nil {
+					t.Fatal(err)
 				}
 			}
 
-			now := tt.currentTime
 			s := handlers.New(authenticator, &dataStore, nilSpaceCheckFunc, nilGarbageCollector, func() time.Time { return now })
 
 			filename := "dummyimage.png"

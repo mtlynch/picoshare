@@ -1,6 +1,7 @@
 package handlers_test
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -285,6 +286,10 @@ func (s failingUploadStore) InsertEntry(io.Reader, picoshare.UploadMetadata) err
 	return s.insertEntryError
 }
 
+func (s failingUploadStore) WriteGuestUpload(context.Context, picoshare.GuestUploadReservation, io.Reader) error {
+	return s.insertEntryError
+}
+
 func TestGuestUploadPostPersistenceError(t *testing.T) {
 	now := mustParseTime("2025-01-01T00:00:00Z")
 	dataStore := test_sqlite.New(t)
@@ -312,7 +317,7 @@ func TestGuestUploadPostPersistenceError(t *testing.T) {
 	if got, want := rec.Code, http.StatusInternalServerError; got != want {
 		t.Fatalf("upload status=%d, want=%d: %s", got, want, rec.Body.String())
 	}
-	if got, want := strings.TrimSpace(rec.Body.String()), "failed to insert file into database"; got != want {
+	if got, want := strings.TrimSpace(rec.Body.String()), "Failed to store guest upload: database error: dummy database failure"; got != want {
 		t.Errorf("response=%q, want=%q", got, want)
 	}
 }

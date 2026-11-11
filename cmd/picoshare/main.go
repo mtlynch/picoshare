@@ -44,6 +44,9 @@ func main() {
 		OptimizeForLitestream: isLitestreamEnabled(),
 		Now:                   time.Now,
 	})
+	if err := store.RecoverGuestUploads(); err != nil {
+		log.Fatalf("failed to recover guest uploads: %v", err)
+	}
 
 	spaceChecker := space.NewChecker(*dbPath, &store)
 

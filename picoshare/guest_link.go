@@ -20,6 +20,7 @@ type (
 		MaxFileUploads  GuestUploadCountLimit
 		IsDisabled      bool
 		FilesUploaded   int
+		UploadsReserved int
 	}
 )
 
@@ -44,7 +45,7 @@ func (gl GuestLink) CanAcceptMoreFiles() bool {
 	if gl.MaxFileUploads == GuestUploadUnlimitedFileUploads {
 		return true
 	}
-	return gl.FilesUploaded < *gl.MaxFileUploads
+	return gl.FilesUploaded+gl.UploadsReserved < *gl.MaxFileUploads
 }
 
 func (gl GuestLink) isExpired(now time.Time) bool {

@@ -173,6 +173,9 @@ func (s Store) GetEntryMetadata(id picoshare.EntryID) (picoshare.UploadMetadata,
 }
 
 func (s Store) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) error {
+	if !metadata.GuestLink.Empty() {
+		return store.GuestUploadInvalidError{Err: fmt.Errorf("guest uploads require a reservation")}
+	}
 	log.Printf("saving new entry %s", metadata.ID)
 
 	// Note: We deliberately don't use a transaction here, as it bloats memory, so

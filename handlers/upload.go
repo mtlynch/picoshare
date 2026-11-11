@@ -45,7 +45,7 @@ func (s Server) entryPost() http.HandlerFunc {
 		// We're intentionally not limiting the size of the request because we
 		// assume that the uploading user is trusted, so they can upload files of
 		// any size they want.
-		id, err := s.insertFileFromRequest(r, expiration, picoshare.GuestLinkID(""))
+		id, err := s.insertFileFromRequest(r, expiration)
 		if err != nil {
 			if _, ok := errors.AsType[*dbError](err); ok {
 				log.Printf("failed to insert uploaded file into data store: %v", err)
@@ -92,54 +92,49 @@ func (s Server) entryPut() http.HandlerFunc {
 
 func (s Server) guestEntryPost() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		guestLinkID, err := parseGuestLinkID(mux.Vars(r)["guestLinkID"])
+		request, err := parseGuestUploadRequest(r)
 		if err != nil {
-			log.Printf("error parsing guest link ID: %v", err)
-			http.Error(w, fmt.Sprintf("Invalid guest link ID: %v", err), http.StatusBadRequest)
+			log.Printf("failed to parse guest upload request: %v", err)
+			http.Error(w, fmt.Sprintf("Invalid guest upload request: %v", err), http.StatusBadRequest)
 			return
 		}
 
-		gl, err := s.store.GetGuestLink(guestLinkID)
+		reservation, err := s.store.ReserveGuestUpload(r.Context(), request.GuestLinkID)
 		if _, ok := errors.AsType[store.GuestLinkNotFoundError](err); ok {
 			http.Error(w, "Invalid guest link ID", http.StatusNotFound)
 			return
-		} else if err != nil {
-			log.Printf("error retrieving guest link with ID %v: %v", guestLinkID, err)
-			http.Error(w, "Failed to retrieve guest link", http.StatusInternalServerError)
-			return
-		}
-
-		if !gl.IsActive(s.now()) {
+		} else if _, ok := errors.AsType[store.GuestUploadRejectedError](err); ok {
 			http.Error(w, "Guest link is no longer active", http.StatusUnauthorized)
 			return
+		} else if err != nil {
+			log.Printf("failed to reserve upload for guest link %s: %v", request.GuestLinkID, err)
+			http.Error(w, fmt.Sprintf("Failed to reserve guest upload: %v", err), http.StatusInternalServerError)
+			return
 		}
 
+		gl := reservation.GuestLink()
 		if gl.MaxFileBytes != picoshare.GuestUploadUnlimitedFileSize {
 			// We technically allow slightly less than the user specified because
 			// other fields in the request take up some space, but it's a difference
 			// of only a few hundred bytes.
-			r.Body = http.MaxBytesReader(w, r.Body, int64(*gl.MaxFileBytes))
+			r.Body = http.MaxBytesReader(w, r.Body, int64(min(*gl.MaxFileBytes, uint64(1<<63-1))))
 		}
 
-		expiration, err := s.parseGuestExpirationFromRequest(r, gl)
-		if err != nil {
-			log.Printf("invalid expiration for guest upload: %v", err)
-			http.Error(w, fmt.Sprintf("Invalid expiration: %v", err), http.StatusBadRequest)
-			return
-		}
-
-		id, err := s.insertFileFromRequest(r, expiration, guestLinkID)
+		err = s.receiveGuestUpload(r, reservation)
 		if err != nil {
 			if _, ok := errors.AsType[*dbError](err); ok {
-				log.Printf("failed to insert uploaded file into data store: %v", err)
-				http.Error(w, "failed to insert file into database", http.StatusInternalServerError)
+				log.Printf("failed to store guest upload %s: %v", reservation.ID(), err)
+				http.Error(w, fmt.Sprintf("Failed to store guest upload: %v", err), http.StatusInternalServerError)
+			} else if _, ok := errors.AsType[store.GuestUploadRejectedError](err); ok {
+				http.Error(w, "Guest link is no longer active", http.StatusUnauthorized)
 			} else {
 				log.Printf("invalid upload: %v", err)
-				http.Error(w, fmt.Sprintf("invalid request: %s", err), http.StatusBadRequest)
+				http.Error(w, fmt.Sprintf("Invalid upload request: %v", err), http.StatusBadRequest)
 			}
 			return
 		}
 
+		id := reservation.ID()
 		if clientAcceptsJson(r) {
 			respondJSON(w, EntryPostResponse{ID: id.String()})
 		} else {
@@ -204,7 +199,7 @@ func (s Server) entryMetadataFromRequest(r *http.Request) (picoshare.UploadMetad
 	}, nil
 }
 
-func (s Server) insertFileFromRequest(r *http.Request, expiration picoshare.ExpirationTime, guestLinkID picoshare.GuestLinkID) (picoshare.EntryID, error) {
+func (s Server) insertFileFromRequest(r *http.Request, expiration picoshare.ExpirationTime) (picoshare.EntryID, error) {
 	// ParseMultipartForm can go above the limit we set, so set a conservative RAM
 	// limit to avoid exhausting RAM on servers with limited resources.
 	multipartMaxMemory := mibToBytes(1)
@@ -242,15 +237,8 @@ func (s Server) insertFileFromRequest(r *http.Request, expiration picoshare.Expi
 		return picoshare.EntryID{}, err
 	}
 
-	if guestLinkID != "" && note.Value != nil {
-		return picoshare.EntryID{}, errors.New("guest uploads cannot have file notes")
-	}
-
 	downloadPassphrase := picoshare.DownloadPassphrase{}
 	if rawDownloadPassphrase := r.FormValue("downloadPassphrase"); rawDownloadPassphrase != "" {
-		if guestLinkID != "" {
-			return picoshare.EntryID{}, errors.New("guest uploads cannot have download passphrases")
-		}
 		downloadPassphrase, err = picoshare.NewDownloadPassphrase(rawDownloadPassphrase)
 		if err != nil {
 			return picoshare.EntryID{}, err
@@ -260,13 +248,10 @@ func (s Server) insertFileFromRequest(r *http.Request, expiration picoshare.Expi
 	id := picoshare.NewEntryID()
 	err = s.store.InsertEntry(reader,
 		picoshare.UploadMetadata{
-			ID:          id,
-			Filename:    filename,
-			ContentType: contentType,
-			Note:        note,
-			GuestLink: picoshare.GuestLink{
-				ID: guestLinkID,
-			},
+			ID:                 id,
+			Filename:           filename,
+			ContentType:        contentType,
+			Note:               note,
 			Uploaded:           s.now(),
 			Expires:            expiration,
 			Size:               fileSize,

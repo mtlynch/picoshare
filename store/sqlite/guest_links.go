@@ -20,7 +20,11 @@ func (s Store) GetGuestLink(id picoshare.GuestLinkID) (picoshare.GuestLink, erro
 			guest_links.creation_time AS creation_time,
 			guest_links.url_expiration_time AS url_expiration_time,
 			guest_links.file_expiration_time AS file_expiration_time,
-			SUM(CASE WHEN entries.id IS NOT NULL THEN 1 ELSE 0 END) AS entry_count
+			SUM(CASE WHEN entries.id IS NOT NULL THEN 1 ELSE 0 END) AS entry_count,
+			(
+				SELECT COUNT(*) FROM guest_upload_reservations
+				WHERE guest_link_id = guest_links.id
+			) AS reservation_count
 		FROM
 			guest_links
 		LEFT JOIN
@@ -44,7 +48,11 @@ func (s Store) GetGuestLinks() ([]picoshare.GuestLink, error) {
 			guest_links.creation_time AS creation_time,
 			guest_links.url_expiration_time AS url_expiration_time,
 			guest_links.file_expiration_time AS file_expiration_time,
-			SUM(CASE WHEN entries.id IS NOT NULL THEN 1 ELSE 0 END) AS entry_count
+			SUM(CASE WHEN entries.id IS NOT NULL THEN 1 ELSE 0 END) AS entry_count,
+			(
+				SELECT COUNT(*) FROM guest_upload_reservations
+				WHERE guest_link_id = guest_links.id
+			) AS reservation_count
 		FROM
 			guest_links
 		LEFT JOIN
@@ -184,8 +192,9 @@ func guestLinkFromRow(row rowScanner) (picoshare.GuestLink, error) {
 	var urlExpirationTimeRaw string
 	var fileLifetimeRaw *string
 	var filesUploaded int
+	var uploadsReserved int
 
-	err := row.Scan(&id, &label, &isDisabled, &maxFileBytes, &maxFileUploads, &creationTimeRaw, &urlExpirationTimeRaw, &fileLifetimeRaw, &filesUploaded)
+	err := row.Scan(&id, &label, &isDisabled, &maxFileBytes, &maxFileUploads, &creationTimeRaw, &urlExpirationTimeRaw, &fileLifetimeRaw, &filesUploaded, &uploadsReserved)
 	if err == sql.ErrNoRows {
 		return picoshare.GuestLink{}, store.GuestLinkNotFoundError{ID: id}
 	} else if err != nil {
@@ -219,6 +228,7 @@ func guestLinkFromRow(row rowScanner) (picoshare.GuestLink, error) {
 		MaxFileBytes:    maxFileBytes,
 		MaxFileUploads:  maxFileUploads,
 		FilesUploaded:   filesUploaded,
+		UploadsReserved: uploadsReserved,
 		Created:         ct,
 		UrlExpires:      picoshare.ExpirationTime(uet),
 		MaxFileLifetime: fileLifetime,

@@ -23,3 +23,25 @@ type GuestLinkNotFoundError struct {
 func (f GuestLinkNotFoundError) Error() string {
 	return fmt.Sprintf("Could not find guest link with ID %v", f.ID)
 }
+
+// GuestUploadRejectedError identifies a guest-link authorization rejection.
+type GuestUploadRejectedError struct {
+	Reason string
+}
+
+func (e GuestUploadRejectedError) Error() string {
+	return e.Reason
+}
+
+// GuestUploadInvalidError identifies invalid upload data or lifecycle usage.
+type GuestUploadInvalidError struct {
+	Err error
+}
+
+func (e GuestUploadInvalidError) Error() string {
+	return e.Err.Error()
+}
+
+func (e GuestUploadInvalidError) Unwrap() error {
+	return e.Err
+}

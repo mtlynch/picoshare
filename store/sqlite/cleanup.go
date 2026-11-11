@@ -84,22 +84,16 @@ func (s Store) deleteExpiredEntries() error {
 func (s Store) deleteOrphanedRows() error {
 	log.Printf("purging orphaned rows from database")
 
-	// Delete rows from entries_data if they don't reference valid rows in
-	// entries. This can happen if the entry insertion fails partway through.
+	// Incomplete guest uploads own their chunks through reservations, even
+	// before they insert metadata. Only delete chunks without either owner.
 	rows, err := s.db.Exec(`
-   	DELETE FROM
-   		entries_data
-   	WHERE
-   	id IN (
-   		SELECT
-   			DISTINCT entries_data.id AS entry_id
-   		FROM
-   			entries_data
-   		LEFT JOIN
-   			entries ON entries_data.id = entries.id
-   		WHERE
-   			entries.id IS NULL
-   		)`)
+		DELETE FROM entries_data
+		WHERE NOT EXISTS (
+			SELECT 1 FROM entries WHERE entries.id = entries_data.id
+		) AND NOT EXISTS (
+			SELECT 1 FROM guest_upload_reservations
+			WHERE entry_id = entries_data.id
+		)`)
 	if err != nil {
 		return err
 	}
