@@ -11,13 +11,13 @@ type EntryNotFoundError struct {
 	ID picoshare.EntryID
 }
 
-func (f EntryNotFoundError) Error() string {
-	return fmt.Sprintf("Could not find entry with ID %v", f.ID)
-}
-
 // GuestLinkNotFoundError occurs when no guest link exists with the given ID.
 type GuestLinkNotFoundError struct {
 	ID picoshare.GuestLinkID
+}
+
+func (f EntryNotFoundError) Error() string {
+	return fmt.Sprintf("Could not find entry with ID %v", f.ID)
 }
 
 func (f GuestLinkNotFoundError) Error() string {
