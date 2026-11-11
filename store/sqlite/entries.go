@@ -207,16 +207,38 @@ func (s Store) InsertEntry(reader io.Reader, metadata picoshare.UploadMetadata) 
 		expiration_time,
 		download_passphrase
 	)
-	SELECT :entry_id, NULLIF(:guest_link_id, ''), :filename, :note, :content_type, :upload_time, :expiration_time, :download_passphrase
+	SELECT
+		:entry_id,
+		NULLIF(:guest_link_id, ''),
+		:filename,
+		:note,
+		:content_type,
+		:upload_time,
+		:expiration_time,
+		:download_passphrase
+	-- Admin uploads bypass guest-link checks.
 	WHERE :guest_link_id = '' OR EXISTS (
+		-- Guest links must still exist and remain enabled.
 		SELECT 1 FROM guest_links
 		WHERE id = :guest_link_id
 			AND is_disabled = 0
-			AND (url_expiration_time = :never_expire OR url_expiration_time > :current_time)
-			AND (max_file_bytes IS NULL OR :file_size <= max_file_bytes)
-			AND (max_file_uploads IS NULL OR (
-				SELECT COUNT(*) FROM entries WHERE guest_link_id = :guest_link_id
-			) < max_file_uploads)
+			-- Accept unexpired links or links that never expire.
+			AND (
+				url_expiration_time = :never_expire
+				OR url_expiration_time > :current_time
+			)
+			-- Check actual bytes received; NULL means unlimited.
+			AND (
+				max_file_bytes IS NULL
+				OR :file_size <= max_file_bytes
+			)
+			-- Claim a remaining slot atomically with this insert.
+			AND (
+				max_file_uploads IS NULL OR (
+					SELECT COUNT(*) FROM entries
+					WHERE guest_link_id = :guest_link_id
+				) < max_file_uploads
+			)
 	)`,
 		sql.Named("entry_id", metadata.ID.String()),
 		sql.Named("guest_link_id", metadata.GuestLink.ID),
