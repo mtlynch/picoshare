@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/mtlynch/picoshare/handlers"
+	"github.com/mtlynch/picoshare/internal/testutil"
 	"github.com/mtlynch/picoshare/picoshare"
 	"github.com/mtlynch/picoshare/store/test_sqlite"
 )
@@ -170,12 +171,12 @@ func TestEntryGet(t *testing.T) {
 				data := "dummy data"
 				entry := picoshare.UploadEntry{
 					UploadMetadata: picoshare.UploadMetadata{
-						ID:          picoshare.MustCreateEntryID(mockEntry.ID),
+						ID:          testutil.MustCreate(t, picoshare.EntryIDFromString, mockEntry.ID),
 						Filename:    mockEntry.Filename,
 						ContentType: mockEntry.ContentType,
-						Uploaded:    mustParseTime("2023-01-01T00:00:00Z"),
+						Uploaded:    testutil.MustCreate2(t, time.Parse, time.RFC3339, "2023-01-01T00:00:00Z"),
 						Expires:     picoshare.NeverExpire,
-						Size:        mustParseFileSize(len(data)),
+						Size:        testutil.MustCreate(t, picoshare.FileSizeFromInt, len(data)),
 					},
 					Reader: strings.NewReader(data),
 				}
@@ -241,7 +242,7 @@ func TestProtectedEntryDownload(t *testing.T) {
 			entryInStore: fakeEntry{
 				ID:                 "PPPPPPPPPP",
 				Contents:           "fake protected data",
-				DownloadPassphrase: mustCreateDownloadPassphrase(t, "correct horse battery staple"),
+				DownloadPassphrase: testutil.MustCreate(t, picoshare.NewDownloadPassphrase, "correct horse battery staple"),
 			},
 			authenticated:              false,
 			method:                     http.MethodGet,
@@ -255,7 +256,7 @@ func TestProtectedEntryDownload(t *testing.T) {
 			entryInStore: fakeEntry{
 				ID:                 "PPPPPPPPPP",
 				Contents:           "fake protected data",
-				DownloadPassphrase: mustCreateDownloadPassphrase(t, "correct horse battery staple"),
+				DownloadPassphrase: testutil.MustCreate(t, picoshare.NewDownloadPassphrase, "correct horse battery staple"),
 			},
 			authenticated:              false,
 			method:                     http.MethodGet,
@@ -269,7 +270,7 @@ func TestProtectedEntryDownload(t *testing.T) {
 			entryInStore: fakeEntry{
 				ID:                 "PPPPPPPPPP",
 				Contents:           "fake protected data",
-				DownloadPassphrase: mustCreateDownloadPassphrase(t, "correct horse battery staple"),
+				DownloadPassphrase: testutil.MustCreate(t, picoshare.NewDownloadPassphrase, "correct horse battery staple"),
 			},
 			authenticated:              false,
 			method:                     http.MethodGet,
@@ -283,7 +284,7 @@ func TestProtectedEntryDownload(t *testing.T) {
 			entryInStore: fakeEntry{
 				ID:                 "PPPPPPPPPP",
 				Contents:           "fake protected data",
-				DownloadPassphrase: mustCreateDownloadPassphrase(t, "correct horse battery staple"),
+				DownloadPassphrase: testutil.MustCreate(t, picoshare.NewDownloadPassphrase, "correct horse battery staple"),
 			},
 			authenticated:              false,
 			method:                     http.MethodPost,
@@ -298,7 +299,7 @@ func TestProtectedEntryDownload(t *testing.T) {
 			entryInStore: fakeEntry{
 				ID:                 "PPPPPPPPPP",
 				Contents:           "fake protected data",
-				DownloadPassphrase: mustCreateDownloadPassphrase(t, "correct horse battery staple"),
+				DownloadPassphrase: testutil.MustCreate(t, picoshare.NewDownloadPassphrase, "correct horse battery staple"),
 			},
 			authenticated:              false,
 			method:                     http.MethodPost,
@@ -314,7 +315,7 @@ func TestProtectedEntryDownload(t *testing.T) {
 			entryInStore: fakeEntry{
 				ID:                 "PPPPPPPPPP",
 				Contents:           "fake protected data",
-				DownloadPassphrase: mustCreateDownloadPassphrase(t, "correct horse battery staple"),
+				DownloadPassphrase: testutil.MustCreate(t, picoshare.NewDownloadPassphrase, "correct horse battery staple"),
 			},
 			authenticated:              false,
 			method:                     http.MethodPost,
@@ -328,7 +329,7 @@ func TestProtectedEntryDownload(t *testing.T) {
 			entryInStore: fakeEntry{
 				ID:                 "PPPPPPPPPP",
 				Contents:           "fake protected data",
-				DownloadPassphrase: mustCreateDownloadPassphrase(t, "correct horse battery staple"),
+				DownloadPassphrase: testutil.MustCreate(t, picoshare.NewDownloadPassphrase, "correct horse battery staple"),
 			},
 			authenticated:              false,
 			method:                     http.MethodPost,
@@ -342,7 +343,7 @@ func TestProtectedEntryDownload(t *testing.T) {
 			entryInStore: fakeEntry{
 				ID:                 "PPPPPPPPPP",
 				Contents:           "fake protected data",
-				DownloadPassphrase: mustCreateDownloadPassphrase(t, "correct horse battery staple"),
+				DownloadPassphrase: testutil.MustCreate(t, picoshare.NewDownloadPassphrase, "correct horse battery staple"),
 			},
 			authenticated:              false,
 			method:                     http.MethodPost,
@@ -356,7 +357,7 @@ func TestProtectedEntryDownload(t *testing.T) {
 			entryInStore: fakeEntry{
 				ID:                 "PPPPPPPPPP",
 				Contents:           "fake protected data",
-				DownloadPassphrase: mustCreateDownloadPassphrase(t, "correct horse battery staple"),
+				DownloadPassphrase: testutil.MustCreate(t, picoshare.NewDownloadPassphrase, "correct horse battery staple"),
 			},
 			authenticated:              false,
 			method:                     http.MethodPost,
@@ -371,7 +372,7 @@ func TestProtectedEntryDownload(t *testing.T) {
 			entryInStore: fakeEntry{
 				ID:                 "PPPPPPPPPP",
 				Contents:           "fake protected data",
-				DownloadPassphrase: mustCreateDownloadPassphrase(t, "correct horse battery staple"),
+				DownloadPassphrase: testutil.MustCreate(t, picoshare.NewDownloadPassphrase, "correct horse battery staple"),
 			},
 			authenticated:  false,
 			method:         http.MethodPost,
@@ -384,7 +385,7 @@ func TestProtectedEntryDownload(t *testing.T) {
 			entryInStore: fakeEntry{
 				ID:                 "PPPPPPPPPP",
 				Contents:           "fake protected data",
-				DownloadPassphrase: mustCreateDownloadPassphrase(t, "correct horse battery staple"),
+				DownloadPassphrase: testutil.MustCreate(t, picoshare.NewDownloadPassphrase, "correct horse battery staple"),
 			},
 			authenticated:              true,
 			method:                     http.MethodGet,
@@ -399,7 +400,7 @@ func TestProtectedEntryDownload(t *testing.T) {
 			entryInStore: fakeEntry{
 				ID:                 "PPPPPPPPPP",
 				Contents:           "fake protected data",
-				DownloadPassphrase: mustCreateDownloadPassphrase(t, "correct horse battery staple"),
+				DownloadPassphrase: testutil.MustCreate(t, picoshare.NewDownloadPassphrase, "correct horse battery staple"),
 			},
 			authenticated:              true,
 			method:                     http.MethodGet,
@@ -426,7 +427,7 @@ func TestProtectedEntryDownload(t *testing.T) {
 			entryInStore: fakeEntry{
 				ID:                 "PPPPPPPPPP",
 				Contents:           "fake protected data",
-				DownloadPassphrase: mustCreateDownloadPassphrase(t, "correct horse battery staple"),
+				DownloadPassphrase: testutil.MustCreate(t, picoshare.NewDownloadPassphrase, "correct horse battery staple"),
 			},
 			authenticated:  false,
 			method:         http.MethodGet,
@@ -437,12 +438,12 @@ func TestProtectedEntryDownload(t *testing.T) {
 		t.Run(tt.explanation, func(t *testing.T) {
 			dataStore := test_sqlite.New(t)
 			if err := dataStore.InsertEntry(strings.NewReader(tt.entryInStore.Contents), picoshare.UploadMetadata{
-				ID:                 picoshare.MustCreateEntryID(tt.entryInStore.ID),
+				ID:                 testutil.MustCreate(t, picoshare.EntryIDFromString, tt.entryInStore.ID),
 				Filename:           "test.txt",
 				ContentType:        "text/plain",
-				Uploaded:           mustParseTime("2023-01-01T00:00:00Z"),
+				Uploaded:           testutil.MustCreate2(t, time.Parse, time.RFC3339, "2023-01-01T00:00:00Z"),
 				Expires:            picoshare.NeverExpire,
-				Size:               mustParseFileSize(len(tt.entryInStore.Contents)),
+				Size:               testutil.MustCreate(t, picoshare.FileSizeFromInt, len(tt.entryInStore.Contents)),
 				DownloadPassphrase: tt.entryInStore.DownloadPassphrase,
 			}); err != nil {
 				t.Fatalf("failed to insert entry: %v", err)
@@ -490,13 +491,13 @@ func TestProtectedEntryDownloadRequiresPassphraseEveryDownload(t *testing.T) {
 	dataStore := test_sqlite.New(t)
 	data := "protected file contents"
 	if err := dataStore.InsertEntry(strings.NewReader(data), picoshare.UploadMetadata{
-		ID:                 picoshare.MustCreateEntryID("PPPPPPPPPP"),
+		ID:                 testutil.MustCreate(t, picoshare.EntryIDFromString, "PPPPPPPPPP"),
 		Filename:           "protected.txt",
 		ContentType:        "text/plain",
-		Uploaded:           mustParseTime("2023-01-01T00:00:00Z"),
+		Uploaded:           testutil.MustCreate2(t, time.Parse, time.RFC3339, "2023-01-01T00:00:00Z"),
 		Expires:            picoshare.NeverExpire,
-		Size:               mustParseFileSize(len(data)),
-		DownloadPassphrase: mustCreateDownloadPassphrase(t, "correct horse battery staple"),
+		Size:               testutil.MustCreate(t, picoshare.FileSizeFromInt, len(data)),
+		DownloadPassphrase: testutil.MustCreate(t, picoshare.NewDownloadPassphrase, "correct horse battery staple"),
 	}); err != nil {
 		t.Fatalf("failed to insert protected entry: %v", err)
 	}
@@ -532,15 +533,4 @@ func TestProtectedEntryDownloadRequiresPassphraseEveryDownload(t *testing.T) {
 			t.Errorf("Location=%q, want=%q", got, want)
 		}
 	}
-}
-
-func mustCreateDownloadPassphrase(t *testing.T, value string) picoshare.DownloadPassphrase {
-	t.Helper()
-
-	passphrase, err := picoshare.NewDownloadPassphrase(value)
-	if err != nil {
-		t.Fatalf("failed to create download passphrase: %v", err)
-	}
-
-	return passphrase
 }

@@ -4,6 +4,7 @@ import (
 	"math"
 	"testing"
 
+	"github.com/mtlynch/picoshare/internal/testutil"
 	"github.com/mtlynch/picoshare/picoshare"
 )
 
@@ -126,15 +127,8 @@ func TestFileSizeEquality(t *testing.T) {
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
-			fs1, err := picoshare.FileSizeFromUint64(tt.size1)
-			if err != nil {
-				t.Fatalf("failed to create first FileSize: %v", err)
-			}
-
-			fs2, err := picoshare.FileSizeFromUint64(tt.size2)
-			if err != nil {
-				t.Fatalf("failed to create second FileSize: %v", err)
-			}
+			fs1 := testutil.MustCreate(t, picoshare.FileSizeFromUint64, tt.size1)
+			fs2 := testutil.MustCreate(t, picoshare.FileSizeFromUint64, tt.size2)
 
 			if got, want := fs1.Equal(fs2), tt.wantEqual; got != want {
 				t.Errorf("Equal()=%v, want=%v", got, want)

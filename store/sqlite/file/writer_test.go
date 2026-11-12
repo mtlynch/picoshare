@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/mtlynch/picoshare/internal/testutil"
 	"github.com/mtlynch/picoshare/picoshare"
 	"github.com/mtlynch/picoshare/store/sqlite/file"
 )
@@ -54,12 +55,12 @@ func TestWriteFile(t *testing.T) {
 	}{
 		{
 			explanation: "data is smaller than chunk size",
-			id:          picoshare.MustCreateEntryID("abcdefghij"),
+			id:          testutil.MustCreate(t, picoshare.EntryIDFromString, "abcdefghij"),
 			data:        []byte("hello, world!"),
 			chunkSize:   25,
 			rowsExpected: []mockChunkRow{
 				{
-					id:         picoshare.MustCreateEntryID("abcdefghij"),
+					id:         testutil.MustCreate(t, picoshare.EntryIDFromString, "abcdefghij"),
 					chunkIndex: 0,
 					chunk:      []byte("hello, world!"),
 				},
@@ -67,12 +68,12 @@ func TestWriteFile(t *testing.T) {
 		},
 		{
 			explanation: "data fits exactly in single chunk",
-			id:          picoshare.MustCreateEntryID("abcdefghij"),
+			id:          testutil.MustCreate(t, picoshare.EntryIDFromString, "abcdefghij"),
 			data:        []byte("01234"),
 			chunkSize:   5,
 			rowsExpected: []mockChunkRow{
 				{
-					id:         picoshare.MustCreateEntryID("abcdefghij"),
+					id:         testutil.MustCreate(t, picoshare.EntryIDFromString, "abcdefghij"),
 					chunkIndex: 0,
 					chunk:      []byte("01234"),
 				},
@@ -80,17 +81,17 @@ func TestWriteFile(t *testing.T) {
 		},
 		{
 			explanation: "data occupies a partial chunk after the first",
-			id:          picoshare.MustCreateEntryID("abcdefghij"),
+			id:          testutil.MustCreate(t, picoshare.EntryIDFromString, "abcdefghij"),
 			data:        []byte("0123456"),
 			chunkSize:   5,
 			rowsExpected: []mockChunkRow{
 				{
-					id:         picoshare.MustCreateEntryID("abcdefghij"),
+					id:         testutil.MustCreate(t, picoshare.EntryIDFromString, "abcdefghij"),
 					chunkIndex: 0,
 					chunk:      []byte("01234"),
 				},
 				{
-					id:         picoshare.MustCreateEntryID("abcdefghij"),
+					id:         testutil.MustCreate(t, picoshare.EntryIDFromString, "abcdefghij"),
 					chunkIndex: 1,
 					chunk:      []byte("56"),
 				},
@@ -98,17 +99,17 @@ func TestWriteFile(t *testing.T) {
 		},
 		{
 			explanation: "data spans exactly two chunks",
-			id:          picoshare.MustCreateEntryID("abcdefghij"),
+			id:          testutil.MustCreate(t, picoshare.EntryIDFromString, "abcdefghij"),
 			data:        []byte("0123456789"),
 			chunkSize:   5,
 			rowsExpected: []mockChunkRow{
 				{
-					id:         picoshare.MustCreateEntryID("abcdefghij"),
+					id:         testutil.MustCreate(t, picoshare.EntryIDFromString, "abcdefghij"),
 					chunkIndex: 0,
 					chunk:      []byte("01234"),
 				},
 				{
-					id:         picoshare.MustCreateEntryID("abcdefghij"),
+					id:         testutil.MustCreate(t, picoshare.EntryIDFromString, "abcdefghij"),
 					chunkIndex: 1,
 					chunk:      []byte("56789"),
 				},
@@ -116,7 +117,7 @@ func TestWriteFile(t *testing.T) {
 		},
 		{
 			explanation: "write fails when SQL transaction returns error",
-			id:          picoshare.MustCreateEntryID("abcdefghij"),
+			id:          testutil.MustCreate(t, picoshare.EntryIDFromString, "abcdefghij"),
 			data:        []byte("0123456789"),
 			chunkSize:   5,
 			sqlExecErr:  errMockSqlFailure,

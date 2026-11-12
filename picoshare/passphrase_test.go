@@ -4,6 +4,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/mtlynch/picoshare/internal/testutil"
 	"github.com/mtlynch/picoshare/picoshare"
 )
 
@@ -85,10 +86,7 @@ func TestDownloadPassphraseEmpty(t *testing.T) {
 		t.Errorf("empty=%v, want=%v", got, want)
 	}
 
-	passphrase, err := picoshare.NewDownloadPassphrase("correct horse battery staple")
-	if err != nil {
-		t.Fatalf("failed to create download passphrase: %v", err)
-	}
+	passphrase := testutil.MustCreate(t, picoshare.NewDownloadPassphrase, "correct horse battery staple")
 	if got, want := passphrase.Empty(), false; got != want {
 		t.Errorf("empty=%v, want=%v", got, want)
 	}
@@ -110,37 +108,37 @@ func TestDownloadPassphraseEqual(t *testing.T) {
 		{
 			explanation:   "an empty passphrase does not equal a non-empty passphrase",
 			a:             picoshare.DownloadPassphrase{},
-			b:             mustCreateDownloadPassphrase(t, "correct horse battery staple"),
+			b:             testutil.MustCreate(t, picoshare.NewDownloadPassphrase, "correct horse battery staple"),
 			equalExpected: false,
 		},
 		{
 			explanation:   "a non-empty passphrase does not equal an empty passphrase",
-			a:             mustCreateDownloadPassphrase(t, "correct horse battery staple"),
+			a:             testutil.MustCreate(t, picoshare.NewDownloadPassphrase, "correct horse battery staple"),
 			b:             picoshare.DownloadPassphrase{},
 			equalExpected: false,
 		},
 		{
 			explanation:   "identical passphrases are equal",
-			a:             mustCreateDownloadPassphrase(t, "correct horse battery staple"),
-			b:             mustCreateDownloadPassphrase(t, "correct horse battery staple"),
+			a:             testutil.MustCreate(t, picoshare.NewDownloadPassphrase, "correct horse battery staple"),
+			b:             testutil.MustCreate(t, picoshare.NewDownloadPassphrase, "correct horse battery staple"),
 			equalExpected: true,
 		},
 		{
 			explanation:   "passphrases that differ by case are not equal",
-			a:             mustCreateDownloadPassphrase(t, "correct horse battery staple"),
-			b:             mustCreateDownloadPassphrase(t, "Correct horse battery staple"),
+			a:             testutil.MustCreate(t, picoshare.NewDownloadPassphrase, "correct horse battery staple"),
+			b:             testutil.MustCreate(t, picoshare.NewDownloadPassphrase, "Correct horse battery staple"),
 			equalExpected: false,
 		},
 		{
 			explanation:   "passphrases that differ by trailing whitespace are not equal",
-			a:             mustCreateDownloadPassphrase(t, "correct horse battery staple"),
-			b:             mustCreateDownloadPassphrase(t, "correct horse battery staple "),
+			a:             testutil.MustCreate(t, picoshare.NewDownloadPassphrase, "correct horse battery staple"),
+			b:             testutil.MustCreate(t, picoshare.NewDownloadPassphrase, "correct horse battery staple "),
 			equalExpected: false,
 		},
 		{
 			explanation:   "passphrases of different lengths are not equal",
-			a:             mustCreateDownloadPassphrase(t, "correct horse battery staple"),
-			b:             mustCreateDownloadPassphrase(t, "correct"),
+			a:             testutil.MustCreate(t, picoshare.NewDownloadPassphrase, "correct horse battery staple"),
+			b:             testutil.MustCreate(t, picoshare.NewDownloadPassphrase, "correct"),
 			equalExpected: false,
 		},
 	} {
@@ -150,14 +148,4 @@ func TestDownloadPassphraseEqual(t *testing.T) {
 			}
 		})
 	}
-}
-
-func mustCreateDownloadPassphrase(t *testing.T, raw string) picoshare.DownloadPassphrase {
-	t.Helper()
-
-	passphrase, err := picoshare.NewDownloadPassphrase(raw)
-	if err != nil {
-		t.Fatalf("failed to create download passphrase %q: %v", raw, err)
-	}
-	return passphrase
 }

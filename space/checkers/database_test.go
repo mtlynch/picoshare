@@ -5,6 +5,7 @@ import (
 	"math"
 	"testing"
 
+	"github.com/mtlynch/picoshare/internal/testutil"
 	"github.com/mtlynch/picoshare/picoshare"
 	"github.com/mtlynch/picoshare/space/checkers"
 )
@@ -31,13 +32,13 @@ func TestTotalSize(t *testing.T) {
 			description: "returns the sum of the database entries",
 			dbEntries: []picoshare.UploadMetadata{
 				{
-					Size: mustParseFileSize(5),
+					Size: testutil.MustCreate(t, picoshare.FileSizeFromUint64, 5),
 				},
 				{
-					Size: mustParseFileSize(3),
+					Size: testutil.MustCreate(t, picoshare.FileSizeFromUint64, 3),
 				},
 				{
-					Size: mustParseFileSize(1),
+					Size: testutil.MustCreate(t, picoshare.FileSizeFromUint64, 1),
 				},
 			},
 			dbErr:         nil,
@@ -48,10 +49,10 @@ func TestTotalSize(t *testing.T) {
 			description: "returns an error if the database sizes overflow int64",
 			dbEntries: []picoshare.UploadMetadata{
 				{
-					Size: mustParseFileSize(math.MaxUint64),
+					Size: testutil.MustCreate(t, picoshare.FileSizeFromUint64, math.MaxUint64),
 				},
 				{
-					Size: mustParseFileSize(1),
+					Size: testutil.MustCreate(t, picoshare.FileSizeFromUint64, 1),
 				},
 			},
 			dbErr:         nil,
@@ -82,13 +83,4 @@ func TestTotalSize(t *testing.T) {
 			}
 		})
 	}
-}
-
-func mustParseFileSize(val uint64) picoshare.FileSize {
-	fileSize, err := picoshare.FileSizeFromUint64(val)
-	if err != nil {
-		panic(err)
-	}
-
-	return fileSize
 }

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/mtlynch/picoshare/handlers/parse"
+	"github.com/mtlynch/picoshare/internal/testutil"
 	"github.com/mtlynch/picoshare/picoshare"
 )
 
@@ -19,28 +20,28 @@ func TestExpiration(t *testing.T) {
 	}{
 		{
 			description: "valid expiration",
-			currentTime: mustParseDate("2024-06-01"),
+			currentTime: testutil.MustCreate2(t, time.Parse, time.DateOnly, "2024-06-01"),
 			input:       "2025-01-01T00:00:00Z",
-			output:      mustParseExpiration("2025-01-01T00:00:00Z"),
+			output:      picoshare.ExpirationTime(testutil.MustCreate2(t, time.Parse, time.RFC3339, "2025-01-01T00:00:00Z")),
 			err:         nil,
 		},
 		{
 			description: "reject expiration time in the past",
-			currentTime: mustParseDate("2024-06-01"),
+			currentTime: testutil.MustCreate2(t, time.Parse, time.DateOnly, "2024-06-01"),
 			input:       "2024-01-01T00:00:00Z",
 			output:      picoshare.ExpirationTime{},
 			err:         parse.ErrExpirationTooSoon,
 		},
 		{
 			description: "empty string is invalid",
-			currentTime: mustParseDate("2024-06-01"),
+			currentTime: testutil.MustCreate2(t, time.Parse, time.DateOnly, "2024-06-01"),
 			input:       "",
 			output:      picoshare.ExpirationTime{},
 			err:         parse.ErrExpirationUnrecognizedFormat,
 		},
 		{
 			description: "string with letters causes error",
-			currentTime: mustParseDate("2024-06-01"),
+			currentTime: testutil.MustCreate2(t, time.Parse, time.DateOnly, "2024-06-01"),
 			input:       "banana",
 			output:      picoshare.ExpirationTime{},
 			err:         parse.ErrExpirationUnrecognizedFormat,
@@ -56,20 +57,4 @@ func TestExpiration(t *testing.T) {
 			}
 		})
 	}
-}
-
-func mustParseExpiration(s string) picoshare.ExpirationTime {
-	et, err := time.Parse(time.RFC3339, s)
-	if err != nil {
-		panic(err)
-	}
-	return picoshare.ExpirationTime(et)
-}
-
-func mustParseDate(s string) time.Time {
-	t, err := time.Parse(time.DateOnly, s)
-	if err != nil {
-		panic(err)
-	}
-	return t
 }
