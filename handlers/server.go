@@ -6,6 +6,7 @@ import (
 	"github.com/gorilla/mux"
 
 	"github.com/mtlynch/picoshare/garbagecollect"
+	"github.com/mtlynch/picoshare/picoshare"
 )
 
 type (
@@ -16,12 +17,13 @@ type (
 	}
 
 	Server struct {
-		router        *mux.Router
-		authenticator Authenticator
-		store         Store
-		checkSpace    SpaceCheckFunc
-		collector     *garbagecollect.Collector
-		now           NowFunc
+		router           *mux.Router
+		authenticator    Authenticator
+		store            Store
+		checkSpace       SpaceCheckFunc
+		collector        *garbagecollect.Collector
+		now              NowFunc
+		guestUploadLocks *guestUploadLocks
 	}
 )
 
@@ -34,12 +36,13 @@ func (s Server) Router() *mux.Router {
 // requests.
 func New(authenticator Authenticator, store Store, checkSpace SpaceCheckFunc, collector *garbagecollect.Collector, now NowFunc) Server {
 	s := Server{
-		router:        mux.NewRouter(),
-		authenticator: authenticator,
-		store:         store,
-		checkSpace:    checkSpace,
-		collector:     collector,
-		now:           now,
+		router:           mux.NewRouter(),
+		authenticator:    authenticator,
+		store:            store,
+		checkSpace:       checkSpace,
+		collector:        collector,
+		now:              now,
+		guestUploadLocks: &guestUploadLocks{links: make(map[picoshare.GuestLinkID]*guestUploadLock)},
 	}
 
 	s.routes()

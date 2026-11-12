@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -99,7 +100,10 @@ func (s Server) guestEntryPost() http.HandlerFunc {
 			return
 		}
 
-		gl, err := s.store.GetGuestLink(guestLinkID)
+		gl, unlock, err := s.acquireGuestLink(r.Context(), guestLinkID)
+		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+			return
+		}
 		if _, ok := errors.AsType[store.GuestLinkNotFoundError](err); ok {
 			http.Error(w, "Invalid guest link ID", http.StatusNotFound)
 			return
@@ -108,6 +112,8 @@ func (s Server) guestEntryPost() http.HandlerFunc {
 			http.Error(w, "Failed to retrieve guest link", http.StatusInternalServerError)
 			return
 		}
+
+		defer unlock()
 
 		if !gl.IsActive(s.now()) {
 			http.Error(w, "Guest link is no longer active", http.StatusUnauthorized)
