@@ -7,8 +7,8 @@ import (
 	"github.com/mtlynch/picoshare/picoshare"
 )
 
-// guestUploadLocks coordinates uploads admitted by one Server, not independent
-// processes writing to the same store.
+// For guests that have upload limits, use a lock to prevent parallel uploads
+// from exceeding the limit.
 type guestUploadLocks struct {
 	mu    sync.Mutex
 	links map[picoshare.GuestLinkID]*guestUploadLock
