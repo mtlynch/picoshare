@@ -6,7 +6,6 @@ import (
 	"github.com/gorilla/mux"
 
 	"github.com/mtlynch/picoshare/garbagecollect"
-	"github.com/mtlynch/picoshare/picoshare"
 )
 
 type (
@@ -42,7 +41,7 @@ func New(authenticator Authenticator, store Store, checkSpace SpaceCheckFunc, co
 		checkSpace:       checkSpace,
 		collector:        collector,
 		now:              now,
-		guestUploadLocks: &guestUploadLocks{active: make(map[picoshare.GuestLinkID]struct{})},
+		guestUploadLocks: newGuestUploadOrchestrator(),
 	}
 
 	s.routes()

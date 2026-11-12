@@ -16,6 +16,10 @@ type guestUploadLocks struct {
 	active map[picoshare.GuestLinkID]struct{}
 }
 
+func newGuestUploadOrchestrator() *guestUploadLocks {
+	return &guestUploadLocks{active: make(map[picoshare.GuestLinkID]struct{})}
+}
+
 func (locks *guestUploadLocks) tryAcquire(id picoshare.GuestLinkID) (func(), bool) {
 	locks.mu.Lock()
 	defer locks.mu.Unlock()

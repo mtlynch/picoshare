@@ -12,6 +12,7 @@ import (
 	"github.com/mtlynch/picoshare/handlers"
 	"github.com/mtlynch/picoshare/picoshare"
 	"github.com/mtlynch/picoshare/store/test_sqlite"
+	"github.com/mtlynch/picoshare/testutil"
 )
 
 func TestAdmittedGuestUploadFinishesAfterLinkBecomesInactive(t *testing.T) {
@@ -43,7 +44,7 @@ func TestAdmittedGuestUploadFinishesAfterLinkBecomesInactive(t *testing.T) {
 			mustInsertGuestUploadLink(t, &dataStore, picoshare.GuestLink{
 				ID:              "abcdefgh23456789",
 				Created:         now,
-				UrlExpires:      mustParseExpirationTime("2025-01-01T01:00:00Z"),
+				UrlExpires:      testutil.MustParseExpirationTime(t, "2025-01-01T01:00:00Z"),
 				MaxFileLifetime: picoshare.FileLifetimeInfinite,
 				MaxFileUploads:  new(2),
 			})
