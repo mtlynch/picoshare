@@ -159,7 +159,7 @@ func TestCollectDoesNothingWhenNoFilesAreExpired(t *testing.T) {
 
 	// Sort the elements so they have a consistent ordering.
 	sort.Slice(remaining, func(i, j int) bool {
-		return (time.Time(remaining[i].Expires)).After(time.Time(remaining[j].Expires))
+		return remaining[i].Expires.Time().After(remaining[j].Expires.Time())
 	})
 
 	expected := []picoshare.UploadMetadata{

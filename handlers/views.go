@@ -84,7 +84,7 @@ func (s Server) guestLinkIndexGet() http.HandlerFunc {
 			if et == picoshare.NeverExpire {
 				return "Never"
 			}
-			t := time.Time(et)
+			t := et.Time()
 			delta := t.Sub(s.now())
 			suffix := ""
 			if delta.Seconds() < 0 {
@@ -159,7 +159,7 @@ func (s Server) guestLinksNewGet() http.HandlerFunc {
 				{"7 days", s.now().AddDate(0, 0, 7), false},
 				{"30 days", s.now().AddDate(0, 0, 30), false},
 				{"1 year", s.now().AddDate(1, 0, 0), false},
-				{"Never", time.Time(picoshare.NeverExpire), true},
+				{"Never", picoshare.NeverExpire.Time(), true},
 			},
 			FileLifetimeOptions: []fileLifetimeOption{
 				{picoshare.NewFileLifetimeInDays(1), false},
@@ -220,7 +220,7 @@ func (s Server) fileEditGet() http.HandlerFunc {
 			if et == picoshare.NeverExpire {
 				return "Never"
 			}
-			return time.Time(et).Format(time.RFC3339)
+			return et.Time().Format(time.RFC3339)
 		},
 	}
 
@@ -505,9 +505,11 @@ func (s Server) uploadGet() http.HandlerFunc {
 		expirationOptions := []expirationOption{}
 		for _, lto := range lifetimeOptions {
 			friendlyName := lto.Lifetime.FriendlyName()
-			expiration := lto.Lifetime.ExpirationFromTime(s.now())
-			if lto.Lifetime.Equal(picoshare.FileLifetimeInfinite) {
-				expiration = picoshare.NeverExpire
+			expiration, err := lto.Lifetime.ExpirationFromTime(s.now())
+			if err != nil {
+				log.Printf("failed to calculate expiration option for lifetime %v: %v", lto.Lifetime, err)
+				http.Error(w, fmt.Sprintf("Failed to calculate expiration options: %v", err), http.StatusInternalServerError)
+				return
 			}
 			expirationOptions = append(expirationOptions, expirationOption{
 				FriendlyName: friendlyName,
@@ -614,9 +616,11 @@ func (s Server) guestUploadGet() http.HandlerFunc {
 		expirationOptions := []expirationOption{}
 		for _, lto := range validLifetimeOptions {
 			friendlyName := lto.Lifetime.FriendlyName()
-			expiration := lto.Lifetime.ExpirationFromTime(s.now())
-			if lto.Lifetime.Equal(picoshare.FileLifetimeInfinite) {
-				expiration = picoshare.NeverExpire
+			expiration, err := lto.Lifetime.ExpirationFromTime(s.now())
+			if err != nil {
+				log.Printf("failed to calculate expiration option for lifetime %v: %v", lto.Lifetime, err)
+				http.Error(w, fmt.Sprintf("Failed to calculate expiration options: %v", err), http.StatusInternalServerError)
+				return
 			}
 			expirationOptions = append(expirationOptions, expirationOption{
 				FriendlyName: friendlyName,

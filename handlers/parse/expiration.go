@@ -23,5 +23,5 @@ func Expiration(expirationRaw string, now time.Time) (picoshare.ExpirationTime, 
 		return picoshare.ExpirationTime{}, ErrExpirationTooSoon
 	}
 
-	return picoshare.ExpirationTime(expiration), nil
+	return picoshare.NewExpirationTime(expiration)
 }

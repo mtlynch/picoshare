@@ -3,6 +3,7 @@ package sqlite
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"log"
 
 	"github.com/mtlynch/picoshare/picoshare"
@@ -201,6 +202,10 @@ func guestLinkFromRow(row rowScanner) (picoshare.GuestLink, error) {
 	if err != nil {
 		return picoshare.GuestLink{}, err
 	}
+	urlExpiration, err := picoshare.NewExpirationTime(uet)
+	if err != nil {
+		return picoshare.GuestLink{}, fmt.Errorf("failed to parse guest link expiration time from database: %w", err)
+	}
 
 	var fileLifetime picoshare.FileLifetime
 	if fileLifetimeRaw == nil {
@@ -220,7 +225,7 @@ func guestLinkFromRow(row rowScanner) (picoshare.GuestLink, error) {
 		MaxFileUploads:  maxFileUploads,
 		FilesUploaded:   filesUploaded,
 		Created:         ct,
-		UrlExpires:      picoshare.ExpirationTime(uet),
+		UrlExpires:      urlExpiration,
 		MaxFileLifetime: fileLifetime,
 	}, nil
 }

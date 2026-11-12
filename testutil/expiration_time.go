@@ -14,5 +14,5 @@ func MustParseExpirationTime(t testing.TB, raw string) picoshare.ExpirationTime 
 		return time.Parse(time.RFC3339, raw)
 	}
 	timestamp := MustCreate(t, parseTimestamp, raw)
-	return picoshare.ExpirationTime(timestamp)
+	return MustCreate(t, picoshare.NewExpirationTime, timestamp)
 }
