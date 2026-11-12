@@ -42,7 +42,7 @@ func New(authenticator Authenticator, store Store, checkSpace SpaceCheckFunc, co
 		checkSpace:       checkSpace,
 		collector:        collector,
 		now:              now,
-		guestUploadLocks: &guestUploadLocks{links: make(map[picoshare.GuestLinkID]*guestUploadLock)},
+		guestUploadLocks: &guestUploadLocks{active: make(map[picoshare.GuestLinkID]struct{})},
 	}
 
 	s.routes()

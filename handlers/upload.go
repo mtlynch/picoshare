@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -100,8 +99,12 @@ func (s Server) guestEntryPost() http.HandlerFunc {
 			return
 		}
 
-		gl, unlock, err := s.acquireGuestLink(r.Context(), guestLinkID)
-		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+		gl, unlock, err := s.acquireGuestLink(guestLinkID)
+		if errors.Is(err, errParallelGuestUpload) {
+			// Prevent HTTP/1.1 from draining the rejected body before sending
+			// the error response.
+			w.Header().Set("Connection", "close")
+			http.Error(w, "Parallel uploads are forbidden on this guest link", http.StatusConflict)
 			return
 		}
 		if _, ok := errors.AsType[store.GuestLinkNotFoundError](err); ok {

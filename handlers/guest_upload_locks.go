@@ -1,63 +1,36 @@
 package handlers
 
 import (
-	"context"
+	"errors"
 	"sync"
 
 	"github.com/mtlynch/picoshare/picoshare"
 )
 
-// For guests that have upload limits, use a lock to prevent parallel uploads
-// from exceeding the limit.
+var errParallelGuestUpload = errors.New("parallel uploads are forbidden on this guest link")
+
+// For guests that have upload limits, claim exclusive access to prevent
+// parallel uploads from exceeding the limit. Claims are local to one Server.
 type guestUploadLocks struct {
-	mu    sync.Mutex
-	links map[picoshare.GuestLinkID]*guestUploadLock
+	mu     sync.Mutex
+	active map[picoshare.GuestLinkID]struct{}
 }
 
-func (locks *guestUploadLocks) acquire(ctx context.Context, id picoshare.GuestLinkID) (func(), error) {
-	locks.mu.Lock()
-	lock := locks.links[id]
-	if lock == nil {
-		lock = &guestUploadLock{token: make(chan struct{}, 1)}
-		locks.links[id] = lock
-	}
-	// Include waiters so releasing a holder cannot remove a lock still in use.
-	lock.references++
-	locks.mu.Unlock()
-
-	select {
-	case lock.token <- struct{}{}:
-		unlock := func() {
-			<-lock.token
-			locks.drop(id, lock)
-		}
-		// If cancellation and acquisition were both ready, do not admit work.
-		if err := ctx.Err(); err != nil {
-			unlock()
-			return nil, err
-		}
-		return unlock, nil
-	case <-ctx.Done():
-		locks.drop(id, lock)
-		return nil, ctx.Err()
-	}
-}
-
-func (locks *guestUploadLocks) drop(id picoshare.GuestLinkID, lock *guestUploadLock) {
+func (locks *guestUploadLocks) tryAcquire(id picoshare.GuestLinkID) (func(), bool) {
 	locks.mu.Lock()
 	defer locks.mu.Unlock()
-	lock.references--
-	if lock.references == 0 {
-		delete(locks.links, id)
+	if _, active := locks.active[id]; active {
+		return nil, false
 	}
+	locks.active[id] = struct{}{}
+	return func() {
+		locks.mu.Lock()
+		defer locks.mu.Unlock()
+		delete(locks.active, id)
+	}, true
 }
 
-type guestUploadLock struct {
-	token      chan struct{}
-	references int
-}
-
-func (s Server) acquireGuestLink(ctx context.Context, id picoshare.GuestLinkID) (picoshare.GuestLink, func(), error) {
+func (s Server) acquireGuestLink(id picoshare.GuestLinkID) (picoshare.GuestLink, func(), error) {
 	gl, err := s.store.GetGuestLink(id)
 	if err != nil {
 		return picoshare.GuestLink{}, nil, err
@@ -66,12 +39,12 @@ func (s Server) acquireGuestLink(ctx context.Context, id picoshare.GuestLinkID) 
 		return gl, func() {}, nil
 	}
 
-	unlock, err := s.guestUploadLocks.acquire(ctx, id)
-	if err != nil {
-		return picoshare.GuestLink{}, nil, err
+	unlock, acquired := s.guestUploadLocks.tryAcquire(id)
+	if !acquired {
+		return picoshare.GuestLink{}, nil, errParallelGuestUpload
 	}
-	// A preceding upload may have consumed capacity while this request waited.
-	// Only the refreshed link may authorize the request.
+	// Another upload may have finished after the initial lookup but before this
+	// request claimed access. Only the refreshed link may authorize the request.
 	gl, err = s.store.GetGuestLink(id)
 	if err != nil {
 		unlock()
