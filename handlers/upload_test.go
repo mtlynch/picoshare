@@ -20,6 +20,7 @@ import (
 	"github.com/mtlynch/picoshare/handlers/parse"
 	"github.com/mtlynch/picoshare/picoshare"
 	"github.com/mtlynch/picoshare/store/test_sqlite"
+	"github.com/mtlynch/picoshare/testutil"
 )
 
 type mockAuthenticator struct{}
@@ -166,7 +167,7 @@ func TestEntryPost(t *testing.T) {
 				t.Errorf("filename=%v, want=%v", got, want)
 			}
 
-			if got, want := entry.Expires, mustParseExpirationTime(tt.expiration); got != want {
+			if got, want := entry.Expires, testutil.MustParseExpirationTime(t, tt.expiration); got != want {
 				t.Errorf("expiration=%v, want=%v", got, want)
 			}
 
@@ -209,7 +210,7 @@ func TestEntryPut(t *testing.T) {
 			entryInStore: fakeEntry{
 				ID:       "AAAAAAAAAA",
 				Filename: "original-filename.mp3",
-				Expires:  mustParseExpirationTime("2024-12-15T21:52:33Z"),
+				Expires:  testutil.MustParseExpirationTime(t, "2024-12-15T21:52:33Z"),
 			},
 			path: "/api/entry/AAAAAAAAAA",
 			payload: `{
@@ -219,7 +220,7 @@ func TestEntryPut(t *testing.T) {
 			}`,
 			filenameExpected: "cool-song.mp3",
 			noteExpected:     makeNote("My latest track"),
-			expiresExpected:  mustParseExpirationTime("2029-01-02T01:02:03Z"),
+			expiresExpected:  testutil.MustParseExpirationTime(t, "2029-01-02T01:02:03Z"),
 			status:           http.StatusOK,
 		},
 		{
@@ -227,7 +228,7 @@ func TestEntryPut(t *testing.T) {
 			entryInStore: fakeEntry{
 				ID:       "AAAAAAAAAA",
 				Filename: "original-filename.mp3",
-				Expires:  mustParseExpirationTime("2024-12-15T21:52:33Z"),
+				Expires:  testutil.MustParseExpirationTime(t, "2024-12-15T21:52:33Z"),
 			},
 			path: "/api/entry/AAAAAAAAAA",
 			payload: `{
@@ -244,7 +245,7 @@ func TestEntryPut(t *testing.T) {
 			entryInStore: fakeEntry{
 				ID:       "AAAAAAAAAA",
 				Filename: "original-filename.mp3",
-				Expires:  mustParseExpirationTime("2024-12-15T21:52:33Z"),
+				Expires:  testutil.MustParseExpirationTime(t, "2024-12-15T21:52:33Z"),
 			},
 			path: "/api/entry/AAAAAAAAAA",
 			payload: `{
@@ -254,7 +255,7 @@ func TestEntryPut(t *testing.T) {
 			}`,
 			filenameExpected: "original-filename.mp3",
 			noteExpected:     picoshare.FileNote{},
-			expiresExpected:  mustParseExpirationTime("2024-12-15T21:52:33Z"),
+			expiresExpected:  testutil.MustParseExpirationTime(t, "2024-12-15T21:52:33Z"),
 			status:           http.StatusBadRequest,
 		},
 		{
@@ -262,7 +263,7 @@ func TestEntryPut(t *testing.T) {
 			entryInStore: fakeEntry{
 				ID:       "AAAAAAAAAA",
 				Filename: "original-filename.mp3",
-				Expires:  mustParseExpirationTime("2024-12-15T21:52:33Z"),
+				Expires:  testutil.MustParseExpirationTime(t, "2024-12-15T21:52:33Z"),
 			},
 			path: "/api/entry/AAAAAAAAAA",
 			payload: `{
@@ -271,7 +272,7 @@ func TestEntryPut(t *testing.T) {
 				"note":"<script>alert(1)</script>"
 			}`,
 			filenameExpected: "original-filename.mp3",
-			expiresExpected:  mustParseExpirationTime("2024-12-15T21:52:33Z"),
+			expiresExpected:  testutil.MustParseExpirationTime(t, "2024-12-15T21:52:33Z"),
 			noteExpected:     picoshare.FileNote{},
 			status:           http.StatusBadRequest,
 		},
@@ -280,7 +281,7 @@ func TestEntryPut(t *testing.T) {
 			entryInStore: fakeEntry{
 				ID:       "AAAAAAAAAA",
 				Filename: "original-filename.mp3",
-				Expires:  mustParseExpirationTime("2024-12-15T21:52:33Z"),
+				Expires:  testutil.MustParseExpirationTime(t, "2024-12-15T21:52:33Z"),
 			},
 			path: "/api/entry/BBBBBBBBBB",
 			payload: `{
@@ -289,7 +290,7 @@ func TestEntryPut(t *testing.T) {
 				"note":"My latest track"
 			}`,
 			filenameExpected: "original-filename.mp3",
-			expiresExpected:  mustParseExpirationTime("2024-12-15T21:52:33Z"),
+			expiresExpected:  testutil.MustParseExpirationTime(t, "2024-12-15T21:52:33Z"),
 			noteExpected:     picoshare.FileNote{},
 			status:           http.StatusNotFound,
 		},
@@ -298,7 +299,7 @@ func TestEntryPut(t *testing.T) {
 			entryInStore: fakeEntry{
 				ID:       "AAAAAAAAAA",
 				Filename: "original-filename.mp3",
-				Expires:  mustParseExpirationTime("2024-12-15T21:52:33Z"),
+				Expires:  testutil.MustParseExpirationTime(t, "2024-12-15T21:52:33Z"),
 			},
 			path: "/api/entry/AAAAAAAAAA",
 			payload: `{
@@ -309,7 +310,7 @@ func TestEntryPut(t *testing.T) {
 			}`,
 			filenameExpected:           "cool-song.mp3",
 			noteExpected:               makeNote("My latest track"),
-			expiresExpected:            mustParseExpirationTime("2029-01-02T01:02:03Z"),
+			expiresExpected:            testutil.MustParseExpirationTime(t, "2029-01-02T01:02:03Z"),
 			downloadPassphraseExpected: "correct horse battery staple",
 			status:                     http.StatusOK,
 		},
@@ -318,7 +319,7 @@ func TestEntryPut(t *testing.T) {
 			entryInStore: fakeEntry{
 				ID:                 "AAAAAAAAAA",
 				Filename:           "original-filename.mp3",
-				Expires:            mustParseExpirationTime("2024-12-15T21:52:33Z"),
+				Expires:            testutil.MustParseExpirationTime(t, "2024-12-15T21:52:33Z"),
 				DownloadPassphrase: "correct horse battery staple",
 			},
 			path: "/api/entry/AAAAAAAAAA",
@@ -330,7 +331,7 @@ func TestEntryPut(t *testing.T) {
 			}`,
 			filenameExpected:           "cool-song.mp3",
 			noteExpected:               makeNote("My latest track"),
-			expiresExpected:            mustParseExpirationTime("2029-01-02T01:02:03Z"),
+			expiresExpected:            testutil.MustParseExpirationTime(t, "2029-01-02T01:02:03Z"),
 			downloadPassphraseExpected: "new passphrase",
 			status:                     http.StatusOK,
 		},
@@ -339,7 +340,7 @@ func TestEntryPut(t *testing.T) {
 			entryInStore: fakeEntry{
 				ID:                 "AAAAAAAAAA",
 				Filename:           "original-filename.mp3",
-				Expires:            mustParseExpirationTime("2024-12-15T21:52:33Z"),
+				Expires:            testutil.MustParseExpirationTime(t, "2024-12-15T21:52:33Z"),
 				DownloadPassphrase: "correct horse battery staple",
 			},
 			path: "/api/entry/AAAAAAAAAA",
@@ -351,7 +352,7 @@ func TestEntryPut(t *testing.T) {
 			}`,
 			filenameExpected:           "cool-song.mp3",
 			noteExpected:               makeNote("My latest track"),
-			expiresExpected:            mustParseExpirationTime("2029-01-02T01:02:03Z"),
+			expiresExpected:            testutil.MustParseExpirationTime(t, "2029-01-02T01:02:03Z"),
 			downloadPassphraseExpected: "",
 			status:                     http.StatusOK,
 		},
@@ -360,7 +361,7 @@ func TestEntryPut(t *testing.T) {
 			entryInStore: fakeEntry{
 				ID:       "AAAAAAAAAA",
 				Filename: "original-filename.mp3",
-				Expires:  mustParseExpirationTime("2024-12-15T21:52:33Z"),
+				Expires:  testutil.MustParseExpirationTime(t, "2024-12-15T21:52:33Z"),
 			},
 			path: "/api/entry/AAAAAAAAAA",
 			payload: `{
@@ -371,7 +372,7 @@ func TestEntryPut(t *testing.T) {
 			}`,
 			filenameExpected:           "cool-song.mp3",
 			noteExpected:               makeNote("My latest track"),
-			expiresExpected:            mustParseExpirationTime("2029-01-02T01:02:03Z"),
+			expiresExpected:            testutil.MustParseExpirationTime(t, "2029-01-02T01:02:03Z"),
 			downloadPassphraseExpected: "",
 			status:                     http.StatusOK,
 		},
@@ -380,7 +381,7 @@ func TestEntryPut(t *testing.T) {
 			entryInStore: fakeEntry{
 				ID:                 "AAAAAAAAAA",
 				Filename:           "original-filename.mp3",
-				Expires:            mustParseExpirationTime("2024-12-15T21:52:33Z"),
+				Expires:            testutil.MustParseExpirationTime(t, "2024-12-15T21:52:33Z"),
 				DownloadPassphrase: "correct horse battery staple",
 			},
 			path: "/api/entry/AAAAAAAAAA",
@@ -391,7 +392,7 @@ func TestEntryPut(t *testing.T) {
 			}`,
 			filenameExpected:           "cool-song.mp3",
 			noteExpected:               makeNote("My latest track"),
-			expiresExpected:            mustParseExpirationTime("2029-01-02T01:02:03Z"),
+			expiresExpected:            testutil.MustParseExpirationTime(t, "2029-01-02T01:02:03Z"),
 			downloadPassphraseExpected: "",
 			status:                     http.StatusOK,
 		},
@@ -400,7 +401,7 @@ func TestEntryPut(t *testing.T) {
 			entryInStore: fakeEntry{
 				ID:                 "AAAAAAAAAA",
 				Filename:           "original-filename.mp3",
-				Expires:            mustParseExpirationTime("2024-12-15T21:52:33Z"),
+				Expires:            testutil.MustParseExpirationTime(t, "2024-12-15T21:52:33Z"),
 				DownloadPassphrase: "correct horse battery staple",
 			},
 			path: "/api/entry/AAAAAAAAAA",
@@ -412,7 +413,7 @@ func TestEntryPut(t *testing.T) {
 			}`,
 			filenameExpected:           "original-filename.mp3",
 			noteExpected:               picoshare.FileNote{},
-			expiresExpected:            mustParseExpirationTime("2024-12-15T21:52:33Z"),
+			expiresExpected:            testutil.MustParseExpirationTime(t, "2024-12-15T21:52:33Z"),
 			downloadPassphraseExpected: "correct horse battery staple",
 			status:                     http.StatusBadRequest,
 		},
@@ -493,20 +494,20 @@ func TestGuestUpload(t *testing.T) {
 			guestLinkInStore: picoshare.GuestLink{
 				ID:              picoshare.GuestLinkID("abcdefgh23456789"),
 				Created:         mustParseTime("2022-05-26T00:00:00Z"),
-				UrlExpires:      mustParseExpirationTime("2030-01-02T03:04:25Z"),
+				UrlExpires:      testutil.MustParseExpirationTime(t, "2030-01-02T03:04:25Z"),
 				MaxFileLifetime: picoshare.FileLifetimeInfinite,
 			},
 			currentTime:                mustParseTime("2024-01-01T00:00:00Z"),
 			url:                        "/api/guest/abcdefgh23456789?expiration=2030-01-01T00:00:00Z",
 			status:                     http.StatusOK,
-			fileExpirationTimeExpected: mustParseExpirationTime("2030-01-01T00:00:00Z"),
+			fileExpirationTimeExpected: testutil.MustParseExpirationTime(t, "2030-01-01T00:00:00Z"),
 		},
 		{
 			description: "expired guest link",
 			guestLinkInStore: picoshare.GuestLink{
 				ID:              picoshare.GuestLinkID("abcdefgh23456789"),
 				Created:         mustParseTime("2024-01-01T00:00:00Z"),
-				UrlExpires:      mustParseExpirationTime("2024-01-02T03:04:25Z"),
+				UrlExpires:      testutil.MustParseExpirationTime(t, "2024-01-02T03:04:25Z"),
 				MaxFileLifetime: picoshare.FileLifetimeInfinite,
 			},
 			currentTime:                mustParseTime("2024-01-03T00:00:00Z"),
@@ -533,7 +534,7 @@ func TestGuestUpload(t *testing.T) {
 			guestLinkInStore: picoshare.GuestLink{
 				ID:              picoshare.GuestLinkID("abcdefgh23456789"),
 				Created:         mustParseTime("2024-01-01T00:00:00Z"),
-				UrlExpires:      mustParseExpirationTime("2030-01-02T03:04:25Z"),
+				UrlExpires:      testutil.MustParseExpirationTime(t, "2030-01-02T03:04:25Z"),
 				MaxFileLifetime: picoshare.FileLifetimeInfinite,
 			},
 			currentTime:                mustParseTime("2024-01-01T00:00:00Z"),
@@ -546,7 +547,7 @@ func TestGuestUpload(t *testing.T) {
 			guestLinkInStore: picoshare.GuestLink{
 				ID:              picoshare.GuestLinkID("abcdefgh23456789"),
 				Created:         mustParseTime("2024-01-01T00:00:00Z"),
-				UrlExpires:      mustParseExpirationTime("2030-01-02T03:04:25Z"),
+				UrlExpires:      testutil.MustParseExpirationTime(t, "2030-01-02T03:04:25Z"),
 				MaxFileLifetime: picoshare.FileLifetimeInfinite,
 			},
 			currentTime:                mustParseTime("2024-01-01T00:00:00Z"),
@@ -559,7 +560,7 @@ func TestGuestUpload(t *testing.T) {
 			guestLinkInStore: picoshare.GuestLink{
 				ID:              picoshare.GuestLinkID("abcdefgh23456789"),
 				Created:         mustParseTime("2024-01-01T00:00:00Z"),
-				UrlExpires:      mustParseExpirationTime("2024-01-02T03:04:25Z"),
+				UrlExpires:      testutil.MustParseExpirationTime(t, "2024-01-02T03:04:25Z"),
 				MaxFileLifetime: picoshare.FileLifetimeInfinite,
 			},
 			currentTime:                mustParseTime("2024-01-01T00:00:00Z"),
@@ -572,7 +573,7 @@ func TestGuestUpload(t *testing.T) {
 			guestLinkInStore: picoshare.GuestLink{
 				ID:              picoshare.GuestLinkID("abcdefgh23456789"),
 				Created:         mustParseTime("2022-05-26T00:00:00Z"),
-				UrlExpires:      mustParseExpirationTime("2030-01-02T03:04:25Z"),
+				UrlExpires:      testutil.MustParseExpirationTime(t, "2030-01-02T03:04:25Z"),
 				MaxFileLifetime: picoshare.FileLifetimeInfinite,
 			},
 			currentTime:                mustParseTime("2024-01-01T00:00:00Z"),
@@ -586,7 +587,7 @@ func TestGuestUpload(t *testing.T) {
 			guestLinkInStore: picoshare.GuestLink{
 				ID:              picoshare.GuestLinkID("abcdefgh23456789"),
 				Created:         mustParseTime("2022-05-26T00:00:00Z"),
-				UrlExpires:      mustParseExpirationTime("2030-01-02T03:04:25Z"),
+				UrlExpires:      testutil.MustParseExpirationTime(t, "2030-01-02T03:04:25Z"),
 				MaxFileLifetime: picoshare.FileLifetimeInfinite,
 			},
 			currentTime:                mustParseTime("2024-01-01T00:00:00Z"),
@@ -600,7 +601,7 @@ func TestGuestUpload(t *testing.T) {
 			guestLinkInStore: picoshare.GuestLink{
 				ID:              picoshare.GuestLinkID("abcdefgh23456789"),
 				Created:         mustParseTime("2024-01-01T00:00:00Z"),
-				UrlExpires:      mustParseExpirationTime("2030-01-02T03:04:25Z"),
+				UrlExpires:      testutil.MustParseExpirationTime(t, "2030-01-02T03:04:25Z"),
 				MaxFileUploads:  makeGuestUploadCountLimit(2),
 				MaxFileLifetime: picoshare.FileLifetimeInfinite,
 			},
@@ -636,7 +637,7 @@ func TestGuestUpload(t *testing.T) {
 			guestLinkInStore: picoshare.GuestLink{
 				ID:              picoshare.GuestLinkID("abcdefgh23456789"),
 				Created:         mustParseTime("2024-01-01T00:00:00Z"),
-				UrlExpires:      mustParseExpirationTime("2030-01-02T03:04:25Z"),
+				UrlExpires:      testutil.MustParseExpirationTime(t, "2030-01-02T03:04:25Z"),
 				MaxFileBytes:    makeGuestUploadMaxFileBytes(1),
 				MaxFileLifetime: picoshare.FileLifetimeInfinite,
 			},
@@ -650,98 +651,98 @@ func TestGuestUpload(t *testing.T) {
 			guestLinkInStore: picoshare.GuestLink{
 				ID:              picoshare.GuestLinkID("abcdefgh23456789"),
 				Created:         mustParseTime("2022-05-26T00:00:00Z"),
-				UrlExpires:      mustParseExpirationTime("2030-01-02T03:04:25Z"),
+				UrlExpires:      testutil.MustParseExpirationTime(t, "2030-01-02T03:04:25Z"),
 				MaxFileLifetime: picoshare.NewFileLifetimeInDays(1),
 			},
 			currentTime:                mustParseTime("2024-01-01T00:00:00Z"),
 			url:                        "/api/guest/abcdefgh23456789?expiration=2024-01-02T00:00:00Z",
 			status:                     http.StatusOK,
-			fileExpirationTimeExpected: mustParseExpirationTime("2024-01-02T00:00:00Z"),
+			fileExpirationTimeExpected: testutil.MustParseExpirationTime(t, "2024-01-02T00:00:00Z"),
 		},
 		{
 			description: "guest file expires in 365 days",
 			guestLinkInStore: picoshare.GuestLink{
 				ID:              picoshare.GuestLinkID("abcdefgh23456789"),
 				Created:         mustParseTime("2022-05-26T00:00:00Z"),
-				UrlExpires:      mustParseExpirationTime("2030-01-02T03:04:25Z"),
+				UrlExpires:      testutil.MustParseExpirationTime(t, "2030-01-02T03:04:25Z"),
 				MaxFileLifetime: picoshare.NewFileLifetimeInDays(365),
 			},
 			currentTime:                mustParseTime("2023-01-01T00:00:00Z"),
 			url:                        "/api/guest/abcdefgh23456789?expiration=2024-01-01T00:00:00Z",
 			status:                     http.StatusOK,
-			fileExpirationTimeExpected: mustParseExpirationTime("2024-01-01T00:00:00Z"),
+			fileExpirationTimeExpected: testutil.MustParseExpirationTime(t, "2024-01-01T00:00:00Z"),
 		},
 		{
 			description: "guest upload with valid expiration within guest link limits",
 			guestLinkInStore: picoshare.GuestLink{
 				ID:              picoshare.GuestLinkID("abcdefgh23456789"),
 				Created:         mustParseTime("2022-05-26T00:00:00Z"),
-				UrlExpires:      mustParseExpirationTime("2030-01-02T03:04:25Z"),
+				UrlExpires:      testutil.MustParseExpirationTime(t, "2030-01-02T03:04:25Z"),
 				MaxFileLifetime: picoshare.NewFileLifetimeInDays(30),
 			},
 			currentTime:                mustParseTime("2024-01-01T00:00:00Z"),
 			url:                        "/api/guest/abcdefgh23456789?expiration=2024-01-15T00:00:00Z",
 			status:                     http.StatusOK,
-			fileExpirationTimeExpected: mustParseExpirationTime("2024-01-15T00:00:00Z"),
+			fileExpirationTimeExpected: testutil.MustParseExpirationTime(t, "2024-01-15T00:00:00Z"),
 		},
 		{
 			description: "guest upload with infinite guest link accepts any expiration",
 			guestLinkInStore: picoshare.GuestLink{
 				ID:              picoshare.GuestLinkID("abcdefgh23456789"),
 				Created:         mustParseTime("2022-05-26T00:00:00Z"),
-				UrlExpires:      mustParseExpirationTime("2030-01-02T03:04:25Z"),
+				UrlExpires:      testutil.MustParseExpirationTime(t, "2030-01-02T03:04:25Z"),
 				MaxFileLifetime: picoshare.FileLifetimeInfinite,
 			},
 			currentTime:                mustParseTime("2024-01-01T00:00:00Z"),
 			url:                        "/api/guest/abcdefgh23456789?expiration=2025-01-01T00:00:00Z",
 			status:                     http.StatusOK,
-			fileExpirationTimeExpected: mustParseExpirationTime("2025-01-01T00:00:00Z"),
+			fileExpirationTimeExpected: testutil.MustParseExpirationTime(t, "2025-01-01T00:00:00Z"),
 		},
 		{
 			description: "reject guest upload with expiration that exceeds guest link limit",
 			guestLinkInStore: picoshare.GuestLink{
 				ID:              picoshare.GuestLinkID("abcdefgh23456789"),
 				Created:         mustParseTime("2022-05-26T00:00:00Z"),
-				UrlExpires:      mustParseExpirationTime("2030-01-02T03:04:25Z"),
+				UrlExpires:      testutil.MustParseExpirationTime(t, "2030-01-02T03:04:25Z"),
 				MaxFileLifetime: picoshare.NewFileLifetimeInDays(7),
 			},
 			currentTime:                mustParseTime("2024-01-01T00:00:00Z"),
 			url:                        "/api/guest/abcdefgh23456789?expiration=2024-01-31T00:00:00Z",
 			status:                     http.StatusBadRequest,
-			fileExpirationTimeExpected: mustParseExpirationTime("2024-01-08T00:00:00Z"),
+			fileExpirationTimeExpected: testutil.MustParseExpirationTime(t, "2024-01-08T00:00:00Z"),
 		},
 		{
 			description: "guest upload without expiration defaults to max allowed (30 days)",
 			guestLinkInStore: picoshare.GuestLink{
 				ID:              picoshare.GuestLinkID("abcdefgh23456789"),
 				Created:         mustParseTime("2022-05-26T00:00:00Z"),
-				UrlExpires:      mustParseExpirationTime("2030-01-02T03:04:25Z"),
+				UrlExpires:      testutil.MustParseExpirationTime(t, "2030-01-02T03:04:25Z"),
 				MaxFileLifetime: picoshare.NewFileLifetimeInDays(30),
 			},
 			currentTime:                mustParseTime("2024-01-01T00:00:00Z"),
 			url:                        "/api/guest/abcdefgh23456789",
 			status:                     http.StatusOK,
-			fileExpirationTimeExpected: mustParseExpirationTime("2024-01-31T00:00:00Z"),
+			fileExpirationTimeExpected: testutil.MustParseExpirationTime(t, "2024-01-31T00:00:00Z"),
 		},
 		{
 			description: "guest upload with empty expiration defaults to max allowed (30 days)",
 			guestLinkInStore: picoshare.GuestLink{
 				ID:              picoshare.GuestLinkID("abcdefgh23456789"),
 				Created:         mustParseTime("2022-05-26T00:00:00Z"),
-				UrlExpires:      mustParseExpirationTime("2030-01-02T03:04:25Z"),
+				UrlExpires:      testutil.MustParseExpirationTime(t, "2030-01-02T03:04:25Z"),
 				MaxFileLifetime: picoshare.NewFileLifetimeInDays(30),
 			},
 			currentTime:                mustParseTime("2024-01-01T00:00:00Z"),
 			url:                        "/api/guest/abcdefgh23456789?expiration=",
 			status:                     http.StatusOK,
-			fileExpirationTimeExpected: mustParseExpirationTime("2024-01-31T00:00:00Z"),
+			fileExpirationTimeExpected: testutil.MustParseExpirationTime(t, "2024-01-31T00:00:00Z"),
 		},
 		{
 			description: "guest upload without expiration defaults to never expire (infinite)",
 			guestLinkInStore: picoshare.GuestLink{
 				ID:              picoshare.GuestLinkID("abcdefgh23456789"),
 				Created:         mustParseTime("2022-05-26T00:00:00Z"),
-				UrlExpires:      mustParseExpirationTime("2030-01-02T03:04:25Z"),
+				UrlExpires:      testutil.MustParseExpirationTime(t, "2030-01-02T03:04:25Z"),
 				MaxFileLifetime: picoshare.FileLifetimeInfinite,
 			},
 			currentTime:                mustParseTime("2024-01-01T00:00:00Z"),
@@ -754,7 +755,7 @@ func TestGuestUpload(t *testing.T) {
 			guestLinkInStore: picoshare.GuestLink{
 				ID:              picoshare.GuestLinkID("abcdefgh23456789"),
 				Created:         mustParseTime("2022-05-26T00:00:00Z"),
-				UrlExpires:      mustParseExpirationTime("2030-01-02T03:04:25Z"),
+				UrlExpires:      testutil.MustParseExpirationTime(t, "2030-01-02T03:04:25Z"),
 				MaxFileLifetime: picoshare.FileLifetimeInfinite,
 			},
 			currentTime:                mustParseTime("2024-01-01T00:00:00Z"),
@@ -895,7 +896,7 @@ func TestGuestUploadAcceptHeader(t *testing.T) {
 			guestLink := picoshare.GuestLink{
 				ID:              picoshare.GuestLinkID("abcdefgh23456789"),
 				Created:         mustParseTime("2022-05-26T00:00:00Z"),
-				UrlExpires:      mustParseExpirationTime("2030-01-02T03:04:25Z"),
+				UrlExpires:      testutil.MustParseExpirationTime(t, "2030-01-02T03:04:25Z"),
 				MaxFileLifetime: picoshare.FileLifetimeInfinite,
 			}
 			if err := dataStore.InsertGuestLink(guestLink); err != nil {
@@ -1078,10 +1079,6 @@ func mustParseTime(s string) time.Time {
 		panic(err)
 	}
 	return t
-}
-
-func mustParseExpirationTime(s string) picoshare.ExpirationTime {
-	return picoshare.ExpirationTime(mustParseTime(s))
 }
 
 func downloadPassphraseToString(p picoshare.DownloadPassphrase) string {
