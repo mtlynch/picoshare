@@ -99,7 +99,14 @@ func (s Server) guestEntryPost() http.HandlerFunc {
 			return
 		}
 
-		gl, err := s.store.GetGuestLink(guestLinkID)
+		gl, unlock, err := s.guestUploadOrchestrator.acquire(guestLinkID)
+		if errors.Is(err, errParallelGuestUpload) {
+			// Prevent HTTP/1.1 from draining the rejected body before sending
+			// the error response.
+			w.Header().Set("Connection", "close")
+			http.Error(w, "Parallel uploads are forbidden on this guest link", http.StatusConflict)
+			return
+		}
 		if _, ok := errors.AsType[store.GuestLinkNotFoundError](err); ok {
 			http.Error(w, "Invalid guest link ID", http.StatusNotFound)
 			return
@@ -108,6 +115,8 @@ func (s Server) guestEntryPost() http.HandlerFunc {
 			http.Error(w, "Failed to retrieve guest link", http.StatusInternalServerError)
 			return
 		}
+
+		defer unlock()
 
 		if !gl.IsActive(s.now()) {
 			http.Error(w, "Guest link is no longer active", http.StatusUnauthorized)
