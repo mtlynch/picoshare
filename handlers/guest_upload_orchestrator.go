@@ -11,16 +11,16 @@ var errParallelGuestUpload = errors.New("parallel uploads are forbidden on this 
 
 // For guests that have upload limits, claim exclusive access to prevent
 // parallel uploads from exceeding the limit. Claims are local to one Server.
-type guestUploadLocks struct {
+type guestUploadOrchestrator struct {
 	mu     sync.Mutex
 	active map[picoshare.GuestLinkID]struct{}
 }
 
-func newGuestUploadOrchestrator() *guestUploadLocks {
-	return &guestUploadLocks{active: make(map[picoshare.GuestLinkID]struct{})}
+func newGuestUploadOrchestrator() *guestUploadOrchestrator {
+	return &guestUploadOrchestrator{active: make(map[picoshare.GuestLinkID]struct{})}
 }
 
-func (locks *guestUploadLocks) tryAcquire(id picoshare.GuestLinkID) (func(), bool) {
+func (locks *guestUploadOrchestrator) tryAcquire(id picoshare.GuestLinkID) (func(), bool) {
 	locks.mu.Lock()
 	defer locks.mu.Unlock()
 	if _, active := locks.active[id]; active {
@@ -43,7 +43,7 @@ func (s Server) acquireGuestLink(id picoshare.GuestLinkID) (picoshare.GuestLink,
 		return gl, func() {}, nil
 	}
 
-	unlock, acquired := s.guestUploadLocks.tryAcquire(id)
+	unlock, acquired := s.guestUploadOrchestrator.tryAcquire(id)
 	if !acquired {
 		return picoshare.GuestLink{}, nil, errParallelGuestUpload
 	}
