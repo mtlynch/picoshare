@@ -7,6 +7,7 @@ import (
 
 	"github.com/mtlynch/picoshare/handlers/parse"
 	"github.com/mtlynch/picoshare/picoshare"
+	"github.com/mtlynch/picoshare/testutil"
 )
 
 func TestExpiration(t *testing.T) {
@@ -21,7 +22,7 @@ func TestExpiration(t *testing.T) {
 			description: "valid expiration",
 			currentTime: mustParseDate("2024-06-01"),
 			input:       "2025-01-01T00:00:00Z",
-			output:      mustParseExpiration("2025-01-01T00:00:00Z"),
+			output:      testutil.MustParseExpirationTime(t, "2025-01-01T00:00:00Z"),
 			err:         nil,
 		},
 		{
@@ -56,14 +57,6 @@ func TestExpiration(t *testing.T) {
 			}
 		})
 	}
-}
-
-func mustParseExpiration(s string) picoshare.ExpirationTime {
-	et, err := time.Parse(time.RFC3339, s)
-	if err != nil {
-		panic(err)
-	}
-	return picoshare.ExpirationTime(et)
 }
 
 func mustParseDate(s string) time.Time {

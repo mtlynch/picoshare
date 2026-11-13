@@ -16,6 +16,7 @@ import (
 	"github.com/mtlynch/picoshare/picoshare"
 	"github.com/mtlynch/picoshare/store"
 	"github.com/mtlynch/picoshare/store/test_sqlite"
+	"github.com/mtlynch/picoshare/testutil"
 )
 
 func TestGuestLinksPost(t *testing.T) {
@@ -39,7 +40,7 @@ func TestGuestLinksPost(t *testing.T) {
 			expected: picoshare.GuestLink{
 				Created:         mustParseTime("2024-01-01T00:00:00Z"),
 				Label:           picoshare.GuestLinkLabel(""),
-				UrlExpires:      mustParseExpirationTime("2030-01-02T03:04:25Z"),
+				UrlExpires:      testutil.MustParseExpirationTime(t, "2030-01-02T03:04:25Z"),
 				MaxFileLifetime: picoshare.FileLifetimeInfinite,
 				MaxFileBytes:    picoshare.GuestUploadUnlimitedFileSize,
 				MaxFileUploads:  picoshare.GuestUploadUnlimitedFileUploads,
@@ -59,7 +60,7 @@ func TestGuestLinksPost(t *testing.T) {
 			expected: picoshare.GuestLink{
 				Created:         mustParseTime("2024-01-01T00:00:00Z"),
 				Label:           picoshare.GuestLinkLabel("For my good pal, Maurice"),
-				UrlExpires:      mustParseExpirationTime("2030-01-02T03:04:25Z"),
+				UrlExpires:      testutil.MustParseExpirationTime(t, "2030-01-02T03:04:25Z"),
 				MaxFileLifetime: picoshare.FileLifetimeInfinite,
 				MaxFileBytes:    makeGuestUploadMaxFileBytes(1048576),
 				MaxFileUploads:  makeGuestUploadCountLimit(1),
@@ -79,7 +80,7 @@ func TestGuestLinksPost(t *testing.T) {
 			expected: picoshare.GuestLink{
 				Created:         mustParseTime("2024-01-01T00:00:00Z"),
 				Label:           picoshare.GuestLinkLabel("For my good pal, Maurice"),
-				UrlExpires:      mustParseExpirationTime("2030-01-02T03:04:25Z"),
+				UrlExpires:      testutil.MustParseExpirationTime(t, "2030-01-02T03:04:25Z"),
 				MaxFileLifetime: picoshare.NewFileLifetimeInDays(1),
 				MaxFileBytes:    makeGuestUploadMaxFileBytes(1048576),
 				MaxFileUploads:  makeGuestUploadCountLimit(1),
@@ -99,7 +100,7 @@ func TestGuestLinksPost(t *testing.T) {
 			expected: picoshare.GuestLink{
 				Created:         mustParseTime("2024-01-01T00:00:00Z"),
 				Label:           picoshare.GuestLinkLabel("For my good pal, Maurice"),
-				UrlExpires:      mustParseExpirationTime("2030-01-02T03:04:25Z"),
+				UrlExpires:      testutil.MustParseExpirationTime(t, "2030-01-02T03:04:25Z"),
 				MaxFileLifetime: picoshare.NewFileLifetimeInDays(30),
 				MaxFileBytes:    makeGuestUploadMaxFileBytes(1048576),
 				MaxFileUploads:  makeGuestUploadCountLimit(1),
@@ -353,7 +354,7 @@ func TestDeleteExistingGuestLink(t *testing.T) {
 	dataStore.InsertGuestLink(picoshare.GuestLink{
 		ID:         picoshare.GuestLinkID("abcdefgh23456789"),
 		Created:    mustParseTime("2025-05-25T00:00:00Z"),
-		UrlExpires: mustParseExpirationTime("2030-01-02T03:04:25Z"),
+		UrlExpires: testutil.MustParseExpirationTime(t, "2030-01-02T03:04:25Z"),
 	})
 	s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceCheckFunc, nilGarbageCollector, time.Now)
 
@@ -430,7 +431,7 @@ func TestEnableDisableGuestLink(t *testing.T) {
 			guestLinkInStore: picoshare.GuestLink{
 				ID:              picoshare.GuestLinkID("abcdefgh23456789"),
 				Created:         mustParseTime("2024-01-01T00:00:00Z"),
-				UrlExpires:      mustParseExpirationTime("2030-01-02T03:04:25Z"),
+				UrlExpires:      testutil.MustParseExpirationTime(t, "2030-01-02T03:04:25Z"),
 				MaxFileLifetime: picoshare.FileLifetimeInfinite,
 				MaxFileBytes:    picoshare.GuestUploadUnlimitedFileSize,
 				MaxFileUploads:  picoshare.GuestUploadUnlimitedFileUploads,
@@ -439,7 +440,7 @@ func TestEnableDisableGuestLink(t *testing.T) {
 			expected: picoshare.GuestLink{
 				ID:              picoshare.GuestLinkID("abcdefgh23456789"),
 				Created:         mustParseTime("2024-01-01T00:00:00Z"),
-				UrlExpires:      mustParseExpirationTime("2030-01-02T03:04:25Z"),
+				UrlExpires:      testutil.MustParseExpirationTime(t, "2030-01-02T03:04:25Z"),
 				MaxFileLifetime: picoshare.FileLifetimeInfinite,
 				MaxFileBytes:    picoshare.GuestUploadUnlimitedFileSize,
 				MaxFileUploads:  picoshare.GuestUploadUnlimitedFileUploads,
@@ -453,7 +454,7 @@ func TestEnableDisableGuestLink(t *testing.T) {
 			guestLinkInStore: picoshare.GuestLink{
 				ID:              picoshare.GuestLinkID("abcdefgh23456789"),
 				Created:         mustParseTime("2024-01-01T00:00:00Z"),
-				UrlExpires:      mustParseExpirationTime("2030-01-02T03:04:25Z"),
+				UrlExpires:      testutil.MustParseExpirationTime(t, "2030-01-02T03:04:25Z"),
 				MaxFileLifetime: picoshare.FileLifetimeInfinite,
 				MaxFileBytes:    picoshare.GuestUploadUnlimitedFileSize,
 				MaxFileUploads:  picoshare.GuestUploadUnlimitedFileUploads,
@@ -462,7 +463,7 @@ func TestEnableDisableGuestLink(t *testing.T) {
 			expected: picoshare.GuestLink{
 				ID:              picoshare.GuestLinkID("abcdefgh23456789"),
 				Created:         mustParseTime("2024-01-01T00:00:00Z"),
-				UrlExpires:      mustParseExpirationTime("2030-01-02T03:04:25Z"),
+				UrlExpires:      testutil.MustParseExpirationTime(t, "2030-01-02T03:04:25Z"),
 				MaxFileLifetime: picoshare.FileLifetimeInfinite,
 				MaxFileBytes:    picoshare.GuestUploadUnlimitedFileSize,
 				MaxFileUploads:  picoshare.GuestUploadUnlimitedFileUploads,
@@ -476,7 +477,7 @@ func TestEnableDisableGuestLink(t *testing.T) {
 			guestLinkInStore: picoshare.GuestLink{
 				ID:              picoshare.GuestLinkID("abcdefgh23456789"),
 				Created:         mustParseTime("2024-01-01T00:00:00Z"),
-				UrlExpires:      mustParseExpirationTime("2030-01-02T03:04:25Z"),
+				UrlExpires:      testutil.MustParseExpirationTime(t, "2030-01-02T03:04:25Z"),
 				MaxFileLifetime: picoshare.FileLifetimeInfinite,
 				MaxFileBytes:    picoshare.GuestUploadUnlimitedFileSize,
 				MaxFileUploads:  picoshare.GuestUploadUnlimitedFileUploads,
@@ -485,7 +486,7 @@ func TestEnableDisableGuestLink(t *testing.T) {
 			expected: picoshare.GuestLink{
 				ID:              picoshare.GuestLinkID("abcdefgh23456789"),
 				Created:         mustParseTime("2024-01-01T00:00:00Z"),
-				UrlExpires:      mustParseExpirationTime("2030-01-02T03:04:25Z"),
+				UrlExpires:      testutil.MustParseExpirationTime(t, "2030-01-02T03:04:25Z"),
 				MaxFileLifetime: picoshare.FileLifetimeInfinite,
 				MaxFileBytes:    picoshare.GuestUploadUnlimitedFileSize,
 				MaxFileUploads:  picoshare.GuestUploadUnlimitedFileUploads,
@@ -499,7 +500,7 @@ func TestEnableDisableGuestLink(t *testing.T) {
 			guestLinkInStore: picoshare.GuestLink{
 				ID:              picoshare.GuestLinkID("abcdefgh23456789"),
 				Created:         mustParseTime("2024-01-01T00:00:00Z"),
-				UrlExpires:      mustParseExpirationTime("2030-01-02T03:04:25Z"),
+				UrlExpires:      testutil.MustParseExpirationTime(t, "2030-01-02T03:04:25Z"),
 				MaxFileLifetime: picoshare.FileLifetimeInfinite,
 				MaxFileBytes:    picoshare.GuestUploadUnlimitedFileSize,
 				MaxFileUploads:  picoshare.GuestUploadUnlimitedFileUploads,
@@ -508,7 +509,7 @@ func TestEnableDisableGuestLink(t *testing.T) {
 			expected: picoshare.GuestLink{
 				ID:              picoshare.GuestLinkID("abcdefgh23456789"),
 				Created:         mustParseTime("2024-01-01T00:00:00Z"),
-				UrlExpires:      mustParseExpirationTime("2030-01-02T03:04:25Z"),
+				UrlExpires:      testutil.MustParseExpirationTime(t, "2030-01-02T03:04:25Z"),
 				MaxFileLifetime: picoshare.FileLifetimeInfinite,
 				MaxFileBytes:    picoshare.GuestUploadUnlimitedFileSize,
 				MaxFileUploads:  picoshare.GuestUploadUnlimitedFileUploads,

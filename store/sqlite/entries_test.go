@@ -10,6 +10,7 @@ import (
 
 	"github.com/mtlynch/picoshare/picoshare"
 	"github.com/mtlynch/picoshare/store/test_sqlite"
+	"github.com/mtlynch/picoshare/testutil"
 )
 
 func TestInsertDeleteSingleEntry(t *testing.T) {
@@ -21,7 +22,7 @@ func TestInsertDeleteSingleEntry(t *testing.T) {
 		ID:       picoshare.MustCreateEntryID("abcdefghij"),
 		Filename: "dummy-file.txt",
 		Uploaded: mustParseTime("2025-05-25T00:00:00Z"),
-		Expires:  mustParseExpirationTime("2040-01-01T00:00:00Z"),
+		Expires:  testutil.MustParseExpirationTime(t, "2040-01-01T00:00:00Z"),
 		Size:     mustParseFileSize(len(input)),
 	}); err != nil {
 		t.Fatalf("failed to insert file into sqlite: %v", err)
@@ -86,7 +87,7 @@ func TestReadLastByteOfEntry(t *testing.T) {
 		ID:       picoshare.MustCreateEntryID("abcdefghij"),
 		Filename: "dummy-file.txt",
 		Uploaded: mustParseTime("2025-05-25T00:00:00Z"),
-		Expires:  mustParseExpirationTime("2040-01-01T00:00:00Z"),
+		Expires:  testutil.MustParseExpirationTime(t, "2040-01-01T00:00:00Z"),
 		Size:     mustParseFileSize(len(input)),
 	}); err != nil {
 		t.Fatalf("failed to insert file into sqlite: %v", err)
@@ -129,7 +130,7 @@ func TestUpdateEntryMetadata(t *testing.T) {
 		ID:                 picoshare.MustCreateEntryID("abcdefghij"),
 		Filename:           "dummy-file.txt",
 		Uploaded:           mustParseTime("2025-05-25T00:00:00Z"),
-		Expires:            mustParseExpirationTime("2040-01-01T00:00:00Z"),
+		Expires:            testutil.MustParseExpirationTime(t, "2040-01-01T00:00:00Z"),
 		Size:               mustParseFileSize(len(data)),
 		DownloadPassphrase: passphrase,
 	}); err != nil {
@@ -146,7 +147,7 @@ func TestUpdateEntryMetadata(t *testing.T) {
 
 	if err := dataStore.UpdateEntryMetadata(picoshare.MustCreateEntryID("abcdefghij"), picoshare.UploadMetadata{
 		Filename:           "renamed-file.txt",
-		Expires:            mustParseExpirationTime("2041-01-01T00:00:00Z"),
+		Expires:            testutil.MustParseExpirationTime(t, "2041-01-01T00:00:00Z"),
 		Note:               picoshare.FileNote{Value: new("updated note")},
 		DownloadPassphrase: picoshare.DownloadPassphrase{},
 	}); err != nil {
@@ -160,7 +161,7 @@ func TestUpdateEntryMetadata(t *testing.T) {
 	if got, want := metadata.Filename, picoshare.Filename("renamed-file.txt"); got != want {
 		t.Errorf("filename=%q, want=%q", got, want)
 	}
-	if got, want := metadata.Expires, mustParseExpirationTime("2041-01-01T00:00:00Z"); got != want {
+	if got, want := metadata.Expires, testutil.MustParseExpirationTime(t, "2041-01-01T00:00:00Z"); got != want {
 		t.Errorf("expiration=%v, want=%v", got, want)
 	}
 	if got, want := metadata.Note.String(), "updated note"; got != want {
@@ -186,7 +187,7 @@ func TestGetEntriesMetadataOmitsDownloadPassphrase(t *testing.T) {
 		ID:                 picoshare.MustCreateEntryID("abcdefghij"),
 		Filename:           "dummy-file.txt",
 		Uploaded:           mustParseTime("2025-05-25T00:00:00Z"),
-		Expires:            mustParseExpirationTime("2040-01-01T00:00:00Z"),
+		Expires:            testutil.MustParseExpirationTime(t, "2040-01-01T00:00:00Z"),
 		Size:               mustParseFileSize(len(data)),
 		DownloadPassphrase: passphrase,
 	}); err != nil {
@@ -211,14 +212,6 @@ func mustParseTime(s string) time.Time {
 		panic(err)
 	}
 	return t
-}
-
-func mustParseExpirationTime(s string) picoshare.ExpirationTime {
-	et, err := time.Parse(time.RFC3339, s)
-	if err != nil {
-		panic(err)
-	}
-	return picoshare.ExpirationTime(et)
 }
 
 func mustParseFileSize(val int) picoshare.FileSize {

@@ -12,6 +12,7 @@ import (
 	"github.com/mtlynch/picoshare/picoshare"
 	"github.com/mtlynch/picoshare/store"
 	"github.com/mtlynch/picoshare/store/test_sqlite"
+	"github.com/mtlynch/picoshare/testutil"
 )
 
 var nilSpaceCheckFunc handlers.SpaceCheckFunc
@@ -24,7 +25,7 @@ func TestDeleteExistingFile(t *testing.T) {
 		picoshare.UploadMetadata{
 			ID:       picoshare.MustCreateEntryID("hR87apiUCj"),
 			Uploaded: mustParseTime("2023-01-01T00:00:00Z"),
-			Expires:  mustParseExpirationTime("2024-01-01T00:00:00Z"),
+			Expires:  testutil.MustParseExpirationTime(t, "2024-01-01T00:00:00Z"),
 			Size:     mustParseFileSize(len(fileContents)),
 		})
 	s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceCheckFunc, nilGarbageCollector, time.Now)
