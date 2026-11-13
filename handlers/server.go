@@ -41,7 +41,7 @@ func New(authenticator Authenticator, store Store, checkSpace SpaceCheckFunc, co
 		checkSpace:              checkSpace,
 		collector:               collector,
 		now:                     now,
-		guestUploadOrchestrator: newGuestUploadOrchestrator(),
+		guestUploadOrchestrator: newGuestUploadOrchestrator(store),
 	}
 
 	s.routes()

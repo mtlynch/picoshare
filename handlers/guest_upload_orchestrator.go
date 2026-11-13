@@ -9,15 +9,23 @@ import (
 
 var errParallelGuestUpload = errors.New("parallel uploads are forbidden on this guest link")
 
+type guestLinkStore interface {
+	GetGuestLink(picoshare.GuestLinkID) (picoshare.GuestLink, error)
+}
+
 // For guests that have upload limits, claim exclusive access to prevent
 // parallel uploads from exceeding the limit. Claims are local to one Server.
 type guestUploadOrchestrator struct {
+	store  guestLinkStore
 	mu     sync.Mutex
 	active map[picoshare.GuestLinkID]struct{}
 }
 
-func newGuestUploadOrchestrator() *guestUploadOrchestrator {
-	return &guestUploadOrchestrator{active: make(map[picoshare.GuestLinkID]struct{})}
+func newGuestUploadOrchestrator(store guestLinkStore) *guestUploadOrchestrator {
+	return &guestUploadOrchestrator{
+		store:  store,
+		active: make(map[picoshare.GuestLinkID]struct{}),
+	}
 }
 
 func (locks *guestUploadOrchestrator) tryAcquire(id picoshare.GuestLinkID) (func(), bool) {
@@ -34,8 +42,8 @@ func (locks *guestUploadOrchestrator) tryAcquire(id picoshare.GuestLinkID) (func
 	}, true
 }
 
-func (s Server) acquireGuestLink(id picoshare.GuestLinkID) (picoshare.GuestLink, func(), error) {
-	gl, err := s.store.GetGuestLink(id)
+func (locks *guestUploadOrchestrator) acquire(id picoshare.GuestLinkID) (picoshare.GuestLink, func(), error) {
+	gl, err := locks.store.GetGuestLink(id)
 	if err != nil {
 		return picoshare.GuestLink{}, nil, err
 	}
@@ -43,13 +51,13 @@ func (s Server) acquireGuestLink(id picoshare.GuestLinkID) (picoshare.GuestLink,
 		return gl, func() {}, nil
 	}
 
-	unlock, acquired := s.guestUploadOrchestrator.tryAcquire(id)
+	unlock, acquired := locks.tryAcquire(id)
 	if !acquired {
 		return picoshare.GuestLink{}, nil, errParallelGuestUpload
 	}
 	// Another upload may have finished after the initial lookup but before this
 	// request claimed access. Only the refreshed link may authorize the request.
-	gl, err = s.store.GetGuestLink(id)
+	gl, err = locks.store.GetGuestLink(id)
 	if err != nil {
 		unlock()
 		return picoshare.GuestLink{}, nil, err

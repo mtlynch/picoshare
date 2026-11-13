@@ -99,7 +99,7 @@ func (s Server) guestEntryPost() http.HandlerFunc {
 			return
 		}
 
-		gl, unlock, err := s.acquireGuestLink(guestLinkID)
+		gl, unlock, err := s.guestUploadOrchestrator.acquire(guestLinkID)
 		if errors.Is(err, errParallelGuestUpload) {
 			// Prevent HTTP/1.1 from draining the rejected body before sending
 			// the error response.
