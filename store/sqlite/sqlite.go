@@ -76,7 +76,7 @@ func New(params Params) Store {
 }
 
 func formatExpirationTime(et picoshare.ExpirationTime) string {
-	return formatTime(time.Time(et))
+	return formatTime(et.Time())
 }
 
 func formatTime(t time.Time) string {

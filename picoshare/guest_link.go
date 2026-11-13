@@ -51,7 +51,7 @@ func (gl GuestLink) isExpired(now time.Time) bool {
 	if gl.UrlExpires == NeverExpire {
 		return false
 	}
-	return !now.Before(time.Time(gl.UrlExpires))
+	return !now.Before(gl.UrlExpires.Time())
 }
 
 func (gl GuestLink) IsActive(now time.Time) bool {

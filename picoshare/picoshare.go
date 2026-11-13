@@ -8,10 +8,44 @@ import (
 	"github.com/mtlynch/picoshare/random"
 )
 
+// picoshareEpoch is the first release date, matching migration 015's lower
+// bound for timestamps.
+var picoshareEpoch = time.Date(2022, time.February, 20, 0, 0, 0, 0, time.UTC)
+
+// NeverExpire represents the "never expire" option with a distant timestamp.
+var NeverExpire = ExpirationTime{value: time.Date(2999, time.December, 31, 0, 0, 0, 0, time.UTC)}
+
+// ExpirationTime is an expiration timestamp at or after PicoShare's first
+// release. The zero value is invalid; use NewExpirationTime to construct one.
+type ExpirationTime struct {
+	value time.Time
+}
+
+func (et ExpirationTime) String() string {
+	return et.Time().String()
+}
+
+func (et ExpirationTime) Time() time.Time {
+	return et.value
+}
+
+// After reports whether et is later than other.
+func (et ExpirationTime) After(other ExpirationTime) bool {
+	return et.value.After(other.value)
+}
+
+// NewExpirationTime constructs an expiration timestamp, including past
+// expirations, but rejects timestamps before PicoShare's first release.
+func NewExpirationTime(raw time.Time) (ExpirationTime, error) {
+	if raw.Before(picoshareEpoch) {
+		return ExpirationTime{}, fmt.Errorf("expiration time must be at or after %s", picoshareEpoch.Format(time.RFC3339))
+	}
+	return ExpirationTime{value: raw}, nil
+}
+
 type (
-	Filename       string
-	ContentType    string
-	ExpirationTime time.Time
+	Filename    string
+	ContentType string
 
 	FileNote struct {
 		Value *string
@@ -67,9 +101,6 @@ type EntryID struct {
 	value string
 }
 
-// Treat a distant expiration time as sort of a sentinel value signifying a "never expire" option.
-var NeverExpire = ExpirationTime(time.Date(2999, time.December, 31, 0, 0, 0, 0, time.UTC))
-
 func (id EntryID) String() string {
 	return id.value
 }
@@ -110,14 +141,6 @@ func (f Filename) String() string {
 
 func (ct ContentType) String() string {
 	return string(ct)
-}
-
-func (et ExpirationTime) String() string {
-	return et.Time().String()
-}
-
-func (et ExpirationTime) Time() time.Time {
-	return time.Time(et)
 }
 
 func (n FileNote) String() string {

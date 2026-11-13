@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/mtlynch/picoshare/picoshare"
+	"github.com/mtlynch/picoshare/testutil"
 )
 
 func TestGuestLinkIsActive(t *testing.T) {
@@ -18,7 +19,7 @@ func TestGuestLinkIsActive(t *testing.T) {
 			explanation: "a link whose expiration is after the current time should be marked as active",
 			now:         time.Date(2025, time.January, 1, 0, 0, 0, 0, time.UTC),
 			guestLink: picoshare.GuestLink{
-				UrlExpires: picoshare.ExpirationTime(time.Date(2025, time.January, 2, 0, 0, 0, 0, time.UTC)),
+				UrlExpires: testutil.MustCreate(t, picoshare.NewExpirationTime, time.Date(2025, time.January, 2, 0, 0, 0, 0, time.UTC)),
 			},
 			isActiveWant: true,
 		},
@@ -26,7 +27,7 @@ func TestGuestLinkIsActive(t *testing.T) {
 			explanation: "a link whose expiration equals the current time should be marked as inactive",
 			now:         time.Date(2025, time.January, 2, 0, 0, 0, 0, time.UTC),
 			guestLink: picoshare.GuestLink{
-				UrlExpires: picoshare.ExpirationTime(time.Date(2025, time.January, 2, 0, 0, 0, 0, time.UTC)),
+				UrlExpires: testutil.MustCreate(t, picoshare.NewExpirationTime, time.Date(2025, time.January, 2, 0, 0, 0, 0, time.UTC)),
 			},
 			isActiveWant: false,
 		},
@@ -34,7 +35,7 @@ func TestGuestLinkIsActive(t *testing.T) {
 			explanation: "a link whose expiration is before the current time should be marked as inactive",
 			now:         time.Date(2025, time.January, 3, 0, 0, 0, 0, time.UTC),
 			guestLink: picoshare.GuestLink{
-				UrlExpires: picoshare.ExpirationTime(time.Date(2025, time.January, 2, 0, 0, 0, 0, time.UTC)),
+				UrlExpires: testutil.MustCreate(t, picoshare.NewExpirationTime, time.Date(2025, time.January, 2, 0, 0, 0, 0, time.UTC)),
 			},
 			isActiveWant: false,
 		},
