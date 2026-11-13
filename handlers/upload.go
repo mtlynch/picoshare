@@ -311,7 +311,7 @@ func (s Server) parseGuestExpirationFromRequest(r *http.Request, gl picoshare.Gu
 	}
 
 	// If the requested expiration is beyond the guest link's maximum, reject it.
-	if requestedExpiration.Time().After(maxPermittedExpiration.Time()) {
+	if requestedExpiration.After(maxPermittedExpiration) {
 		return picoshare.ExpirationTime{},
 			fmt.Errorf("requested expiration time of %v is beyond guest link's limit: %v",
 				requestedExpiration,

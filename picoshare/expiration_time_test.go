@@ -75,3 +75,48 @@ func TestExpirationTimeString(t *testing.T) {
 		t.Errorf("expiration.String()=%q, want=%q", got, want)
 	}
 }
+
+func TestExpirationTimeAfter(t *testing.T) {
+	for _, tt := range []struct {
+		explanation   string
+		expiration    time.Time
+		other         time.Time
+		afterExpected bool
+	}{
+		{
+			explanation:   "an expiration one nanosecond later is after the other expiration",
+			expiration:    time.Date(2025, time.January, 1, 0, 0, 0, 1, time.UTC),
+			other:         time.Date(2025, time.January, 1, 0, 0, 0, 0, time.UTC),
+			afterExpected: true,
+		},
+		{
+			explanation: "an earlier expiration is not after the other expiration",
+			expiration:  time.Date(2025, time.January, 1, 0, 0, 0, 0, time.UTC),
+			other:       time.Date(2025, time.January, 1, 0, 0, 0, 1, time.UTC),
+		},
+		{
+			explanation: "equal expirations are not after each other",
+			expiration:  time.Date(2025, time.January, 1, 0, 0, 0, 0, time.UTC),
+			other:       time.Date(2025, time.January, 1, 0, 0, 0, 0, time.UTC),
+		},
+		{
+			explanation: "equal instants in different time zones are not after each other",
+			expiration:  time.Date(2025, time.January, 1, 1, 0, 0, 0, time.FixedZone("UTC+1", 60*60)),
+			other:       time.Date(2025, time.January, 1, 0, 0, 0, 0, time.UTC),
+		},
+		{
+			explanation:   "the never-expire timestamp sorts after an earlier expiration",
+			expiration:    picoshare.NeverExpire.Time(),
+			other:         time.Date(2025, time.January, 1, 0, 0, 0, 0, time.UTC),
+			afterExpected: true,
+		},
+	} {
+		t.Run(tt.explanation, func(t *testing.T) {
+			expiration := testutil.MustCreate(t, picoshare.NewExpirationTime, tt.expiration)
+			other := testutil.MustCreate(t, picoshare.NewExpirationTime, tt.other)
+			if got, want := expiration.After(other), tt.afterExpected; got != want {
+				t.Errorf("expiration.After(other)=%v, want=%v", got, want)
+			}
+		})
+	}
+}

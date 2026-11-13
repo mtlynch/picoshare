@@ -29,6 +29,11 @@ func (et ExpirationTime) Time() time.Time {
 	return et.value
 }
 
+// After reports whether et is later than other.
+func (et ExpirationTime) After(other ExpirationTime) bool {
+	return et.value.After(other.value)
+}
+
 // NewExpirationTime constructs an expiration timestamp, including past
 // expirations, but rejects timestamps before PicoShare's first release.
 func NewExpirationTime(raw time.Time) (ExpirationTime, error) {
