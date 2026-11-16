@@ -28,6 +28,9 @@ func newGuestUploadOrchestrator(store guestLinkStore) *guestUploadOrchestrator {
 	}
 }
 
+// tryAcquire claims exclusive access to a guest link without waiting. It returns
+// nil and false if the link is already claimed; otherwise, the caller must invoke
+// the returned release function once when the upload finishes or fails.
 func (locks *guestUploadOrchestrator) tryAcquire(id picoshare.GuestLinkID) (func(), bool) {
 	locks.mu.Lock()
 	defer locks.mu.Unlock()
@@ -42,6 +45,10 @@ func (locks *guestUploadOrchestrator) tryAcquire(id picoshare.GuestLinkID) (func
 	}, true
 }
 
+// acquire retrieves a guest link and claims exclusive access if it has an upload
+// count limit, rejecting an existing claim with errParallelGuestUpload. Limited
+// links are refreshed after claiming access. On success, the caller must invoke
+// the returned release function, which does nothing for unlimited links.
 func (locks *guestUploadOrchestrator) acquire(id picoshare.GuestLinkID) (picoshare.GuestLink, func(), error) {
 	gl, err := locks.store.GetGuestLink(id)
 	if err != nil {
