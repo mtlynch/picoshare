@@ -17,7 +17,7 @@ import (
 	"github.com/mtlynch/picoshare/store/test_sqlite"
 )
 
-func TestParallelGuestUploadRespondsBeforeReceivingHTTPBody(t *testing.T) {
+func TestServerRejectsParallelGuestUploadBeforeReceivingHTTPBody(t *testing.T) {
 	dataStore := test_sqlite.New(t)
 	now := mustParseTime("2025-01-01T00:00:00Z")
 	mustInsertGuestUploadLink(t, &dataStore, picoshare.GuestLink{

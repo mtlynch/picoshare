@@ -29,7 +29,7 @@ func (r *beforeGuestUploadRead) Read(p []byte) (int, error) {
 	return r.Reader.Read(p)
 }
 
-func TestLimitedGuestUploadsRejectParallelRequests(t *testing.T) {
+func TestServerRejectsParallelLimitedGuestUploads(t *testing.T) {
 	for _, tt := range []struct {
 		explanation   string
 		uploadLimit   int
@@ -39,14 +39,14 @@ func TestLimitedGuestUploadsRejectParallelRequests(t *testing.T) {
 		storedUploads int
 	}{
 		{
-			explanation:   "parallel requests are forbidden even when multiple slots remain",
+			explanation:   "the server rejects parallel uploads even when multiple slots remain",
 			uploadLimit:   2,
 			firstStatus:   http.StatusOK,
 			laterStatus:   http.StatusOK,
 			storedUploads: 2,
 		},
 		{
-			explanation:   "an invalid upload releases access without consuming its slot",
+			explanation:   "the server releases access after an invalid upload without consuming a slot",
 			uploadLimit:   1,
 			firstNote:     "guest uploads cannot contain notes",
 			firstStatus:   http.StatusBadRequest,
@@ -99,7 +99,7 @@ func TestLimitedGuestUploadsRejectParallelRequests(t *testing.T) {
 						t.Errorf("rejection=%q, want=%q", got, want)
 					}
 					if got, want := bodyRead, false; got != want {
-						t.Errorf("rejected request read its body=%v, want=%v", got, want)
+						t.Errorf("server read the rejected request body=%v, want=%v", got, want)
 					}
 				}
 				releaseFirst()
