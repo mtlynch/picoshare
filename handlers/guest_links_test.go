@@ -62,8 +62,8 @@ func TestGuestLinksPost(t *testing.T) {
 				Label:           picoshare.GuestLinkLabel("For my good pal, Maurice"),
 				UrlExpires:      testutil.MustParseExpirationTime(t, "2030-01-02T03:04:25Z"),
 				MaxFileLifetime: picoshare.FileLifetimeInfinite,
-				MaxFileBytes:    makeGuestUploadMaxFileBytes(1048576),
-				MaxFileUploads:  makeGuestUploadCountLimit(1),
+				MaxFileBytes:    new(uint64(1048576)),
+				MaxFileUploads:  new(1),
 			},
 			status: http.StatusOK,
 		},
@@ -82,8 +82,8 @@ func TestGuestLinksPost(t *testing.T) {
 				Label:           picoshare.GuestLinkLabel("For my good pal, Maurice"),
 				UrlExpires:      testutil.MustParseExpirationTime(t, "2030-01-02T03:04:25Z"),
 				MaxFileLifetime: picoshare.NewFileLifetimeInDays(1),
-				MaxFileBytes:    makeGuestUploadMaxFileBytes(1048576),
-				MaxFileUploads:  makeGuestUploadCountLimit(1),
+				MaxFileBytes:    new(uint64(1048576)),
+				MaxFileUploads:  new(1),
 			},
 			status: http.StatusOK,
 		},
@@ -102,8 +102,8 @@ func TestGuestLinksPost(t *testing.T) {
 				Label:           picoshare.GuestLinkLabel("For my good pal, Maurice"),
 				UrlExpires:      testutil.MustParseExpirationTime(t, "2030-01-02T03:04:25Z"),
 				MaxFileLifetime: picoshare.NewFileLifetimeInDays(30),
-				MaxFileBytes:    makeGuestUploadMaxFileBytes(1048576),
-				MaxFileUploads:  makeGuestUploadCountLimit(1),
+				MaxFileBytes:    new(uint64(1048576)),
+				MaxFileUploads:  new(1),
 			},
 			status: http.StatusOK,
 		},
@@ -339,14 +339,6 @@ func TestOwnerUploadPostPersistenceError(t *testing.T) {
 	if got, want := strings.TrimSpace(rec.Body.String()), "failed to insert file into database"; got != want {
 		t.Errorf("response=%q, want=%q", got, want)
 	}
-}
-
-func makeGuestUploadMaxFileBytes(i uint64) picoshare.GuestUploadMaxFileBytes {
-	return picoshare.GuestUploadMaxFileBytes(&i)
-}
-
-func makeGuestUploadCountLimit(i int) picoshare.GuestUploadCountLimit {
-	return picoshare.GuestUploadCountLimit(&i)
 }
 
 func TestDeleteExistingGuestLink(t *testing.T) {

@@ -239,8 +239,7 @@ func downloadPassphraseString(passphrase picoshare.DownloadPassphrase) *string {
 	if passphrase.Empty() {
 		return nil
 	}
-	s := passphrase.String()
-	return &s
+	return new(passphrase.String())
 }
 
 func (s Store) UpdateEntryMetadata(id picoshare.EntryID, metadata picoshare.UploadMetadata) error {

@@ -219,7 +219,7 @@ func TestEntryPut(t *testing.T) {
 				"note":"My latest track"
 			}`,
 			filenameExpected: "cool-song.mp3",
-			noteExpected:     makeNote("My latest track"),
+			noteExpected:     picoshare.FileNote{Value: new("My latest track")},
 			expiresExpected:  testutil.MustParseExpirationTime(t, "2029-01-02T01:02:03Z"),
 			status:           http.StatusOK,
 		},
@@ -236,7 +236,7 @@ func TestEntryPut(t *testing.T) {
 				"note":"My latest track"
 			}`,
 			filenameExpected: "cool-song.mp3",
-			noteExpected:     makeNote("My latest track"),
+			noteExpected:     picoshare.FileNote{Value: new("My latest track")},
 			expiresExpected:  picoshare.NeverExpire,
 			status:           http.StatusOK,
 		},
@@ -309,7 +309,7 @@ func TestEntryPut(t *testing.T) {
 				"downloadPassphrase": "correct horse battery staple"
 			}`,
 			filenameExpected:           "cool-song.mp3",
-			noteExpected:               makeNote("My latest track"),
+			noteExpected:               picoshare.FileNote{Value: new("My latest track")},
 			expiresExpected:            testutil.MustParseExpirationTime(t, "2029-01-02T01:02:03Z"),
 			downloadPassphraseExpected: "correct horse battery staple",
 			status:                     http.StatusOK,
@@ -330,7 +330,7 @@ func TestEntryPut(t *testing.T) {
 				"downloadPassphrase": "new passphrase"
 			}`,
 			filenameExpected:           "cool-song.mp3",
-			noteExpected:               makeNote("My latest track"),
+			noteExpected:               picoshare.FileNote{Value: new("My latest track")},
 			expiresExpected:            testutil.MustParseExpirationTime(t, "2029-01-02T01:02:03Z"),
 			downloadPassphraseExpected: "new passphrase",
 			status:                     http.StatusOK,
@@ -351,7 +351,7 @@ func TestEntryPut(t *testing.T) {
 				"downloadPassphrase": ""
 			}`,
 			filenameExpected:           "cool-song.mp3",
-			noteExpected:               makeNote("My latest track"),
+			noteExpected:               picoshare.FileNote{Value: new("My latest track")},
 			expiresExpected:            testutil.MustParseExpirationTime(t, "2029-01-02T01:02:03Z"),
 			downloadPassphraseExpected: "",
 			status:                     http.StatusOK,
@@ -371,7 +371,7 @@ func TestEntryPut(t *testing.T) {
 				"downloadPassphrase": ""
 			}`,
 			filenameExpected:           "cool-song.mp3",
-			noteExpected:               makeNote("My latest track"),
+			noteExpected:               picoshare.FileNote{Value: new("My latest track")},
 			expiresExpected:            testutil.MustParseExpirationTime(t, "2029-01-02T01:02:03Z"),
 			downloadPassphraseExpected: "",
 			status:                     http.StatusOK,
@@ -391,7 +391,7 @@ func TestEntryPut(t *testing.T) {
 				"note":"My latest track"
 			}`,
 			filenameExpected:           "cool-song.mp3",
-			noteExpected:               makeNote("My latest track"),
+			noteExpected:               picoshare.FileNote{Value: new("My latest track")},
 			expiresExpected:            testutil.MustParseExpirationTime(t, "2029-01-02T01:02:03Z"),
 			downloadPassphraseExpected: "",
 			status:                     http.StatusOK,
@@ -602,7 +602,7 @@ func TestGuestUpload(t *testing.T) {
 				ID:              picoshare.GuestLinkID("abcdefgh23456789"),
 				Created:         mustParseTime("2024-01-01T00:00:00Z"),
 				UrlExpires:      testutil.MustParseExpirationTime(t, "2030-01-02T03:04:25Z"),
-				MaxFileUploads:  makeGuestUploadCountLimit(2),
+				MaxFileUploads:  new(2),
 				MaxFileLifetime: picoshare.FileLifetimeInfinite,
 			},
 			entriesInStore: []picoshare.UploadEntry{
@@ -638,7 +638,7 @@ func TestGuestUpload(t *testing.T) {
 				ID:              picoshare.GuestLinkID("abcdefgh23456789"),
 				Created:         mustParseTime("2024-01-01T00:00:00Z"),
 				UrlExpires:      testutil.MustParseExpirationTime(t, "2030-01-02T03:04:25Z"),
-				MaxFileBytes:    makeGuestUploadMaxFileBytes(1),
+				MaxFileBytes:    new(uint64(1)),
 				MaxFileLifetime: picoshare.FileLifetimeInfinite,
 			},
 			currentTime:                mustParseTime("2024-01-01T00:00:00Z"),
@@ -1094,10 +1094,6 @@ func mustReadAll(r io.Reader) []byte {
 		panic(err)
 	}
 	return d
-}
-
-func makeNote(s string) picoshare.FileNote {
-	return picoshare.FileNote{Value: &s}
 }
 
 func mustParseFileSize(val int) picoshare.FileSize {

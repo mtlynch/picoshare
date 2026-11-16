@@ -19,13 +19,13 @@ func TestFileNote(t *testing.T) {
 			description: "valid message",
 			input:       "Shared with my college group chat",
 			valid:       true,
-			output:      makeFileNote("Shared with my college group chat"),
+			output:      picoshare.FileNote{Value: new("Shared with my college group chat")},
 		},
 		{
 			description: "message of maximum bytes",
 			input:       strings.Repeat("A", parse.MaxFileNoteBytes),
 			valid:       true,
-			output:      makeFileNote(strings.Repeat("A", parse.MaxFileNoteBytes)),
+			output:      picoshare.FileNote{Value: new(strings.Repeat("A", parse.MaxFileNoteBytes))},
 		},
 		{
 			description: "message of maximum length with multibyte Unicode characters",
@@ -83,8 +83,4 @@ func TestFileNote(t *testing.T) {
 			}
 		})
 	}
-}
-
-func makeFileNote(s string) picoshare.FileNote {
-	return picoshare.FileNote{Value: &s}
 }
