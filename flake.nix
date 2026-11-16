@@ -86,12 +86,163 @@
           ]);
       };
 
-      release = import ./nix/release.nix {
-        pkgs = gopkg;
-        src = backendSrc;
-        vendorHash = goVendorHash;
-        litestreamPkgs = litestream-nixpkgs;
+      release = let
+        inherit (gopkg) lib;
+        litestreamVersion = litestream-nixpkgs.legacyPackages.${system}.litestream.version;
+        targets = {
+          linux-amd64 = {
+            packages = gopkg.pkgsCross.gnu64;
+            architecture = "amd64";
+            litestreamArchitecture = "amd64";
+            litestreamHash = "sha256-63Wj3lyrA4dc2un19TnmrtrdZmBwA9mx56kHeUiBi6A=";
+          };
+          linux-arm64 = {
+            packages = gopkg.pkgsCross.aarch64-multiplatform;
+            architecture = "arm64";
+            litestreamArchitecture = "arm64";
+            litestreamHash = "sha256-lYX1pQhRa9Zq8rI3a6tN4lal744rc+x2BVnmeWKPLVk=";
+          };
+          linux-armv7 = {
+            packages = gopkg.pkgsCross.armv7l-hf-multiplatform;
+            architecture = "arm";
+            litestreamArchitecture = "arm7";
+            litestreamHash = "sha256-Il8tDsQx3TLTjuR+OUHrcv4DFqr/2UEYW6MPfG3iGGY=";
+          };
+        };
+        mkBackend = target: let
+          targetBuildGoModule = gopkg.buildGoModule.override {
+            inherit go;
+          };
+        in
+          targetBuildGoModule {
+            pname = "picoshare";
+            version = "0.0.1";
+            src = backendSrc;
+            vendorHash = goVendorHash;
+            subPackages = ["cmd/picoshare"];
+            env =
+              {
+                CGO_ENABLED = "0";
+                GOOS = "linux";
+                GOARCH = target.architecture;
+              }
+              // lib.optionalAttrs (target.architecture == "arm") {GOARM = "7";};
+            tags = ["netgo"];
+            ldflags = ["-w"];
+            doCheck = false;
+          };
+        binaries = lib.mapAttrs (_: mkBackend) targets;
+        mkImage = platform: target: let
+          litestreamArchive = gopkg.fetchurl {
+            url = "https://github.com/benbjohnson/litestream/releases/download/v${litestreamVersion}/litestream-v${litestreamVersion}-linux-${target.litestreamArchitecture}.tar.gz";
+            hash = target.litestreamHash;
+          };
+          runtime = gopkg.buildEnv {
+            name = "picoshare-runtime-${platform}";
+            paths = [target.packages.bash target.packages.coreutils target.packages.cacert];
+            pathsToLink = ["/bin" "/etc/ssl/certs"];
+          };
+        in
+          gopkg.dockerTools.streamLayeredImage {
+            name = "picoshare";
+            tag = platform;
+            inherit (target) architecture;
+            # Preserve the root account needed by Fly's SSH console.
+            contents = [runtime gopkg.dockerTools.fakeNss];
+            extraCommands = ''
+              mkdir -p app etc usr/bin data tmp
+              chmod 1777 tmp
+              cp ${binaries.${platform}}/bin/picoshare app/picoshare
+              tar --extract --gzip --file=${litestreamArchive} --directory=app litestream
+              cp ${./docker-entrypoint} app/docker-entrypoint
+              chmod +x app/docker-entrypoint app/litestream
+              cp ${./litestream.yml} etc/litestream.yml
+              cp ${./LICENSE} app/LICENSE
+              ln -s /bin/env usr/bin/env
+            '';
+            config = {
+              WorkingDir = "/app";
+              Entrypoint = ["/app/docker-entrypoint"];
+              Cmd = ["-db" "/data/store.db"];
+              Env = ["PATH=/bin:/usr/bin" "LITESTREAM_RETENTION=72h" "LITESTREAM_PATH=db"];
+            };
+          };
+        images = lib.mapAttrs mkImage targets;
+        nativePlatform = "linux-${gopkg.stdenv.hostPlatform.go.GOARCH}";
+      in {
+        backend = binaries.${nativePlatform};
+        docker-image = images.${nativePlatform};
+        release-binaries = gopkg.runCommand "picoshare-release-binaries" {} (
+          lib.concatStringsSep "\n" (lib.mapAttrsToList (platform: binary: ''
+              mkdir -p "$out/${platform}"
+              cp ${binary}/bin/picoshare "$out/${platform}/picoshare"
+            '')
+            binaries)
+        );
+        release-images = gopkg.runCommand "picoshare-release-images" {} (
+          ''mkdir -p "$out"''
+          + "\n"
+          + lib.concatStringsSep "\n" (lib.mapAttrsToList (platform: image: ''
+              ln -s ${image} "$out/${platform}"
+            '')
+            images)
+        );
       };
+
+      goTests = let
+        testBuildGoModule = gopkg.buildGoModule.override {inherit go;};
+        # These tools load packages using the same Go version as the tests.
+        go-critic = (gopkg.go-critic.override {buildGoModule = testBuildGoModule;}).overrideAttrs {
+          subPackages = ["cmd/go-critic"];
+        };
+        staticcheck = gopkg.go-tools.override {buildGoModule = testBuildGoModule;};
+        errcheck = gopkg.errcheck.override {buildGoModule = testBuildGoModule;};
+      in
+        assert gopkg.gci.version == "0.13.7";
+        assert go-critic.version == "0.14.3";
+        # Staticcheck's 2026.1 release is Go module version v0.7.0.
+        assert staticcheck.version == "2026.1";
+        assert errcheck.version == "1.10.0";
+          testBuildGoModule {
+            pname = "picoshare-go-tests";
+            version = "0.0.1";
+            src = gopkg.lib.fileset.toSource {
+              root = ./.;
+              fileset =
+                gopkg.lib.fileset.intersection
+                (gopkg.lib.fileset.gitTracked ./.)
+                (gopkg.lib.fileset.unions [
+                  ./dev-scripts/run-go-tests
+                  ./go.mod
+                  ./go.sum
+                  ./handlers/templates
+                  ./handlers/static
+                  ./store/sqlite/migrations
+                  (gopkg.lib.fileset.fileFilter (file: file.hasExt "go") ./.)
+                ]);
+            };
+            vendorHash = "sha256-Q2PtwnlWl71XOv0RUM4oWNknGPeyjBkGvO7dLQ93jlY=";
+            nativeBuildInputs = [gopkg.git gopkg.gci go-critic staticcheck errcheck sqlite];
+            env.CGO_ENABLED = "0";
+            dontBuild = true;
+            doCheck = true;
+            checkPhase = ''
+              runHook preCheck
+              export HOME="$TMPDIR/home"
+              mkdir -p "$HOME"
+              patchShebangs ./dev-scripts
+              git init --quiet
+              git add --all
+              ./dev-scripts/run-go-tests --full
+              runHook postCheck
+            '';
+            installPhase = ''
+              runHook preInstall
+              mkdir -p "$out"
+              cp .coverage.out .coverage.html "$out/"
+              runHook postInstall
+            '';
+          };
 
       npmDependenciesSrc = gopkg.lib.fileset.toSource {
         root = ./.;
@@ -199,10 +350,7 @@
         {
           inherit backend-dev frontend-check;
 
-          go-tests = import ./nix/go-tests.nix {
-            pkgs = gopkg;
-            inherit go sqlite;
-          };
+          go-tests = goTests;
 
           check-ci-workflows = mkBuildStep {
             name = "check-ci-workflows";
@@ -373,16 +521,34 @@
         // gopkg.lib.optionalAttrs gopkg.stdenv.isLinux {
           inherit (release) backend release-binaries docker-image release-images;
 
-          deploy-to-fly = import ./nix/fly.nix {
-            pkgs = gopkg;
-            inherit flyctl;
-            image = release.docker-image;
-          };
+          deploy-to-fly = let
+            skopeoPolicy = gopkg.writeText "containers-policy.json" (builtins.toJSON {
+              default = [{type = "reject";}];
+              transports.docker-archive."" = [
+                # Trust only the local archive; reject every other image source.
+                {type = "insecureAcceptAnything";}
+              ];
+            });
+            streamDockerImage = gopkg.writeShellScriptBin "stream-docker-image" ''
+              exec ${release.docker-image}
+            '';
+          in
+            gopkg.writeShellApplication {
+              name = "deploy-to-fly";
+              runtimeInputs = [gopkg.bash flyctl gopkg.skopeo gopkg.git gopkg.coreutils streamDockerImage];
+              text = ''
+                exec bash ${./dev-scripts/deploy-to-fly} ${skopeoPolicy}
+              '';
+              meta.mainProgram = "deploy-to-fly";
+            };
 
-          publish-release = import ./nix/publish-release.nix {
-            pkgs = gopkg;
-            binaries = release.release-binaries;
-            images = release.release-images;
+          publish-release = gopkg.writeShellApplication {
+            name = "publish-release";
+            runtimeInputs = with gopkg; [bash coreutils gzip gnutar git gh crane jq];
+            text = ''
+              exec bash ${./dev-scripts/publish-release} \
+                ${release.release-binaries} ${release.release-images} ${./dev-scripts/package-binaries}
+            '';
           };
         };
 
