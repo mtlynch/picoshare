@@ -11,6 +11,10 @@ set -u
 BASH_SCRIPTS=()
 
 while read -r filepath; do
+  if [[ ! -f "${filepath}" ]]; then
+    continue
+  fi
+
   # Check shebang for bash.
   if head -n 1 "${filepath}" | grep --quiet --regexp 'bash'; then
       BASH_SCRIPTS+=("${filepath}")
