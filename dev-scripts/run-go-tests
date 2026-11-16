@@ -48,7 +48,8 @@ if [[ -z "${GOBIN}" ]]; then
 fi
 readonly GOBIN
 
-project_go_files="$(git ls-files --cached --others --exclude-standard -- '*.go')"
+project_go_files="$(git ls-files --cached --others --exclude-standard -- \
+  '*.go' ':!:vendor/**')"
 readonly project_go_files
 GO_PACKAGE_DIRS=()
 declare -A seen_go_package_dirs=()
@@ -108,33 +109,40 @@ if [[ -n "${GCI_DIFF}" ]]; then
   exit 1
 fi
 
-# Install go-critic if it's not present.
-GOCRITIC_PATH="${GOBIN}/go-critic"
-readonly GOCRITIC_PATH
+# Use pinned tools from PATH when available, or install them for standalone use.
+GOCRITIC_PATH="$(command -v go-critic || true)"
+if [[ -z "${GOCRITIC_PATH}" ]]; then
+  GOCRITIC_PATH="${GOBIN}/go-critic"
+fi
 readonly GOCRITIC_VERSION="v0.14.3"
-if [[ ! -f "${GOCRITIC_PATH}" ]]; then
+if [[ ! -x "${GOCRITIC_PATH}" ]]; then
   CGO_ENABLED=0 go install \
     "github.com/go-critic/go-critic/cmd/go-critic@${GOCRITIC_VERSION}"
 fi
+readonly GOCRITIC_PATH
 "${GOCRITIC_PATH}" check "${GO_PACKAGE_DIRS[@]}"
 "${GOCRITIC_PATH}" check -enable=returnAfterHttpError "${GO_PACKAGE_DIRS[@]}"
 
-# Install staticcheck if it's not present.
-STATICCHECK_PATH="${GOBIN}/staticcheck"
-readonly STATICCHECK_PATH
+STATICCHECK_PATH="$(command -v staticcheck || true)"
+if [[ -z "${STATICCHECK_PATH}" ]]; then
+  STATICCHECK_PATH="${GOBIN}/staticcheck"
+fi
 readonly STATICCHECK_VERSION="v0.7.0"
-if [[ ! -f "${STATICCHECK_PATH}" ]]; then
+if [[ ! -x "${STATICCHECK_PATH}" ]]; then
   CGO_ENABLED=0 go install \
     "honnef.co/go/tools/cmd/staticcheck@${STATICCHECK_VERSION}"
 fi
+readonly STATICCHECK_PATH
 "${STATICCHECK_PATH}" "${GO_PACKAGE_DIRS[@]}"
 
-# Install errcheck if it's not present.
-ERRCHECK_PATH="${GOBIN}/errcheck"
-readonly ERRCHECK_PATH
+ERRCHECK_PATH="$(command -v errcheck || true)"
+if [[ -z "${ERRCHECK_PATH}" ]]; then
+  ERRCHECK_PATH="${GOBIN}/errcheck"
+fi
 readonly ERRCHECK_VERSION="v1.10.0"
-if [[ ! -f "${ERRCHECK_PATH}" ]]; then
+if [[ ! -x "${ERRCHECK_PATH}" ]]; then
   CGO_ENABLED=0 go install \
     "github.com/kisielk/errcheck@${ERRCHECK_VERSION}"
 fi
+readonly ERRCHECK_PATH
 "${ERRCHECK_PATH}" -ignoretests "${GO_PACKAGE_DIRS[@]}"

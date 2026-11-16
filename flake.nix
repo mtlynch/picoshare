@@ -64,9 +64,34 @@
       litestream = litestream-nixpkgs.legacyPackages.${system}.litestream;
       air = air-nixpkgs.legacyPackages.${system}.air;
 
-      goVendorHash = "sha256-Q2PtwnlWl71XOv0RUM4oWNknGPeyjBkGvO7dLQ93jlY=";
+      # Backend sources omit tests and their test-only dependencies.
+      goVendorHash = "sha256-autscgwM+dSiA9L15kX6BQkA8eAr7+Guxg6ypr2a4MI=";
 
       npmDepsHash = "sha256-vlpvjZBjSn+dx4s+mdp/2kI4TbXmpP+kWYwjwRLhBxE=";
+
+      backendSrc = gopkg.lib.fileset.toSource {
+        root = ./.;
+        fileset =
+          gopkg.lib.fileset.intersection
+          (gopkg.lib.fileset.gitTracked ./.)
+          (gopkg.lib.fileset.unions [
+            ./go.mod
+            ./go.sum
+            (gopkg.lib.fileset.fileFilter
+              (file: file.hasExt "go" && !(gopkg.lib.hasSuffix "_test.go" file.name))
+              ./.)
+            ./handlers/static
+            ./handlers/templates
+            ./store/sqlite/migrations
+          ]);
+      };
+
+      release = import ./nix/release.nix {
+        pkgs = gopkg;
+        src = backendSrc;
+        vendorHash = goVendorHash;
+        litestreamPkgs = litestream-nixpkgs;
+      };
 
       npmDependenciesSrc = gopkg.lib.fileset.toSource {
         root = ./.;
@@ -112,7 +137,7 @@
       backend-dev = buildGoModule {
         pname = "picoshare-dev";
         version = "0.0.1";
-        src = gopkg.lib.cleanSource ./.;
+        src = backendSrc;
         vendorHash = goVendorHash;
         subPackages = ["cmd/picoshare"];
         env.CGO_ENABLED = "0";
@@ -170,142 +195,199 @@
         '';
       };
     in {
-      packages = {
-        inherit backend-dev frontend-check;
+      packages =
+        {
+          inherit backend-dev frontend-check;
 
-        lint-sql = mkBuildStep {
-          name = "lint-sql";
-          command = "./dev-scripts/lint-sql";
-          src = gopkg.lib.fileset.toSource {
-            root = ./.;
-            fileset = gopkg.lib.fileset.unions [
-              ./dev-scripts/lint-sql
-              ./.sqlfluffignore
-              (gopkg.lib.fileset.fileFilter
-                (file: file.hasExt "sql")
-                ./store/sqlite/migrations)
-            ];
+          go-tests = import ./nix/go-tests.nix {
+            pkgs = gopkg;
+            inherit go sqlite;
           };
-          extraInputs = [sqlfluff];
-        };
 
-        check-go-formatting = mkBuildStep {
-          name = "check-go-formatting";
-          command = "./dev-scripts/check-go-formatting";
-          src = gopkg.lib.fileset.toSource {
-            root = ./.;
-            fileset =
-              gopkg.lib.fileset.intersection
-              (gopkg.lib.fileset.gitTracked ./.)
-              (gopkg.lib.fileset.unions [
-                ./dev-scripts/check-go-formatting
-                (gopkg.lib.fileset.fileFilter (file: file.hasExt "go") ./.)
-              ]);
+          check-ci-workflows = mkBuildStep {
+            name = "check-ci-workflows";
+            command = "python3 ./dev-scripts/tests/test-ci-workflows.py";
+            src = gopkg.lib.fileset.toSource {
+              root = ./.;
+              fileset = gopkg.lib.fileset.unions [
+                ./dev-scripts/build-all-flake-targets
+                ./dev-scripts/upload-to-nixci-cache
+                ./dev-scripts/package-binaries
+                ./dev-scripts/publish-release
+                ./dev-scripts/deploy-to-fly
+                ./dev-scripts/tests/test-ci-workflows.py
+              ];
+            };
+            extraInputs = [gopkg.python3 gopkg.jq gopkg.git gopkg.gnutar gopkg.gzip];
+            extraAttrs = gopkg.lib.optionalAttrs gopkg.stdenv.isLinux {
+              env.LOCALE_ARCHIVE = "${gopkg.glibcLocales}/lib/locale/locale-archive";
+            };
           };
-          extraInputs = [go];
-        };
 
-        check-go-test-packages = mkBuildStep {
-          name = "check-go-test-packages";
-          command = "./dev-scripts/check-go-test-packages";
-          src = gopkg.lib.fileset.toSource {
-            root = ./.;
-            fileset =
-              gopkg.lib.fileset.intersection
-              (gopkg.lib.fileset.gitTracked ./.)
-              (gopkg.lib.fileset.unions [
-                ./dev-scripts/check-go-test-packages
+          check-bash = mkBuildStep {
+            name = "check-bash";
+            command = "./dev-scripts/check-bash";
+            src = gopkg.lib.fileset.toSource {
+              root = ./.;
+              fileset = gopkg.lib.fileset.gitTracked ./.;
+            };
+            extraInputs = [gopkg.git shellcheck];
+            setup = ''
+              git init --quiet
+              git add --all
+            '';
+          };
+
+          lint-sql = mkBuildStep {
+            name = "lint-sql";
+            command = "./dev-scripts/lint-sql";
+            src = gopkg.lib.fileset.toSource {
+              root = ./.;
+              fileset = gopkg.lib.fileset.unions [
+                ./dev-scripts/lint-sql
+                ./.sqlfluffignore
                 (gopkg.lib.fileset.fileFilter
-                  (file: gopkg.lib.hasSuffix "_test.go" file.name)
-                  ./.)
-              ]);
+                  (file: file.hasExt "sql")
+                  ./store/sqlite/migrations)
+              ];
+            };
+            extraInputs = [sqlfluff];
           };
-          extraInputs = [gopkg.git gopkg.gawk];
-          setup = ''
-            git init --quiet
-            git add --all
-          '';
-        };
 
-        check-trailing-newline = mkBuildStep {
-          name = "check-trailing-newline";
-          command = "./dev-scripts/check-trailing-newline";
-          src = gopkg.lib.fileset.toSource {
-            root = ./.;
-            fileset = gopkg.lib.fileset.gitTracked ./.;
-          };
-          extraInputs = [gopkg.git gopkg.coreutils gopkg.findutils gopkg.gnugrep];
-          setup = ''
-            git init --quiet
-            git add --all
-          '';
-        };
-
-        check-trailing-whitespace = mkBuildStep {
-          name = "check-trailing-whitespace";
-          command = "./dev-scripts/check-trailing-whitespace";
-          src = gopkg.lib.fileset.toSource {
-            root = ./.;
-            fileset = gopkg.lib.fileset.gitTracked ./.;
-          };
-          extraInputs = [gopkg.git gopkg.gnugrep];
-          setup = ''
-            git init --quiet
-            git add --all
-          '';
-        };
-
-        e2e-tests = let
-          playwrightBrowsers = playwright-nixpkgs.legacyPackages.${system}.playwright-driver.browsers;
-          fontsConf = nodepkgs.makeFontsConf {
-            fontDirectories = [nodepkgs.dejavu_fonts];
-          };
-        in
-          buildNpmPackage {
-            pname = "picoshare-e2e-tests";
-            version = "0.0.1";
+          check-go-formatting = mkBuildStep {
+            name = "check-go-formatting";
+            command = "./dev-scripts/check-go-formatting";
             src = gopkg.lib.fileset.toSource {
               root = ./.;
               fileset =
                 gopkg.lib.fileset.intersection
                 (gopkg.lib.fileset.gitTracked ./.)
                 (gopkg.lib.fileset.unions [
-                  ./dev-scripts/run-e2e-tests
-                  ./e2e
-                  ./package.json
-                  ./package-lock.json
+                  ./dev-scripts/check-go-formatting
+                  (gopkg.lib.fileset.fileFilter (file: file.hasExt "go") ./.)
                 ]);
             };
-            inherit npmDeps;
-            npmInstallFlags = ["--ignore-scripts"];
-            dontNpmBuild = true;
-            nativeBuildInputs = [nodejs playwrightBrowsers backend-dev];
-            doCheck = true;
-            checkPhase = ''
-              export HOME="$PWD/.home"
-              mkdir -p "$HOME"
-              export CI=1
-              export PLAYWRIGHT_BROWSERS_PATH=${playwrightBrowsers}
-              export PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
-              export PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS=true
+            extraInputs = [go];
+          };
 
-              # Configure fonts for headless browser rendering.
-              export FONTCONFIG_FILE=${fontsConf}
-
-              mkdir -p ./bin
-              cp ${backend-dev}/bin/picoshare-dev ./bin/picoshare-dev
-
-              patchShebangs ./dev-scripts
-              ./dev-scripts/run-e2e-tests --skip-build
-            '';
-            installPhase = ''
-              mkdir -p "$out"
-              printf 'e2e-tests passed\n' > "$out/result"
+          check-go-test-packages = mkBuildStep {
+            name = "check-go-test-packages";
+            command = "./dev-scripts/check-go-test-packages";
+            src = gopkg.lib.fileset.toSource {
+              root = ./.;
+              fileset =
+                gopkg.lib.fileset.intersection
+                (gopkg.lib.fileset.gitTracked ./.)
+                (gopkg.lib.fileset.unions [
+                  ./dev-scripts/check-go-test-packages
+                  (gopkg.lib.fileset.fileFilter
+                    (file: gopkg.lib.hasSuffix "_test.go" file.name)
+                    ./.)
+                ]);
+            };
+            extraInputs = [gopkg.git gopkg.gawk];
+            setup = ''
+              git init --quiet
+              git add --all
             '';
           };
-      };
+
+          check-trailing-newline = mkBuildStep {
+            name = "check-trailing-newline";
+            command = "./dev-scripts/check-trailing-newline";
+            src = gopkg.lib.fileset.toSource {
+              root = ./.;
+              fileset = gopkg.lib.fileset.gitTracked ./.;
+            };
+            extraInputs = [gopkg.git gopkg.coreutils gopkg.findutils gopkg.gnugrep];
+            setup = ''
+              git init --quiet
+              git add --all
+            '';
+          };
+
+          check-trailing-whitespace = mkBuildStep {
+            name = "check-trailing-whitespace";
+            command = "./dev-scripts/check-trailing-whitespace";
+            src = gopkg.lib.fileset.toSource {
+              root = ./.;
+              fileset = gopkg.lib.fileset.gitTracked ./.;
+            };
+            extraInputs = [gopkg.git gopkg.gnugrep];
+            setup = ''
+              git init --quiet
+              git add --all
+            '';
+          };
+
+          e2e-tests = let
+            playwrightBrowsers = playwright-nixpkgs.legacyPackages.${system}.playwright-driver.browsers;
+            fontsConf = nodepkgs.makeFontsConf {
+              fontDirectories = [nodepkgs.dejavu_fonts];
+            };
+          in
+            buildNpmPackage {
+              pname = "picoshare-e2e-tests";
+              version = "0.0.1";
+              src = gopkg.lib.fileset.toSource {
+                root = ./.;
+                fileset =
+                  gopkg.lib.fileset.intersection
+                  (gopkg.lib.fileset.gitTracked ./.)
+                  (gopkg.lib.fileset.unions [
+                    ./dev-scripts/run-e2e-tests
+                    ./e2e
+                    ./package.json
+                    ./package-lock.json
+                  ]);
+              };
+              inherit npmDeps;
+              npmInstallFlags = ["--ignore-scripts"];
+              dontNpmBuild = true;
+              nativeBuildInputs = [nodejs playwrightBrowsers backend-dev];
+              doCheck = true;
+              checkPhase = ''
+                export HOME="$PWD/.home"
+                mkdir -p "$HOME"
+                export CI=1
+                export PLAYWRIGHT_BROWSERS_PATH=${playwrightBrowsers}
+                export PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
+                export PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS=true
+
+                # Configure fonts for headless browser rendering.
+                export FONTCONFIG_FILE=${fontsConf}
+
+                mkdir -p ./bin
+                cp ${backend-dev}/bin/picoshare-dev ./bin/picoshare-dev
+
+                patchShebangs ./dev-scripts
+                ./dev-scripts/run-e2e-tests --skip-build
+              '';
+              installPhase = ''
+                mkdir -p "$out"
+                printf 'e2e-tests passed\n' > "$out/result"
+                cp --recursive playwright-report "$out/"
+              '';
+            };
+        }
+        // gopkg.lib.optionalAttrs gopkg.stdenv.isLinux {
+          inherit (release) backend release-binaries docker-image release-images;
+
+          deploy-to-fly = import ./nix/fly.nix {
+            pkgs = gopkg;
+            inherit flyctl;
+            image = release.docker-image;
+          };
+
+          publish-release = import ./nix/publish-release.nix {
+            pkgs = gopkg;
+            binaries = release.release-binaries;
+            images = release.release-images;
+          };
+        };
 
       checks = {
+        all = gopkg.linkFarm "all-flake-targets" self.packages.${system};
         inherit frontend-check;
         inherit
           (self.packages.${system})

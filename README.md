@@ -1,6 +1,6 @@
 # PicoShare
 
-[![CircleCI](https://circleci.com/gh/mtlynch/picoshare.svg?style=svg)](https://circleci.com/gh/mtlynch/picoshare)
+[![NixCI](https://nix-ci.com/badge/gh:mtlynch:picoshare)](https://nix-ci.com/gh:mtlynch:picoshare)
 [![Docker Version](https://img.shields.io/docker/v/mtlynch/picoshare?sort=semver&maxAge=86400)](https://hub.docker.com/r/mtlynch/picoshare/)
 [![Docker Pulls](https://img.shields.io/docker/pulls/mtlynch/picoshare.svg?maxAge=604800)](https://hub.docker.com/r/mtlynch/picoshare/)
 [![GitHub commit activity](https://img.shields.io/github/commit-activity/m/mtlynch/picoshare)](https://github.com/mtlynch/picoshare/commits/master)
