@@ -34,13 +34,12 @@ func TestServerRejectsConcurrentGuestUploadsUntilActiveUploadCompletes(t *testin
 	// not outlive the test bubble.
 	dataStore := test_sqlite.New(t)
 	now := mustParseTime("2025-01-01T00:00:00Z")
-	maxFileUploads := 2
 	mustInsertGuestUploadLink(t, &dataStore, picoshare.GuestLink{
 		ID:              "abcdefgh23456789",
 		Created:         now,
 		UrlExpires:      picoshare.NeverExpire,
 		MaxFileLifetime: picoshare.FileLifetimeInfinite,
-		MaxFileUploads:  &maxFileUploads,
+		MaxFileUploads:  new(2),
 	})
 	synctest.Test(t, func(t *testing.T) {
 		s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceCheckFunc, nilGarbageCollector, func() time.Time { return now })
@@ -108,13 +107,12 @@ func TestServerRejectsConcurrentGuestUploadsUntilInvalidUploadFails(t *testing.T
 	// not outlive the test bubble.
 	dataStore := test_sqlite.New(t)
 	now := mustParseTime("2025-01-01T00:00:00Z")
-	maxFileUploads := 1
 	mustInsertGuestUploadLink(t, &dataStore, picoshare.GuestLink{
 		ID:              "abcdefgh23456789",
 		Created:         now,
 		UrlExpires:      picoshare.NeverExpire,
 		MaxFileLifetime: picoshare.FileLifetimeInfinite,
-		MaxFileUploads:  &maxFileUploads,
+		MaxFileUploads:  new(1),
 	})
 	synctest.Test(t, func(t *testing.T) {
 		s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceCheckFunc, nilGarbageCollector, func() time.Time { return now })
