@@ -76,7 +76,7 @@ func main() {
 		log.Printf("http server exit: %s", httpSrv.ListenAndServe())
 	}()
 	<-stop
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	err = httpSrv.Shutdown(ctx)
 	cancel()
 	if err != nil {

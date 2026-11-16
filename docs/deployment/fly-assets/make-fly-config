@@ -42,7 +42,7 @@ cat > fly.toml <<EOF
 app = "${APP_NAME}"
 
 kill_signal = "SIGINT"
-kill_timeout = 5
+kill_timeout = 15
 processes = []
 
 [env]
