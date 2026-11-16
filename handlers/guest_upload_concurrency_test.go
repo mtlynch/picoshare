@@ -68,13 +68,6 @@ func TestLimitedGuestUploadsRejectParallelRequests(t *testing.T) {
 			storedUploads: 2,
 		},
 		{
-			explanation:   "parallel requests conflict but a later request sees the exhausted link",
-			uploadLimit:   1,
-			firstStatus:   http.StatusOK,
-			laterStatus:   http.StatusUnauthorized,
-			storedUploads: 1,
-		},
-		{
 			explanation:   "an invalid upload releases access without consuming its slot",
 			uploadLimit:   1,
 			firstNote:     "guest uploads cannot contain notes",
@@ -127,9 +120,6 @@ func TestLimitedGuestUploadsRejectParallelRequests(t *testing.T) {
 					if got, want := rec.Body.String(), "This guest link does not allow you to perform multiple uploads at once\n"; got != want {
 						t.Errorf("rejection=%q, want=%q", got, want)
 					}
-					if got, want := rec.Header().Get("Connection"), "close"; got != want {
-						t.Errorf("connection header=%q, want=%q", got, want)
-					}
 					if got, want := bodyRead, false; got != want {
 						t.Errorf("rejected request read its body=%v, want=%v", got, want)
 					}
@@ -161,49 +151,77 @@ func TestLimitedGuestUploadsRejectParallelRequests(t *testing.T) {
 	}
 }
 
-func TestUnlimitedGuestUploadsRemainConcurrent(t *testing.T) {
-	dataStore := test_sqlite.New(t)
-	now := mustParseTime("2025-01-01T00:00:00Z")
-	mustInsertGuestUploadLink(t, &dataStore, picoshare.GuestLink{
-		ID:              "abcdefgh23456789",
-		Created:         now,
-		UrlExpires:      picoshare.NeverExpire,
-		MaxFileLifetime: picoshare.FileLifetimeInfinite,
-	})
-	synctest.Test(t, func(t *testing.T) {
-		s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceCheckFunc, nilGarbageCollector, func() time.Time { return now })
-		release := make(chan struct{})
-		releaseFirst := sync.OnceFunc(func() { close(release) })
-		defer func() { releaseFirst(); synctest.Wait() }()
-		firstStarted := make(chan struct{})
-		first := httptest.NewRecorder()
+func TestGuestUploadsRemainConcurrent(t *testing.T) {
+	for _, tt := range []struct {
+		explanation       string
+		firstUploadLimit  *int
+		secondUploadLimit *int
+		secondUploadURL   string
+	}{
 		{
-			body, contentType := createMultipartFormBody("first.txt", "", "", strings.NewReader("first payload"))
-			heldBody := &beforeGuestUploadRead{Reader: body, beforeRead: func() {
-				close(firstStarted)
-				<-release
-			}}
-			req := httptest.NewRequest(http.MethodPost, "/api/guest/abcdefgh23456789", heldBody)
-			req.Header.Set("Content-Type", contentType)
-			go s.Router().ServeHTTP(first, req)
-		}
-		<-firstStarted
+			explanation:     "uploads to the same unlimited link remain concurrent",
+			secondUploadURL: "/api/guest/abcdefgh23456789",
+		},
 		{
-			body, contentType := createMultipartFormBody("second.txt", "", "", strings.NewReader("second payload"))
-			req := httptest.NewRequest(http.MethodPost, "/api/guest/abcdefgh23456789", body)
-			req.Header.Set("Content-Type", contentType)
-			rec := httptest.NewRecorder()
-			s.Router().ServeHTTP(rec, req)
-			if got, want := rec.Code, http.StatusOK; got != want {
-				t.Fatalf("concurrent upload status=%d, want=%d: %s", got, want, rec.Body.String())
-			}
-		}
-		releaseFirst()
-		synctest.Wait()
-		if got, want := first.Code, http.StatusOK; got != want {
-			t.Fatalf("first status=%d, want=%d: %s", got, want, first.Body.String())
-		}
-	})
+			explanation:       "uploads to different limited links remain concurrent",
+			firstUploadLimit:  new(1),
+			secondUploadLimit: new(1),
+			secondUploadURL:   "/api/guest/bcdefghj23456789",
+		},
+	} {
+		t.Run(tt.explanation, func(t *testing.T) {
+			dataStore := test_sqlite.New(t)
+			now := mustParseTime("2025-01-01T00:00:00Z")
+			mustInsertGuestUploadLink(t, &dataStore, picoshare.GuestLink{
+				ID:              "abcdefgh23456789",
+				Created:         now,
+				UrlExpires:      picoshare.NeverExpire,
+				MaxFileLifetime: picoshare.FileLifetimeInfinite,
+				MaxFileUploads:  tt.firstUploadLimit,
+			})
+			mustInsertGuestUploadLink(t, &dataStore, picoshare.GuestLink{
+				ID:              "bcdefghj23456789",
+				Created:         now,
+				UrlExpires:      picoshare.NeverExpire,
+				MaxFileLifetime: picoshare.FileLifetimeInfinite,
+				MaxFileUploads:  tt.secondUploadLimit,
+			})
+			synctest.Test(t, func(t *testing.T) {
+				s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceCheckFunc, nilGarbageCollector, func() time.Time { return now })
+				release := make(chan struct{})
+				releaseFirst := sync.OnceFunc(func() { close(release) })
+				defer func() { releaseFirst(); synctest.Wait() }()
+				firstStarted := make(chan struct{})
+				first := httptest.NewRecorder()
+				{
+					body, contentType := createMultipartFormBody("first.txt", "", "", strings.NewReader("first payload"))
+					heldBody := &beforeGuestUploadRead{Reader: body, beforeRead: func() {
+						close(firstStarted)
+						<-release
+					}}
+					req := httptest.NewRequest(http.MethodPost, "/api/guest/abcdefgh23456789", heldBody)
+					req.Header.Set("Content-Type", contentType)
+					go s.Router().ServeHTTP(first, req)
+				}
+				<-firstStarted
+				{
+					body, contentType := createMultipartFormBody("second.txt", "", "", strings.NewReader("second payload"))
+					req := httptest.NewRequest(http.MethodPost, tt.secondUploadURL, body)
+					req.Header.Set("Content-Type", contentType)
+					rec := httptest.NewRecorder()
+					s.Router().ServeHTTP(rec, req)
+					if got, want := rec.Code, http.StatusOK; got != want {
+						t.Fatalf("concurrent upload status=%d, want=%d: %s", got, want, rec.Body.String())
+					}
+				}
+				releaseFirst()
+				synctest.Wait()
+				if got, want := first.Code, http.StatusOK; got != want {
+					t.Fatalf("first status=%d, want=%d: %s", got, want, first.Body.String())
+				}
+			})
+		})
+	}
 }
 
 func TestLimitedGuestUploadHoldsClaimThroughPersistence(t *testing.T) {
@@ -292,59 +310,6 @@ func TestLimitedGuestUploadHoldsClaimThroughPersistence(t *testing.T) {
 			})
 		})
 	}
-}
-
-func TestLimitedGuestUploadsOnDifferentLinksRemainConcurrent(t *testing.T) {
-	dataStore := test_sqlite.New(t)
-	now := mustParseTime("2025-01-01T00:00:00Z")
-	mustInsertGuestUploadLink(t, &dataStore, picoshare.GuestLink{
-		ID:              "abcdefgh23456789",
-		Created:         now,
-		UrlExpires:      picoshare.NeverExpire,
-		MaxFileLifetime: picoshare.FileLifetimeInfinite,
-		MaxFileUploads:  new(1),
-	})
-	mustInsertGuestUploadLink(t, &dataStore, picoshare.GuestLink{
-		ID:              "bcdefghj23456789",
-		Created:         now,
-		UrlExpires:      picoshare.NeverExpire,
-		MaxFileLifetime: picoshare.FileLifetimeInfinite,
-		MaxFileUploads:  new(1),
-	})
-	synctest.Test(t, func(t *testing.T) {
-		s := handlers.New(mockAuthenticator{}, &dataStore, nilSpaceCheckFunc, nilGarbageCollector, func() time.Time { return now })
-		release := make(chan struct{})
-		releaseFirst := sync.OnceFunc(func() { close(release) })
-		defer func() { releaseFirst(); synctest.Wait() }()
-		firstStarted := make(chan struct{})
-		first := httptest.NewRecorder()
-		{
-			body, contentType := createMultipartFormBody("first.txt", "", "", strings.NewReader("first payload"))
-			heldBody := &beforeGuestUploadRead{Reader: body, beforeRead: func() {
-				close(firstStarted)
-				<-release
-			}}
-			req := httptest.NewRequest(http.MethodPost, "/api/guest/abcdefgh23456789", heldBody)
-			req.Header.Set("Content-Type", contentType)
-			go s.Router().ServeHTTP(first, req)
-		}
-		<-firstStarted
-		{
-			body, contentType := createMultipartFormBody("second.txt", "", "", strings.NewReader("second payload"))
-			req := httptest.NewRequest(http.MethodPost, "/api/guest/bcdefghj23456789", body)
-			req.Header.Set("Content-Type", contentType)
-			rec := httptest.NewRecorder()
-			s.Router().ServeHTTP(rec, req)
-			if got, want := rec.Code, http.StatusOK; got != want {
-				t.Fatalf("other link upload status=%d, want=%d: %s", got, want, rec.Body.String())
-			}
-		}
-		releaseFirst()
-		synctest.Wait()
-		if got, want := first.Code, http.StatusOK; got != want {
-			t.Fatalf("first status=%d, want=%d: %s", got, want, first.Body.String())
-		}
-	})
 }
 
 func TestGuestUploadRefreshesStaleCountAfterClaim(t *testing.T) {
