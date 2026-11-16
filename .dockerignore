@@ -5,6 +5,8 @@ dist/
 .coverage*
 .env*
 *.test.js
+flake.nix
+flake.lock
 fly.toml
 .air.toml
 Dockerfile

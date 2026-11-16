@@ -54,6 +54,12 @@
       buildGoModule = gopkg.buildGoModule.override {
         inherit go;
       };
+      # These tools load packages using the same Go version as the tests.
+      go-critic = (gopkg.go-critic.override {inherit buildGoModule;}).overrideAttrs {
+        subPackages = ["cmd/go-critic"];
+      };
+      staticcheck = gopkg.go-tools.override {inherit buildGoModule;};
+      errcheck = gopkg.errcheck.override {inherit buildGoModule;};
       sqlite = sqlite-nixpkgs.legacyPackages.${system}.sqlite;
       nodepkgs = nodejs-nixpkgs.legacyPackages.${system};
       nodejs = nodepkgs.nodejs_24;
@@ -110,8 +116,9 @@
           };
         };
         mkBackend = target: let
-          targetBuildGoModule = gopkg.buildGoModule.override {
-            inherit go;
+          targetBuildGoModule = target.packages.buildGoModule.override {
+            go = target.packages.go_1_26;
+            stdenv = target.packages.stdenvNoCC;
           };
         in
           targetBuildGoModule {
@@ -123,8 +130,8 @@
             env =
               {
                 CGO_ENABLED = "0";
-                GOOS = "linux";
-                GOARCH = target.architecture;
+                # Nix's cross Go toolchain otherwise defaults to external linking.
+                GO_EXTLINK_ENABLED = "0";
               }
               // lib.optionalAttrs (target.architecture == "arm") {GOARM = "7";};
             tags = ["netgo"];
@@ -189,60 +196,52 @@
         );
       };
 
-      goTests = let
-        testBuildGoModule = gopkg.buildGoModule.override {inherit go;};
-        # These tools load packages using the same Go version as the tests.
-        go-critic = (gopkg.go-critic.override {buildGoModule = testBuildGoModule;}).overrideAttrs {
-          subPackages = ["cmd/go-critic"];
-        };
-        staticcheck = gopkg.go-tools.override {buildGoModule = testBuildGoModule;};
-        errcheck = gopkg.errcheck.override {buildGoModule = testBuildGoModule;};
-      in
-        assert gopkg.gci.version == "0.13.7";
-        assert go-critic.version == "0.14.3";
-        # Staticcheck's 2026.1 release is Go module version v0.7.0.
-        assert staticcheck.version == "2026.1";
-        assert errcheck.version == "1.10.0";
-          testBuildGoModule {
-            pname = "picoshare-go-tests";
-            version = "0.0.1";
-            src = gopkg.lib.fileset.toSource {
-              root = ./.;
-              fileset =
-                gopkg.lib.fileset.intersection
-                (gopkg.lib.fileset.gitTracked ./.)
-                (gopkg.lib.fileset.unions [
-                  ./dev-scripts/run-go-tests
-                  ./go.mod
-                  ./go.sum
-                  ./handlers/templates
-                  ./handlers/static
-                  ./store/sqlite/migrations
-                  (gopkg.lib.fileset.fileFilter (file: file.hasExt "go") ./.)
-                ]);
-            };
-            vendorHash = "sha256-Q2PtwnlWl71XOv0RUM4oWNknGPeyjBkGvO7dLQ93jlY=";
-            nativeBuildInputs = [gopkg.git gopkg.gci go-critic staticcheck errcheck sqlite];
-            env.CGO_ENABLED = "0";
-            dontBuild = true;
-            doCheck = true;
-            checkPhase = ''
-              runHook preCheck
-              export HOME="$TMPDIR/home"
-              mkdir -p "$HOME"
-              patchShebangs ./dev-scripts
-              git init --quiet
-              git add --all
-              ./dev-scripts/run-go-tests --full
-              runHook postCheck
-            '';
-            installPhase = ''
-              runHook preInstall
-              mkdir -p "$out"
-              cp .coverage.out .coverage.html "$out/"
-              runHook postInstall
-            '';
+      goTests = assert gopkg.gci.version == "0.13.7";
+      assert go-critic.version == "0.14.3";
+      # Staticcheck's 2026.1 release is Go module version v0.7.0.
+      assert staticcheck.version == "2026.1";
+      assert errcheck.version == "1.10.0";
+        buildGoModule {
+          pname = "picoshare-go-tests";
+          version = "0.0.1";
+          src = gopkg.lib.fileset.toSource {
+            root = ./.;
+            fileset =
+              gopkg.lib.fileset.intersection
+              (gopkg.lib.fileset.gitTracked ./.)
+              (gopkg.lib.fileset.unions [
+                ./dev-scripts/run-go-tests
+                ./go.mod
+                ./go.sum
+                ./handlers/templates
+                ./handlers/static
+                ./store/sqlite/migrations
+                (gopkg.lib.fileset.fileFilter (file: file.hasExt "go") ./.)
+              ]);
           };
+          vendorHash = "sha256-Q2PtwnlWl71XOv0RUM4oWNknGPeyjBkGvO7dLQ93jlY=";
+          nativeBuildInputs = [gopkg.git gopkg.gci go-critic staticcheck errcheck sqlite];
+          # Go's race detector requires CGO even with a pure-Go SQLite driver.
+          env.CGO_ENABLED = "1";
+          dontBuild = true;
+          doCheck = true;
+          checkPhase = ''
+            runHook preCheck
+            export HOME="$TMPDIR/home"
+            mkdir -p "$HOME"
+            patchShebangs ./dev-scripts
+            git init --quiet
+            git add --all
+            ./dev-scripts/run-go-tests --full
+            runHook postCheck
+          '';
+          installPhase = ''
+            runHook preInstall
+            mkdir -p "$out"
+            cp .coverage.out .coverage.html "$out/"
+            runHook postInstall
+          '';
+        };
 
       npmDependenciesSrc = gopkg.lib.fileset.toSource {
         root = ./.;
@@ -575,6 +574,9 @@
           go-nixpkgs.legacyPackages.${system}.godef
           go-nixpkgs.legacyPackages.${system}.golint
           go-nixpkgs.legacyPackages.${system}.gci
+          go-critic
+          staticcheck
+          errcheck
           go
           sqlite
           nodejs
@@ -591,7 +593,7 @@
           export GOENV=off
           export GOTOOLCHAIN=local
           export GOBIN="$PWD/bin"
-          export PATH="$GOBIN:$PATH"
+          export PATH="$PATH:$GOBIN"
 
           # Restore the exact lockfile dependency set when manifests change.
           if [ -f package.json ]; then
