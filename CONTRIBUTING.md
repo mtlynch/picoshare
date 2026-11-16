@@ -29,8 +29,6 @@ To run PicoShare's build scripts before making a PR, run:
 dev-scripts/git-hooks/pre-commit
 ```
 
-See [CI and release](docs/ci.md) for the flake validation and hosted CI contracts.
-
 ### Enable Git hooks
 
 If you're planning to contribute code to PicoShare, it's a good idea to enable the standard Git hooks so that build scripts run before you commit. That way, you can see if basic tests pass in a few seconds rather than waiting a few minutes to watch them run in NixCI.
