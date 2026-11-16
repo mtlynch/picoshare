@@ -1,7 +1,7 @@
 app = "picoshare"
 primary_region = "iad"
 kill_signal = "SIGINT"
-kill_timeout = "5s"
+kill_timeout = "15s"
 
 [experimental]
   auto_rollback = true
