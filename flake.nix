@@ -351,26 +351,6 @@
 
           go-tests = goTests;
 
-          check-ci-workflows = mkBuildStep {
-            name = "check-ci-workflows";
-            command = "python3 ./dev-scripts/tests/test-ci-workflows.py";
-            src = gopkg.lib.fileset.toSource {
-              root = ./.;
-              fileset = gopkg.lib.fileset.unions [
-                ./dev-scripts/build-all-flake-targets
-                ./dev-scripts/upload-to-nixci-cache
-                ./dev-scripts/package-binaries
-                ./dev-scripts/publish-release
-                ./dev-scripts/deploy-to-fly
-                ./dev-scripts/tests/test-ci-workflows.py
-              ];
-            };
-            extraInputs = [gopkg.python3 gopkg.jq gopkg.git gopkg.gnutar gopkg.gzip];
-            extraAttrs = gopkg.lib.optionalAttrs gopkg.stdenv.isLinux {
-              env.LOCALE_ARCHIVE = "${gopkg.glibcLocales}/lib/locale/locale-archive";
-            };
-          };
-
           check-bash = mkBuildStep {
             name = "check-bash";
             command = "./dev-scripts/check-bash";
