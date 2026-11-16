@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+# Builds the PicoShare backend for a supported Linux target. The resulting
+# binary is statically linked and does not require CGO.
+
 # Exit build script on first failure.
 set -e
 
@@ -21,9 +24,6 @@ GO_BUILD_TAGS=()
 BINARY='./bin/picoshare'
 
 GO_BUILD_TAGS+=('netgo')
-# Disable dynamically-loaded extensions, which cause a compile time warning.
-# https://www.arp242.net/static-go.html
-GO_BUILD_TAGS+=('sqlite_omit_load_extension')
 
 if [[ "${MODE}" != 'prod' ]]; then
   BINARY="${BINARY}-${MODE}"
@@ -57,11 +57,10 @@ done
 BUILD_TAGS_JOINED="${BUILD_TAGS_JOINED# }"
 readonly BUILD_TAGS_JOINED
 
-# cgo is required for mattn/go-sqlite3.
-export CGO_ENABLED=1
+export CGO_ENABLED=0
 
 go build \
   -tags "${BUILD_TAGS_JOINED}" \
-  -ldflags "-w -extldflags '-static'" \
+  -ldflags "-w" \
   -o "${BINARY}" \
   ./cmd/picoshare/

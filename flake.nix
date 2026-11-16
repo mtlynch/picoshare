@@ -53,7 +53,6 @@
       go = gopkg.go_1_26;
       buildGoModule = gopkg.buildGoModule.override {
         inherit go;
-        stdenv = gopkg.pkgsStatic.stdenv;
       };
       sqlite = sqlite-nixpkgs.legacyPackages.${system}.sqlite;
       nodepkgs = nodejs-nixpkgs.legacyPackages.${system};
@@ -65,7 +64,7 @@
       litestream = litestream-nixpkgs.legacyPackages.${system}.litestream;
       air = air-nixpkgs.legacyPackages.${system}.air;
 
-      goVendorHash = "sha256-lVlcwGZbZhT31+eBo2UycXHiJvwKDblrRQGycAm9Hrc=";
+      goVendorHash = "sha256-Q2PtwnlWl71XOv0RUM4oWNknGPeyjBkGvO7dLQ93jlY=";
 
       npmDepsHash = "sha256-vlpvjZBjSn+dx4s+mdp/2kI4TbXmpP+kWYwjwRLhBxE=";
 
@@ -116,9 +115,9 @@
         src = gopkg.lib.cleanSource ./.;
         vendorHash = goVendorHash;
         subPackages = ["cmd/picoshare"];
-        env.CGO_ENABLED = "1";
-        tags = ["netgo" "sqlite_omit_load_extension" "dev"];
-        ldflags = ["-w" "-extldflags '-static'"];
+        env.CGO_ENABLED = "0";
+        tags = ["netgo" "dev"];
+        ldflags = ["-w"];
         postInstall = ''
           mv "$out/bin/picoshare" "$out/bin/picoshare-dev"
         '';
@@ -318,64 +317,59 @@
           ;
       };
 
-      devShells.default =
-        go-nixpkgs.legacyPackages.${system}.mkShell.override
-        {
-          stdenv = go-nixpkgs.legacyPackages.${system}.pkgsStatic.stdenv;
-        }
-        {
-          packages = [
-            go-nixpkgs.legacyPackages.${system}.gotools
-            go-nixpkgs.legacyPackages.${system}.gopls
-            go-nixpkgs.legacyPackages.${system}.go-outline
-            go-nixpkgs.legacyPackages.${system}.gopkgs
-            go-nixpkgs.legacyPackages.${system}.gocode-gomod
-            go-nixpkgs.legacyPackages.${system}.godef
-            go-nixpkgs.legacyPackages.${system}.golint
-            go-nixpkgs.legacyPackages.${system}.gci
-            go
-            sqlite
-            nodejs
-            shellcheck
-            sqlfluff
-            flyctl
-            litestream
-            air
-          ];
+      devShells.default = go-nixpkgs.legacyPackages.${system}.mkShell {
+        packages = [
+          go-nixpkgs.legacyPackages.${system}.gotools
+          go-nixpkgs.legacyPackages.${system}.gopls
+          go-nixpkgs.legacyPackages.${system}.go-outline
+          go-nixpkgs.legacyPackages.${system}.gopkgs
+          go-nixpkgs.legacyPackages.${system}.gocode-gomod
+          go-nixpkgs.legacyPackages.${system}.godef
+          go-nixpkgs.legacyPackages.${system}.golint
+          go-nixpkgs.legacyPackages.${system}.gci
+          go
+          sqlite
+          nodejs
+          shellcheck
+          sqlfluff
+          flyctl
+          litestream
+          air
+        ];
 
-          shellHook = ''
-            # Ignore user-level Go settings and keep installed tools local to
-            # this checkout.
-            export GOENV=off
-            export GOTOOLCHAIN=local
-            export GOBIN="$PWD/bin"
-            export PATH="$GOBIN:$PATH"
+        shellHook = ''
+          # Ignore user-level Go settings and keep installed tools local to
+          # this checkout.
+          export GOENV=off
+          export GOTOOLCHAIN=local
+          export GOBIN="$PWD/bin"
+          export PATH="$GOBIN:$PATH"
 
-            # Restore the exact lockfile dependency set when manifests change.
-            if [ -f package.json ]; then
-              if [ ! -d node_modules ] \
-                || [ package.json -nt node_modules ] \
-                || [ package-lock.json -nt node_modules ]; then
-                echo "Installing npm packages..."
-                if npm ci; then
-                  touch node_modules
-                else
-                  echo "Failed to install npm packages" >&2
-                  exit 1
-                fi
+          # Restore the exact lockfile dependency set when manifests change.
+          if [ -f package.json ]; then
+            if [ ! -d node_modules ] \
+              || [ package.json -nt node_modules ] \
+              || [ package-lock.json -nt node_modules ]; then
+              echo "Installing npm packages..."
+              if npm ci; then
+                touch node_modules
+              else
+                echo "Failed to install npm packages" >&2
+                exit 1
               fi
             fi
+          fi
 
-            echo "shellcheck" "$(shellcheck --version | grep '^version:')"
-            sqlfluff --version
-            fly version | cut -d ' ' -f 1-3
-            echo "litestream" "$(litestream version)"
-            echo "node" "$(node --version)"
-            echo "npm" "$(npm --version)"
-            echo "sqlite" "$(sqlite3 --version | cut -d ' ' -f 1-2)"
-            go version
-          '';
-        };
+          echo "shellcheck" "$(shellcheck --version | grep '^version:')"
+          sqlfluff --version
+          fly version | cut -d ' ' -f 1-3
+          echo "litestream" "$(litestream version)"
+          echo "node" "$(node --version)"
+          echo "npm" "$(npm --version)"
+          echo "sqlite" "$(sqlite3 --version | cut -d ' ' -f 1-2)"
+          go version
+        '';
+      };
 
       formatter = go-nixpkgs.legacyPackages.${system}.alejandra;
     });
