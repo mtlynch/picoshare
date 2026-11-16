@@ -65,7 +65,7 @@
       litestream = litestream-nixpkgs.legacyPackages.${system}.litestream;
       air = air-nixpkgs.legacyPackages.${system}.air;
 
-      goVendorHash = "sha256-nsMr0i3nZeMNxEbHrgQTimVjOQpRFvIhWcistX2vGUI=";
+      goVendorHash = "sha256-lVlcwGZbZhT31+eBo2UycXHiJvwKDblrRQGycAm9Hrc=";
 
       npmDepsHash = "sha256-vlpvjZBjSn+dx4s+mdp/2kI4TbXmpP+kWYwjwRLhBxE=";
 

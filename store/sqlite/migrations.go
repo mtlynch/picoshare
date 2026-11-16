@@ -7,7 +7,7 @@ import (
 	"io/fs"
 	"log"
 
-	migrate "codefloe.com/mtlynch/go-evolutionary-migrate/v2"
+	migrate "codefloe.com/mtlynch/go-evolutionary-migrate/v3"
 )
 
 //go:embed migrations/*.sql
@@ -19,7 +19,10 @@ func applyMigrations(db *sql.DB) {
 		log.Fatalf("failed to open migrations directory: %v", err)
 	}
 
-	if err := migrate.Run(context.Background(), db, migrationsSubFs); err != nil {
+	if err := migrate.Run(context.Background(), migrate.RunParams{
+		DB: db,
+		FS: migrationsSubFs,
+	}); err != nil {
 		log.Fatalf("failed to apply database migrations: %v", err)
 	}
 }

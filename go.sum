@@ -1,5 +1,5 @@
-codefloe.com/mtlynch/go-evolutionary-migrate/v2 v2.0.0-20260917185754-fdf050969c49 h1:AQQEb/se+5A7PFYE6zSOucHm7qQzGh6kY4OHUbIo3AA=
-codefloe.com/mtlynch/go-evolutionary-migrate/v2 v2.0.0-20260917185754-fdf050969c49/go.mod h1:ur6/lLS8Asgh6OhSB43QEuDzq8xqoNWEvgUo6ZSqEdc=
+codefloe.com/mtlynch/go-evolutionary-migrate/v3 v3.0.0 h1:EvPz6c5t/jy9mS6rueMOF1LBSCYl+V5BeAF5G5tmhL0=
+codefloe.com/mtlynch/go-evolutionary-migrate/v3 v3.0.0/go.mod h1:/8QGg68WU3ThYp7BUOnJ1yMDcKj2WtZwsCVaQ6KhyVY=
 github.com/felixge/httpsnoop v1.0.1 h1:lvB5Jl89CsZtGIWuTcDM1E/vkVs49/Ml7JJe07l8SPQ=
 github.com/felixge/httpsnoop v1.0.1/go.mod h1:m8KPJKqk1gH5J9DgRY2ASl2lWCfGKXixSwevea8zH2U=
 github.com/go-test/deep v1.1.1 h1:0r/53hagsehfO4bzD2Pgr/+RgHqhmf+k1Bpse2cTu1U=
