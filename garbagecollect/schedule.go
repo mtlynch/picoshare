@@ -19,11 +19,13 @@ func NewScheduler(collector *Collector, interval time.Duration) Scheduler {
 
 func (s *Scheduler) StartAsync() {
 	go func() {
-		for range s.ticker.C {
+		for {
+			// Collect before waiting so short-lived processes also perform cleanup.
 			log.Printf("performing database maintenance")
 			if err := s.collector.Collect(); err != nil {
 				log.Printf("database maintenance failed: %v", err)
 			}
+			<-s.ticker.C
 		}
 	}()
 }
