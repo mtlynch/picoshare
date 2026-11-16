@@ -124,7 +124,7 @@ func TestLimitedGuestUploadsRejectParallelRequests(t *testing.T) {
 					if got, want := rec.Code, http.StatusConflict; got != want {
 						t.Fatalf("parallel upload status=%d, want=%d: %s", got, want, rec.Body.String())
 					}
-					if got, want := rec.Body.String(), "Parallel uploads are forbidden on this guest link\n"; got != want {
+					if got, want := rec.Body.String(), "This guest link does not allow you to perform multiple uploads at once\n"; got != want {
 						t.Errorf("rejection=%q, want=%q", got, want)
 					}
 					if got, want := rec.Header().Get("Connection"), "close"; got != want {

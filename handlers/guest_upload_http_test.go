@@ -97,7 +97,7 @@ func TestParallelGuestUploadRespondsBeforeReceivingHTTPBody(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to read rejection body: %v", err)
 		}
-		if got, want := string(body), "Parallel uploads are forbidden on this guest link\n"; got != want {
+		if got, want := string(body), "This guest link does not allow you to perform multiple uploads at once\n"; got != want {
 			t.Errorf("rejection=%q, want=%q", got, want)
 		}
 	}

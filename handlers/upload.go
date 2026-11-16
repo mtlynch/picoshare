@@ -100,22 +100,22 @@ func (s Server) guestEntryPost() http.HandlerFunc {
 		}
 
 		gl, unlock, err := s.guestUploadOrchestrator.acquire(guestLinkID)
-		if errors.Is(err, errParallelGuestUpload) {
-			// Prevent HTTP/1.1 from draining the rejected body before sending
-			// the error response.
-			w.Header().Set("Connection", "close")
-			http.Error(w, "Parallel uploads are forbidden on this guest link", http.StatusConflict)
-			return
+		if err != nil {
+			if errors.Is(err, errParallelGuestUpload) {
+				// Prevent HTTP/1.1 from draining the rejected body before sending
+				// the error response.
+				w.Header().Set("Connection", "close")
+				http.Error(w, "This guest link does not allow you to perform multiple uploads at once", http.StatusConflict)
+				return
+			} else if _, ok := errors.AsType[store.GuestLinkNotFoundError](err); ok {
+				http.Error(w, "Invalid guest link ID", http.StatusNotFound)
+				return
+			} else {
+				log.Printf("error retrieving guest link with ID %v: %v", guestLinkID, err)
+				http.Error(w, "Failed to retrieve guest link", http.StatusInternalServerError)
+				return
+			}
 		}
-		if _, ok := errors.AsType[store.GuestLinkNotFoundError](err); ok {
-			http.Error(w, "Invalid guest link ID", http.StatusNotFound)
-			return
-		} else if err != nil {
-			log.Printf("error retrieving guest link with ID %v: %v", guestLinkID, err)
-			http.Error(w, "Failed to retrieve guest link", http.StatusInternalServerError)
-			return
-		}
-
 		defer unlock()
 
 		if !gl.IsActive(s.now()) {
