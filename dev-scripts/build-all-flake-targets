@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+
+# Runs flake checks for the current system, then an optional upload hook.
+
+set -e
+set -x
+set -o pipefail
+set -u
+
+build_options=(--max-jobs auto)
+if [ "$#" -ne 0 ]; then
+  build_options=("$@")
+fi
+readonly build_options
+
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+readonly SCRIPT_DIR
+cd "${SCRIPT_DIR}/.."
+
+nix flake check "${build_options[@]}"
+
+upload_script="${SCRIPT_DIR}/upload-to-nixci-cache"
+readonly upload_script
+if [ -e "${upload_script}" ]; then
+  "${upload_script}"
+fi

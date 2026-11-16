@@ -1,0 +1,82 @@
+#!/usr/bin/env bash
+
+# Publish a tagged release's binary archives and multi-platform container image.
+set -euo pipefail
+umask 077
+
+if [[ $# -ne 3 ]]; then
+  printf 'Usage: %s BINARIES_DIR IMAGES_DIR PACKAGER\n' "$0" >&2
+  exit 2
+fi
+
+binaries=$1
+images=$2
+packager=$3
+
+if [[ ! ${NIX_CI_GIT_REF:-} =~ ^refs/tags/v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+  printf 'NIX_CI_GIT_REF must be a semantic-version release tag\n' >&2
+  exit 1
+fi
+tag=${NIX_CI_GIT_REF#refs/tags/}
+version=${tag#v}
+
+if [[ -z ${NIX_CI_GIT_COMMIT_SHA:-} ]]; then
+  printf 'NIX_CI_GIT_COMMIT_SHA is required\n' >&2
+  exit 1
+fi
+head_commit=$(git rev-parse HEAD)
+tag_commit=$(git rev-parse "${NIX_CI_GIT_REF}^{commit}")
+if [[ $head_commit != "$NIX_CI_GIT_COMMIT_SHA" || \
+      $tag_commit != "$NIX_CI_GIT_COMMIT_SHA" ]]; then
+  printf 'HEAD and release tag must match NIX_CI_GIT_COMMIT_SHA\n' >&2
+  exit 1
+fi
+
+for secret in GH_TOKEN DOCKERHUB_USERNAME DOCKERHUB_ACCESS_TOKEN; do
+  if [[ -z ${!secret:-} ]]; then
+    printf '%s is required\n' "$secret" >&2
+    exit 1
+  fi
+done
+
+repo=mtlynch/picoshare
+gh release view "$tag" --repo "$repo" >/dev/null
+
+workdir=$(mktemp --directory)
+trap 'rm --recursive --force "$workdir"' EXIT
+export DOCKER_CONFIG="$workdir/docker-config"
+mkdir --mode=700 "$DOCKER_CONFIG"
+dist="$workdir/dist"
+mkdir "$dist"
+"$packager" "$version" "$binaries" "$dist"
+
+printf '%s' "$DOCKERHUB_ACCESS_TOKEN" |
+  crane auth login index.docker.io --username "$DOCKERHUB_USERNAME" \
+    --password-stdin
+
+image_repo=index.docker.io/mtlynch/picoshare
+digests=()
+for arch in amd64 arm64 armv7; do
+  image="$image_repo:$tag-$arch"
+  "$images/linux-$arch" > "$workdir/image.tar"
+  crane push "$workdir/image.tar" "$image"
+  if [[ $arch == armv7 ]]; then
+    crane mutate "$image" --set-platform linux/arm/v7 --tag "$image"
+  fi
+  digest=$(crane digest "$image")
+  digests+=(--manifest "$image_repo@$digest")
+done
+
+crane index append "${digests[@]}" --tag "$image_repo:$tag"
+release_digest=$(crane digest "$image_repo:$tag")
+platforms=$(crane manifest "$image_repo@$release_digest" |
+  jq -r '.manifests[].platform | [.os, .architecture, (.variant // "")] | @tsv' |
+  LC_ALL=C sort)
+expected=$(printf 'linux\tamd64\t\nlinux\tarm\tv7\nlinux\tarm64\t\n')
+if [[ $platforms != "$expected" ]]; then
+  printf 'Release image platforms did not match expected platforms\n' >&2
+  exit 1
+fi
+
+gh release upload "$tag" "$dist"/*.tar.gz --repo "$repo" --clobber
+crane tag "$image_repo@$release_digest" latest
