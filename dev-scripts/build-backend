@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
-# Builds the PicoShare backend for a supported Linux target. The resulting
-# binary is statically linked and does not require CGO.
+# Builds the PicoShare backend for a supported Linux target.
 
 # Exit build script on first failure.
 set -e
